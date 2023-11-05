@@ -9,7 +9,6 @@
 
 ## 🐶 新手必读
 
-* nodejs > 14.17.0
 * 演示地址【Vue3 + element-plus】：<http://dashboard-vue3.yudao.iocoder.cn>
 * 演示地址【Vue3 + vben(ant-design-vue)】：<http://dashboard-vben.yudao.iocoder.cn>
 * 演示地址【Vue2 + element-ui】：<http://dashboard.yudao.iocoder.cn>
@@ -27,12 +26,10 @@
 
 ## 技术栈
 
-
 | 框架                                              | 说明                 | 版本     |
 |-------------------------------------------------|--------------------|--------|
 | [uni-app](hhttps://github.com/dcloudio/uni-app) | 跨平台框架              | 2.0.0  |
 | [uni-ui](https://github.com/dcloudio/uni-ui)    | 基于 uni-app 的 UI 框架 | 1.4.20 |
-                                                      |
 
 ## 🔥 后端架构
 
