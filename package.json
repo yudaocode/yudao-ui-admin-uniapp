@@ -123,6 +123,7 @@
     "vue": "^3.4.21",
     "vue-i18n": "9.1.9",
     "vue-router": "4.5.1",
+    "wot-design-uni": "^1.13.0",
     "z-paging": "2.8.7"
   },
   "devDependencies": {
