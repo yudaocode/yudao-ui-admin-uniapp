@@ -23,7 +23,12 @@ const LOGIN_PAGE = '/pages/login/index'
  * 如果要立即跳转，不做延时，可以使用 `toLoginPage.flush()` 方法
  */
 export const toLoginPage = debounce((options: ToLoginPageOptions = {}) => {
-  const { mode = 'navigateTo', queryString = '' } = options
+  let { mode = 'navigateTo', queryString = '' } = options
+  // add by 芋艿：如果有查询参数，强制使用 reLaunch 模式。
+  // 原因：携带 redirect 参数，登录成功后可以跳回去。避免使用 navigateTo 导致页面数据不会刷新
+  if (queryString) {
+    mode = 'reLaunch'
+  }
 
   const url = `${LOGIN_PAGE}${queryString}`
 

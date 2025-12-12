@@ -1,20 +1,22 @@
 import type { CustomRequestOptions } from '@/http/types'
-import { useTokenStore } from '@/store'
+import { useTokenStore, useUserStore } from '@/store'
 import { getEnvBaseUrl } from '@/utils'
 import { stringifyQuery } from './tools/queryString'
 
 // 请求基准地址
 const baseUrl = getEnvBaseUrl()
+const tenantEnable = import.meta.env.VITE_APP_TENANT_ENABLE
+
+const whiteList: string[] = [
+  '/login',
+  '/refresh-token',
+  '/system/tenant/get-id-by-name',
+] // 白名单列表，不需要传递 token 字段
 
 // 拦截器配置
 const httpInterceptor = {
   // 拦截前触发
   invoke(options: CustomRequestOptions) {
-    // 如果您使用了alova，则请把下面的代码放开注释
-    // alova 执行流程：alova beforeRequest --> 本拦截器 --> alova responded
-    // return options
-
-    // 非 alova 请求，正常执行
     // 接口请求支持通过 query 参数配置 queryString
     if (options.query) {
       const queryStr = stringifyQuery(options.query)
@@ -51,9 +53,22 @@ const httpInterceptor = {
     // 3. 添加 token 请求头标识
     const tokenStore = useTokenStore()
     const token = tokenStore.validToken
-
-    if (token) {
+    let isToken = (options!.header || {}).isToken === false
+    whiteList.some((v) => {
+      if (options.url && options.url.indexOf(v) > -1) {
+        return (isToken = false)
+      }
+    })
+    if (!isToken && token) {
       options.header.Authorization = `Bearer ${token}`
+    }
+
+    // 4. 添加租户标识
+    if (tenantEnable && tenantEnable === 'true') {
+      const tenantId = useUserStore().tenantId
+      if (tenantId) {
+        options.header['tenant-id'] = tenantId
+      }
     }
     return options
   },

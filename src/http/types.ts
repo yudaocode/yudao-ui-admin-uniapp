@@ -20,17 +20,18 @@ export type IResponse<T = any> = {
   [key: string]: any // 允许额外属性
 }
 
-// 分页请求参数
-export interface PageParams {
-  page: number
+/** 分页参数 */
+export interface PageParam {
+  pageNo: number
   pageSize: number
-  [key: string]: any
+  [key: string]: any // 允许额外属性
 }
 
-// 分页响应数据
+/** 分页结果 */
 export interface PageResult<T> {
   list: T[]
   total: number
-  page: number
-  pageSize: number
 }
+
+/** 加载状态枚举 - 从 wot-design-uni 重新导出 */
+export type { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'

@@ -2,7 +2,7 @@ import type { IDoubleTokenRes } from '@/api/types/login'
 import type { CustomRequestOptions, IResponse } from '@/http/types'
 import { nextTick } from 'vue'
 import { useTokenStore } from '@/store/token'
-import { isDoubleTokenMode } from '@/utils'
+import { getLastPage, isDoubleTokenMode } from '@/utils'
 import { toLoginPage } from '@/utils/toLoginPage'
 import { ResultEnum } from './tools/enum'
 
@@ -55,11 +55,12 @@ export function http<T>(options: CustomRequestOptions) {
               refreshing = false
               nextTick(() => {
                 // 关闭其他弹窗
-                uni.hideToast()
-                uni.showToast({
-                  title: 'token 刷新成功',
-                  icon: 'none',
-                })
+                // 注释 by 芋艿：刷新 token 成功，是后台静默操作，没必要提示用户
+                // uni.hideToast()
+                // uni.showToast({
+                //   title: 'token 刷新成功',
+                //   icon: 'none',
+                // })
               })
               // 将任务队列的所有任务重新请求
               taskQueue.forEach(task => task())
@@ -80,7 +81,14 @@ export function http<T>(options: CustomRequestOptions) {
               await tokenStore.logout()
               // 跳转到登录页
               setTimeout(() => {
-                toLoginPage()
+                // 优化 by 芋艿：跳转登录页时，携带上次浏览的页面地址，登录成功后可以跳回去
+                const lastPage = getLastPage()
+                let queryString = ''
+                if (lastPage) {
+                  const fullPath = lastPage.$page?.fullPath || `/${lastPage.route}`
+                  queryString = `?redirect=${encodeURIComponent(fullPath)}`
+                }
+                toLoginPage({ queryString })
               }, 2000)
             }
             finally {
@@ -96,10 +104,14 @@ export function http<T>(options: CustomRequestOptions) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 处理业务逻辑错误
           if (code !== ResultEnum.Success0 && code !== ResultEnum.Success200) {
-            uni.showToast({
+            // add by 芋艿：后端返回的 msg 提示
+            !options.hideErrorToast
+            && uni.showToast({
               icon: 'none',
               title: responseData.msg || responseData.message || '请求错误',
             })
+            // add by 芋艿：reject 替代原本的 resolve，避免调用的地方以为请求成功
+            return reject(responseData)
           }
           return resolve(responseData.data)
         }
@@ -191,9 +203,3 @@ http.get = httpGet
 http.post = httpPost
 http.put = httpPut
 http.delete = httpDelete
-
-// 支持与 alovaJS 类似的API调用
-http.Get = httpGet
-http.Post = httpPost
-http.Put = httpPut
-http.Delete = httpDelete
