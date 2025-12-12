@@ -1,6 +1,9 @@
 import type { CustomTabBarItem, CustomTabBarItemBadge } from './types'
 import { reactive } from 'vue'
 
+import { isNeedLoginMode } from '@/router/config'
+import { FG_LOG_ENABLE, judgeIsExcludePath } from '@/router/interceptor'
+import { useTokenStore } from '@/store/token'
 import { tabbarList as _tabbarList, customTabbarEnable, selectedTabbarStrategy, TABBAR_STRATEGY_MAP } from './config'
 
 // TODO 1/2: 中间的鼓包tabbarItem的开关
@@ -38,8 +41,12 @@ const tabbarStore = reactive({
   curIdx: uni.getStorageSync('app-tabbar-index') || 0,
   prevIdx: uni.getStorageSync('app-tabbar-index') || 0,
   setCurIdx(idx: number) {
-    this.curIdx = idx
-    uni.setStorageSync('app-tabbar-index', idx)
+    const tokenStore = useTokenStore()
+    // 已登录 或 (url 需要登录 && 在白名单 || 不需要登录 && 不在黑名单) （关于 白名单|黑名单 逻辑： src/router/interceptor.ts）
+    if (tokenStore.hasLogin || (isNeedLoginMode && judgeIsExcludePath(tabbarList[idx].pagePath)) || (!isNeedLoginMode && !judgeIsExcludePath(tabbarList[idx].pagePath))) {
+      this.curIdx = idx
+      uni.setStorageSync('app-tabbar-index', idx)
+    }
   },
   setTabbarItemBadge(idx: number, badge: CustomTabBarItemBadge) {
     if (tabbarList[idx]) {
@@ -53,6 +60,7 @@ const tabbarStore = reactive({
       return
     }
     const index = tabbarList.findIndex(item => item.pagePath === path)
+    FG_LOG_ENABLE && console.log('index:', index, path)
     // console.log('tabbarList:', tabbarList)
     if (index === -1) {
       const pagesPathList = getCurrentPages().map(item => item.route.startsWith('/') ? item.route : `/${item.route}`)
