@@ -1,0 +1,139 @@
+/**
+ * BPM 列表组件共享样式
+ */
+
+// 列表容器
+.bpm-list {
+  padding: 24rpx;
+}
+
+// 搜索框容器
+.bpm-search {
+  margin-bottom: 24rpx;
+}
+
+// 列表卡片
+.bpm-card {
+  margin-bottom: 24rpx;
+  overflow: hidden;
+  border-radius: 12rpx;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+// 卡片内容区
+.bpm-card-content {
+  padding: 24rpx;
+}
+
+// 卡片标题行
+.bpm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+// 卡片标题
+.bpm-card-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+// 卡片信息行
+.bpm-card-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 28rpx;
+  color: #666;
+}
+
+// 摘要区域
+.bpm-summary {
+  margin-bottom: 16rpx;
+  padding: 16rpx;
+  border-radius: 8rpx;
+  background-color: #f9f9f9;
+  font-size: 26rpx;
+}
+
+.bpm-summary-item {
+  margin-bottom: 8rpx;
+  line-height: 1.5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// 用户信息
+.bpm-user {
+  display: flex;
+  align-items: center;
+}
+
+// 用户头像
+.bpm-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 12rpx;
+  border-radius: 50%;
+  background-color: #1890ff;
+  font-size: 24rpx;
+  color: #fff;
+}
+
+// 用户昵称
+.bpm-nickname {
+  max-width: 200rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 时间文本
+.bpm-time {
+  color: #999;
+}
+
+// 时间文本 - 警告色
+.bpm-time--warning {
+  color: #ff9800;
+}
+
+// 操作按钮区
+.bpm-actions {
+  display: flex;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+// 操作按钮
+.bpm-action-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #1890ff;
+
+  &:not(:last-child) {
+    border-right: 1rpx solid #f0f0f0;
+  }
+}
+
+// 空状态
+.bpm-empty {
+  padding: 100rpx 0;
+  text-align: center;
+}

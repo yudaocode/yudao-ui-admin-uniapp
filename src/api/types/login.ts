@@ -11,8 +11,9 @@ export interface ISingleTokenRes {
 export interface IDoubleTokenRes {
   accessToken: string
   refreshToken: string
-  accessExpiresIn: number // 访问令牌有效期(秒)
-  refreshExpiresIn: number // 刷新令牌有效期(秒)
+  // accessExpiresIn: number // 访问令牌有效期(秒)
+  // refreshExpiresIn: number // 刷新令牌有效期(秒)
+  expiresTime: number // 访问令牌过期时间，单位：毫秒
 }
 
 /**
@@ -31,7 +32,18 @@ export interface IUserInfoRes {
   [key: string]: any // 允许其他扩展字段
 }
 
+/**
+ * 权限信息
+ */
+export interface AuthPermissionInfo {
+  user: IUserInfoRes;
+  roles: string[];
+  permissions: string[];
+  // menus: AppRouteRecordRaw[]; // add by 芋艿：暂时用不到
+}
+
 // 认证存储数据结构
+// TODO @芋艿：可以考虑删除
 export interface AuthStorage {
   mode: AuthMode
   tokens: ISingleTokenRes | IDoubleTokenRes

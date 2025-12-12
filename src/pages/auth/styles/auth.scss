@@ -1,0 +1,63 @@
+/** 认证页面公共样式 */
+
+// 页面容器
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e8f4ff 0%, #fff 50%);
+  box-sizing: border-box;
+}
+
+// 表单容器
+.form-container {
+  flex: 1;
+  border-radius: 24rpx 24rpx 0 0;
+  background: #fff;
+  padding: 40rpx;
+}
+
+// 输入项
+.input-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  margin-bottom: 24rpx;
+
+  :deep(.wd-input) {
+    flex: 1;
+    margin-left: 16rpx;
+    background: transparent;
+  }
+
+  :deep(.wd-picker) {
+    flex: 1;
+    margin-left: 16rpx;
+  }
+
+  :deep(.wd-picker__field) {
+    background: transparent;
+    padding: 0;
+  }
+
+  // 移除 picker 的边框，保持与 input 一致
+  :deep(.wd-picker__cell) {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  :deep(.wd-cell) {
+    background: transparent !important;
+    padding: 0 !important;
+
+    &::after {
+      display: none !important;
+    }
+  }
+
+  :deep(.wd-cell__wrapper) {
+    padding: 0 !important;
+  }
+}
