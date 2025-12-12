@@ -1,45 +1,128 @@
 /**
- * 文件上传钩子函数使用示例
- * @example
- * const { loading, error, data, progress, run } = useUpload<IUploadResult>(
- *   uploadUrl,
- *   {},
- *   {
- *     maxSize: 5, // 最大5MB
- *     sourceType: ['album'], // 仅支持从相册选择
- *     onProgress: (p) => console.log(`上传进度：${p}%`),
- *     onSuccess: (res) => console.log('上传成功', res),
- *     onError: (err) => console.error('上传失败', err),
- *   },
- * )
+ * 文件上传工具
+ *
+ * 支持两种上传模式：
+ * - server: 后端上传（默认）
+ * - client: 前端直连上传（仅支持 S3 服务）
+ *
+ * 通过环境变量 VITE_UPLOAD_TYPE 配置
  */
 
-/**
- * 上传文件的URL配置
- */
-export const uploadFileUrl = {
-  /** 用户头像上传地址 */
-  USER_AVATAR: `${import.meta.env.VITE_SERVER_BASEURL}/user/avatar`,
+import * as FileApi from '@/api/infra/file'
+
+/** 上传类型 */
+const UPLOAD_TYPE = {
+  /** 客户端直接上传（只支持S3服务） */
+  CLIENT: 'client',
+  /** 客户端发送到后端上传 */
+  SERVER: 'server',
 }
 
 /**
- * 通用文件上传函数（支持直接传入文件路径）
- * @param url 上传地址
- * @param filePath 本地文件路径
- * @param formData 额外表单数据
- * @param options 上传选项
+ * 读取文件二进制内容
+ * @param uniFile 文件对象
  */
-export function useFileUpload<T = string>(url: string, filePath: string, formData: Record<string, any> = {}, options: Omit<UploadOptions, 'sourceType' | 'sizeType' | 'count'> = {}) {
-  return useUpload<T>(
-    url,
-    formData,
-    {
-      ...options,
-      sourceType: ['album'],
-      sizeType: ['original'],
-    },
-    filePath,
-  )
+async function readFile(uniFile: { path: string, arrayBuffer?: () => Promise<ArrayBuffer> }): Promise<ArrayBuffer | string> {
+  // 微信小程序
+  if (uni.getFileSystemManager) {
+    const fs = uni.getFileSystemManager()
+    return fs.readFileSync(uniFile.path) as ArrayBuffer
+  }
+  // H5 等
+  if (uniFile.arrayBuffer) {
+    return uniFile.arrayBuffer()
+  }
+  throw new Error('不支持的文件读取方式')
+}
+
+/**
+ * 创建文件记录（异步）
+ * @param presignedInfo 预签名信息
+ * @param file 文件信息
+ */
+function createFileRecord(presignedInfo: FileApi.FilePresignedUrlRespVO, file: { name: string, type?: string, size?: number }) {
+  const fileVo: FileApi.FileCreateReqVO = {
+    configId: presignedInfo.configId,
+    url: presignedInfo.url,
+    path: presignedInfo.path,
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  }
+  FileApi.createFile(fileVo).catch((err) => {
+    console.error('创建文件记录失败:', err, fileVo)
+  })
+}
+
+/**
+ * 从文件路径上传文件（纯文件上传）
+ * @param filePath 文件路径
+ * @param directory 目录（可选）
+ * @returns 文件访问 URL
+ */
+export async function uploadFileFromPath(filePath: string, directory?: string, fileType?: string): Promise<string> {
+  const fileName = filePath.includes('/') ? filePath.substring(filePath.lastIndexOf('/') + 1) : filePath
+  const uploadType = import.meta.env.VITE_UPLOAD_TYPE || UPLOAD_TYPE.SERVER
+  // 根据文件后缀推断 MIME 类型
+  const mimeType = fileType || getMimeType(fileName)
+
+  // 情况一：前端直连上传
+  if (uploadType === UPLOAD_TYPE.CLIENT) {
+    // 1.1 获取文件预签名地址
+    const presignedInfo = await FileApi.getFilePresignedUrl(fileName, directory)
+
+    // 1.2 获取二进制文件对象
+    const fileBuffer = await readFile({ path: filePath })
+
+    // 返回上传的 Promise
+    return new Promise((resolve, reject) => {
+      // 1.3 上传到 S3
+      uni.request({
+        url: presignedInfo.uploadUrl,
+        method: 'PUT',
+        header: {
+          'Content-Type': mimeType,
+        },
+        data: fileBuffer,
+        success: () => {
+          // 1.4. 记录文件信息到后端（异步）
+          createFileRecord(presignedInfo, { name: fileName, type: mimeType })
+          // 1.5 返回文件访问 URL
+          resolve(presignedInfo.url)
+        },
+        fail: (err) => {
+          console.error('上传到S3失败:', err, presignedInfo)
+          reject(err)
+        },
+      })
+    })
+  } else {
+    // 情况二：后端上传
+    return FileApi.uploadFile(filePath, directory)
+  }
+}
+
+/** 根据文件名获取 MIME 类型 */
+function getMimeType(fileName: string): string {
+  const ext = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase()
+  const mimeTypes: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    avi: 'video/x-msvideo',
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  }
+  return mimeTypes[ext] || 'application/octet-stream'
 }
 
 export interface UploadOptions {
@@ -62,7 +145,7 @@ export interface UploadOptions {
 }
 
 /**
- * 文件上传钩子函数
+ * 文件上传钩子函数（带 formData）
  * @template T 上传成功后返回的数据类型
  * @param url 上传地址
  * @param formData 额外的表单数据
@@ -249,7 +332,7 @@ interface UploadFileOptions<T> {
 }
 
 /**
- * 执行文件上传
+ * 执行文件上传（带 formData）
  * @template T 上传成功后返回的数据类型
  * @param options 上传选项
  */
@@ -288,8 +371,7 @@ function uploadFile<T>({
           // 上传成功
           data.value = _data as T
           onSuccess?.(_data)
-        }
-        catch (err) {
+        } catch (err) {
           // 响应解析错误
           console.error('解析上传响应失败:', err)
           error.value = true
@@ -314,8 +396,7 @@ function uploadFile<T>({
       progress.value = res.progress
       onProgress?.(res.progress)
     })
-  }
-  catch (err) {
+  } catch (err) {
     // 创建上传任务失败
     console.error('创建上传任务失败:', err)
     error.value = true

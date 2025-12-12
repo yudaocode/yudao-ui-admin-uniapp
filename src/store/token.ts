@@ -1,4 +1,8 @@
+/* eslint-disable brace-style */ // 原因：unibest 官方维护的代码，尽量不要大概，避免难以合并
 import type {
+  AuthLoginReqVO,
+  AuthRegisterReqVO,
+  AuthSmsLoginReqVO,
   ILoginForm,
 } from '@/api/login'
 import type { IAuthLoginRes } from '@/api/types/login'
@@ -10,18 +14,22 @@ import {
   refreshToken as _refreshToken,
   wxLogin as _wxLogin,
   getWxCode,
+  register,
+  smsLogin,
 } from '@/api/login'
 import { isDoubleTokenRes, isSingleTokenRes } from '@/api/types/login'
 import { isDoubleTokenMode } from '@/utils'
+import { useDictStore } from './dict'
 import { useUserStore } from './user'
 
 // 初始化状态
 const tokenInfoState = isDoubleTokenMode
   ? {
       accessToken: '',
-      accessExpiresIn: 0,
+      // accessExpiresIn: 0,
       refreshToken: '',
-      refreshExpiresIn: 0,
+      // refreshExpiresIn: 0,
+      expiresTime: 0,
     }
   : {
       token: '',
@@ -46,10 +54,11 @@ export const useTokenStore = defineStore(
       }
       else if (isDoubleTokenRes(val)) {
         // 双token模式
-        const accessExpireTime = now + val.accessExpiresIn * 1000
-        const refreshExpireTime = now + val.refreshExpiresIn * 1000
+        const accessExpireTime = val.expiresTime
+        // const refreshExpireTime = now + val.refreshExpiresIn * 1000
         uni.setStorageSync('accessTokenExpireTime', accessExpireTime)
-        uni.setStorageSync('refreshTokenExpireTime', refreshExpireTime)
+        // uni.setStorageSync('refreshTokenExpireTime', refreshExpireTime)
+        // add by 芋艿：目前后端没有返回 refreshToken 的过期时间，所以这里暂时不存储 refreshToken 过期时间
       }
     }
 
@@ -76,12 +85,14 @@ export const useTokenStore = defineStore(
       if (!isDoubleTokenMode)
         return true
 
-      const now = Date.now()
-      const refreshExpireTime = uni.getStorageSync('refreshTokenExpireTime')
-
-      if (!refreshExpireTime)
-        return true
-      return now >= refreshExpireTime
+      // const now = Date.now()
+      // const refreshExpireTime = uni.getStorageSync('refreshTokenExpireTime')
+      //
+      // if (!refreshExpireTime)
+      //   return true
+      // return now >= refreshExpireTime
+      // add by 芋艿：目前后端没有返回 refreshToken 的过期时间，所以这里暂时不做过期判断，先全部返回 false 非过期
+      return false
     })
 
     /**
@@ -89,35 +100,58 @@ export const useTokenStore = defineStore(
      * @param tokenInfo 登录返回的token信息
      */
     async function _postLogin(tokenInfo: IAuthLoginRes) {
+      // 设置认证信息
       setTokenInfo(tokenInfo)
+      // 获取用户信息
       const userStore = useUserStore()
       await userStore.fetchUserInfo()
+      // add by 芋艿：加载字典数据（异步）
+      const dictStore = useDictStore()
+      dictStore.loadDictCache().then()
     }
 
     /**
-     * 用户登录
+     * 用户登录：账号登录、注册登录、短信登录、三方登录等
      * 有的时候后端会用一个接口返回token和用户信息，有的时候会分开2个接口，一个获取token，一个获取用户信息
      * （各有利弊，看业务场景和系统复杂度），这里使用2个接口返回的来模拟
      * @param loginForm 登录参数
      * @returns 登录结果
      */
     const login = async (loginForm: ILoginForm) => {
+      let typeName = ''
       try {
-        const res = await _login(loginForm)
-        console.log('普通登录-res: ', res)
+        let res: IAuthLoginRes
+        switch (loginForm.type) {
+          case 'register': {
+            res = await register(loginForm as AuthRegisterReqVO)
+            typeName = '注册'
+            break
+          }
+          case 'sms': {
+            res = await smsLogin(loginForm as AuthSmsLoginReqVO)
+            typeName = '注册'
+            break
+          }
+          default: {
+            res = await _login(loginForm as AuthLoginReqVO)
+            typeName = '登录'
+          }
+        }
+        // console.log('普通登录-res: ', res)
         await _postLogin(res)
         uni.showToast({
-          title: '登录成功',
+          title: `${typeName}成功`,
           icon: 'success',
         })
         return res
       }
       catch (error) {
-        console.error('登录失败:', error)
-        uni.showToast({
-          title: '登录失败，请重试',
-          icon: 'error',
-        })
+        console.error(`${typeName}失败:`, error)
+        // 注释 by 芋艿：避免覆盖 http.ts 中的错误提示
+        // uni.showToast({
+        //   title: `${typeName}失败，请重试`,
+        //   icon: 'error',
+        // })
         throw error
       }
     }
@@ -167,12 +201,15 @@ export const useTokenStore = defineStore(
         // 无论成功失败，都需要清除本地token信息
         // 清除存储的过期时间
         uni.removeStorageSync('accessTokenExpireTime')
-        uni.removeStorageSync('refreshTokenExpireTime')
+        // uni.removeStorageSync('refreshTokenExpireTime')
         console.log('退出登录-清除用户信息')
         tokenInfo.value = { ...tokenInfoState }
         uni.removeStorageSync('token')
         const userStore = useUserStore()
         userStore.clearUserInfo()
+        // add by 芋艿：清空字典缓存
+        const dictStore = useDictStore()
+        dictStore.clearDictCache()
       }
     }
 
@@ -243,6 +280,12 @@ export const useTokenStore = defineStore(
      */
     const hasValidLogin = computed(() => {
       console.log('hasValidLogin', hasLoginInfo.value, !isTokenExpired.value)
+      if (isDoubleTokenMode) {
+        // add by 芋艿：双令牌场景下，以刷新令牌过期为准。而刷新令牌是否过期，通过请求时返回 401 来判断（由于后端 refreshToken 不返回过期时间）
+        // 即相比下面的判断方式，去掉了“!isTokenExpired.value”
+        // 如果不这么做：访问令牌过期时（刷新令牌没过期），会导致刷新界面时，直接认为是令牌过期，导致跳转到登录界面
+        return hasLoginInfo.value
+      }
       return hasLoginInfo.value && !isTokenExpired.value
     })
 

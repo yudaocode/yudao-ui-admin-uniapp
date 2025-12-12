@@ -1,6 +1,8 @@
 import type { PageMetaDatum, SubPackages } from '@uni-helper/vite-plugin-uni-pages'
 import { isMpWeixin } from '@uni-helper/uni-env'
 import { pages, subPackages } from '@/pages.json'
+import { tabbarList } from '@/tabbar/config'
+import { isPageTabbar } from '@/tabbar/store'
 
 export type PageInstance = Page.PageInstance<AnyObject, object> & { $page: Page.PageInstance<AnyObject, object> & { fullPath: string } }
 
@@ -121,9 +123,10 @@ export function getEnvBaseUrl() {
   let baseUrl = import.meta.env.VITE_SERVER_BASEURL
 
   // # 有些同学可能需要在微信小程序里面根据 develop、trial、release 分别设置上传地址，参考代码如下。
-  const VITE_SERVER_BASEURL__WEIXIN_DEVELOP = 'https://ukw0y1.laf.run'
-  const VITE_SERVER_BASEURL__WEIXIN_TRIAL = 'https://ukw0y1.laf.run'
-  const VITE_SERVER_BASEURL__WEIXIN_RELEASE = 'https://ukw0y1.laf.run'
+  // TODO @芋艿：这个后续也要调整。
+  const VITE_SERVER_BASEURL__WEIXIN_DEVELOP = 'http://localhost:48080/admin-api'
+  const VITE_SERVER_BASEURL__WEIXIN_TRIAL = 'http://localhost:48080/admin-api'
+  const VITE_SERVER_BASEURL__WEIXIN_RELEASE = 'http://localhost:48080/admin-api'
 
   // 微信小程序端环境区分
   if (isMpWeixin) {
@@ -148,6 +151,20 @@ export function getEnvBaseUrl() {
 }
 
 /**
+ * 根据环境变量，获取基础路径的根路径，比如 http://localhost:48080
+ *
+ * add by 芋艿：用户类似 websocket 这种需要根路径的场景
+ *
+ * @return 根路径
+ */
+export function getEnvBaseUrlRoot() {
+  const baseUrl = getEnvBaseUrl()
+  // 提取根路径
+  const urlObj = new URL(baseUrl)
+  return urlObj.origin
+}
+
+/**
  * 是否是双token模式
  */
 export const isDoubleTokenMode = import.meta.env.VITE_AUTH_MODE === 'double'
@@ -157,3 +174,22 @@ export const isDoubleTokenMode = import.meta.env.VITE_AUTH_MODE === 'double'
  * 通常为 /pages/index/index
  */
 export const HOME_PAGE = `/${(pages as PageMetaDatum[]).find(page => page.type === 'home')?.path || (pages as PageMetaDatum[])[0].path}`
+
+// TODO @芋艿：这里要不要换成 HOME_PAGE？
+/**
+ * 登录成功后跳转
+ * @param redirectUrl 重定向地址，为空则跳转到默认首页（tabbar 第一个页面）
+ */
+export function redirectAfterLogin(redirectUrl?: string) {
+  let path = redirectUrl || tabbarList[0].pagePath
+  if (!path.startsWith('/')) {
+    path = `/${path}`
+  }
+  const { path: _path } = parseUrlToObj(path)
+  if (isPageTabbar(_path)) {
+    uni.switchTab({ url: path })
+  }
+  else {
+    uni.navigateBack()
+  }
+}
