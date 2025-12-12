@@ -32,6 +32,7 @@ export default uniHelper({
     'jsdoc/require-returns-description': 'off',
     'ts/no-empty-object-type': 'off',
     'no-extend-native': 'off',
+    'style/brace-style': 'off', // 参考 https://github.com/antfu/eslint-config/issues/322 帖子：关闭此规则，使用下面的 brace-style 规则
     'vue/singleline-html-element-content-newline': [
       'error',
       {
@@ -39,8 +40,13 @@ export default uniHelper({
       },
     ],
     // vue SFC 调换顺序改这里
+    // 解释 by 芋艿：为什么 script 开始放在 template 前面：https://yb.tencent.com/s/1fYYlgBopLAT
     'vue/block-order': ['error', {
       order: [['script', 'template'], 'style'],
+    }],
+    // add by 芋艿：else、catch、} 等，不换行：https://zh-hans.eslint.org/docs/latest/rules/brace-style
+    'brace-style': ['error', '1tbs', {
+      allowSingleLine: true,
     }],
   },
   formatters: {
