@@ -88,7 +88,6 @@
     "build:quickapp-webview-huawei": "uni build -p quickapp-webview-huawei",
     "build:quickapp-webview-union": "uni build -p quickapp-webview-union",
     "type-check": "vue-tsc --noEmit",
-    "openapi": "openapi-ts",
     "init-husky": "git init && husky",
     "init-baseFiles": "node ./scripts/create-base-files.js",
     "init-json": "pnpm init-baseFiles",
@@ -97,8 +96,6 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
-    "@alova/adapter-uniapp": "^2.0.14",
-    "@alova/shared": "^1.3.1",
     "@dcloudio/uni-app": "3.0.0-4070620250821001",
     "@dcloudio/uni-app-harmony": "3.0.0-4070620250821001",
     "@dcloudio/uni-app-plus": "3.0.0-4070620250821001",
@@ -116,7 +113,6 @@
     "@dcloudio/uni-mp-xhs": "3.0.0-4070620250821001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4070620250821001",
     "abortcontroller-polyfill": "^1.7.8",
-    "alova": "^3.3.3",
     "dayjs": "1.11.10",
     "pinia": "2.0.36",
     "pinia-plugin-persistedstate": "3.2.1",
@@ -163,7 +159,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "miniprogram-api-typings": "^4.1.0",
-    "openapi-ts-request": "^1.10.0",
     "postcss": "^8.4.49",
     "postcss-html": "^1.8.0",
     "postcss-scss": "^4.0.9",
