@@ -1,98 +1,112 @@
 <p align="center">
-  <a href="https://github.com/unibest-tech/unibest">
+  <a href="https://github.com/yudaocode/yudao-ui-admin-uniapp">
     <img width="160" src="./src/static/logo.svg">
   </a>
 </p>
 
 <h1 align="center">
-  <a href="https://github.com/unibest-tech/unibest" target="_blank">unibest - 最好的 uniapp 开发框架</a>
+  <a href="https://github.com/yudaocode/yudao-ui-admin-uniapp" target="_blank">芋道管理后台 · 移动端</a>
 </h1>
 
 <div align="center">
-旧仓库 codercup 进不去了，star 也拿不回来，这里也展示一下那个地址的 star.
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/codercup/unibest?style=flat&logo=github)](https://github.com/codercup/unibest)
-[![GitHub forks](https://img.shields.io/github/forks/codercup/unibest?style=flat&logo=github)](https://github.com/codercup/unibest)
-
-</div>
-
-<div align="center">
-
-[![GitHub Repo stars](https://img.shields.io/github/stars/feige996/unibest?style=flat&logo=github)](https://github.com/feige996/unibest)
-[![GitHub forks](https://img.shields.io/github/forks/feige996/unibest?style=flat&logo=github)](https://github.com/feige996/unibest)
-[![star](https://gitee.com/feige996/unibest/badge/star.svg?theme=dark)](https://gitee.com/feige996/unibest/stargazers)
-[![fork](https://gitee.com/feige996/unibest/badge/fork.svg?theme=dark)](https://gitee.com/feige996/unibest/members)
-![node version](https://img.shields.io/badge/node-%3E%3D18-green)
-![pnpm version](https://img.shields.io/badge/pnpm-%3E%3D7.30-green)
-![GitHub package.json version (subfolder of monorepo)](https://img.shields.io/github/package-json/v/feige996/unibest)
-![GitHub License](https://img.shields.io/github/license/feige996/unibest)
+[![GitHub stars](https://img.shields.io/github/stars/yudaocode/yudao-ui-admin-uniapp?style=flat&logo=github)](https://github.com/yudaocode/yudao-ui-admin-uniapp)
+[![Gitee star](https://gitee.com/yudaocode/yudao-ui-admin-uniapp/badge/star.svg?theme=dark)](https://gitee.com/yudaocode/yudao-ui-admin-uniapp/stargazers)
+![node version](https://img.shields.io/badge/node-%3E%3D20-green)
+![pnpm version](https://img.shields.io/badge/pnpm-%3E%3D9-green)
+![GitHub License](https://img.shields.io/github/license/yudaocode/yudao-ui-admin-uniapp)
 
 </div>
-
-`unibest` —— 最好的 `uniapp` 开发模板，由 `uniapp` + `Vue3` + `Ts` + `Vite5` + `UnoCss` + `wot-ui` + `z-paging` 构成，使用了最新的前端技术栈，无需依靠 `HBuilderX`，通过命令行方式运行 `web`、`小程序` 和 `App`（编辑器推荐 `VSCode`，可选 `webstorm`）。
-
-`unibest` 内置了 `约定式路由`、`layout布局`、`请求封装`、`请求拦截`、`登录拦截`、`UnoCSS`、`i18n多语言` 等基础功能，提供了 `代码提示`、`自动格式化`、`统一配置`、`代码片段` 等辅助功能，让你编写 `uniapp` 拥有 `best` 体验 （ `unibest 的由来`）。
-
-![](https://raw.githubusercontent.com/andreasbm/readme/master/screenshots/lines/rainbow.png)
-
-<p align="center">
-  <a href="https://unibest.tech/" target="_blank">📖 文档地址(new)</a>
-  <span style="margin:0 10px;">|</span>
-  <a href="https://unibest-tech.github.io/hello-unibest" target="_blank">📱 DEMO 地址</a>
-</p>
 
 ---
 
-注意旧的地址 [codercup](https://github.com/codercup/unibest) 我进不去了，使用新的 [feige996](https://github.com/feige996/unibest)。PR和 issue 也请使用新地址，否则无法合并。
+**严肃声明：现在、未来都不会有商业版本，所有代码全部开源!！**
 
-## 平台兼容性
+**「我喜欢写代码，乐此不疲」**  
+**「我喜欢做开源，以此为乐」**
 
-| H5  | IOS | 安卓 | 微信小程序 | 字节小程序 | 快手小程序 | 支付宝小程序 | 钉钉小程序 | 百度小程序 |
-| --- | --- | ---- | ---------- | ---------- | ---------- | ------------ | ---------- | ---------- |
-| √   | √   | √    | √          | √          | √          | √            | √          | √          |
+我 🐶 在上海艰苦奋斗，早中晚在 top3 大厂认真搬砖，夜里为开源做贡献。
 
-注意每种 `UI框架` 支持的平台有所不同，详情请看各 `UI框架` 的官网，也可以看 `unibest` 文档。
+如果这个项目让你有所收获，记得 Star 关注哦，这对我是非常不错的鼓励与支持。
 
-## ⚙️ 环境
+---
 
-- node>=18
-- pnpm>=7.30
-- Vue Official>=2.1.10
-- TypeScript>=5.0
+## 🐶 新手必读
 
-## 新版分支 
-- main == base
-- base --> base-i18n
-- base-login --> base-login-i18n
+平台兼容性：
 
-## &#x1F4C2; 快速开始
+| H5 | iOS | Android | 微信小程序 | 支付宝小程序 | 字节小程序 | 百度小程序 | 钉钉小程序 | 快手小程序 | QQ 小程序 |
+|:--:|:---:|:-------:|:-----:|:------:|:-----:|:-----:|:-----:|:-----:|:------:|
+| ✅  |  ✅  |    ✅    |   ✅   |   ✅    |   ✅   |   ✅   |   ✅   |   ✅   |   ✅    |
 
-执行 `pnpm create unibest` 创建项目
-执行 `pnpm i` 安装依赖
-执行 `pnpm dev` 运行 `H5`
-执行 `pnpm dev:mp` 运行 `微信小程序`
+* nodejs >= 20 && pnpm >= 9
+* 启动文档：<https://doc.iocoder.cn/quick-start-front/>
+* 视频教程：<https://doc.iocoder.cn/video/>
 
-## 📦 运行（支持热更新）
+## 🐯 平台简介
 
-- web平台： `pnpm dev:h5`, 然后打开 [http://localhost:9000/](http://localhost:9000/)。
-- weixin平台：`pnpm dev:mp` 然后打开微信开发者工具，导入本地文件夹，选择本项目的`dist/dev/mp-weixin` 文件。
-- APP平台：`pnpm dev:app`, 然后打开 `HBuilderX`，导入刚刚生成的`dist/dev/app` 文件夹，选择运行到模拟器(开发时优先使用)，或者运行的安卓/ios基座。(如果是 `安卓` 和 `鸿蒙` 平台，则不用这个方式，可以把整个unibest项目导入到hbx，通过hbx的菜单来运行到对应的平台。)
+**芋道**，以开发者为中心，打造中国第一流的快速开发平台，全部开源，个人与企业可 100% 免费使用。本项目是 **芋道管理后台的移动端**：
 
-## 🔗 发布
+|               工作台                |               工作流                |               个人中心               |
+|:--------------------------------:|:--------------------------------:|:--------------------------------:|
+| ![](/.image/admin-uniapp/01.png) | ![](/.image/admin-uniapp/02.png) | ![](/.image/admin-uniapp/03.png) |
 
-- web平台： `pnpm build:h5`，打包后的文件在 `dist/build/h5`，可以放到web服务器，如nginx运行。如果最终不是放在根目录，可以在 `manifest.config.ts` 文件的 `h5.router.base` 属性进行修改。
-- weixin平台：`pnpm build:mp`, 打包后的文件在 `dist/build/mp-weixin`，然后通过微信开发者工具导入，并点击右上角的“上传”按钮进行上传。
-- APP平台：`pnpm build:app`, 然后打开 `HBuilderX`，导入刚刚生成的`dist/build/app` 文件夹，选择发行 - APP云打包。(如果是 `安卓` 和 `鸿蒙` 平台，则不用这个方式，可以把整个unibest项目导入到hbx，通过hbx的菜单来发行到对应的平台。)
+* 采用 `Vue3` + `TypeScript` + `Vite5` + `UnoCSS` + `wot-design-uni` + `z-paging` 构成，使用最新的前端技术栈，无需依赖 `HBuilderX`，通过命令行方式运行 `H5`、`小程序` 和 `App`。
+* 内置了 `约定式路由`、`layout布局`、`请求封装`、`请求拦截`、`登录拦截`、`UnoCSS`、`i18n多语言` 等基础功能，提供了 `代码提示`、`自动格式化`、`统一配置`、`代码片段` 等辅助功能，让你编写 `uniapp` 拥有 `best` 体验。
 
-## 📄 License
+## ⚙️ 技术栈
 
-[MIT](https://opensource.org/license/mit/)
+| 框架                                                  | 说明                | 版本     |
+|-----------------------------------------------------|-------------------|--------|
+| [Vue](https://vuejs.org/)                           | 渐进式 JavaScript 框架 | 3.4.x  |
+| [uni-app](https://uniapp.dcloud.io/)                | 跨平台应用开发框架         | 3.0.x  |
+| [TypeScript](https://www.typescriptlang.org/)       | JavaScript 的超集    | 5.8.x  |
+| [Vite](https://vitejs.dev/)                         | 下一代前端构建工具         | 5.2.x  |
+| [Pinia](https://pinia.vuejs.org/)                   | Vue 状态管理库         | 2.0.x  |
+| [UnoCSS](https://unocss.dev/)                       | 即时原子化 CSS 引擎      | 66.x   |
+| [unibest](https://github.com/feige996/unibest)      | 最好的 uniapp 框架     | 4.1.0  |
+| [wot-design-uni](https://wot-design-uni.pages.dev/) | 高颜值、轻量化 UI 组件库    | 1.13.x |
+| [z-paging](https://z-paging.zxlee.cn/)              | 高性能分页组件           | 2.8.x  |
+| [vue-i18n](https://vue-i18n.intlify.dev/)           | 国际化解决方案           | 9.x    |
 
-Copyright (c) 2025 菲鸽
+## ✨ 项目特性
 
-## 捐赠
+| 特性                | 说明                                      |
+|-------------------|-----------------------------------------|
+| 🚀 **约定式路由**      | 基于文件系统自动生成路由，无需手动配置                     |
+| 🎨 **Layout 布局**  | 内置多种布局方案，支持 Tabbar 自定义                  |
+| 📦 **请求封装**       | 基于 uni.request 封装，支持拦截器、TypeScript 类型推导 |
+| 🔐 **登录拦截**       | 内置完善的登录态管理与页面拦截机制                       |
+| 🎯 **UnoCSS**     | 原子化 CSS，按需生成，极致性能                       |
+| 🌍 **i18n 多语言**   | 内置国际化方案，轻松实现多语言切换                       |
+| 📝 **代码规范**       | ESLint + Prettier + Husky，保证代码质量        |
+| 🔧 **TypeScript** | 全面的 TypeScript 支持，类型安全                  |
+| 📱 **多端适配**       | 一套代码，多端运行（H5、小程序、App）                   |
 
-<p align='center'>
-<img alt="special sponsor appwrite" src="https://oss.laf.run/ukw0y1-site/pay/wepay.png" height="330" style="display:inline-block; height:330px;">
-<img alt="special sponsor appwrite" src="https://oss.laf.run/ukw0y1-site/pay/alipay.jpg" height="330" style="display:inline-block; height:330px; margin-left:10px;">
-</p>
+## 🔥 后端架构
+
+支持 Spring Boot、Spring Cloud 两种架构：
+
+### ① Spring Boot 单体架构
+
+文档地址：<https://doc.iocoder.cn>
+
+![架构图](./.image/common/ruoyi-vue-pro-architecture.png)
+
+### ② Spring Cloud 微服务架构
+
+文档地址：<https://cloud.iocoder.cn>
+
+![架构图](./.image/common/yudao-cloud-architecture.png)
+
+## 😎 开源协议
+
+**为什么推荐使用本项目？**
+
+① 本项目采用比 Apache 2.0 更宽松的 [MIT License](https://gitee.com/zhijiantianya/ruoyi-vue-pro/blob/master/LICENSE) 开源协议，个人与企业可 100% 免费使用，不用保留类作者、Copyright 信息。
+
+② 代码全部开源，不会像其他项目一样，只开源部分代码，让你无法了解整个项目的架构设计。[国产开源项目对比](https://www.yuque.com/xiatian-bsgny/lm0ec1/wqf8mn)
+
+![开源项目对比](/.image/common/project-vs.png)
+
+③ 代码整洁、架构整洁，遵循《阿里巴巴 Java 开发手册》规范，代码注释详细，113770 行 Java 代码，42462 行代码注释。
