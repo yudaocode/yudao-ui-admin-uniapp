@@ -117,6 +117,7 @@ import { getProcessInstance } from '@/api/bpm/processInstance'
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { useUserStore } from '@/store'
 import { formatDateTime, formatPast } from '@/utils/date'
+import { navigateBackPlus } from '@/utils';
 
 definePage({
   style: {
@@ -135,8 +136,9 @@ const orderAsc = ref(true)
 const runningTask = computed(() => {
   return tasks.value.find((task) => {
     // 待处理状态
-    if (task.status !== 1 && task.status !== 6)
+    if (task.status !== 1 && task.status !== 6) {
       return false
+    }
     // 当前用户是处理人
     return task.assigneeUser?.id === userStore.userInfo?.id
   })
@@ -146,12 +148,15 @@ const runningTask = computed(() => {
 const sortedTasks = computed(() => {
   const list = [...tasks.value].filter(t => t.status !== 4) // 过滤已取消
   list.sort((a, b) => {
-    if (a.endTime && b.endTime)
+    if (a.endTime && b.endTime) {
       return orderAsc.value ? a.endTime - b.endTime : b.endTime - a.endTime
-    if (a.endTime)
+    }
+    if (a.endTime) {
       return orderAsc.value ? -1 : 1
-    if (b.endTime)
+    }
+    if (b.endTime) {
       return orderAsc.value ? 1 : -1
+    }
     return orderAsc.value ? a.createTime - b.createTime : b.createTime - a.createTime
   })
   return list
@@ -159,7 +164,7 @@ const sortedTasks = computed(() => {
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/bpm/index')
 }
 
 /** 切换排序 */
@@ -184,54 +189,68 @@ function getStatusText(status?: number) {
 
 /** 获取状态标签类型 */
 function getStatusType(status?: number): 'default' | 'primary' | 'success' | 'warning' | 'danger' {
-  if ([1, 6, 7].includes(status ?? 0))
+  if ([1, 6, 7].includes(status ?? 0)) {
     return 'primary'
-  if (status === 2)
+  }
+  if (status === 2) {
     return 'success'
-  if (status === 3)
+  }
+  if (status === 3) {
     return 'danger'
-  if (status === 4 || status === 5)
+  }
+  if (status === 4 || status === 5) {
     return 'warning'
+  }
   return 'default'
 }
 
 /** 获取任务圆点样式 */
 function getTaskDotClass(task: Task) {
-  if ([1, 6, 7].includes(task.status))
+  if ([1, 6, 7].includes(task.status)) {
     return 'bg-[#1890ff]'
-  if (task.status === 2)
+  }
+  if (task.status === 2) {
     return 'bg-[#52c41a]'
-  if (task.status === 3)
+  }
+  if (task.status === 3) {
     return 'bg-[#ff4d4f]'
-  if (task.status === 5)
+  }
+  if (task.status === 5) {
     return 'bg-[#faad14]'
+  }
   return 'bg-[#d9d9d9]'
 }
 
 /** 获取状态文本样式 */
 function getStatusTextClass(status: number) {
-  if ([1, 6, 7].includes(status))
+  if ([1, 6, 7].includes(status)) {
     return 'text-[#1890ff]'
-  if (status === 2)
+  }
+  if (status === 2) {
     return 'text-[#52c41a]'
-  if (status === 3)
+  }
+  if (status === 3) {
     return 'text-[#ff4d4f]'
-  if (status === 5)
+  }
+  if (status === 5) {
     return 'text-[#faad14]'
+  }
   return 'text-[#999]'
 }
 
 /** 同意 */
 function handleApprove() {
-  if (!runningTask.value)
+  if (!runningTask.value) {
     return
+  }
   uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?id=${runningTask.value.id}&pass=true` })
 }
 
 /** 拒绝 */
 function handleReject() {
-  if (!runningTask.value)
+  if (!runningTask.value) {
     return
+  }
   uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?id=${runningTask.value.id}&pass=false` })
 }
 

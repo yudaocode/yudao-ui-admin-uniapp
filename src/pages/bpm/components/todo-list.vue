@@ -1,63 +1,64 @@
 <template>
-  <view class="bpm-list">
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="bpm-card"
-      @click="handleDetail(item)"
-    >
-      <view class="bpm-card-content">
-        <view class="bpm-card-header">
-          <view class="bpm-card-title">
-            {{ item.processInstance?.name }}
-          </view>
-          <wd-tag type="primary" plain>
-            待审批
-          </wd-tag>
-        </view>
-        <view v-if="item.processInstance?.summary?.length" class="bpm-summary">
-          <view v-for="(s, idx) in item.processInstance.summary" :key="idx" class="bpm-summary-item">
-            <text class="text-[#999]">{{ s.key }}：</text>
-            <text>{{ s.value }}</text>
-          </view>
-        </view>
-        <view class="bpm-card-info">
-          <view class="bpm-user">
-            <view class="bpm-avatar">
-              {{ item.processInstance?.startUser?.nickname?.[0] || '?' }}
-            </view>
-            <text class="bpm-nickname">{{ item.processInstance?.startUser?.nickname }}</text>
-          </view>
-          <text class="bpm-time--warning">{{ formatPast(item.createTime) }}</text>
-        </view>
-      </view>
-      <view class="bpm-actions">
-        <view class="bpm-action-btn" @click.stop="handleReject(item)">
-          <text>拒绝</text>
-        </view>
-        <view class="bpm-action-btn" @click.stop="handleApprove(item)">
-          <text>同意</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 加载更多 -->
-    <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
-      <wd-status-tip image="content" tip="暂无待办任务" />
-    </view>
-    <wd-loadmore
-      v-if="list.length > 0"
-      :state="loadMoreState"
-      @reload="loadMore"
-    />
-
-    <!-- 搜索弹窗 -->
+  <view>
+    <!-- 搜索组件 -->
     <TodoSearchForm
-      v-model="searchPopupVisible"
       :search-params="queryParams"
       @search="handleSearch"
       @reset="handleReset"
     />
+
+    <view class="bpm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="bpm-card"
+        @click="handleDetail(item)"
+      >
+        <view class="bpm-card-content">
+          <view class="bpm-card-header">
+            <view class="bpm-card-title">
+              {{ item.processInstance?.name }}
+            </view>
+            <wd-tag type="primary" plain>
+              待审批
+            </wd-tag>
+          </view>
+          <view v-if="item.processInstance?.summary?.length" class="bpm-summary">
+            <view v-for="(s, idx) in item.processInstance.summary" :key="idx" class="bpm-summary-item">
+              <text class="text-[#999]">{{ s.key }}：</text>
+              <text>{{ s.value }}</text>
+            </view>
+          </view>
+          <view class="bpm-card-info">
+            <view class="bpm-user">
+              <view class="bpm-avatar">
+                {{ item.processInstance?.startUser?.nickname?.[0] || '?' }}
+              </view>
+              <text class="bpm-nickname">{{ item.processInstance?.startUser?.nickname }}</text>
+            </view>
+            <text class="bpm-time--warning">{{ formatPast(item.createTime) }}</text>
+          </view>
+        </view>
+        <view class="bpm-actions">
+          <view class="bpm-action-btn" @click.stop="handleReject(item)">
+            <text>拒绝</text>
+          </view>
+          <view class="bpm-action-btn" @click.stop="handleApprove(item)">
+            <text>同意</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
+        <wd-status-tip image="content" tip="暂无待办任务" />
+      </view>
+      <wd-loadmore
+        v-if="list.length > 0"
+        :state="loadMoreState"
+        @reload="loadMore"
+      />
+    </view>
   </view>
 </template>
 
@@ -73,17 +74,13 @@ import TodoSearchForm from './todo-search-form.vue'
 import './index.scss'
 
 const props = defineProps<{
-  searchVisible?: boolean
-}>()
-
-const emit = defineEmits<{
-  'update:searchVisible': [value: boolean]
+  active?: boolean
 }>()
 
 const total = ref(0)
 const list = ref<Task[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const searchPopupVisible = ref(false)
+const isFirstLoad = ref(true)
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -152,16 +149,18 @@ onReachBottom(() => {
   loadMore()
 })
 
-watch(() => props.searchVisible, (val) => {
-  searchPopupVisible.value = val ?? false
-})
-
-watch(searchPopupVisible, (val) => {
-  emit('update:searchVisible', val)
+/** 监听激活状态，刷新数据 */
+watch(() => props.active, (val) => {
+  if (val && !isFirstLoad.value) {
+    queryParams.pageNo = 1
+    list.value = []
+    getList()
+  }
 })
 
 /** 初始化 */
 onMounted(() => {
   getList()
+  isFirstLoad.value = false
 })
 </script>

@@ -43,9 +43,14 @@
 </template>
 
 <script lang="ts" setup>
-import { onLoad } from '@dcloudio/uni-app'
 import { computed, reactive, ref } from 'vue'
 import { approveTask, rejectTask } from '@/api/bpm/task'
+import { navigateBackPlus } from '@/utils'
+
+const props = defineProps<{
+  id?: string | any
+  pass?: string | any
+}>()
 
 definePage({
   style: {
@@ -54,19 +59,27 @@ definePage({
   },
 })
 
-const taskId = ref('')
-const pass = ref(true) // true: 同意, false: 拒绝
+const taskId = computed(() => props.id || '')
+const isPass = computed(() => props.pass !== 'false') // true: 同意, false: 拒绝
 const submitting = ref(false)
 const formData = reactive({
   reason: '',
 })
 
 /** 是否为同意操作 */
-const isApprove = computed(() => pass.value)
+const isApprove = computed(() => isPass.value)
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus(`/pages-bpm/processInstance/detail/index?id=${taskId.value}`)
+}
+
+/** 初始化校验 */
+if (!props.id) {
+  uni.showToast({
+    title: '参数错误',
+    icon: 'none',
+  })
 }
 
 /** 校验表单 */
@@ -92,7 +105,7 @@ async function handleSubmit() {
   try {
     const api = isApprove.value ? approveTask : rejectTask
     const result = await api({
-      id: taskId.value,
+      id: taskId.value as string,
       reason: formData.reason,
     })
     if (result) {
@@ -104,25 +117,10 @@ async function handleSubmit() {
         uni.navigateBack()
       }, 1500)
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[audit] 审批失败:', error)
-  }
-  finally {
+  } finally {
     submitting.value = false
   }
 }
-
-/** 初始化 */
-onLoad((options) => {
-  if (!options?.id) {
-    uni.showToast({
-      title: '参数错误',
-      icon: 'none',
-    })
-    return
-  }
-  taskId.value = options.id
-  pass.value = options.pass !== 'false' // 默认为同意
-})
 </script>

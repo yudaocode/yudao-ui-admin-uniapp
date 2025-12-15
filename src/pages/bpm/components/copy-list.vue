@@ -1,54 +1,55 @@
 <template>
-  <view class="bpm-list">
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="bpm-card"
-      @click="handleDetail(item)"
-    >
-      <view class="bpm-card-content">
-        <view class="bpm-card-header">
-          <view class="bpm-card-title">
-            {{ item.processInstanceName }}
-          </view>
-          <wd-tag type="primary" plain>
-            查看详情
-          </wd-tag>
-        </view>
-        <view v-if="item.summary?.length" class="bpm-summary">
-          <view v-for="(s, idx) in item.summary" :key="idx" class="bpm-summary-item">
-            <text class="text-[#999]">{{ s.key }}：</text>
-            <text>{{ s.value }}</text>
-          </view>
-        </view>
-        <view class="bpm-card-info">
-          <view class="bpm-user">
-            <view class="bpm-avatar">
-              {{ item.startUser.nickname?.[0] || '?' }}
-            </view>
-            <text class="bpm-nickname">{{ item.startUser.nickname }}</text>
-          </view>
-          <text class="bpm-time">{{ formatDateTime(item.createTime) }}</text>
-        </view>
-      </view>
-    </view>
-
-    <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
-      <wd-status-tip image="content" tip="暂无抄送任务" />
-    </view>
-    <wd-loadmore
-      v-if="list.length > 0"
-      :state="loadMoreState"
-      @reload="loadMore"
-    />
-
-    <!-- 搜索弹窗 -->
+  <view>
+    <!-- 搜索组件 -->
     <CopySearchForm
-      v-model="searchPopupVisible"
       :search-params="queryParams"
       @search="handleSearch"
       @reset="handleReset"
     />
+
+    <view class="bpm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="bpm-card"
+        @click="handleDetail(item)"
+      >
+        <view class="bpm-card-content">
+          <view class="bpm-card-header">
+            <view class="bpm-card-title">
+              {{ item.processInstanceName }}
+            </view>
+            <wd-tag type="primary" plain>
+              查看详情
+            </wd-tag>
+          </view>
+          <view v-if="item.summary?.length" class="bpm-summary">
+            <view v-for="(s, idx) in item.summary" :key="idx" class="bpm-summary-item">
+              <text class="text-[#999]">{{ s.key }}：</text>
+              <text>{{ s.value }}</text>
+            </view>
+          </view>
+          <view class="bpm-card-info">
+            <view class="bpm-user">
+              <view class="bpm-avatar">
+                {{ item.startUser.nickname?.[0] || '?' }}
+              </view>
+              <text class="bpm-nickname">{{ item.startUser.nickname }}</text>
+            </view>
+            <text class="bpm-time">{{ formatDateTime(item.createTime) }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
+        <wd-status-tip image="content" tip="暂无抄送任务" />
+      </view>
+      <wd-loadmore
+        v-if="list.length > 0"
+        :state="loadMoreState"
+        @reload="loadMore"
+      />
+    </view>
   </view>
 </template>
 
@@ -64,17 +65,13 @@ import CopySearchForm from './copy-search-form.vue'
 import './index.scss'
 
 const props = defineProps<{
-  searchVisible?: boolean
-}>()
-
-const emit = defineEmits<{
-  'update:searchVisible': [value: boolean]
+  active?: boolean
 }>()
 
 const total = ref(0)
 const list = ref<ProcessInstanceCopy[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const searchPopupVisible = ref(false)
+const isFirstLoad = ref(true)
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -133,16 +130,18 @@ onReachBottom(() => {
   loadMore()
 })
 
-watch(() => props.searchVisible, (val) => {
-  searchPopupVisible.value = val ?? false
-})
-
-watch(searchPopupVisible, (val) => {
-  emit('update:searchVisible', val)
+/** 监听激活状态，刷新数据 */
+watch(() => props.active, (val) => {
+  if (val && !isFirstLoad.value) {
+    queryParams.pageNo = 1
+    list.value = []
+    getList()
+  }
 })
 
 /** 初始化 */
 onMounted(() => {
   getList()
+  isFirstLoad.value = false
 })
 </script>

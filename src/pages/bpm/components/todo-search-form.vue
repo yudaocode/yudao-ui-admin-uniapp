@@ -1,4 +1,13 @@
 <template>
+  <!-- 搜索框入口 -->
+  <wd-search
+    :placeholder="searchPlaceholder"
+    :hide-cancel="true"
+    disabled
+    @click="visible = true"
+  />
+
+  <!-- 搜索弹窗 -->
   <wd-popup
     v-model="visible"
     position="top"
@@ -126,7 +135,7 @@ import type { ProcessDefinition } from '@/api/bpm/definition'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinitionList } from '@/api/bpm/definition'
-import { getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 
@@ -140,19 +149,29 @@ export interface TodoSearchFormData {
 }
 
 const props = defineProps<{
-  modelValue: boolean
   searchParams?: Partial<TodoSearchFormData>
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'search': [data: TodoSearchFormData]
-  'reset': []
+  search: [data: TodoSearchFormData]
+  reset: []
 }>()
 
-const visible = computed({
-  get: () => props.modelValue,
-  set: (val: boolean) => emit('update:modelValue', val),
+const visible = ref(false)
+
+/** 搜索条件 placeholder 拼接 */
+const searchPlaceholder = computed(() => {
+  const conditions: string[] = []
+  if (props.searchParams?.name) {
+    conditions.push(`名称:${props.searchParams.name}`)
+  }
+  if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS, props.searchParams.status)}`)
+  }
+  if (props.searchParams?.createTime?.[0] && props.searchParams?.createTime?.[1]) {
+    conditions.push(`时间:${formatDate(props.searchParams.createTime[0])}~${formatDate(props.searchParams.createTime[1])}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索待办任务'
 })
 
 const categoryList = ref<Category[]>([])
@@ -211,7 +230,7 @@ async function getProcessDefinitions() {
 }
 
 /** 监听弹窗打开，同步外部参数 */
-watch(() => props.modelValue, (val) => {
+watch(visible, (val) => {
   if (val && props.searchParams) {
     formData.name = props.searchParams.name
     formData.processDefinitionKey = props.searchParams.processDefinitionKey

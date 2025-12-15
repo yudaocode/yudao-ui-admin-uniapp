@@ -1,61 +1,63 @@
 <template>
-  <view class="bpm-list">
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="bpm-card"
-      @click="handleDetail(item)"
-    >
-      <view class="bpm-card-content">
-        <view class="bpm-card-header">
-          <view class="bpm-card-title">
-            {{ item.name }}
-          </view>
-          <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="item.status" />
-        </view>
-        <view v-if="item.summary?.length" class="bpm-summary">
-          <view v-for="(s, idx) in item.summary" :key="idx" class="bpm-summary-item">
-            <text class="text-[#999]">{{ s.key }}：</text>
-            <text>{{ s.value }}</text>
-          </view>
-        </view>
-        <view class="bpm-card-info">
-          <view class="bpm-user">
-            <view class="bpm-avatar">
-              {{ userNickname?.[0] }}
-            </view>
-            <text class="bpm-nickname">{{ userNickname }}</text>
-          </view>
-          <text class="bpm-time">{{ formatDateTime(item.startTime) }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 空状态 -->
-    <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
-      <wd-status-tip image="content" tip="暂无发起的流程" />
-    </view>
-    <!-- 加载更多 -->
-    <wd-loadmore
-      v-if="list.length > 0"
-      :state="loadMoreState"
-      @reload="loadMore"
-    />
-
-    <!-- 搜索弹窗 -->
+  <view>
+    <!-- 搜索组件 -->
     <MySearchForm
-      v-model="searchPopupVisible"
       :search-params="queryParams"
       @search="handleSearch"
       @reset="handleReset"
     />
 
-    <!-- 新增按钮 -->
-    <view
-      class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
-      @click="handleCreate"
-    >
-      <wd-icon name="add" size="24px" color="#fff" />
+    <view class="bpm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="bpm-card"
+        @click="handleDetail(item)"
+      >
+        <view class="bpm-card-content">
+          <view class="bpm-card-header">
+            <view class="bpm-card-title">
+              {{ item.name }}
+            </view>
+            <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="item.status" />
+          </view>
+          <view v-if="item.summary?.length" class="bpm-summary">
+            <view v-for="(s, idx) in item.summary" :key="idx" class="bpm-summary-item">
+              <text class="text-[#999]">{{ s.key }}：</text>
+              <text>{{ s.value }}</text>
+            </view>
+          </view>
+          <view class="bpm-card-info">
+            <view class="bpm-user">
+              <view class="bpm-avatar">
+                {{ userNickname?.[0] }}
+              </view>
+              <text class="bpm-nickname">{{ userNickname }}</text>
+            </view>
+            <text class="bpm-time">{{ formatDateTime(item.startTime) }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view v-if="loadMoreState !== 'loading' && list.length === 0" class="bpm-empty">
+        <wd-status-tip image="content" tip="暂无发起的流程" />
+      </view>
+      <!-- 加载更多 -->
+      <wd-loadmore
+        v-if="list.length > 0"
+        :state="loadMoreState"
+        @reload="loadMore"
+      />
+
+      <!-- 新增按钮 -->
+      <!-- TODO @AI：换成 wd-fat：要注意，可能高度不对；晚点在改； -->
+      <view
+        class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
+        @click="handleCreate"
+      >
+        <wd-icon name="add" size="24px" color="#fff" />
+      </view>
     </view>
   </view>
 </template>
@@ -74,11 +76,7 @@ import MySearchForm from './my-search-form.vue'
 import './index.scss'
 
 const props = defineProps<{
-  searchVisible?: boolean
-}>()
-
-const emit = defineEmits<{
-  'update:searchVisible': [value: boolean]
+  active?: boolean
 }>()
 
 const userStore = useUserStore()
@@ -87,7 +85,7 @@ const userNickname = computed(() => userStore.userInfo?.nickname || '')
 const total = ref(0)
 const list = ref<ProcessInstance[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const searchPopupVisible = ref(false)
+const isFirstLoad = ref(true)
 
 const queryParams = reactive({
   pageNo: 1,
@@ -157,16 +155,18 @@ onReachBottom(() => {
   loadMore()
 })
 
-watch(() => props.searchVisible, (val) => {
-  searchPopupVisible.value = val ?? false
-})
-
-watch(searchPopupVisible, (val) => {
-  emit('update:searchVisible', val)
+/** 监听激活状态，刷新数据 */
+watch(() => props.active, (val) => {
+  if (val && !isFirstLoad.value) {
+    queryParams.pageNo = 1
+    list.value = []
+    getList()
+  }
 })
 
 /** 初始化 */
 onMounted(() => {
   getList()
+  isFirstLoad.value = false
 })
 </script>

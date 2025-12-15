@@ -4,13 +4,7 @@
     <wd-navbar
       title="审批"
       placeholder safe-area-inset-top fixed
-    >
-      <template #right>
-        <view class="flex items-center" @click="searchVisible = !searchVisible">
-          <wd-icon name="search" size="20px" />
-        </view>
-      </template>
-    </wd-navbar>
+    />
 
     <!-- Tabs 区域 -->
     <view class="bg-white">
@@ -22,26 +16,10 @@
       </wd-tabs>
     </view>
     <!-- 列表内容 -->
-    <TodoList
-      v-show="tabType === 'todo'"
-      :search-visible="searchVisible && tabType === 'todo'"
-      @update:search-visible="searchVisible = $event"
-    />
-    <DoneList
-      v-show="tabType === 'done'"
-      :search-visible="searchVisible && tabType === 'done'"
-      @update:search-visible="searchVisible = $event"
-    />
-    <MyList
-      v-show="tabType === 'my'"
-      :search-visible="searchVisible && tabType === 'my'"
-      @update:search-visible="searchVisible = $event"
-    />
-    <CopyList
-      v-show="tabType === 'copy'"
-      :search-visible="searchVisible && tabType === 'copy'"
-      @update:search-visible="searchVisible = $event"
-    />
+    <TodoList v-show="tabType === 'todo'" :active="tabType === 'todo'" />
+    <DoneList v-show="tabType === 'done'" :active="tabType === 'done'" />
+    <MyList v-show="tabType === 'my'" :active="tabType === 'my'" />
+    <CopyList v-show="tabType === 'copy'" :active="tabType === 'copy'" />
   </view>
 </template>
 
@@ -63,12 +41,10 @@ definePage({
 const tabTypes: string[] = ['todo', 'done', 'my', 'copy']
 const tabIndex = ref(0)
 const tabType = computed<string>(() => tabTypes[tabIndex.value])
-const searchVisible = ref(false)
 
 /** Tab 切换 */
 function handleTabChange({ index }: { index: number }) {
   tabIndex.value = index
-  searchVisible.value = false
 }
 
 /** 初始化：根据 tab 参数设置默认 tab */

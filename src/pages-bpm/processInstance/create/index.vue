@@ -92,6 +92,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinitionList } from '@/api/bpm/definition'
+import { navigateBackPlus } from '@/utils';
 
 definePage({
   style: {
@@ -148,7 +149,7 @@ const groupedDefinitions = computed<Record<string, ProcessDefinition[]>>(() => {
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/bpm/index')
 }
 
 /** 搜索 */
