@@ -11,13 +11,10 @@
     <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
         <wd-cell-group border>
-          <wd-cell
-            title="上级部门"
-            title-width="180rpx"
-            prop="parentId"
-            is-link
-            :value="getParentName()"
-            @click="showDeptPicker = true"
+          <DeptPicker
+            v-model="formData.parentId"
+            label="上级部门"
+            :show-root="true"
           />
           <wd-input
             v-model="formData.name"
@@ -33,13 +30,9 @@
               :min="0"
             />
           </wd-cell>
-          <wd-cell
-            title="负责人"
-            title-width="180rpx"
-            prop="leaderUserId"
-            is-link
-            :value="getLeaderName()"
-            @click="showUserPicker = true"
+          <UserPicker
+            v-model="formData.leaderUserId"
+            type="radio"
           />
           <wd-input
             v-model="formData.phone"
@@ -79,35 +72,18 @@
         保存
       </wd-button>
     </view>
-
-    <!-- 上级部门选择器 -->
-    <wd-picker
-      :model-value="showDeptPicker"
-      :columns="deptPickerColumns"
-      title="选择上级部门"
-      @confirm="handleDeptConfirm"
-      @close="showDeptPicker = false"
-    />
-
-    <!-- 负责人选择器 -->
-    <wd-picker
-      :model-value="showUserPicker"
-      :columns="userPickerColumns"
-      title="选择负责人"
-      @confirm="handleUserConfirm"
-      @close="showUserPicker = false"
-    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { Dept } from '@/api/system/dept'
-import type { User } from '@/api/system/user'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createDept, getDept, getSimpleDeptList, updateDept } from '@/api/system/dept'
-import { getSimpleUserList } from '@/api/system/user'
+import { createDept, getDept, updateDept } from '@/api/system/dept'
 import { CommonStatusEnum } from '@/utils/constants'
+import DeptPicker from './components/dept-picker.vue'
+import UserPicker from '@/pages-system/user/form/components/user-picker.vue'
+import {navigateBackPlus} from '@/utils';
 
 const props = defineProps<{
   id?: number | any
@@ -142,54 +118,9 @@ const formRules = {
 }
 const formRef = ref()
 
-const deptList = ref<Dept[]>([]) // 部门列表
-const userList = ref<User[]>([]) // 用户列表
-const showDeptPicker = ref(false) // 部门选择器
-const showUserPicker = ref(false) // 负责人选择器
-
-/** 部门选择器列 */
-const deptPickerColumns = computed(() => {
-  const items = [{ label: '顶级部门', value: 0 }]
-  deptList.value.forEach((dept) => {
-    // 编辑时排除自己和子部门
-    if (props.id && dept.id === props.id) {
-      return
-    }
-    items.push({ label: dept.name, value: dept.id! })
-  })
-  return items
-})
-
-/** 用户选择器列 */
-const userPickerColumns = computed(() => {
-  const items = [{ label: '不设置', value: 0 }]
-  userList.value.forEach((user) => {
-    items.push({ label: user.nickname, value: user.id! })
-  })
-  return items
-})
-
-/** 获取上级部门名称 */
-function getParentName(): string {
-  if (!formData.value.parentId || formData.value.parentId === 0) {
-    return '顶级部门'
-  }
-  const parent = deptList.value.find(d => d.id === formData.value.parentId)
-  return parent?.name || '请选择'
-}
-
-/** 获取负责人名称 */
-function getLeaderName(): string {
-  if (!formData.value.leaderUserId) {
-    return '请选择'
-  }
-  const user = userList.value.find(u => u.id === formData.value.leaderUserId)
-  return user?.nickname || '请选择'
-}
-
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/dept/index')
 }
 
 /** 加载部门详情 */
@@ -198,16 +129,6 @@ async function getDetail() {
     return
   }
   formData.value = await getDept(props.id)
-}
-
-/** 部门选择确认 */
-function handleDeptConfirm({ value }: { value: number }) {
-  formData.value.parentId = value
-}
-
-/** 负责人选择确认 */
-function handleUserConfirm({ value }: { value: number }) {
-  formData.value.leaderUserId = value || undefined
 }
 
 /** 提交表单 */
@@ -236,10 +157,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  // 获取部门列表
-  deptList.value = await getSimpleDeptList()
-  // 获取用户列表
-  userList.value = await getSimpleUserList()
   // 获取详情
   await getDetail()
 })

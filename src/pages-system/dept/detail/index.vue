@@ -67,7 +67,7 @@ const userList = ref<User[]>([]) // 用户列表
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus()
+  navigateBackPlus('/pages-system/dept/index')
 }
 
 /** 获取上级部门名称 */

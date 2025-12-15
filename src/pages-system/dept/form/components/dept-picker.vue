@@ -1,8 +1,7 @@
-<!-- TODO @芋艿：【优化】看看后续要不要抽成组件！ -->
 <template>
   <wd-col-picker
     v-model="selectedValue"
-    label="归属部门"
+    :label="label"
     label-width="180rpx"
     :columns="deptColumns"
     :column-change="handleColumnChange"
@@ -12,13 +11,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { Dept } from '@/api/system/dept'
-import { onMounted, ref, watch } from 'vue'
-import { getSimpleDeptList } from '@/api/system/dept'
+import type {Dept} from '@/api/system/dept'
+import {getSimpleDeptList} from '@/api/system/dept'
+import {onMounted, ref, watch} from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue?: number
-}>()
+  label?: string
+  showRoot?: boolean // 是否显示顶级部门节点
+}>(), {
+  label: '上级部门',
+  showRoot: false,
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number | undefined): void
@@ -32,26 +36,54 @@ const selectedValue = ref<number[]>([])
 watch(
   () => props.modelValue,
   (val) => {
-    if (val && deptList.value.length > 0) {
+    // 0 或 undefined 都视为顶级部门（如果允许显示顶级）
+    if (val && val !== 0 && deptList.value.length > 0) {
       const path = findDeptPath(val)
       selectedValue.value = path
       // 构建列数据以支持回显
       buildColumnsForPath(path)
-    }
-    else {
-      selectedValue.value = []
+    } else {
+      if (props.showRoot) {
+        // 顶级部门或未选择，重置
+        selectedValue.value = [0]
+      } else {
+         selectedValue.value = []
+      }
+      // 重新构建第一列，确保正确
+      if (deptList.value.length > 0) {
+         initFirstColumn()
+      }
     }
   },
+  { immediate: true }
 )
+
+/** 初始化第一列 */
+function initFirstColumn() {
+  const topDepts = deptList.value.filter(item => item.parentId === 0)
+  if (props.showRoot) {
+    deptColumns.value = [
+      [
+        { label: '顶级部门', value: 0 },
+        ...topDepts.map(item => ({ value: item.id, label: item.name }))
+      ]
+    ]
+  } else {
+    deptColumns.value = [
+      topDepts.map(item => ({ value: item.id, label: item.name }))
+    ]
+  }
+}
 
 /** 加载部门列表 */
 async function loadDeptList() {
   deptList.value = await getSimpleDeptList()
-  // 构建第一列数据（顶级部门）
-  const topDepts = deptList.value.filter(item => item.parentId === 0)
-  deptColumns.value = [topDepts.map(item => ({ value: item.id, label: item.name }))]
+
+  // 初始化第一列
+  initFirstColumn()
+
   // 如果有初始值，回显
-  if (props.modelValue) {
+  if (props.modelValue && props.modelValue !== 0) {
     const path = findDeptPath(props.modelValue)
     selectedValue.value = path
     buildColumnsForPath(path)
@@ -98,11 +130,14 @@ function buildColumnsForPath(path: number[]) {
 
 /** 列变化 */
 function handleColumnChange({ selectedItem, resolve, finish }: any) {
+  if (selectedItem.value === 0) {
+    finish()
+    return
+  }
   const children = deptList.value.filter(item => item.parentId === selectedItem.value)
   if (children.length > 0) {
     resolve(children.map(item => ({ value: item.id, label: item.name })))
-  }
-  else {
+  } else {
     finish()
   }
 }
@@ -116,9 +151,9 @@ function displayFormat(selectedItems: any[]) {
 function handleConfirm({ value }: { value: number[] }) {
   if (value && value.length > 0) {
     emit('update:modelValue', value[value.length - 1])
-  }
-  else {
-    emit('update:modelValue', undefined)
+  } else {
+    // 如果允许 root，默认顶级 0；否则 undefined
+    emit('update:modelValue', props.showRoot ? 0 : undefined)
   }
 }
 

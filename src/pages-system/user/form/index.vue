@@ -37,7 +37,10 @@
             clearable
             placeholder="请输入用户昵称"
           />
-          <DeptPicker v-model="formData.deptId" />
+          <DeptPicker
+            v-model="formData.deptId"
+            label="归属部门"
+          />
           <PostPicker v-model="formData.postIds" />
           <wd-input
             v-model="formData.email"
@@ -104,8 +107,8 @@ import { createUser, getUser, updateUser } from '@/api/system/user'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { isEmail, isMobile } from '@/utils/validator'
-import DeptPicker from './components/dept-picker.vue'
-import PostPicker from './components/post-picker.vue'
+import DeptPicker from '@/pages-system/dept/form/components/dept-picker.vue'
+import PostPicker from '@/pages-system/post/form/components/post-picker.vue'
 import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
