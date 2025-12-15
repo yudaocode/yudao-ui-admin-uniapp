@@ -47,11 +47,12 @@
           <wd-radio :value="-1">
             全部
           </wd-radio>
-          <wd-radio :value="0">
-            启用
-          </wd-radio>
-          <wd-radio :value="1">
-            禁用
+          <wd-radio
+            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+            :key="dict.value"
+            :value="dict.value"
+          >
+            {{ dict.label }}
           </wd-radio>
         </wd-radio-group>
       </view>
@@ -69,6 +70,8 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { DICT_TYPE } from '@/utils/constants'
 
 /** 搜索表单数据 */
 export interface SearchFormData {
@@ -98,7 +101,7 @@ const searchPlaceholder = computed(() => {
     conditions.push(`编码:${props.searchParams.code}`)
   }
   if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
-    conditions.push(`状态:${props.searchParams.status === 0 ? '启用' : '禁用'}`)
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索岗位'
 })

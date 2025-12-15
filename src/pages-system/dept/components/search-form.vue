@@ -17,25 +17,15 @@
   >
     <view class="p-32rpx">
       <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
-        搜索角色
+        搜索部门
       </view>
       <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          角色名称
+          部门名称
         </view>
         <wd-input
           v-model="formData.name"
-          placeholder="请输入角色名称"
-          clearable
-        />
-      </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
-          角色标识
-        </view>
-        <wd-input
-          v-model="formData.code"
-          placeholder="请输入角色标识"
+          placeholder="请输入部门名称"
           clearable
         />
       </view>
@@ -76,8 +66,7 @@ import { DICT_TYPE } from '@/utils/constants'
 /** 搜索表单数据 */
 export interface SearchFormData {
   name?: string
-  code?: string
-  status: number // -1 表示全部
+  status?: number
 }
 
 const props = defineProps<{
@@ -97,18 +86,14 @@ const searchPlaceholder = computed(() => {
   if (props.searchParams?.name) {
     conditions.push(`名称:${props.searchParams.name}`)
   }
-  if (props.searchParams?.code) {
-    conditions.push(`标识:${props.searchParams.code}`)
-  }
   if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索角色'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索部门'
 })
 
 const formData = reactive<SearchFormData>({
   name: undefined,
-  code: undefined,
   status: -1,
 })
 
@@ -116,21 +101,23 @@ const formData = reactive<SearchFormData>({
 watch(visible, (val) => {
   if (val && props.searchParams) {
     formData.name = props.searchParams.name
-    formData.code = props.searchParams.code
-    formData.status = props.searchParams.status ?? -1
+    formData.status = props.searchParams.status !== undefined ? props.searchParams.status : -1
   }
 })
 
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  const params = { ...formData }
+  if (params.status === -1) {
+    params.status = undefined
+  }
+  emit('search', params)
 }
 
 /** 重置 */
 function handleReset() {
   formData.name = undefined
-  formData.code = undefined
   formData.status = -1
   visible.value = false
   emit('reset')

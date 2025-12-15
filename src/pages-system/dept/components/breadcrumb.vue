@@ -80,5 +80,11 @@ function back(): boolean {
   return true
 }
 
-defineExpose({ enter, back })
+/** 重置 */
+function reset() {
+  breadcrumbList.value = []
+  emit('update:modelValue', 0)
+}
+
+defineExpose({ enter, back, reset })
 </script>

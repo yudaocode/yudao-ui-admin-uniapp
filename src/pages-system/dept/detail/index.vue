@@ -8,8 +8,8 @@
     />
 
     <!-- 详情内容 -->
-    <view class="p-24rpx pb-200rpx">
-      <wd-cell-group custom-class="cell-group" border>
+    <view>
+      <wd-cell-group border>
         <wd-cell title="部门名称" :value="formData?.name || '-'" />
         <wd-cell title="上级部门" :value="getParentName() || '-'" />
         <wd-cell title="负责人" :value="getLeaderName() || '-'" />
@@ -24,7 +24,7 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button class="flex-1" type="warning" @click="handleEdit">
           编辑
@@ -44,11 +44,12 @@ import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { deleteDept, getDept, getSimpleDeptList } from '@/api/system/dept'
 import { getSimpleUserList } from '@/api/system/user'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
-  id: number
+  id: number | any
 }>()
 
 definePage({
@@ -66,7 +67,7 @@ const userList = ref<User[]>([]) // 用户列表
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 /** 获取上级部门名称 */
@@ -92,7 +93,12 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDept(props.id)
+  toast.loading('加载中...')
+  try {
+    formData.value = await getDept(props.id)
+  } finally {
+    toast.close()
+  }
 }
 
 /** 编辑部门 */
@@ -140,13 +146,4 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>
