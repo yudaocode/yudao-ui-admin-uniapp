@@ -54,12 +54,12 @@
 <script lang="ts" setup>
 import type { ApiAccessLog } from '@/api/infra/apiAccessLog'
 import { onMounted, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getApiAccessLog } from '@/api/infra/apiAccessLog'
 import { getDictLabel } from '@/hooks/useDict'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { useToast } from 'wot-design-uni'
-import { navigateBackPlus } from '@/utils'
 
 const props = defineProps<{
   id: number | any
@@ -88,10 +88,7 @@ function handleCopyText(text?: string, title?: string) {
   uni.setClipboardData({
     data: text,
     success: () => {
-      uni.showToast({
-        title: `${title || '内容'}已复制`,
-        icon: 'success',
-      })
+      toast.success(`${title || '内容'}已复制`)
     },
   })
 }

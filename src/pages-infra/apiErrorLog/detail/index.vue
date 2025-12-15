@@ -65,9 +65,9 @@ import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { getApiErrorLog, updateApiErrorLogStatus } from '@/api/infra/apiErrorLog'
 import { getDictLabel } from '@/hooks/useDict'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, InfraApiErrorLogProcessStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { navigateBackPlus } from '@/utils'
 
 const props = defineProps<{
   id: number | any
@@ -97,10 +97,7 @@ function handleCopyText(text?: string, title?: string) {
   uni.setClipboardData({
     data: text,
     success: () => {
-      uni.showToast({
-        title: `${title || '内容'}已复制`,
-        icon: 'success',
-      })
+      toast.success(`${title || '内容'}已复制`)
     },
   })
 }

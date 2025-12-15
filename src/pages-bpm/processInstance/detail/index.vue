@@ -108,16 +108,17 @@
 </template>
 
 <script lang="ts" setup>
-// TODO @芋艿：缺少功能的补全！！！！
 import type { ProcessInstance } from '@/api/bpm/processInstance'
 import type { Task } from '@/api/bpm/task'
+// TODO @芋艿：缺少功能的补全！！！！
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getProcessInstance } from '@/api/bpm/processInstance'
 import { getTaskListByProcessInstanceId } from '@/api/bpm/task'
 import { useUserStore } from '@/store'
+import { navigateBackPlus } from '@/utils'
 import { formatDateTime, formatPast } from '@/utils/date'
-import { navigateBackPlus } from '@/utils';
 
 definePage({
   style: {
@@ -127,6 +128,7 @@ definePage({
 })
 
 const userStore = useUserStore()
+const toast = useToast()
 const processInstanceId = ref('')
 const processInstance = ref<Partial<ProcessInstance>>({})
 const tasks = ref<Task[]>([])
@@ -258,8 +260,7 @@ function handleReject() {
 async function loadProcessInstance() {
   try {
     processInstance.value = await getProcessInstance(processInstanceId.value)
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[detail] 加载流程实例失败:', error)
   }
 }
@@ -268,8 +269,7 @@ async function loadProcessInstance() {
 async function loadTasks() {
   try {
     tasks.value = await getTaskListByProcessInstanceId(processInstanceId.value)
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[detail] 加载任务列表失败:', error)
   }
 }
@@ -277,7 +277,7 @@ async function loadTasks() {
 /** 初始化 */
 onLoad(async (options) => {
   if (!options?.id) {
-    uni.showToast({ title: '参数错误', icon: 'none' })
+    toast.show('参数错误')
     return
   }
   processInstanceId.value = options.id

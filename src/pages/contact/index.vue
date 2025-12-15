@@ -79,6 +79,7 @@
 import type { Dept } from '@/api/system/dept'
 import type { User } from '@/api/system/user'
 import { computed, onMounted, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getSimpleDeptList } from '@/api/system/dept'
 import { getSimpleUserList, getUser } from '@/api/system/user'
 import { findChildren, handleTree } from '@/utils/tree'
@@ -94,6 +95,7 @@ definePage({
 const loading = ref(false)
 const deptList = ref<Dept[]>([]) // 完整部门列表（树形结构）
 const userList = ref<User[]>([]) // 用户列表
+const toast = useToast()
 
 const currentDeptId = ref(0) // 当前层级的部门编号
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>()
@@ -131,7 +133,7 @@ async function handleUserClick(item: User) {
     actions.push(`邮箱：${userInfo.email}`)
   }
   if (actions.length === 0) {
-    uni.showToast({ title: '暂无联系方式', icon: 'none' })
+    toast.show('暂无联系方式')
     return
   }
   uni.showActionSheet({
@@ -143,7 +145,7 @@ async function handleUserClick(item: User) {
         uni.makePhoneCall({ phoneNumber: userInfo.mobile! })
       } else if (selected.startsWith('邮箱')) {
         uni.setClipboardData({ data: userInfo.email!, success: () => {
-          uni.showToast({ title: '邮箱已复制', icon: 'success' })
+          toast.success('邮箱已复制')
         } })
       }
     },

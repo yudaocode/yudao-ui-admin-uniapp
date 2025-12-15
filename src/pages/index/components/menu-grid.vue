@@ -22,6 +22,7 @@
 
 <script lang="ts" setup>
 import type { MenuItem } from '../index'
+import { useToast } from 'wot-design-uni'
 import { isTabBarPage } from '@/tabbar/config'
 import { parseUrl, setTabParams } from '@/utils/url'
 
@@ -33,11 +34,13 @@ defineProps<{
   menus: MenuItem[] // 菜单列表
 }>()
 
+const toast = useToast()
+
 /** 处理菜单点击 */
 function handleClick(menu: MenuItem) {
   console.log( '点击菜单：', menu )
   if (!menu.url) {
-    uni.showToast({ title: '功能开发中', icon: 'none' })
+    toast.show('功能开发中')
     return
   }
 
@@ -53,7 +56,7 @@ function handleClick(menu: MenuItem) {
     uni.switchTab({
       url: path,
       fail: () => {
-        uni.showToast({ title: '页面不存在', icon: 'none' })
+        toast.show('页面不存在')
       },
     })
   } else {
@@ -61,7 +64,7 @@ function handleClick(menu: MenuItem) {
     uni.navigateTo({
       url: menu.url,
       fail: () => {
-        uni.showToast({ title: '页面不存在', icon: 'none' })
+        toast.show('页面不存在')
       },
     })
   }

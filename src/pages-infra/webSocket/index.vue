@@ -166,6 +166,7 @@
 <script lang="ts" setup>
 import type { User } from '@/api/system/user'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getSimpleUserList } from '@/api/system/user'
 import { useTokenStore } from '@/store/token'
 import { getEnvBaseUrlRoot, navigateBackPlus } from '@/utils'
@@ -180,6 +181,7 @@ definePage({
 
 // ======================= 状态定义 =======================
 const tokenStore = useTokenStore()
+const toast = useToast()
 
 // WebSocket 相关状态
 const socketTask = ref<UniApp.SocketTask | null>(null)
@@ -243,14 +245,14 @@ function connect() {
     },
     fail: (err) => {
       console.error('WebSocket 连接失败:', err)
-      uni.showToast({ title: '连接失败', icon: 'error' })
+      toast.error('连接失败')
     },
   })
   // 1.2 监听连接打开
   socketTask.value.onOpen(() => {
     console.log('WebSocket 连接已打开')
     isConnected.value = true
-    uni.showToast({ title: '连接成功', icon: 'success' })
+    toast.success('连接成功')
     // 开始心跳
     startHeartbeat()
   })
@@ -273,7 +275,7 @@ function connect() {
     isConnected.value = false
     socketTask.value = null
     stopHeartbeat()
-    uni.showToast({ title: '连接异常', icon: 'error' })
+    toast.error('连接异常')
   })
 }
 
@@ -285,7 +287,7 @@ function disconnect() {
   socketTask.value.close({
     success: () => {
       console.log('WebSocket 连接已主动关闭')
-      uni.showToast({ title: '已断开', icon: 'success' })
+      toast.success('已断开')
     },
   })
   socketTask.value = null
@@ -383,11 +385,11 @@ function handleMessage(data: string) {
 /** 发送消息 */
 function handleSend() {
   if (!sendText.value.trim()) {
-    uni.showToast({ title: '请输入消息内容', icon: 'none' })
+    toast.show('请输入消息内容')
     return
   }
   if (!socketTask.value || !isConnected.value) {
-    uni.showToast({ title: '请先建立连接', icon: 'none' })
+    toast.show('请先建立连接')
     return
   }
 
@@ -406,12 +408,12 @@ function handleSend() {
   socketTask.value.send({
     data: jsonMessage,
     success: () => {
-      uni.showToast({ title: '发送成功', icon: 'success' })
+      toast.success('发送成功')
       sendText.value = ''
     },
     fail: (err) => {
       console.error('消息发送失败:', err)
-      uni.showToast({ title: '发送失败', icon: 'error' })
+      toast.error('发送失败')
     },
   })
 }
@@ -468,8 +470,7 @@ onMounted(async () => {
   // 获取用户列表
   try {
     userList.value = await getSimpleUserList()
-  }
-  catch (error) {
+  } catch (error) {
     console.error('获取用户列表失败:', error)
   }
 })

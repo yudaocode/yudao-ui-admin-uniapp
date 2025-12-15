@@ -90,9 +90,10 @@ import type { Category } from '@/api/bpm/category'
 import type { ProcessDefinition } from '@/api/bpm/definition'
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinitionList } from '@/api/bpm/definition'
-import { navigateBackPlus } from '@/utils';
+import { navigateBackPlus } from '@/utils'
 
 definePage({
   style: {
@@ -100,6 +101,8 @@ definePage({
     navigationStyle: 'custom',
   },
 })
+
+const toast = useToast()
 
 const searchName = ref('')
 const activeIndex = ref(0)
@@ -197,10 +200,7 @@ function getIconColor(index: number) {
 /** 选择流程定义 */
 function handleSelect(item: ProcessDefinition) {
   // TODO @芋艿：跳转到流程表单页面
-  uni.showToast({
-    title: `选择了: ${item.name}`,
-    icon: 'none',
-  })
+  toast.show(`选择了: ${item.name}`)
 }
 
 /** 加载分类列表 */
@@ -211,8 +211,7 @@ async function loadCategoryList() {
     categoryList.value.forEach((cat) => {
       expandedCategories.value[cat.code] = true
     })
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[create] 加载分类失败:', error)
   }
 }
@@ -221,8 +220,7 @@ async function loadCategoryList() {
 async function loadDefinitionList() {
   try {
     definitionList.value = await getProcessDefinitionList({ suspensionState: 1 })
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[create] 加载流程定义失败:', error)
   }
 }

@@ -76,9 +76,10 @@
 
 <script lang="ts" setup>
 import type { MenuGroup, MenuItem } from '../index'
+import { useToast } from 'wot-design-uni'
 import { useUserStore } from '@/store/user'
+import { navigateBackPlus } from '@/utils'
 import { getMenuGroups, getMenuItemByKey } from '../index'
-import { navigateBackPlus } from '@/utils';
 
 defineOptions({
   name: 'FavoriteSettings',
@@ -91,6 +92,7 @@ definePage({
 })
 
 const userStore = useUserStore()
+const toast = useToast()
 
 const searchKeyword = ref('') // 搜索关键词
 const menuGroups = ref<MenuGroup[]>([]) // 菜单分组列表
@@ -133,7 +135,7 @@ function handleAddFavorite(menu: MenuItem) {
     keys.push(menu.key)
     userStore.setFavoriteMenus(keys)
   }
-  uni.showToast({ title: '已添加', icon: 'success' })
+  toast.success('已添加')
 }
 
 /** 处理移除常用服务 */
@@ -144,7 +146,7 @@ function handleRemoveFavorite(menu: MenuItem) {
     keys.splice(index, 1)
     userStore.setFavoriteMenus(keys)
   }
-  uni.showToast({ title: '已移除', icon: 'success' })
+  toast.success('已移除')
 }
 
 /** 检查菜单是否已添加到常用服务 */

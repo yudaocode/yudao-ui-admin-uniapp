@@ -44,6 +44,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { approveTask, rejectTask } from '@/api/bpm/task'
 import { navigateBackPlus } from '@/utils'
 
@@ -61,6 +62,7 @@ definePage({
 
 const taskId = computed(() => props.id || '')
 const isPass = computed(() => props.pass !== 'false') // true: 同意, false: 拒绝
+const toast = useToast()
 const submitting = ref(false)
 const formData = reactive({
   reason: '',
@@ -76,19 +78,13 @@ function handleBack() {
 
 /** 初始化校验 */
 if (!props.id) {
-  uni.showToast({
-    title: '参数错误',
-    icon: 'none',
-  })
+  toast.show('参数错误')
 }
 
 /** 校验表单 */
 function validateForm() {
   if (!formData.reason.trim()) {
-    uni.showToast({
-      title: '请输入审批意见',
-      icon: 'none',
-    })
+    toast.show('请输入审批意见')
     return false
   }
   return true
@@ -109,10 +105,7 @@ async function handleSubmit() {
       reason: formData.reason,
     })
     if (result) {
-      uni.showToast({
-        title: '审批成功',
-        icon: 'success',
-      })
+      toast.success('审批成功')
       setTimeout(() => {
         handleBack()
       }, 1500)

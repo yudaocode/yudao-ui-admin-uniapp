@@ -76,6 +76,7 @@
 import type { UserProfileVO } from '@/api/system/user/profile'
 import { storeToRefs } from 'pinia'
 import { onMounted, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
 import { getUserProfile } from '@/api/system/user/profile'
 import { LOGIN_PAGE } from '@/router/config'
 import { useUserStore } from '@/store'
@@ -89,6 +90,7 @@ definePage({
 
 const userStore = useUserStore()
 const tokenStore = useTokenStore()
+const toast = useToast()
 const { userInfo } = storeToRefs(userStore)
 const userProfile = ref<UserProfileVO | null>(null) // 用户详细信息
 
@@ -138,10 +140,7 @@ function handleLogout() {
         return
       }
       await tokenStore.logout()
-      uni.showToast({
-        title: '退出登录成功',
-        icon: 'success',
-      })
+      toast.success('退出登录成功')
       setTimeout(() => {
         uni.reLaunch({ url: LOGIN_PAGE })
       }, 500)
