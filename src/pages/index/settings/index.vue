@@ -1,7 +1,14 @@
 <template>
   <view class="min-h-screen bg-#f5f5f5">
+    <!-- 顶部导航栏 -->
+    <wd-navbar
+      title="编辑工作台"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
+
     <!-- 搜索框 -->
-    <view class="mx-20rpx overflow-hidden rounded-16rpx bg-white">
+    <view>
       <wd-search v-model="searchKeyword" placeholder="搜索" hide-cancel />
     </view>
 
@@ -71,6 +78,7 @@
 import type { MenuGroup, MenuItem } from '../index'
 import { useUserStore } from '@/store/user'
 import { getMenuGroups, getMenuItemByKey } from '../index'
+import { navigateBackPlus } from '@/utils';
 
 defineOptions({
   name: 'FavoriteSettings',
@@ -78,7 +86,7 @@ defineOptions({
 
 definePage({
   style: {
-    navigationBarTitleText: '编辑工作台',
+    navigationStyle: 'custom',
   },
 })
 
@@ -107,6 +115,11 @@ const filteredMenuGroups = computed(() => {
     }))
     .filter(group => group.menus.length > 0)
 })
+
+/** 返回上一页 */
+function handleBack() {
+  navigateBackPlus()
+}
 
 /** 初始化数据 */
 function initData() {

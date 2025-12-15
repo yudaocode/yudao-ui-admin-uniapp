@@ -1,9 +1,10 @@
 <template>
   <view class="min-h-screen bg-[#f5f5f5]">
     <!-- 顶部导航栏 -->
+    <!-- TODO @AI：待修复 -->
     <wd-navbar
       title="我的消息"
-      left-arrow placeholder safe-area-inset-top fixed
+      placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     >
       <template #right>
