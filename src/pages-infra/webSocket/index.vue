@@ -168,7 +168,7 @@ import type { User } from '@/api/system/user'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getSimpleUserList } from '@/api/system/user'
 import { useTokenStore } from '@/store/token'
-import { getEnvBaseUrlRoot } from '@/utils'
+import { getEnvBaseUrlRoot, navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
 
 definePage({
@@ -458,7 +458,7 @@ function handleUserChange({ value }: { value: string[] }) {
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 // ======================= 生命周期 =======================

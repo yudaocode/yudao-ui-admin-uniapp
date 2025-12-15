@@ -8,8 +8,8 @@
     />
 
     <!-- 详情内容 -->
-    <view class="p-24rpx">
-      <wd-cell-group custom-class="cell-group" border>
+    <view>
+      <wd-cell-group border>
         <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
         <wd-cell title="链路追踪" :value="formData?.traceId || '-'" />
         <wd-cell title="应用名" :value="formData?.applicationName || '-'" />
@@ -58,9 +58,11 @@ import { getApiAccessLog } from '@/api/infra/apiAccessLog'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import { useToast } from 'wot-design-uni'
+import { navigateBackPlus } from '@/utils'
 
 const props = defineProps<{
-  id: number
+  id: number | any
 }>()
 
 definePage({
@@ -71,10 +73,11 @@ definePage({
 })
 
 const formData = ref<ApiAccessLog>() // 详情数据
+const toast = useToast()
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-infra/apiAccessLog/index')
 }
 
 /** 复制文本并提示 */
@@ -98,7 +101,12 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getApiAccessLog(props.id)
+  toast.loading('加载中...')
+  try {
+    formData.value = await getApiAccessLog(props.id)
+  } finally {
+    toast.close()
+  }
 }
 
 /** 获取请求信息 */
@@ -124,9 +132,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
 </style>

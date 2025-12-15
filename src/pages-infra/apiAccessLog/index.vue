@@ -1,18 +1,18 @@
 <template>
-  <!-- TODO @芋艿：【优化：全局样式】后续要全局样式么 -->
   <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="API 访问日志"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center" @click="searchVisible = !searchVisible">
-          <wd-icon name="search" size="20px" />
-        </view>
-      </template>
-    </wd-navbar>
+    />
+
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 日志列表 -->
     <view class="p-24rpx">
@@ -68,14 +68,6 @@
         @reload="loadMore"
       />
     </view>
-
-    <!-- 搜索弹窗 -->
-    <SearchForm
-      v-model="searchVisible"
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
   </view>
 </template>
 
@@ -87,6 +79,7 @@ import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, reactive, ref } from 'vue'
 import { getApiAccessLogPage } from '@/api/infra/apiAccessLog'
 import { formatDateTime } from '@/utils/date'
+import { navigateBackPlus } from '@/utils'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -99,7 +92,6 @@ definePage({
 const total = ref(0) // 列表的总页数
 const list = ref<ApiAccessLog[]>([]) // 列表的数据
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
-const searchVisible = ref(false) // 搜索弹窗
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -109,7 +101,7 @@ const queryParams = reactive({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 /** 查询日志列表 */
