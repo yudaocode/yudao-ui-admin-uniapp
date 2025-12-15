@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<{
   label?: string
 }>(), {
   type: 'checkbox',
-  label: '负责人'
+  label: '负责人',
 })
 
 const emit = defineEmits<{
@@ -35,7 +35,7 @@ const selectedId = ref<number | string | number[]>([])
 const columns = computed(() => {
   return userList.value.map(user => ({
     label: user.nickname,
-    value: user.id
+    value: user.id,
   }))
 })
 
@@ -50,7 +50,7 @@ watch(
       selectedId.value = Array.isArray(val) ? val : []
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 async function loadUserList() {

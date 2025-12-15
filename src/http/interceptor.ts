@@ -1,3 +1,4 @@
+/* eslint-disable brace-style */ // 原因：unibest 官方维护的代码，尽量不要大概，避免难以合并
 import type { CustomRequestOptions } from '@/http/types'
 import { useTokenStore, useUserStore } from '@/store'
 import { getEnvBaseUrl } from '@/utils'
@@ -55,7 +56,7 @@ const httpInterceptor = {
     const token = tokenStore.validToken
     let isToken = (options!.header || {}).isToken === false
     whiteList.some((v) => {
-      if (options.url && options.url.indexOf(v) > -1) {
+      if (options.url && options.url.includes(v)) {
         return (isToken = false)
       }
     })

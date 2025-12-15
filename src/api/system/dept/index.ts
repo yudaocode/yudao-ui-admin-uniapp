@@ -15,7 +15,7 @@ export interface Dept {
 }
 
 /** 获取部门列表 */
-export function getDeptList(params?: { name?: string; status?: number }) {
+export function getDeptList(params?: { name?: string, status?: number }) {
   return http.get<Dept[]>('/system/dept/list', params)
 }
 

@@ -34,7 +34,7 @@
           菜单状态
         </view>
         <wd-radio-group v-model="formData.status" shape="button">
-           <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
+          <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
             {{ dict.label }}
           </wd-radio>
         </wd-radio-group>
@@ -53,8 +53,8 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { DICT_TYPE } from '@/utils/constants'
 import { getIntDictOptions } from '@/hooks/useDict'
+import { DICT_TYPE } from '@/utils/constants'
 
 /** 搜索表单数据 */
 export interface SearchFormData {
@@ -67,8 +67,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'search': [data: SearchFormData]
-  'reset': []
+  search: [data: SearchFormData]
+  reset: []
 }>()
 
 const visible = ref(false)

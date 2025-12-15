@@ -141,8 +141,7 @@ async function handleConfirm() {
     toast.success('修改成功')
     handleClose()
     emit('success')
-  }
-  finally {
+  } finally {
     submitting.value = false
   }
 }

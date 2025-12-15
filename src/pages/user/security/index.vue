@@ -22,13 +22,17 @@
         <template #icon>
           <wd-icon name="chat" size="20px" color="#07c160" class="mr-16rpx" />
         </template>
-        <view class="text-[#999]">未绑定</view>
+        <view class="text-[#999]">
+          未绑定
+        </view>
       </wd-cell>
       <wd-cell title="微信公众号" is-link @click="handleBindWechatOfficialAccount">
         <template #icon>
           <wd-icon name="chat" size="20px" color="#07c160" class="mr-16rpx" />
         </template>
-        <view class="text-[#999]">未绑定</view>
+        <view class="text-[#999]">
+          未绑定
+        </view>
       </wd-cell>
     </wd-cell-group>
 

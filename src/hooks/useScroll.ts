@@ -1,3 +1,4 @@
+/* eslint-disable brace-style */ // 原因：unibest 官方维护的代码，尽量不要大概，避免难以合并
 import type { Ref } from 'vue'
 import { onMounted, ref } from 'vue'
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/* eslint-disable brace-style */ // 原因：unibest 官方维护的代码，尽量不要大概，避免难以合并
 // i-carbon-code
 import type { CustomTabBarItem } from './types'
 import { customTabbarEnable, needHideNativeTabbar, tabbarCacheEnable } from './config'

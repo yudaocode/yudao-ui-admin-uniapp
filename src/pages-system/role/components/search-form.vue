@@ -85,8 +85,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'search': [data: SearchFormData]
-  'reset': []
+  search: [data: SearchFormData]
+  reset: []
 }>()
 
 const visible = ref(false)

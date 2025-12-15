@@ -73,11 +73,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { deleteUser, getUser, updateUserStatus } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
+import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import PasswordForm from './components/password-form.vue'
 import RoleAssignForm from './components/role-assign-form.vue'
-import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
   id?: number | any

@@ -30,7 +30,7 @@ const selectedIds = ref<number[]>([])
 const columns = computed(() => {
   return postList.value.map(item => ({
     label: item.name,
-    value: item.id
+    value: item.id,
   }))
 })
 
@@ -39,7 +39,7 @@ watch(
   (val) => {
     selectedIds.value = val || []
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 async function loadPostList() {

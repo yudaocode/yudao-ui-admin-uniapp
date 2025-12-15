@@ -88,8 +88,8 @@ import { getUserPage } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
-import { formatDate } from '@/utils/date';
 
 definePage({
   style: {

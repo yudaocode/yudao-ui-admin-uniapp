@@ -23,68 +23,68 @@
 </template>
 
 <script lang="ts" setup>
-import { onUnmounted, ref } from "vue";
-import { useToast } from "wot-design-uni";
-import { sendSmsCode } from "@/api/login";
-import { isMobile } from "@/utils/validator";
+import { onUnmounted, ref } from 'vue'
+import { useToast } from 'wot-design-uni'
+import { sendSmsCode } from '@/api/login'
+import { isMobile } from '@/utils/validator'
 
 defineOptions({
-  name: "CodeInput",
-});
+  name: 'CodeInput',
+})
 
 const props = defineProps<{
-  modelValue: string; // 验证码值 (v-model)
-  mobile: string; // 手机号
-  scene: number; // 短信场景：21-登录 23-重置密码
-  beforeSend?: () => boolean; // 发送前的校验函数，返回 false 则不发送
-}>();
+  modelValue: string // 验证码值 (v-model)
+  mobile: string // 手机号
+  scene: number // 短信场景：21-登录 23-重置密码
+  beforeSend?: () => boolean // 发送前的校验函数，返回 false 则不发送
+}>()
 
 defineEmits<{
-  "update:modelValue": [value: string];
-}>();
+  'update:modelValue': [value: string]
+}>()
 
-const toast = useToast();
-const countdown = ref(0); // 验证码倒计时，单位秒
-let countdownTimer: ReturnType<typeof setInterval> | null = null; // 倒计时定时器
+const toast = useToast()
+const countdown = ref(0) // 验证码倒计时，单位秒
+let countdownTimer: ReturnType<typeof setInterval> | null = null // 倒计时定时器
 
 /** 页面卸载时清除倒计时定时器 */
 onUnmounted(() => {
   if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
+    clearInterval(countdownTimer)
+    countdownTimer = null
   }
-});
+})
 
 /** 发送验证码 */
 async function handleSendCode() {
   // 执行前置校验
   if (props.beforeSend && !props.beforeSend()) {
-    return;
+    return
   }
   if (countdown.value > 0) {
-    return;
+    return
   }
   if (!props.mobile) {
-    toast.warning("请输入手机号");
-    return;
+    toast.warning('请输入手机号')
+    return
   }
   if (!isMobile(props.mobile)) {
-    toast.warning("请输入正确的手机号");
-    return;
+    toast.warning('请输入正确的手机号')
+    return
   }
 
   // 发送验证码
-  await sendSmsCode({ mobile: props.mobile, scene: props.scene });
-  toast.success("验证码已发送");
+  await sendSmsCode({ mobile: props.mobile, scene: props.scene })
+  toast.success('验证码已发送')
 
   // 开始倒计时
-  countdown.value = 60;
+  countdown.value = 60
   countdownTimer = setInterval(() => {
-    countdown.value--;
+    countdown.value--
     if (countdown.value <= 0) {
-      clearInterval(countdownTimer!);
-      countdownTimer = null;
+      clearInterval(countdownTimer!)
+      countdownTimer = null
     }
-  }, 1000);
+  }, 1000)
 }
 </script>

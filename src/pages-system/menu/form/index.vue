@@ -126,8 +126,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createMenu, getMenu, updateMenu } from '@/api/system/menu'
 import { getIntDictOptions } from '@/hooks/useDict'
-import { CommonStatusEnum, DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
 import { navigateBackPlus } from '@/utils'
+import { CommonStatusEnum, DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
 import MenuPicker from './components/menu-picker.vue'
 
 const props = defineProps<{

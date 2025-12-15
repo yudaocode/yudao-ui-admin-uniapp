@@ -36,9 +36,9 @@ export interface IUserInfoRes {
  * 权限信息
  */
 export interface AuthPermissionInfo {
-  user: IUserInfoRes;
-  roles: string[];
-  permissions: string[];
+  user: IUserInfoRes
+  roles: string[]
+  permissions: string[]
   // menus: AppRouteRecordRaw[]; // add by 芋艿：暂时用不到
 }
 

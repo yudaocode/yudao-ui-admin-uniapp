@@ -11,9 +11,9 @@
 </template>
 
 <script lang="ts" setup>
-import type {Dept} from '@/api/system/dept'
-import {getSimpleDeptList} from '@/api/system/dept'
-import {onMounted, ref, watch} from 'vue'
+import type { Dept } from '@/api/system/dept'
+import { onMounted, ref, watch } from 'vue'
+import { getSimpleDeptList } from '@/api/system/dept'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
@@ -47,15 +47,15 @@ watch(
         // 顶级部门或未选择，重置
         selectedValue.value = [0]
       } else {
-         selectedValue.value = []
+        selectedValue.value = []
       }
       // 重新构建第一列，确保正确
       if (deptList.value.length > 0) {
-         initFirstColumn()
+        initFirstColumn()
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 /** 初始化第一列 */
@@ -65,12 +65,12 @@ function initFirstColumn() {
     deptColumns.value = [
       [
         { label: '顶级部门', value: 0 },
-        ...topDepts.map(item => ({ value: item.id, label: item.name }))
-      ]
+        ...topDepts.map(item => ({ value: item.id, label: item.name })),
+      ],
     ]
   } else {
     deptColumns.value = [
-      topDepts.map(item => ({ value: item.id, label: item.name }))
+      topDepts.map(item => ({ value: item.id, label: item.name })),
     ]
   }
 }

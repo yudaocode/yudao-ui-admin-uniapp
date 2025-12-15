@@ -68,9 +68,9 @@ import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, reactive, ref } from 'vue'
 import { getApiErrorLogPage } from '@/api/infra/apiErrorLog'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { navigateBackPlus } from '@/utils'
 import SearchForm from './components/search-form.vue'
 
 definePage({

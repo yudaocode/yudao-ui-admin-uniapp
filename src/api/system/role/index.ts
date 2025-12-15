@@ -1,5 +1,5 @@
+import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
-import { PageParam, PageResult } from '@/http/types';
 
 /** 角色信息 */
 export interface Role {

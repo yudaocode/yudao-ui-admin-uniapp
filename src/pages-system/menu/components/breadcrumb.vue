@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
-  back: [] // 返回上一层级事件
+  'back': [] // 返回上一层级事件
 }>()
 
 const breadcrumbs = ref<BreadcrumbNode[]>([]) // 面包屑路径（不包含根目录）
@@ -47,12 +47,13 @@ const breadcrumbItems = computed(() => [
 
 const currentParentId = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
+  set: val => emit('update:modelValue', val),
 }) // 当前父节点编号
 
 /** 面包屑点击 */
 function handleClick(index: number) {
-  if (index === breadcrumbItems.value.length - 1) return // 点击当前层级不处理
+  if (index === breadcrumbItems.value.length - 1)
+    return // 点击当前层级不处理
   if (index === 0) {
     breadcrumbs.value = []
     currentParentId.value = 0

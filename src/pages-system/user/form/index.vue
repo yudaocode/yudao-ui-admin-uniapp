@@ -105,11 +105,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createUser, getUser, updateUser } from '@/api/system/user'
 import { getIntDictOptions } from '@/hooks/useDict'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { isEmail, isMobile } from '@/utils/validator'
 import DeptPicker from '@/pages-system/dept/form/components/dept-picker.vue'
 import PostPicker from '@/pages-system/post/form/components/post-picker.vue'
-import { navigateBackPlus } from '@/utils';
+import { navigateBackPlus } from '@/utils'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { isEmail, isMobile } from '@/utils/validator'
 
 const props = defineProps<{
   id?: number | any

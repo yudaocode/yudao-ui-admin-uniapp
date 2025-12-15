@@ -80,10 +80,10 @@ import type { Dept } from '@/api/system/dept'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createDept, getDept, updateDept } from '@/api/system/dept'
+import UserPicker from '@/pages-system/user/form/components/user-picker.vue'
+import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import DeptPicker from './components/dept-picker.vue'
-import UserPicker from '@/pages-system/user/form/components/user-picker.vue'
-import {navigateBackPlus} from '@/utils';
 
 const props = defineProps<{
   id?: number | any
