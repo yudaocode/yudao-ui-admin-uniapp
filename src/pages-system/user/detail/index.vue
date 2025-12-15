@@ -8,8 +8,8 @@
     />
 
     <!-- 详情内容 -->
-    <view class="p-24rpx pb-200rpx">
-      <wd-cell-group custom-class="cell-group" border>
+    <view>
+      <wd-cell-group border>
         <wd-cell title="头像">
           <view v-if="formData?.avatar" class="h-80rpx w-80rpx overflow-hidden rounded-full">
             <image :src="formData.avatar" class="h-full w-full" mode="aspectFill" />
@@ -35,7 +35,7 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button
           v-if="hasAccessByCodes(['system:user:update'])"
@@ -196,13 +196,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>

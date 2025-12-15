@@ -20,7 +20,7 @@
       <view
         v-for="item in list"
         :key="item.id"
-        class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+        class="mb-24rpx rounded-12rpx bg-white"
         @click="handleDetail(item)"
       >
         <view class="relative p-24rpx">
@@ -28,17 +28,19 @@
             <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="flex items-center gap-16rpx">
-            <view
+            <wd-img
               v-if="item.avatar"
-              class="h-80rpx w-80rpx overflow-hidden rounded-full"
-            >
-              <image :src="item.avatar" class="h-full w-full" mode="aspectFill" />
-            </view>
+              :src="item.avatar"
+              :width="40"
+              :height="40"
+              mode="aspectFill"
+              round
+            />
             <view
               v-else
               class="h-80rpx w-80rpx flex items-center justify-center rounded-full bg-[#1890ff] text-32rpx text-white"
             >
-              {{ item.nickname?.charAt(0) || item.username?.charAt(0) }}
+              {{ (item.nickname || item.username)?.charAt(0) }}
             </view>
             <view>
               <view class="text-32rpx text-[#333] font-semibold">
@@ -48,6 +50,9 @@
                 {{ item.deptName || '未分配部门' }}
               </view>
             </view>
+          </view>
+          <view v-if="item.loginDate" class="absolute bottom-24rpx right-24rpx text-22rpx text-[#999]">
+            登录时间：{{ formatDate(item.loginDate) }}
           </view>
         </view>
       </view>
@@ -63,16 +68,14 @@
       />
     </view>
 
-
     <!-- 新增按钮 -->
-    <!-- TODO @芋艿：【优化：全局样式】后续要全局样式么 -->
-    <view
+    <wd-fab
       v-if="hasAccessByCodes(['system:user:create'])"
-      class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
       @click="handleAdd"
-    >
-      <wd-icon name="add" size="24px" color="#fff" />
-    </view>
+    />
   </view>
 </template>
 
@@ -84,9 +87,10 @@ import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, reactive, ref } from 'vue'
 import { getUserPage } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
-import { navigateBackPlus } from '@/utils';
+import { formatDate } from '@/utils/date';
 
 definePage({
   style: {

@@ -8,9 +8,9 @@
     />
 
     <!-- 表单区域 -->
-    <view class="p-24rpx">
+    <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
-        <wd-cell-group custom-class="cell-group" border>
+        <wd-cell-group border>
           <wd-input
             v-model="formData.username"
             label="用户名称"
@@ -83,7 +83,7 @@
     </view>
 
     <!-- 底部保存按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <wd-button
         type="primary"
         block
@@ -190,13 +190,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>
