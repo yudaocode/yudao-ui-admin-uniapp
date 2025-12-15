@@ -80,6 +80,12 @@ function back(): boolean {
   return false
 }
 
+/** 重置面包屑 */
+function reset() {
+  breadcrumbs.value = []
+  currentParentId.value = 0
+}
+
 /** 监听外部 modelValue 变化，重置面包屑（用于外部重置场景） */
 watch(() => props.modelValue, (val) => {
   if (val === 0 && breadcrumbs.value.length > 0) {
@@ -90,6 +96,7 @@ watch(() => props.modelValue, (val) => {
 defineExpose({
   enter,
   back,
+  reset,
   breadcrumbs,
 })
 </script>

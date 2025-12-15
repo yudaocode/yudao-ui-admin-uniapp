@@ -8,9 +8,9 @@
     />
 
     <!-- 表单区域 -->
-    <view class="p-24rpx pb-200rpx">
+    <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
-        <wd-cell-group custom-class="cell-group" border>
+        <wd-cell-group border>
           <MenuPicker v-model="formData.parentId" />
           <wd-cell title="菜单类型" title-width="180rpx" prop="type">
             <wd-radio-group v-model="formData.type" shape="button" @change="handleTypeChange">
@@ -127,10 +127,11 @@ import { useToast } from 'wot-design-uni'
 import { createMenu, getMenu, updateMenu } from '@/api/system/menu'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { CommonStatusEnum, DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
+import { navigateBackPlus } from '@/utils'
 import MenuPicker from './components/menu-picker.vue'
 
 const props = defineProps<{
-  id?: number
+  id?: number | any
   parentId?: number
 }>()
 
@@ -170,7 +171,7 @@ const formRef = ref()
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/menu/index')
 }
 
 /** 菜单类型变更： */
@@ -245,12 +246,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
 .safe-area-inset-bottom {
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }

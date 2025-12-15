@@ -8,8 +8,8 @@
     />
 
     <!-- 详情内容 -->
-    <view class="p-24rpx pb-200rpx">
-      <wd-cell-group custom-class="cell-group" border>
+    <view>
+      <wd-cell-group border>
         <wd-cell title="菜单名称" :value="formData?.name || '-'" />
         <wd-cell title="菜单类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_MENU_TYPE" :value="formData?.type" />
@@ -44,7 +44,7 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button class="flex-1" type="warning" @click="handleEdit">
           编辑
@@ -62,11 +62,12 @@ import type { Menu } from '@/api/system/menu'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { deleteMenu, getMenu, getSimpleMenuList } from '@/api/system/menu'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
-  id: number
+  id: number | any
 }>()
 
 definePage({
@@ -83,7 +84,7 @@ const parentMenuName = ref('-') // 上级菜单名称
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/menu/index')
 }
 
 /** 加载菜单详情 */
@@ -91,15 +92,20 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMenu(props.id)
-  // 获取上级菜单名称
-  if (formData.value?.parentId === 0) {
-    parentMenuName.value = '主类目'
-  } else if (formData.value?.parentId) {
-    // TODO @芋艿：后续这里可以优化，由后端返回 menuName；
-    const menuList = await getSimpleMenuList()
-    const parent = menuList.find(item => item.id === formData.value?.parentId)
-    parentMenuName.value = parent?.name || '-'
+  toast.loading('加载中...')
+  try {
+    formData.value = await getMenu(props.id)
+    // 获取上级菜单名称
+    if (formData.value?.parentId === 0) {
+      parentMenuName.value = '主类目'
+    } else if (formData.value?.parentId) {
+      // TODO @芋艿：后续这里可以优化，由后端返回 menuName；
+      const menuList = await getSimpleMenuList()
+      const parent = menuList.find(item => item.id === formData.value?.parentId)
+      parentMenuName.value = parent?.name || '-'
+    }
+  } finally {
+    toast.close()
   }
 }
 
@@ -143,13 +149,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>

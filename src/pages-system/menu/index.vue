@@ -7,6 +7,13 @@
       @click-left="handleBack"
     />
 
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
+
     <!-- 面包屑导航 -->
     <Breadcrumb ref="breadcrumbRef" v-model="currentParentId" />
 
@@ -55,22 +62,25 @@
     </view>
 
     <!-- 新增按钮 -->
-    <view
-      class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
+    <wd-fab
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
       @click="handleAdd"
-    >
-      <wd-icon name="add" size="24px" color="#fff" />
-    </view>
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
+import type { SearchFormData } from './components/search-form.vue'
 import type { Menu } from '@/api/system/menu'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { getMenuList } from '@/api/system/menu'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
 import { findChildren, handleTree } from '@/utils/tree'
 import Breadcrumb from './components/breadcrumb.vue'
+import SearchForm from './components/search-form.vue'
 
 definePage({
   style: {
@@ -91,10 +101,15 @@ const currentList = computed(() => {
 }) // 当前层级的菜单列表
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>()
 
+const queryParams = reactive<SearchFormData>({
+  name: undefined,
+  status: undefined,
+})
+
 /** 返回上一页或上一层级 */
 function handleBack() {
   if (!breadcrumbRef.value?.back()) {
-    uni.navigateBack()
+    navigateBackPlus()
   }
 }
 
@@ -149,11 +164,26 @@ function handleEnterChildren(item: Menu) {
 async function getList() {
   loading.value = true
   try {
-    const data = await getMenuList()
+    const data = await getMenuList(queryParams)
     list.value = handleTree(data)
   } finally {
     loading.value = false
   }
+}
+
+/** 搜索按钮操作 */
+function handleQuery(data?: SearchFormData) {
+  queryParams.name = data?.name
+  queryParams.status = data?.status
+  // 重置面包屑
+  currentParentId.value = 0
+  breadcrumbRef.value?.reset()
+  getList()
+}
+
+/** 重置按钮操作 */
+function handleReset() {
+  handleQuery()
 }
 
 /** 新增菜单 */
