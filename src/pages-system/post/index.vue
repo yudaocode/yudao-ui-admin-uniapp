@@ -5,13 +5,14 @@
       title="岗位管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center" @click="searchVisible = !searchVisible">
-          <wd-icon name="search" size="20px" />
-        </view>
-      </template>
-    </wd-navbar>
+    />
+
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 岗位列表 -->
     <view class="p-24rpx">
@@ -50,30 +51,26 @@
       />
     </view>
 
-    <!-- 搜索弹窗 -->
-    <SearchForm
-      v-model="searchVisible"
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
-
     <!-- 新增按钮 -->
-    <view
-      class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
+    <wd-fab
+      v-if="hasAccessByCodes(['system:post:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
       @click="handleAdd"
-    >
-      <wd-icon name="add" size="24px" color="#fff" />
-    </view>
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
+import type { SearchFormData } from './components/search-form.vue'
 import type { Post } from '@/api/system/post'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, reactive, ref } from 'vue'
 import { getPostPage } from '@/api/system/post'
+import { useAccess } from '@/hooks/useAccess'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
 
@@ -84,10 +81,10 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const total = ref(0) // 列表的总页数
 const list = ref<Post[]>([]) // 列表的数据
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
-const searchVisible = ref(false) // 搜索弹窗
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -98,7 +95,7 @@ const queryParams = reactive({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 /** 查询岗位列表 */
@@ -119,7 +116,7 @@ async function getList() {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: { name?: string, code?: string, status?: number }) {
+function handleQuery(data?: SearchFormData) {
   queryParams.name = data?.name
   queryParams.code = data?.code
   queryParams.status = data?.status ?? -1

@@ -1,4 +1,13 @@
 <template>
+  <!-- 搜索框入口 -->
+  <wd-search
+    :placeholder="searchPlaceholder"
+    :hide-cancel="true"
+    disabled
+    @click="visible = true"
+  />
+
+  <!-- 搜索弹窗 -->
   <wd-popup
     v-model="visible"
     position="top"
@@ -59,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 /** 搜索表单数据 */
 export interface SearchFormData {
@@ -69,19 +78,29 @@ export interface SearchFormData {
 }
 
 const props = defineProps<{
-  modelValue: boolean
   searchParams?: Partial<SearchFormData> // 初始搜索参数
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
   'search': [data: SearchFormData]
   'reset': []
 }>()
 
-const visible = computed({
-  get: () => props.modelValue,
-  set: (val: boolean) => emit('update:modelValue', val),
+const visible = ref(false)
+
+/** 搜索条件 placeholder 拼接 */
+const searchPlaceholder = computed(() => {
+  const conditions: string[] = []
+  if (props.searchParams?.name) {
+    conditions.push(`名称:${props.searchParams.name}`)
+  }
+  if (props.searchParams?.code) {
+    conditions.push(`编码:${props.searchParams.code}`)
+  }
+  if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
+    conditions.push(`状态:${props.searchParams.status === 0 ? '启用' : '禁用'}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索岗位'
 })
 
 const formData = reactive<SearchFormData>({
@@ -91,7 +110,7 @@ const formData = reactive<SearchFormData>({
 })
 
 /** 监听弹窗打开，同步外部参数 */
-watch(() => props.modelValue, (val) => {
+watch(visible, (val) => {
   if (val && props.searchParams) {
     formData.name = props.searchParams.name
     formData.code = props.searchParams.code
