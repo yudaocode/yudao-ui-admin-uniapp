@@ -125,7 +125,12 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getUser(Number(props.id))
+  try {
+    toast.loading('加载中...')
+    formData.value = await getUser(Number(props.id))
+  } finally {
+    toast.close()
+  }
 }
 
 /** 编辑用户 */
