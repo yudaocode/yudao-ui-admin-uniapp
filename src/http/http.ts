@@ -64,8 +64,7 @@ export function http<T>(options: CustomRequestOptions) {
               })
               // 将任务队列的所有任务重新请求
               taskQueue.forEach(task => task())
-            }
-            catch (refreshErr) {
+            } catch (refreshErr) {
               console.error('刷新 token 失败:', refreshErr)
               refreshing = false
               // 刷新 token 失败，跳转到登录页
@@ -90,8 +89,7 @@ export function http<T>(options: CustomRequestOptions) {
                 }
                 toLoginPage({ queryString })
               }, 2000)
-            }
-            finally {
+            } finally {
               // 不管刷新 token 成功与否，都清空任务队列
               taskQueue = []
             }
@@ -102,6 +100,10 @@ export function http<T>(options: CustomRequestOptions) {
 
         // 处理其他成功状态（HTTP状态码200-299）
         if (res.statusCode >= 200 && res.statusCode < 300) {
+          // add by panda 25.12.10：如果设置了 original 为 true，则返回原始数据
+          if (options.original) {
+            return resolve(responseData as unknown as T)
+          }
           // 处理业务逻辑错误
           if (code !== ResultEnum.Success0 && code !== ResultEnum.Success200) {
             // add by 芋艿：后端返回的 msg 提示

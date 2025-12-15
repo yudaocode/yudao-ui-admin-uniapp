@@ -113,6 +113,7 @@
     "@dcloudio/uni-mp-xhs": "3.0.0-4070620250821001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4070620250821001",
     "abortcontroller-polyfill": "^1.7.8",
+    "crypto-js": "^4.2.0",
     "dayjs": "1.11.10",
     "pinia": "2.0.36",
     "pinia-plugin-persistedstate": "3.2.1",
