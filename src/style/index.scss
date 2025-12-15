@@ -9,6 +9,14 @@
   color: red;
 }
 
+// ==================== 全局公共样式 ====================
+
+// 页面容器：灰色背景 + 最小全屏高度
+.page-container {
+  @apply min-h-screen;
+  background-color: #f5f5f5;
+}
+
 :root,
 page {
   // 修改按主题色

@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen flex flex-col bg-white">
+  <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="常见问题"

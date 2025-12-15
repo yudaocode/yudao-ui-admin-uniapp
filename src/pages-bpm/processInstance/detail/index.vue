@@ -1,6 +1,6 @@
 <template>
   <!-- TODO @芋艿：功能待 review；先从老版本迁移过来！ -->
-  <view class="min-h-screen bg-[#f5f5f5]">
+  <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="审批详情"

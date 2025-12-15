@@ -1,6 +1,5 @@
 <template>
-  <!-- TODO @芋艿：【优化：全局样式】后续要全局样式么 -->
-  <view class="min-h-screen bg-[#f5f5f5]">
+  <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="用户管理"

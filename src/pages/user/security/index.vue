@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-[#f5f5f5]">
+  <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="账号安全"

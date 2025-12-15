@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-[#f5f5f5]">
+  <view class="page-container">
     <!-- 顶部背景区域 -->
     <view class="header-bg h-120rpx w-full flex items-center justify-center" />
 

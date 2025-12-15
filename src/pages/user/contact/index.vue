@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-screen bg-gray-100">
+  <view class="page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="联系客服"
