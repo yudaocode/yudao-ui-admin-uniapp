@@ -13,12 +13,12 @@
     <!-- 协议内容 -->
     <view class="p-32rpx">
       <view class="mb-40rpx text-center">
-        <text class="text-36rpx font-bold text-gray-800">用户服务协议</text>
+        <text class="text-36rpx text-gray-800 font-bold">用户服务协议</text>
       </view>
 
-      <view class="text-28rpx leading-relaxed text-gray-600">
+      <view class="text-28rpx text-gray-600 leading-relaxed">
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">一、总则</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">一、总则</text>
           <text class="block">
             1.1 欢迎使用芋道移动端应用（以下简称"本应用"）。在使用本应用前，请您仔细阅读本协议。
           </text>
@@ -31,7 +31,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">二、服务内容</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">二、服务内容</text>
           <text class="block">
             2.1 本应用为用户提供企业管理、数据分析、业务处理等相关服务。
           </text>
@@ -44,7 +44,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">三、用户账号</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">三、用户账号</text>
           <text class="block">
             3.1 用户在使用本应用服务前需要注册账号。用户应当对其账号和密码的安全负责。
           </text>
@@ -57,7 +57,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">四、用户行为规范</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">四、用户行为规范</text>
           <text class="block">
             4.1 用户在使用本应用服务时，必须遵守国家法律法规，不得利用本应用从事违法违规活动。
           </text>
@@ -70,7 +70,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">五、知识产权</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">五、知识产权</text>
           <text class="block">
             5.1 本应用的所有内容，包括但不限于文字、图片、音频、视频、软件、程序、版面设计等均受知识产权法律法规保护。
           </text>
@@ -80,7 +80,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">六、免责声明</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">六、免责声明</text>
           <text class="block">
             6.1 本应用不对因网络状况、通讯线路等任何技术原因导致的服务中断或其他缺陷承担责任。
           </text>
@@ -90,7 +90,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">七、其他</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">七、其他</text>
           <text class="block">
             7.1 本协议的订立、执行和解释及争议的解决均应适用中华人民共和国法律。
           </text>
@@ -108,6 +108,8 @@
 </template>
 
 <script lang="ts" setup>
+import { navigateBackPlus } from '@/utils'
+
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -117,6 +119,6 @@ definePage({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 </script>

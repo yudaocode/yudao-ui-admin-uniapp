@@ -5,7 +5,6 @@
     <wd-navbar
       title="我的消息"
       placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
     >
       <template #right>
         <view class="flex items-center gap-24rpx">
@@ -106,6 +105,7 @@ import {
   updateNotifyMessageRead,
 } from '@/api/system/notify'
 import { getDictLabel } from '@/hooks/useDict'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange, formatDateTime } from '@/utils/date'
 import DetailPopup from './components/detail-popup.vue'
@@ -130,11 +130,6 @@ const queryParams = reactive({
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 const detailPopupRef = ref<InstanceType<typeof DetailPopup>>() // 详情弹窗
-
-/** 返回上一页 */
-function handleBack() {
-  uni.navigateBack()
-}
 
 /** 查询消息列表 */
 async function getList() {

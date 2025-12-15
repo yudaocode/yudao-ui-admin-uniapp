@@ -54,6 +54,7 @@
 <script lang="ts" setup>
 import type { FaqItem } from './data'
 import { ref } from 'vue'
+import { navigateBackPlus } from '@/utils'
 import { faqList } from './data'
 
 definePage({
@@ -79,7 +80,7 @@ function filteredList(list: FaqItem[]) {
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 </script>
 

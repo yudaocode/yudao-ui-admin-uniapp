@@ -22,8 +22,7 @@
             clearable
             :rows="5"
           />
-          <wd-cell title="反馈图片" title-width="180rpx">
-          </wd-cell>
+          <wd-cell title="反馈图片" title-width="180rpx" />
           <!-- TODO @芋艿：图片上传的接入 -->
           <view class="px-24rpx pb-24rpx">
             <wd-upload
@@ -56,7 +55,7 @@
 import type { UploadFile, UploadMethod } from 'wot-design-uni/components/wd-upload/types'
 import { ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getEnvBaseUrl } from '@/utils/index'
+import { getEnvBaseUrl, navigateBackPlus } from '@/utils/index'
 
 definePage({
   style: {
@@ -86,7 +85,7 @@ const formRules = {
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 
 /** 自定义上传方法 */
@@ -103,8 +102,7 @@ const customUpload: UploadMethod = (file, formData, options) => {
     success(res) {
       if (res.statusCode === options.statusCode) {
         options.onSuccess(res, file, formData)
-      }
-      else {
+      } else {
         options.onError({ ...res, errMsg: res.errMsg || '' }, file, formData)
       }
     },
@@ -138,8 +136,7 @@ async function handleSubmit() {
             try {
               const res = typeof file.response === 'string' ? JSON.parse(file.response) : file.response
               return res.data || file.url
-            }
-            catch {
+            } catch {
               return file.url
             }
           }

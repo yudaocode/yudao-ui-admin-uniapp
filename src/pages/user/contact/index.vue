@@ -22,7 +22,7 @@
             mode="aspectFit"
           />
         </view>
-        <text class="mb-40rpx text-32rpx font-bold text-gray-800">
+        <text class="mb-40rpx text-32rpx text-gray-800 font-bold">
           添加客服二维码
         </text>
         <text class="mb-16rpx text-28rpx text-gray-500">
@@ -53,6 +53,7 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { navigateBackPlus } from '@/utils'
 import { saveImageToAlbum } from '@/utils/download'
 
 definePage({
@@ -67,7 +68,7 @@ const servicePhone = ref('18818818818') // 客服电话号码
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 
 /** 拨打电话 */

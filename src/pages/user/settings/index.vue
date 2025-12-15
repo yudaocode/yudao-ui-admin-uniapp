@@ -66,6 +66,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
+import { navigateBackPlus } from '@/utils'
 
 definePage({
   style: {
@@ -80,7 +81,7 @@ const storageSize = ref('') // 本地缓存大小
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 
 /** 获取应用版本号 */

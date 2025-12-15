@@ -40,6 +40,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useToast } from 'wot-design-uni'
+import { navigateBackPlus } from '@/utils'
 import PasswordForm from './components/password-form.vue'
 
 definePage({
@@ -54,7 +55,7 @@ const showPasswordPopup = ref(false) // 密码弹窗相关
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 
 /** 打开修改密码弹窗 */

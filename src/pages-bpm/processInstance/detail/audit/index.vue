@@ -114,7 +114,7 @@ async function handleSubmit() {
         icon: 'success',
       })
       setTimeout(() => {
-        uni.navigateBack()
+        handleBack()
       }, 1500)
     }
   } catch (error) {

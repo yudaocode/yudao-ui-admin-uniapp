@@ -48,6 +48,7 @@ import { useToast } from 'wot-design-uni'
 import { getUserProfile, updateUserProfile } from '@/api/system/user/profile'
 import { getDictLabel } from '@/hooks/useDict'
 import { useUserStore } from '@/store/user'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { uploadFileFromPath } from '@/utils/uploadFile'
 import Form from './components/form.vue'
@@ -75,7 +76,7 @@ const formValue = ref<string | number>('')
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages/user/index')
 }
 
 /** 加载用户信息 */

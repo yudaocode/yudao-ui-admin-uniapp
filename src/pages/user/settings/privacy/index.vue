@@ -13,19 +13,19 @@
     <!-- 协议内容 -->
     <view class="p-32rpx">
       <view class="mb-40rpx text-center">
-        <text class="text-36rpx font-bold text-gray-800">隐私保护政策</text>
+        <text class="text-36rpx text-gray-800 font-bold">隐私保护政策</text>
       </view>
 
-      <view class="text-28rpx leading-relaxed text-gray-600">
+      <view class="text-28rpx text-gray-600 leading-relaxed">
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">引言</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">引言</text>
           <text class="block">
             芋道移动端（以下简称"我们"）非常重视用户的隐私和个人信息保护。本隐私政策旨在向您说明我们如何收集、使用、存储和保护您的个人信息。请您在使用我们的服务前，仔细阅读并理解本隐私政策。
           </text>
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">一、我们收集的信息</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">一、我们收集的信息</text>
           <text class="block">
             1.1 账号信息：当您注册账号时，我们会收集您的手机号码、邮箱地址等信息。
           </text>
@@ -41,7 +41,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">二、信息的使用</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">二、信息的使用</text>
           <text class="block">
             2.1 为您提供服务：我们使用收集的信息来提供、维护和改进我们的服务。
           </text>
@@ -57,7 +57,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">三、信息的存储</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">三、信息的存储</text>
           <text class="block">
             3.1 我们会采取合理的安全措施来保护您的个人信息，防止未经授权的访问、使用或泄露。
           </text>
@@ -70,7 +70,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">四、信息的共享</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">四、信息的共享</text>
           <text class="block">
             4.1 未经您的同意，我们不会向第三方共享您的个人信息，但以下情况除外：
           </text>
@@ -86,7 +86,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">五、您的权利</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">五、您的权利</text>
           <text class="block">
             5.1 访问权：您有权访问我们持有的关于您的个人信息。
           </text>
@@ -102,7 +102,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">六、未成年人保护</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">六、未成年人保护</text>
           <text class="block">
             6.1 我们非常重视对未成年人个人信息的保护。如果您是未满18周岁的未成年人，请在监护人的陪同下阅读本政策。
           </text>
@@ -112,7 +112,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">七、政策更新</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">七、政策更新</text>
           <text class="block">
             7.1 我们可能会不时更新本隐私政策。更新后的政策将在应用内公布。
           </text>
@@ -122,7 +122,7 @@
         </view>
 
         <view class="mb-32rpx">
-          <text class="mb-16rpx block font-bold text-gray-800">八、联系我们</text>
+          <text class="mb-16rpx block text-gray-800 font-bold">八、联系我们</text>
           <text class="block">
             如果您对本隐私政策有任何疑问、意见或建议，请通过以下方式联系我们：
           </text>
@@ -143,6 +143,8 @@
 </template>
 
 <script lang="ts" setup>
+import { navigateBackPlus } from '@/utils'
+
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -152,6 +154,6 @@ definePage({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 </script>
