@@ -5,6 +5,8 @@ export type CustomRequestOptions = UniApp.RequestOptions & {
   query?: Record<string, any>
   /** 出错时是否隐藏错误提示 */
   hideErrorToast?: boolean
+  /** 是否返回原始数据 add by panda 25.12.10 */
+  original?: boolean
 } & IUniUploadFileOptions // 添加uni.uploadFile参数类型
 
 // 通用响应格式（兼容 msg + message 字段）
@@ -32,6 +34,3 @@ export interface PageResult<T> {
   list: T[]
   total: number
 }
-
-/** 加载状态枚举 - 从 wot-design-uni 重新导出 */
-export type { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
