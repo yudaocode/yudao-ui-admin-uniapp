@@ -61,9 +61,9 @@
     <!-- 更多操作菜单 -->
     <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
     <!-- 重置密码弹窗 -->
-    <PasswordForm v-model="passwordFormVisible" :user-id="props.id" @success="getDetail" />
+    <PasswordForm v-model="passwordFormVisible" :user-id="Number(props.id)" @success="getDetail" />
     <!-- 分配角色弹窗 -->
-    <RoleAssignForm v-model="roleAssignFormVisible" :user-id="props.id" @success="getDetail" />
+    <RoleAssignForm v-model="roleAssignFormVisible" :user-id="Number(props.id)" @success="getDetail" />
   </view>
 </template>
 
@@ -80,7 +80,7 @@ import RoleAssignForm from './components/role-assign-form.vue'
 import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
-  id: number
+  id: string
 }>()
 
 definePage({
@@ -125,7 +125,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getUser(props.id)
+  formData.value = await getUser(Number(props.id))
 }
 
 /** 编辑用户 */
@@ -149,7 +149,7 @@ function handleDelete() {
       }
       deleting.value = true
       try {
-        await deleteUser(props.id)
+        await deleteUser(Number(props.id))
         toast.success('删除成功')
         setTimeout(() => {
           handleBack()
@@ -182,7 +182,7 @@ function handleUpdateStatus() {
       if (!res.confirm) {
         return
       }
-      await updateUserStatus(props.id, formData.value.status === 1 ? 0 : 1)
+      await updateUserStatus(Number(props.id), formData.value.status === 1 ? 0 : 1)
       toast.success(isDisable ? '禁用成功' : '开启成功')
       await getDetail()
     },

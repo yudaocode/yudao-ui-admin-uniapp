@@ -6,13 +6,14 @@
       title="用户管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center" @click="searchVisible = !searchVisible">
-          <wd-icon name="search" size="20px" />
-        </view>
-      </template>
-    </wd-navbar>
+    />
+
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 用户列表 -->
     <view class="p-24rpx">
@@ -62,13 +63,6 @@
       />
     </view>
 
-    <!-- 搜索弹窗 -->
-    <SearchForm
-      v-model="searchVisible"
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
 
     <!-- 新增按钮 -->
     <!-- TODO @芋艿：【优化：全局样式】后续要全局样式么 -->
@@ -105,7 +99,6 @@ const { hasAccessByCodes } = useAccess()
 const total = ref(0) // 列表的总页数
 const list = ref<User[]>([]) // 列表的数据
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
-const searchVisible = ref(false) // 搜索弹窗
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -143,7 +136,7 @@ function handleQuery(data?: SearchFormData) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  getList()
+  handleQuery()
 }
 
 /** 加载更多 */

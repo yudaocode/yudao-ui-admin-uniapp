@@ -109,7 +109,7 @@ import PostPicker from './components/post-picker.vue'
 import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
-  id?: number
+  id?: string
 }>()
 
 definePage({
@@ -156,7 +156,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getUser(props.id)
+  formData.value = await getUser(Number(props.id))
 }
 
 /** 提交表单 */
