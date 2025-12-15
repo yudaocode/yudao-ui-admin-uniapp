@@ -29,8 +29,8 @@
  * @description 分发验证码使用
  */
 import { computed, ref, watchEffect } from 'vue'
-import VerifyPoints from './Verify/VerifyPoints.vue'
-import VerifySlide from './Verify/VerifySlide.vue'
+import VerifyPoints from './verify/verify-points.vue'
+import VerifySlide from './verify/verify-slide.vue'
 
 defineOptions({
   options: {

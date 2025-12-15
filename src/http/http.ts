@@ -100,7 +100,7 @@ export function http<T>(options: CustomRequestOptions) {
 
         // 处理其他成功状态（HTTP状态码200-299）
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          // add by panda 25.12.10：如果设置了 original 为 true，则返回原始数据
+          // add by panda 25.12.10：如果设置了 original 为 true，则返回原始数据。例如说：滑块验证码，有自己的返回格式
           if (options.original) {
             return resolve(responseData as unknown as T)
           }

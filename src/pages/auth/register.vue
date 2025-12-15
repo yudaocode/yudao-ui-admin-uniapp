@@ -48,6 +48,16 @@
           no-border
         />
       </view>
+      <view v-if="captchaEnabled">
+        <Verify
+          ref="verifyRef"
+          :captcha-type="captchaType"
+          explain="向右滑动完成验证"
+          :img-size="{ width: '300px', height: '150px' }"
+          mode="pop"
+          @success="verifySuccess"
+        />
+      </view>
 
       <!-- 用户协议 -->
       <view class="mb-24rpx flex items-center">
@@ -89,6 +99,7 @@ import { useTokenStore } from "@/store/token";
 import { redirectAfterLogin } from "@/utils";
 import Header from "./components/header.vue";
 import TenantPicker from "./components/tenant-picker.vue";
+import { Verify } from '@/components/verifition';
 
 defineOptions({
   name: "RegisterPage",
@@ -104,13 +115,29 @@ const toast = useToast();
 const loading = ref(false); // 加载状态
 const agreePolicy = ref(false); // 用户协议勾选
 const tenantPickerRef = ref<InstanceType<typeof TenantPicker>>(); // 租户选择器引用
+const captchaEnabled = import.meta.env.VITE_APP_CAPTCHA_ENABLE === 'true'; // 验证码开关
+const verifyRef = ref();
+const captchaType = ref('blockPuzzle'); // 滑块验证码 blockPuzzle|clickWord
 
 const formData = reactive({
   username: "",
   nickname: "",
   password: "",
   confirmPassword: "",
+  captchaVerification: "", // 验证码校验值
 }); // 表单数据
+
+/** 获取验证码 */
+async function getCode() {
+  // 情况一，未开启：则直接注册
+  if (!captchaEnabled) {
+    await verifySuccess({});
+  } else {
+    // 情况二，已开启：则展示验证码；只有完成验证码的情况，才进行注册
+    // 弹出验证码
+    verifyRef.value.show();
+  }
+}
 
 /** 注册处理 */
 async function handleRegister() {
@@ -141,11 +168,16 @@ async function handleRegister() {
     toast.warning("两次输入的密码不一致");
     return;
   }
+  await getCode();
+}
 
+/** 验证码验证成功回调 */
+async function verifySuccess(params: any) {
   loading.value = true;
   try {
     // 调用注册接口
     const tokenStore = useTokenStore();
+    formData.captchaVerification = params.captchaVerification;
     await tokenStore.login({
       type: "register",
       ...formData,

@@ -29,10 +29,15 @@
       </view>
       <view v-if="captchaEnabled">
         <Verify
-          ref="verifyRef" :captcha-type="captchaType" explain="向右滑动完成验证"
-          :img-size="{ width: '300px', height: '150px' }" mode="pop" @success="verifySuccess"
+          ref="verifyRef"
+          :captcha-type="captchaType"
+          explain="向右滑动完成验证"
+          :img-size="{ width: '300px', height: '150px' }"
+          mode="pop"
+          @success="verifySuccess"
         />
       </view>
+
       <!-- 登录按钮 -->
       <view class="mb-2 mt-2 flex justify-between">
         <text class="text-28rpx text-[#1890ff]" @click="goToSmsLogin">
@@ -86,7 +91,7 @@ import { useTokenStore } from '@/store/token'
 import { ensureDecodeURIComponent, redirectAfterLogin } from '@/utils'
 import Header from './components/header.vue'
 import TenantPicker from './components/tenant-picker.vue'
-import Verify from './components/Verifition/Verify.vue'
+import { Verify } from '@/components/verifition';
 
 defineOptions({
   name: 'LoginPage',
@@ -149,7 +154,8 @@ async function handleLogin() {
   }
   await getCode()
 }
-async function verifySuccess(params) {
+
+async function verifySuccess(params: any) {
   loading.value = true
   try {
     // 调用登录接口

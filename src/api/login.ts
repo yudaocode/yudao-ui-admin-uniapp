@@ -65,19 +65,12 @@ export interface AuthResetPasswordReqVO {
   password: string
 }
 
-/**
- * 获取验证码
- * @returns ICaptcha 验证码
- */
+/** 获取验证码 */
 export function getCode(data: any) {
   return http.post<ICaptcha>('/system/captcha/get', data, null, null, { original: true })
 }
 
-/**
- * 校验验证码
- * @param data 验证码校验参数
- * @returns Promise 包含校验结果
- */
+/** 校验验证码 */
 export function checkCaptcha(data: any) {
   return http.post<boolean>('/system/captcha/check', data, null, null, { original: true })
 }
@@ -117,24 +110,12 @@ export function smsResetPassword(data: AuthResetPasswordReqVO) {
   return http.post<boolean>('/system/auth/reset-password', data)
 }
 
-/**
- * 刷新token
- * @param refreshToken 刷新token
- */
+/** 刷新token */
 export function refreshToken(refreshToken: string) {
   return http.post<IDoubleTokenRes>(`/system/auth/refresh-token?refreshToken=${refreshToken}`)
 }
 
-/**
- * 获取用户信息
- */
-export function getUserInfo() {
-  return http.get<IUserInfoRes>('/user/info')
-}
-
-/**
- * 获取权限信息
- */
+/** 获取权限信息 */
 export function getAuthPermissionInfo() {
   return http.get<AuthPermissionInfo>('/system/auth/get-permission-info')
 }
@@ -144,20 +125,7 @@ export function logout() {
   return http.post<void>('/system/auth/logout')
 }
 
-/**
- * 修改用户信息
- */
-export function updateInfo(data: IUpdateInfo) {
-  return http.post('/user/updateInfo', data)
-}
-
-/**
- * 修改用户密码
- */
-export function updateUserPassword(data: IUpdatePassword) {
-  return http.post('/user/updatePassword', data)
-}
-
+// TODO @芋艿：三方登录
 /**
  * 获取微信登录凭证
  * @returns Promise 包含微信登录凭证(code)
@@ -172,6 +140,7 @@ export function getWxCode() {
   })
 }
 
+// TODO @芋艿：三方登录
 /**
  * 微信登录
  * @param params 微信登录参数，包含code
