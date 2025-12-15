@@ -1,7 +1,6 @@
 import type { PageMetaDatum, SubPackages } from '@uni-helper/vite-plugin-uni-pages'
 import { isMpWeixin } from '@uni-helper/uni-env'
 import { pages, subPackages } from '@/pages.json'
-import { tabbarList } from '@/tabbar/config'
 import { isPageTabbar } from '@/tabbar/store'
 
 export type PageInstance = Page.PageInstance<AnyObject, object> & { $page: Page.PageInstance<AnyObject, object> & { fullPath: string } }
@@ -175,21 +174,53 @@ export const isDoubleTokenMode = import.meta.env.VITE_AUTH_MODE === 'double'
  */
 export const HOME_PAGE = `/${(pages as PageMetaDatum[]).find(page => page.type === 'home')?.path || (pages as PageMetaDatum[])[0].path}`
 
-// TODO @芋艿：这里要不要换成 HOME_PAGE？
 /**
  * 登录成功后跳转
- * @param redirectUrl 重定向地址，为空则跳转到默认首页（tabbar 第一个页面）
+ *
+ * @author 芋艿
+ * @param redirectUrl 重定向地址，为空则跳转到默认首页（HOME_PAGE）
  */
 export function redirectAfterLogin(redirectUrl?: string) {
-  let path = redirectUrl || tabbarList[0].pagePath
+  let path = redirectUrl || HOME_PAGE
   if (!path.startsWith('/')) {
     path = `/${path}`
   }
   const { path: _path } = parseUrlToObj(path)
   if (isPageTabbar(_path)) {
     uni.switchTab({ url: path })
-  }
-  else {
+  } else {
     uni.navigateBack()
+  }
+}
+
+/**
+ * 增强的返回方法
+ * 1. 如果存在上一页，则返回上一页
+ * 2. 如果不存在上一页，则跳转到传入的 fallbackUrl 地址
+ * 3. 如果 fallbackUrl 也不存在，则跳转到首页
+ *
+ * @author 芋艿
+ * @param fallbackUrl 备选跳转地址，当不存在上一页时使用
+ */
+export function navigateBackPlus(fallbackUrl?: string) {
+  const pages = getCurrentPages()
+  // 情况一：如果存在上一页（页面栈长度大于 1），则直接返回
+  if (pages.length > 1) {
+    uni.navigateBack()
+    return
+  }
+
+  // 情况二 + 三：不存在上一页，尝试跳转到传入的 fallbackUrl
+  let targetUrl = fallbackUrl || HOME_PAGE
+  // 确保路径以 / 开头
+  if (!targetUrl.startsWith('/')) {
+    targetUrl = `/${targetUrl}`
+  }
+  // 解析路径，判断是否是 tabbar 页面
+  const { path } = parseUrlToObj(targetUrl)
+  if (isPageTabbar(path)) {
+    uni.switchTab({ url: targetUrl })
+  } else {
+    uni.reLaunch({ url: targetUrl })
   }
 }

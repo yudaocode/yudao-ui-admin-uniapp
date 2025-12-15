@@ -92,6 +92,7 @@ import { getUserPage } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
+import { navigateBackPlus } from '@/utils';
 
 definePage({
   style: {
@@ -114,7 +115,7 @@ const queryParams = reactive({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 /** 查询用户列表 */

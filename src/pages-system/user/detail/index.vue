@@ -77,6 +77,7 @@ import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import PasswordForm from './components/password-form.vue'
 import RoleAssignForm from './components/role-assign-form.vue'
+import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
   id: number
@@ -116,7 +117,7 @@ const hasMoreActions = computed(() => moreActions.value.length > 0)
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/user/index')
 }
 
 /** 加载用户详情 */

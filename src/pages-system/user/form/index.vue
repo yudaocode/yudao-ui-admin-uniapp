@@ -106,6 +106,7 @@ import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { isEmail, isMobile } from '@/utils/validator'
 import DeptPicker from './components/dept-picker.vue'
 import PostPicker from './components/post-picker.vue'
+import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
   id?: number
@@ -147,7 +148,7 @@ const formRef = ref()
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/user/index')
 }
 
 /** 加载用户详情 */
