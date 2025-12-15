@@ -1,4 +1,20 @@
 <template>
+  <!-- 搜索框入口 -->
+  <view class="flex items-center bg-white pr-30rpx">
+    <view class="flex-1">
+      <wd-search
+        :placeholder="searchPlaceholder"
+        :hide-cancel="true"
+        disabled
+        @click="visible = true"
+      />
+    </view>
+    <view class="text-28rpx text-[#1890ff]" @click="handleReadAll">
+      全部已读
+    </view>
+  </view>
+
+  <!-- 搜索弹窗 -->
   <wd-popup
     v-model="visible"
     position="top"
@@ -101,20 +117,39 @@ export interface SearchFormData {
 }
 
 const props = defineProps<{
-  modelValue: boolean
-  searchParams?: Partial<SearchFormData>
+  searchParams?: Partial<SearchFormData> // 初始搜索参数
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
   'search': [data: SearchFormData]
   'reset': []
+  'readAll': []
 }>()
 
-const visible = computed({
-  get: () => props.modelValue,
-  set: (val: boolean) => emit('update:modelValue', val),
+const visible = ref(false)
+
+/** 搜索条件 placeholder 拼接 */
+const searchPlaceholder = computed(() => {
+  const conditions: string[] = []
+  if (props.searchParams?.readStatus === 1) {
+    conditions.push('已读')
+  } else if (props.searchParams?.readStatus === 0) {
+    conditions.push('未读')
+  }
+  if (props.searchParams?.createTime?.[0] || props.searchParams?.createTime?.[1]) {
+    const start = props.searchParams.createTime[0] ? formatDate(props.searchParams.createTime[0]) : ''
+    const end = props.searchParams.createTime[1] ? formatDate(props.searchParams.createTime[1]) : ''
+    if (start || end) {
+      conditions.push(`${start}~${end}`)
+    }
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索消息'
 })
+
+/** 全部已读 */
+function handleReadAll() {
+  emit('readAll')
+}
 
 const formData = reactive<SearchFormData>({
   readStatus: -1,
@@ -149,7 +184,7 @@ function handleEndCancel() {
 }
 
 /** 监听弹窗打开，同步外部参数 */
-watch(() => props.modelValue, (val) => {
+watch(visible, (val) => {
   if (val && props.searchParams) {
     formData.readStatus = props.searchParams.readStatus ?? -1
     formData.createTime = props.searchParams.createTime ?? [undefined, undefined]

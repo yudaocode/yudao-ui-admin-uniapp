@@ -1,22 +1,18 @@
 <template>
   <view class="page-container">
     <!-- 顶部导航栏 -->
-    <!-- TODO @AI：待修复 -->
     <wd-navbar
       title="我的消息"
       placeholder safe-area-inset-top fixed
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <view @click="handleReadAll">
-            <wd-icon name="check-circle" size="20px" />
-          </view>
-          <view @click="searchVisible = !searchVisible">
-            <wd-icon name="search" size="20px" />
-          </view>
-        </view>
-      </template>
-    </wd-navbar>
+    />
+
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+      @read-all="handleReadAll"
+    />
 
     <!-- 消息列表 -->
     <view class="p-24rpx">
@@ -79,14 +75,6 @@
       />
     </view>
 
-    <!-- 搜索弹窗 -->
-    <SearchForm
-      v-model="searchVisible"
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
-
     <!-- 详情弹窗 -->
     <DetailPopup ref="detailPopupRef" />
   </view>
@@ -105,7 +93,6 @@ import {
   updateNotifyMessageRead,
 } from '@/api/system/notify'
 import { getDictLabel } from '@/hooks/useDict'
-import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange, formatDateTime } from '@/utils/date'
 import DetailPopup from './components/detail-popup.vue'
@@ -122,7 +109,6 @@ const toast = useToast()
 const total = ref(0) // 列表的总页数
 const list = ref<NotifyMessage[]>([]) // 列表的数据
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
-const searchVisible = ref(false) // 搜索弹窗
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
