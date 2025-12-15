@@ -109,7 +109,7 @@ import PostPicker from './components/post-picker.vue'
 import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
-  id?: string
+  id?: number | any
 }>()
 
 definePage({

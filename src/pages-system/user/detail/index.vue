@@ -61,9 +61,9 @@
     <!-- 更多操作菜单 -->
     <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
     <!-- 重置密码弹窗 -->
-    <PasswordForm v-model="passwordFormVisible" :user-id="Number(props.id)" @success="getDetail" />
+    <PasswordForm v-model="passwordFormVisible" :user-id="props.id" @success="getDetail" />
     <!-- 分配角色弹窗 -->
-    <RoleAssignForm v-model="roleAssignFormVisible" :user-id="Number(props.id)" @success="getDetail" />
+    <RoleAssignForm v-model="roleAssignFormVisible" :user-id="props.id" @success="getDetail" />
   </view>
 </template>
 
@@ -80,7 +80,7 @@ import RoleAssignForm from './components/role-assign-form.vue'
 import { navigateBackPlus } from '@/utils';
 
 const props = defineProps<{
-  id: string
+  id?: number | any
 }>()
 
 definePage({
@@ -127,7 +127,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getUser(Number(props.id))
+    formData.value = await getUser(props.id)
   } finally {
     toast.close()
   }

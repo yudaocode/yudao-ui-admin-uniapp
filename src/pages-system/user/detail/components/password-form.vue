@@ -41,7 +41,7 @@ import { resetUserPassword } from '@/api/system/user'
 
 const props = defineProps<{
   modelValue: boolean
-  userId: number
+  userId: number | any
 }>()
 
 const emit = defineEmits<{
