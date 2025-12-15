@@ -70,7 +70,7 @@ export interface AuthResetPasswordReqVO {
  * @returns ICaptcha 验证码
  */
 export function getCode(data: any) {
-  return http.postOriginal<ICaptcha>('/system/captcha/get', data)
+  return http.post<ICaptcha>('/system/captcha/get', data, null, null, { original: true })
 }
 
 /**
@@ -79,7 +79,7 @@ export function getCode(data: any) {
  * @returns Promise 包含校验结果
  */
 export function checkCaptcha(data: any) {
-  return http.postOriginal('/system/captcha/check', data)
+  return http.post<boolean>('/system/captcha/check', data, null, null, { original: true })
 }
 
 /** 使用账号密码登录 */

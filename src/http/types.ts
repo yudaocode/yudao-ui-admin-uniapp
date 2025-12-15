@@ -34,3 +34,5 @@ export interface PageResult<T> {
   list: T[]
   total: number
 }
+/** 加载状态枚举 - 从 wot-design-uni 重新导出 */
+export type { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'

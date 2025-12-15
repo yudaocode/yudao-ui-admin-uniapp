@@ -200,24 +200,8 @@ export function httpDelete<T>(url: string, query?: Record<string, any>, header?:
   })
 }
 
-/**
- * POST 请求（返回原始数据）
- */
-export function httpPostOriginal<T>(url: string, data?: Record<string, any>, query?: Record<string, any>, header?: Record<string, any>, options?: Partial<CustomRequestOptions>) {
-  return http<T>({
-    url,
-    data,
-    query,
-    method: 'POST',
-    header,
-    original: true,
-    ...options,
-  })
-}
-
 // 支持与 axios 类似的API调用
 http.get = httpGet
 http.post = httpPost
 http.put = httpPut
 http.delete = httpDelete
-http.postOriginal = httpPostOriginal
