@@ -3,6 +3,9 @@
  */
 
 import { isH5, isMpWeixin } from '@uni-helper/uni-env'
+import { useToast } from 'wot-design-uni'
+
+const toast = useToast()
 
 /** 保存图片到相册 */
 export async function saveImageToAlbum(url: string, fileName?: string): Promise<void> {
@@ -20,12 +23,16 @@ export async function saveImageToAlbum(url: string, fileName?: string): Promise<
           if (downloadResult.statusCode === 200) {
             saveToAlbum(downloadResult.tempFilePath, resolve, reject)
           } else {
-            uni.showToast({ icon: 'none', title: '下载失败' })
+            // 注释 by 芋艿：使用 wd-toast 替代
+            // uni.showToast({ icon: 'none', title: '下载失败' })
+            toast.show('下载失败')
             reject(new Error('Download failed'))
           }
         },
         fail: (err) => {
-          uni.showToast({ icon: 'none', title: '下载失败' })
+          // 注释 by 芋艿：使用 wd-toast 替代
+          // uni.showToast({ icon: 'none', title: '下载失败' })
+          toast.show('下载失败')
           reject(err)
         },
       })
@@ -45,10 +52,11 @@ function saveToAlbum(
   uni.saveImageToPhotosAlbum({
     filePath,
     success: () => {
-      uni.showToast({
-        icon: 'success',
-        title: '已保存到相册',
-      })
+      // uni.showToast({
+      //   icon: 'success',
+      //   title: '已保存到相册',
+      // })
+      toast.success('已保存到相册')
       resolve()
     },
     fail: (err) => {
@@ -64,23 +72,22 @@ function saveToAlbum(
                   if (settingRes.authSetting['scope.writePhotosAlbum']) {
                     // 重新尝试保存
                     saveToAlbum(filePath, resolve, reject)
-                  }
-                  else {
+                  } else {
                     reject(new Error('User denied'))
                   }
                 },
               })
-            }
-            else {
+            } else {
               reject(new Error('User cancelled'))
             }
           },
         })
       } else {
-        uni.showToast({
-          icon: 'none',
-          title: '保存失败',
-        })
+        // uni.showToast({
+        //   icon: 'none',
+        //   title: '保存失败',
+        // })
+        toast.show('保存失败')
         reject(err)
       }
     },

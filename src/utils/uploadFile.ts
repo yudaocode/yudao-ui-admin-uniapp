@@ -8,6 +8,7 @@
  * 通过环境变量 VITE_UPLOAD_TYPE 配置
  */
 
+import { useToast } from 'wot-design-uni'
 import * as FileApi from '@/api/infra/file'
 
 /** 上传类型 */
@@ -163,6 +164,7 @@ export function useUpload<T = string>(url: string, formData: Record<string, any>
   const data = ref<T>()
   /** 上传进度（0-100） */
   const progress = ref(0)
+  const toast = useToast()
 
   /** 解构上传选项，设置默认值 */
   const {
@@ -192,10 +194,12 @@ export function useUpload<T = string>(url: string, formData: Record<string, any>
   const checkFileSize = (size: number) => {
     const sizeInMB = size / 1024 / 1024
     if (sizeInMB > maxSize) {
-      uni.showToast({
-        title: `文件大小不能超过${maxSize}MB`,
-        icon: 'none',
-      })
+      // 注释 by 芋艿：使用 wd-toast 替代
+      // uni.showToast({
+      //   title: `文件大小不能超过${maxSize}MB`,
+      //   icon: 'none',
+      // })
+      toast.show(`文件大小不能超过${maxSize}MB`)
       return false
     }
     return true

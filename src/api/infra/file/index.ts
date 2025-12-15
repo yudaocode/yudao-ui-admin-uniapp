@@ -1,3 +1,4 @@
+import { useToast } from 'wot-design-uni'
 import { http } from '@/http/http'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
@@ -66,7 +67,8 @@ export function uploadFile(filePath: string, directory?: string): Promise<string
           if (result.code === 0) {
             resolve(result.data)
           } else {
-            uni.showToast({ icon: 'none', title: result.msg || '上传失败' })
+            const toast = useToast()
+            toast.show(result.msg || '上传失败')
             reject(new Error(result.msg || '上传失败'))
           }
         } else {

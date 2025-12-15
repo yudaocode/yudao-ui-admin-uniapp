@@ -8,6 +8,7 @@ import type {
 import type { IAuthLoginRes } from '@/api/types/login'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue' // 修复：导入 computed
+import { useToast } from 'wot-design-uni'
 import {
   login as _login,
   logout as _logout,
@@ -39,6 +40,7 @@ const tokenInfoState = isDoubleTokenMode
 export const useTokenStore = defineStore(
   'token',
   () => {
+    const toast = useToast()
     // 定义用户信息
     const tokenInfo = ref<IAuthLoginRes>({ ...tokenInfoState })
     // 设置用户信息
@@ -139,10 +141,12 @@ export const useTokenStore = defineStore(
         }
         // console.log('普通登录-res: ', res)
         await _postLogin(res)
-        uni.showToast({
-          title: `${typeName}成功`,
-          icon: 'success',
-        })
+        // 注释 by 芋艿：使用 wd-toast 替代
+        // uni.showToast({
+        //   title: `${typeName}成功`,
+        //   icon: 'success',
+        // })
+        toast.success(`${typeName}成功`)
         return res
       }
       catch (error) {
@@ -170,18 +174,22 @@ export const useTokenStore = defineStore(
         const res = await _wxLogin(code)
         console.log('微信登录-res: ', res)
         await _postLogin(res)
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success',
-        })
+        // 注释 by 芋艿：使用 wd-toast 替代
+        // uni.showToast({
+        //   title: '登录成功',
+        //   icon: 'success',
+        // })
+        toast.success('登录成功')
         return res
       }
       catch (error) {
         console.error('微信登录失败:', error)
-        uni.showToast({
-          title: '微信登录失败，请重试',
-          icon: 'error',
-        })
+        // 注释 by 芋艿：使用 wd-toast 替代
+        // uni.showToast({
+        //   title: '微信登录失败，请重试',
+        //   icon: 'error',
+        // })
+        toast.error('微信登录失败，请重试')
         throw error
       }
     }
