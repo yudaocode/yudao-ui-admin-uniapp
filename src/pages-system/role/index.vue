@@ -5,13 +5,14 @@
       title="角色管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center" @click="searchVisible = !searchVisible">
-          <wd-icon name="search" size="20px" />
-        </view>
-      </template>
-    </wd-navbar>
+    />
+
+    <!-- 搜索组件 -->
+    <SearchForm
+      :search-params="queryParams"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 角色列表 -->
     <view class="p-24rpx">
@@ -50,22 +51,14 @@
       />
     </view>
 
-    <!-- 搜索弹窗 -->
-    <SearchForm
-      v-model="searchVisible"
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
-
     <!-- 新增按钮 -->
-    <!-- TODO @芋艿：【优化：全局样式】后续要全局样式么 -->
-    <view
-      class="fixed bottom-100rpx right-32rpx z-10 h-100rpx w-100rpx flex items-center justify-center rounded-full bg-[#1890ff] shadow-lg"
+    <wd-fab
+      v-if="hasAccessByCodes(['system:role:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
       @click="handleAdd"
-    >
-      <wd-icon name="add" size="24px" color="#fff" />
-    </view>
+    />
   </view>
 </template>
 
@@ -76,6 +69,8 @@ import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, reactive, ref } from 'vue'
 import { getRolePage } from '@/api/system/role'
+import { useAccess } from '@/hooks/useAccess'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
 
@@ -86,10 +81,10 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const total = ref(0) // 列表的总页数
 const list = ref<Role[]>([]) // 列表的数据
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
-const searchVisible = ref(false) // 搜索弹窗
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -100,7 +95,7 @@ const queryParams = reactive({
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus()
 }
 
 /** 查询角色列表 */

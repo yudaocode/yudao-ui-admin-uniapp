@@ -8,9 +8,9 @@
     />
 
     <!-- 表单区域 -->
-    <view class="p-24rpx">
+    <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
-        <wd-cell-group custom-class="cell-group" border>
+        <wd-cell-group border>
           <wd-input
             v-model="formData.name"
             label="角色名称"
@@ -54,7 +54,7 @@
     </view>
 
     <!-- 底部保存按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <wd-button
         type="primary"
         block
@@ -72,10 +72,11 @@ import type { Role } from '@/api/system/role'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createRole, getRole, updateRole } from '@/api/system/role'
+import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 
 const props = defineProps<{
-  id?: number
+  id?: number | any
 }>()
 
 definePage({
@@ -107,7 +108,7 @@ const formRef = ref()
 
 /** 返回上一页 */
 function handleBack() {
-  uni.navigateBack()
+  navigateBackPlus('/pages-system/role/index')
 }
 
 /** 加载角色详情 */
@@ -149,13 +150,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.cell-group) {
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-shadow: 0 3rpx 8rpx rgba(24, 144, 255, 0.06);
-}
-
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>
