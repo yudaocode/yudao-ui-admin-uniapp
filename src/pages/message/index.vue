@@ -106,9 +106,9 @@ definePage({
 })
 
 const toast = useToast()
-const total = ref(0) // 列表的总页数
-const list = ref<NotifyMessage[]>([]) // 列表的数据
-const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
+const total = ref(0)
+const list = ref<NotifyMessage[]>([])
+const loadMoreState = ref<LoadMoreState>('loading')
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
