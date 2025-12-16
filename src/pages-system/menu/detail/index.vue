@@ -78,9 +78,9 @@ definePage({
 })
 
 const toast = useToast()
-const formData = ref<Menu>() // 详情数据
-const deleting = ref(false) // 删除中
-const parentMenuName = ref('-') // 上级菜单名称
+const formData = ref<Menu>()
+const deleting = ref(false)
+const parentMenuName = ref('-')
 
 /** 返回上一页 */
 function handleBack() {

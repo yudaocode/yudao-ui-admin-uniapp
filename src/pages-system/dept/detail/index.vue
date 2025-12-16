@@ -60,10 +60,10 @@ definePage({
 })
 
 const toast = useToast()
-const formData = ref<Dept>() // 详情数据
-const deleting = ref(false) // 删除中
-const deptList = ref<Dept[]>([]) // 部门列表
-const userList = ref<User[]>([]) // 用户列表
+const formData = ref<Dept>()
+const deleting = ref(false)
+const deptList = ref<Dept[]>([])
+const userList = ref<User[]>([])
 
 /** 返回上一页 */
 function handleBack() {

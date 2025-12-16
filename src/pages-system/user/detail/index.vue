@@ -92,8 +92,8 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const formData = ref<User>() // 详情数据
-const deleting = ref(false) // 删除中
+const formData = ref<User>()
+const deleting = ref(false)
 const moreActionVisible = ref(false) // 更多操作菜单
 const passwordFormVisible = ref(false) // 密码表单弹窗
 const roleAssignFormVisible = ref(false) // 角色分配弹窗
