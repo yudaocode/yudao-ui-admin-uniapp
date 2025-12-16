@@ -1,20 +1,11 @@
 <template>
-  <!-- 搜索框入口 -->
-  <view class="flex items-center bg-white pr-30rpx">
-    <view class="flex-1">
-      <wd-search
-        :placeholder="searchPlaceholder"
-        :hide-cancel="true"
-        disabled
-        @click="visible = true"
-      />
-    </view>
-    <view class="text-28rpx text-[#1890ff]" @click="handleReadAll">
-      全部已读
-    </view>
-  </view>
+  <wd-search
+    :placeholder="searchPlaceholder"
+    :hide-cancel="true"
+    disabled
+    @click="visible = true"
+  />
 
-  <!-- 搜索弹窗 -->
   <wd-popup
     v-model="visible"
     position="top"
@@ -24,76 +15,38 @@
   >
     <view class="p-32rpx">
       <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
-        搜索消息
+        搜索通知公告
       </view>
+
       <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          已读状态
+          公告标题
         </view>
-        <wd-radio-group v-model="formData.readStatus" shape="button" size="medium">
+        <wd-input
+          v-model="formData.title"
+          placeholder="请输入公告标题"
+          clearable
+        />
+      </view>
+
+      <view class="mb-32rpx">
+        <view class="mb-12rpx text-28rpx text-[#666]">
+          公告状态（0正常 1关闭）
+        </view>
+        <wd-radio-group v-model="formData.status" shape="button" size="medium">
           <wd-radio :value="-1">
             全部
           </wd-radio>
-          <wd-radio :value="1">
-            已读
-          </wd-radio>
-          <wd-radio :value="0">
-            未读
+          <wd-radio
+            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+            :key="dict.value"
+            :value="dict.value"
+          >
+            {{ dict.label }}
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="mb-32rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
-          发送时间
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <view class="flex-1" @click="showStartPicker = true">
-            <view
-              class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
-            >
-              {{ formatDate(formData.createTime?.[0]) || '开始日期' }}
-            </view>
-          </view>
-          <text class="text-28rpx text-[#999]">至</text>
-          <view class="flex-1" @click="showEndPicker = true">
-            <view
-              class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
-            >
-              {{ formatDate(formData.createTime?.[1]) || '结束日期' }}
-            </view>
-          </view>
-        </view>
-        <!-- 开始时间选择器 -->
-        <wd-datetime-picker-view
-          v-if="showStartPicker"
-          v-model="tempCreateTime[0]"
-          type="date"
-          :columns-height="200"
-        />
-        <view v-if="showStartPicker" class="mt-16rpx flex justify-end gap-16rpx">
-          <wd-button size="small" plain @click="handleStartCancel">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleStartConfirm">
-            确定
-          </wd-button>
-        </view>
-        <!-- 结束时间选择器 -->
-        <wd-datetime-picker-view
-          v-if="showEndPicker"
-          v-model="tempCreateTime[1]"
-          type="date"
-          :columns-height="200"
-        />
-        <view v-if="showEndPicker" class="mt-16rpx flex justify-end gap-16rpx">
-          <wd-button size="small" plain @click="handleEndCancel">
-            取消
-          </wd-button>
-          <wd-button size="small" type="primary" @click="handleEndConfirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
+
       <view class="w-full flex justify-center gap-24rpx">
         <wd-button class="flex-1" plain @click="handleReset">
           重置
@@ -108,22 +61,23 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { formatDate } from '@/utils/date'
+
+import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { DICT_TYPE } from '@/utils/constants'
 
 /** 搜索表单数据 */
 export interface SearchFormData {
-  readStatus: number // -1 表示全部, 0 未读, 1 已读
-  createTime?: [number | undefined, number | undefined]
+  title?: string
+  status?: number
 }
 
 const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
+  searchParams?: Partial<SearchFormData>
 }>()
 
 const emit = defineEmits<{
   search: [data: SearchFormData]
   reset: []
-  readAll: []
 }>()
 
 const visible = ref(false)
@@ -131,76 +85,35 @@ const visible = ref(false)
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.readStatus === 1) {
-    conditions.push('已读')
-  } else if (props.searchParams?.readStatus === 0) {
-    conditions.push('未读')
+  if (props.searchParams?.title) {
+    conditions.push(`公告标题:${props.searchParams.title}`)
   }
-  if (props.searchParams?.createTime?.[0] || props.searchParams?.createTime?.[1]) {
-    const start = props.searchParams.createTime[0] ? formatDate(props.searchParams.createTime[0]) : ''
-    const end = props.searchParams.createTime[1] ? formatDate(props.searchParams.createTime[1]) : ''
-    if (start || end) {
-      conditions.push(`${start}~${end}`)
-    }
+  if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
+    conditions.push(`公告状态（0正常 1关闭）:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索消息'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索通知公告'
 })
-
-/** 全部已读 */
-function handleReadAll() {
-  emit('readAll')
-}
 
 const formData = reactive<SearchFormData>({
-  readStatus: -1,
-  createTime: [undefined, undefined],
+  title: undefined,
+  status: -1 as number,
 })
 
-// 时间选择器状态
-const showStartPicker = ref(false)
-const showEndPicker = ref(false)
-const tempCreateTime = ref<[number, number]>([Date.now(), Date.now()])
-
-/** 开始时间确认 */
-function handleStartConfirm() {
-  formData.createTime = [tempCreateTime.value[0], formData.createTime?.[1]]
-  showStartPicker.value = false
-}
-
-/** 开始时间取消 */
-function handleStartCancel() {
-  showStartPicker.value = false
-}
-
-/** 结束时间确认 */
-function handleEndConfirm() {
-  formData.createTime = [formData.createTime?.[0], tempCreateTime.value[1]]
-  showEndPicker.value = false
-}
-
-/** 结束时间取消 */
-function handleEndCancel() {
-  showEndPicker.value = false
-}
-
-/** 监听弹窗打开，同步外部参数 */
 watch(visible, (val) => {
   if (val && props.searchParams) {
-    formData.readStatus = props.searchParams.readStatus ?? -1
-    formData.createTime = props.searchParams.createTime ?? [undefined, undefined]
+    formData.title = props.searchParams.title
+    formData.status = props.searchParams.status ?? -1
   }
 })
 
-/** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', { ...formData } as SearchFormData)
 }
 
-/** 重置 */
 function handleReset() {
-  formData.readStatus = -1
-  formData.createTime = [undefined, undefined]
+  formData.title = undefined
+  formData.status = -1
   visible.value = false
   emit('reset')
 }

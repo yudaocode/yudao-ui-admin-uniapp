@@ -144,7 +144,7 @@ definePage({
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑菜单' : '新增菜单')
-const formLoading = ref(false) // 提交中状态
+const formLoading = ref(false)
 const formData = ref<Menu>({
   id: undefined,
   name: '',

@@ -88,7 +88,7 @@ definePage({
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑角色' : '新增角色')
-const formLoading = ref(false) // 提交中状态
+const formLoading = ref(false)
 const formData = ref<Role>({
   id: undefined,
   name: '',
@@ -96,7 +96,6 @@ const formData = ref<Role>({
   sort: 0,
   status: CommonStatusEnum.ENABLE,
   remark: '',
-  createTime: '',
 })
 const formRules = {
   name: [{ required: true, message: '角色名称不能为空' }],

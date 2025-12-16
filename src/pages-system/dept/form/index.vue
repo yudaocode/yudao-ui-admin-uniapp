@@ -99,7 +99,7 @@ definePage({
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑部门' : '新增部门')
-const formLoading = ref(false) // 提交中状态
+const formLoading = ref(false)
 const formData = ref<Dept>({
   id: undefined,
   name: '',

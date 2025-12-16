@@ -10,8 +10,8 @@ export interface UserProfileVO {
   sex?: number
   avatar?: string
   loginIp: string
-  loginDate: string
-  createTime: string
+  loginDate: Date
+  createTime: Date
   roles: { id: number, name: string }[]
   dept: { id: number, name: string }
   posts: { id: number, name: string }[]

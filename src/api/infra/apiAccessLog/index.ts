@@ -17,12 +17,12 @@ export interface ApiAccessLog {
   operateModule: string
   operateName: string
   operateType: number
-  beginTime: string
-  endTime: string
+  beginTime: Date
+  endTime: Date
   duration: number
   resultCode: number
   resultMsg: string
-  createTime: string
+  createTime: Date
 }
 
 /** 获取 API 访问日志分页列表 */

@@ -16,7 +16,7 @@ export interface Menu {
   visible: boolean
   keepAlive: boolean
   alwaysShow?: boolean
-  createTime?: string
+  createTime?: Date
   children?: Menu[]
 }
 

@@ -10,7 +10,7 @@ export interface Dept {
   leaderUserId?: number
   phone?: string
   email?: string
-  createTime?: string
+  createTime?: Date
   children?: Dept[]
 }
 

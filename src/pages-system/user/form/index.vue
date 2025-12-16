@@ -124,7 +124,7 @@ definePage({
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑用户' : '新增用户')
-const formLoading = ref(false) // 提交中状态
+const formLoading = ref(false)
 const formData = ref<User>({
   id: undefined,
   username: '',

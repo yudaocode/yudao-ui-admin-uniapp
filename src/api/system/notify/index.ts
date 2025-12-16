@@ -13,8 +13,8 @@ export interface NotifyMessage {
   templateType: number
   templateParams: string
   readStatus: boolean
-  readTime: string
-  createTime: string
+  readTime: Date
+  createTime?: Date
 }
 
 /** 获取我的站内信分页 */

@@ -16,8 +16,8 @@ export interface Task {
   id: string
   name: string
   status: number
-  createTime: number
-  endTime?: number
+  createTime: Date
+  endTime?: Date
   reason?: string
   assigneeUser?: TaskUser
   ownerUser?: TaskUser

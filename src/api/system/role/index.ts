@@ -12,7 +12,7 @@ export interface Role {
   remark?: string
   dataScope?: number
   dataScopeDeptIds?: number[]
-  createTime: string
+  createTime?: Date
 }
 
 /** 获取角色分页列表 */

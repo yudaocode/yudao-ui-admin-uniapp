@@ -66,12 +66,10 @@ definePage({
 
 const toast = useToast()
 const formLoading = ref(false)
-const formRef = ref()
 const fileList = ref<UploadFile[]>([])
-
 const formData = ref({
   content: '',
-}) // 表单数据
+})
 const formRules = {
   content: [
     { required: true, message: '请输入反馈内容' },
@@ -81,7 +79,8 @@ const formRules = {
       message: '反馈内容至少10个字符',
     },
   ],
-} // 表单校验规则
+}
+const formRef = ref()
 
 /** 返回上一页 */
 function handleBack() {

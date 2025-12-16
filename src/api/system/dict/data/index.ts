@@ -11,7 +11,7 @@ export interface DictData {
   sort?: number
   status: number
   remark?: string
-  createTime?: string
+  createTime?: Date
 }
 
 /** 查询字典数据（精简）列表 */

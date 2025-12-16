@@ -13,7 +13,7 @@ export interface ApiErrorLog {
   requestUrl: string
   userIp: string
   userAgent: string
-  exceptionTime: string
+  exceptionTime: Date
   exceptionName: string
   exceptionMessage: string
   exceptionRootCauseMessage: string
@@ -24,9 +24,9 @@ export interface ApiErrorLog {
   exceptionLineNumber: number
   processUserId: number
   processStatus: number
-  processTime: string
+  processTime: Date
   resultCode: number
-  createTime: string
+  createTime: Date
 }
 
 /** 获取 API 错误日志分页列表 */
