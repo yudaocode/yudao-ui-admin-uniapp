@@ -59,7 +59,7 @@
             placeholder="请输入手机号码"
           />
           <wd-cell title="性别" title-width="180rpx" center prop="sex">
-            <wd-radio-group v-model="formData.sex" shape="button" size="medium">
+            <wd-radio-group v-model="formData.sex" shape="button">
               <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_USER_SEX)" :key="dict.value" :value="dict.value">
                 {{ dict.label }}
               </wd-radio>

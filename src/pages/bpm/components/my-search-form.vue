@@ -96,7 +96,7 @@
         <view class="mb-12rpx text-28rpx text-[#666]">
           流程状态
         </view>
-        <wd-radio-group v-model="formData.status" shape="button" size="medium">
+        <wd-radio-group v-model="formData.status" shape="button">
           <wd-radio :value="-1">
             全部
           </wd-radio>
@@ -158,6 +158,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<MySearchFormData>({
+  name: undefined,
+  processDefinitionId: undefined,
+  createTime: [undefined, undefined],
+  status: -1,
+  categoryId: undefined,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -176,13 +183,6 @@ const searchPlaceholder = computed(() => {
 
 const categoryList = ref<Category[]>([])
 const processDefinitionList = ref<ProcessDefinition[]>([])
-const formData = reactive<MySearchFormData>({
-  name: undefined,
-  processDefinitionId: undefined,
-  createTime: [undefined, undefined],
-  status: -1,
-  categoryId: undefined,
-})
 
 // 时间选择器状态
 const showStartPicker = ref(false)

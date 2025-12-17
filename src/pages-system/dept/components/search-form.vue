@@ -33,7 +33,7 @@
         <view class="mb-12rpx text-28rpx text-[#666]">
           状态
         </view>
-        <wd-radio-group v-model="formData.status" shape="button" size="medium">
+        <wd-radio-group v-model="formData.status" shape="button">
           <wd-radio :value="-1">
             全部
           </wd-radio>
@@ -79,6 +79,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<SearchFormData>({
+  name: undefined,
+  status: -1,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -90,11 +94,6 @@ const searchPlaceholder = computed(() => {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索部门'
-})
-
-const formData = reactive<SearchFormData>({
-  name: undefined,
-  status: -1,
 })
 
 /** 监听弹窗打开，同步外部参数 */

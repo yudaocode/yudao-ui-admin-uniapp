@@ -42,7 +42,7 @@
         <view class="mb-12rpx text-28rpx text-[#666]">
           处理状态
         </view>
-        <wd-radio-group v-model="formData.processStatus" shape="button" size="medium">
+        <wd-radio-group v-model="formData.processStatus" shape="button">
           <wd-radio :value="-1">
             全部
           </wd-radio>
@@ -89,6 +89,11 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<SearchFormData>({
+  userId: undefined,
+  applicationName: undefined,
+  processStatus: -1,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -104,12 +109,6 @@ const searchPlaceholder = computed(() => {
     conditions.push(`状态:${statusMap[props.searchParams.processStatus]}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索日志'
-})
-
-const formData = reactive<SearchFormData>({
-  userId: undefined,
-  applicationName: undefined,
-  processStatus: -1,
 })
 
 /** 监听弹窗打开，同步外部参数 */

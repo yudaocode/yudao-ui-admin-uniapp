@@ -33,7 +33,7 @@
         <view class="mb-12rpx text-28rpx text-[#666]">
           公告状态（0正常 1关闭）
         </view>
-        <wd-radio-group v-model="formData.status" shape="button" size="medium">
+        <wd-radio-group v-model="formData.status" shape="button">
           <wd-radio :value="-1">
             全部
           </wd-radio>
@@ -81,6 +81,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<SearchFormData>({
+  title: undefined,
+  status: -1 as number,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -92,11 +96,6 @@ const searchPlaceholder = computed(() => {
     conditions.push(`公告状态（0正常 1关闭）:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索通知公告'
-})
-
-const formData = reactive<SearchFormData>({
-  title: undefined,
-  status: -1 as number,
 })
 
 watch(visible, (val) => {
