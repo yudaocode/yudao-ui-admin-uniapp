@@ -71,6 +71,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<SearchFormData>({
+  userId: undefined,
+  applicationName: undefined,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -82,11 +86,6 @@ const searchPlaceholder = computed(() => {
     conditions.push(`应用名:${props.searchParams.applicationName}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索日志'
-})
-
-const formData = reactive<SearchFormData>({
-  userId: undefined,
-  applicationName: undefined,
 })
 
 /** 监听弹窗打开，同步外部参数 */

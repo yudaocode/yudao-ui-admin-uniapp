@@ -72,6 +72,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const formData = reactive<SearchFormData>({
+  name: undefined,
+  status: undefined,
+})
 
 /** 搜索条件 placeholder 拼接 */
 const searchPlaceholder = computed(() => {
@@ -86,11 +90,6 @@ const searchPlaceholder = computed(() => {
     }
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索菜单'
-})
-
-const formData = reactive<SearchFormData>({
-  name: undefined,
-  status: undefined,
 })
 
 /** 监听弹窗打开，同步外部参数 */

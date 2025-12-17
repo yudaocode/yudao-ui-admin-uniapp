@@ -60,6 +60,7 @@ function handleBack() {
 }
 
 /** 获取请求 URL */
+// TODO @AI：放在界面里，这里不要这么搞；
 function getRequestUrl() {
   if (formData.value?.requestMethod && formData.value?.requestUrl) {
     return `${formData.value.requestMethod} ${formData.value.requestUrl}`

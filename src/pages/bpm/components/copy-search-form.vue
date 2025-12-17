@@ -34,7 +34,7 @@
           抄送时间
         </view>
         <view class="flex items-center gap-16rpx">
-          <view class="flex-1" @click="showStartPicker = true">
+          <view class="flex-1" @click="visibleCreateTime[0] = true">
             <view
               class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
             >
@@ -42,7 +42,7 @@
             </view>
           </view>
           <text class="text-28rpx text-[#999]">至</text>
-          <view class="flex-1" @click="showEndPicker = true">
+          <view class="flex-1" @click="visibleCreateTime[1] = true">
             <view
               class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
             >
@@ -51,30 +51,30 @@
           </view>
         </view>
         <wd-datetime-picker-view
-          v-if="showStartPicker"
+          v-if="visibleCreateTime[0]"
           v-model="tempCreateTime[0]"
           type="date"
           :columns-height="200"
         />
-        <view v-if="showStartPicker" class="mt-16rpx flex justify-end gap-16rpx">
-          <wd-button size="small" plain @click="handleStartCancel">
+        <view v-if="visibleCreateTime[0]" class="mt-16rpx flex justify-end gap-16rpx">
+          <wd-button size="small" plain @click="handleCreateTime0Cancel">
             取消
           </wd-button>
-          <wd-button size="small" type="primary" @click="handleStartConfirm">
+          <wd-button size="small" type="primary" @click="handleCreateTime0Confirm">
             确定
           </wd-button>
         </view>
         <wd-datetime-picker-view
-          v-if="showEndPicker"
+          v-if="visibleCreateTime[1]"
           v-model="tempCreateTime[1]"
           type="date"
           :columns-height="200"
         />
-        <view v-if="showEndPicker" class="mt-16rpx flex justify-end gap-16rpx">
-          <wd-button size="small" plain @click="handleEndCancel">
+        <view v-if="visibleCreateTime[1]" class="mt-16rpx flex justify-end gap-16rpx">
+          <wd-button size="small" plain @click="handleCreateTime1Cancel">
             取消
           </wd-button>
-          <wd-button size="small" type="primary" @click="handleEndConfirm">
+          <wd-button size="small" type="primary" @click="handleCreateTime1Confirm">
             确定
           </wd-button>
         </view>
@@ -130,30 +130,29 @@ const formData = reactive<CopySearchFormData>({
 })
 
 // 时间选择器状态
-const showStartPicker = ref(false)
-const showEndPicker = ref(false)
+const visibleCreateTime = ref<[boolean, boolean]>([false, false])
 const tempCreateTime = ref<[number, number]>([Date.now(), Date.now()])
 
-/** 开始时间确认 */
-function handleStartConfirm() {
+/** 创建时间[0]确认 */
+function handleCreateTime0Confirm() {
   formData.createTime = [tempCreateTime.value[0], formData.createTime?.[1]]
-  showStartPicker.value = false
+  visibleCreateTime.value[0] = false
 }
 
-/** 开始时间取消 */
-function handleStartCancel() {
-  showStartPicker.value = false
+/** 创建时间[0]取消 */
+function handleCreateTime0Cancel() {
+  visibleCreateTime.value[0] = false
 }
 
-/** 结束时间确认 */
-function handleEndConfirm() {
+/** 创建时间[1]确认 */
+function handleCreateTime1Confirm() {
   formData.createTime = [formData.createTime?.[0], tempCreateTime.value[1]]
-  showEndPicker.value = false
+  visibleCreateTime.value[1] = false
 }
 
-/** 结束时间取消 */
-function handleEndCancel() {
-  showEndPicker.value = false
+/** 创建时间[1]取消 */
+function handleCreateTime1Cancel() {
+  visibleCreateTime.value[1] = false
 }
 
 /** 监听弹窗打开，同步外部参数 */
