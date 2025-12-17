@@ -69,6 +69,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#eb2f96',
         permission: 'system:post:query',
       },
+      {
+        key: 'notice',
+        name: '通知公告',
+        icon: 'spool',
+        url: '/pages-system/notice/index',
+        iconColor: '#faad14',
+        permission: 'system:notice:query',
+      },
     ],
   },
   {
