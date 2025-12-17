@@ -77,6 +77,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#faad14',
         permission: 'system:notice:query',
       },
+      {
+        key: 'operateLog',
+        name: '操作日志',
+        icon: 'notes',
+        url: '/pages-system/operate-log/index',
+        iconColor: '#722ed1',
+        permission: 'system:operate-log:query',
+      },
     ],
   },
   {
