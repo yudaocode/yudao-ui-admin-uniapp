@@ -121,16 +121,13 @@ const detailPopupRef = ref<InstanceType<typeof DetailPopup>>() // 详情弹窗
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    // 构建参数
-    const params = { ...queryParams } as any
+    const params: any = { ...queryParams }
     if (queryParams.readStatus !== -1) {
       params.readStatus = queryParams.readStatus === 1
     } else {
       delete params.readStatus
     }
     params.createTime = formatDateRange(queryParams.createTime)
-
-    // 执行查询
     const data = await getMyNotifyMessagePage(params)
     list.value = [...list.value, ...data.list]
     total.value = data.total

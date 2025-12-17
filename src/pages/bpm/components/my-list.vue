@@ -64,7 +64,7 @@
 
 <script lang="ts" setup>
 import type { MySearchFormData } from './my-search-form.vue'
-import type { ProcessInstance } from '@/api/bpm/processInstance'
+import {getProcessInstanceCopyPage, ProcessInstance} from '@/api/bpm/processInstance'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -91,7 +91,7 @@ const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: undefined as string | undefined,
-  createTime: undefined as number[] | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
   status: -1,
   categoryId: undefined as string | undefined,
 })
@@ -100,11 +100,11 @@ const queryParams = reactive({
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const params = {
+    const params: any = {
       ...queryParams,
       status: queryParams.status === -1 ? undefined : queryParams.status,
-      createTime: formatDateRange(queryParams.createTime as any),
     }
+    params.createTime = formatDateRange(queryParams.createTime)
     const data = await getProcessInstanceMyPage(params)
     list.value = [...list.value, ...data.list]
     total.value = data.total
@@ -127,7 +127,7 @@ function loadMore() {
 /** 搜索 */
 function handleSearch(data?: MySearchFormData) {
   queryParams.name = data?.name
-  queryParams.createTime = data?.createTime as any
+  queryParams.createTime = data?.createTime ?? [undefined, undefined]
   queryParams.status = data?.status ?? -1
   queryParams.categoryId = data?.categoryId
   queryParams.pageNo = 1

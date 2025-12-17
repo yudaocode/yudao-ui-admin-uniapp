@@ -85,17 +85,15 @@ const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: undefined as string | undefined,
-  createTime: undefined as number[] | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 查询列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const params = {
-      ...queryParams,
-      createTime: formatDateRange(queryParams.createTime as any),
-    }
+    const params: any = { ...queryParams }
+    params.createTime = formatDateRange(queryParams.createTime)
     const data = await getTaskTodoPage(params)
     list.value = [...list.value, ...data.list]
     total.value = data.total
@@ -118,7 +116,7 @@ function loadMore() {
 /** 搜索 */
 function handleSearch(data?: TodoSearchFormData) {
   queryParams.name = data?.name
-  queryParams.createTime = data?.createTime
+  queryParams.createTime = data?.createTime ?? [undefined, undefined]
   queryParams.pageNo = 1
   list.value = []
   getList()
