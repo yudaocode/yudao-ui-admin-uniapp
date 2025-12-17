@@ -7,12 +7,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-      @read-all="handleReadAll"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" @read-all="handleReadAll" />
 
     <!-- 消息列表 -->
     <view class="p-24rpx">
@@ -81,11 +76,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { NotifyMessage } from '@/api/system/notify'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import {
   getMyNotifyMessagePage,
@@ -94,7 +88,7 @@ import {
 } from '@/api/system/notify'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateRange, formatDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import DetailPopup from './components/detail-popup.vue'
 import SearchForm from './components/search-form.vue'
 
@@ -109,11 +103,9 @@ const toast = useToast()
 const total = ref(0)
 const list = ref<NotifyMessage[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  readStatus: -1 as number, // -1 表示全部
-  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 const detailPopupRef = ref<InstanceType<typeof DetailPopup>>() // 详情弹窗
 
@@ -121,29 +113,24 @@ const detailPopupRef = ref<InstanceType<typeof DetailPopup>>() // 详情弹窗
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const params: any = { ...queryParams }
-    if (queryParams.readStatus !== -1) {
-      params.readStatus = queryParams.readStatus === 1
-    } else {
-      delete params.readStatus
-    }
-    params.createTime = formatDateRange(queryParams.createTime)
-    const data = await getMyNotifyMessagePage(params)
+    const data = await getMyNotifyMessagePage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.readStatus = data?.readStatus ?? -1
-  queryParams.createTime = data?.createTime ?? [undefined, undefined]
-  queryParams.pageNo = 1
-  list.value = [] // 清空列表
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
+  list.value = []
   getList()
 }
 
@@ -157,7 +144,7 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 
@@ -176,7 +163,7 @@ async function handleReadOne(item: NotifyMessage, showToast = true) {
   await updateNotifyMessageRead(item.id)
   // 更新本地状态
   item.readStatus = true
-  item.readTime = new Date().toISOString()
+  item.readTime = new Date()
   if (showToast) {
     toast.success('已标记为已读')
   }
@@ -194,7 +181,7 @@ function handleReadAll() {
       await updateAllNotifyMessageRead()
       toast.success('全部已读成功')
       // 刷新列表
-      queryParams.pageNo = 1
+      queryParams.value.pageNo = 1
       list.value = []
       await getList()
     },

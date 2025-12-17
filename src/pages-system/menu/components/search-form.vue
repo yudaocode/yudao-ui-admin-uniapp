@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -52,52 +52,34 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 
-/** 搜索表单数据 */
-export interface SearchFormData {
-  name?: string
-  status?: number
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
-}>()
-
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  name: undefined,
-  status: undefined,
+const formData = reactive({
+  name: undefined as string | undefined,
+  status: undefined as number | undefined,
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.name) {
-    conditions.push(`名称:${props.searchParams.name}`)
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
   }
-  if (props.searchParams?.status !== undefined) {
-    const dict = getIntDictOptions(DICT_TYPE.COMMON_STATUS).find(d => d.value === props.searchParams?.status)
+  if (formData.status !== undefined) {
+    const dict = getIntDictOptions(DICT_TYPE.COMMON_STATUS).find(d => d.value === formData.status)
     if (dict) {
       conditions.push(`状态:${dict.label}`)
     }
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索菜单'
-})
-
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.name = props.searchParams.name
-    formData.status = props.searchParams.status
-  }
 })
 
 /** 搜索 */

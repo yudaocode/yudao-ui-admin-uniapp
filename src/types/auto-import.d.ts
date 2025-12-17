@@ -13,9 +13,15 @@ declare global {
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
   const defineComponent: typeof import('vue')['defineComponent']
   const effectScope: typeof import('vue')['effectScope']
+  const getBoolDictOptions: typeof import('../hooks/useDict')['getBoolDictOptions']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const getCurrentWatcher: typeof import('vue')['getCurrentWatcher']
+  const getDictLabel: typeof import('../hooks/useDict')['getDictLabel']
+  const getDictObj: typeof import('../hooks/useDict')['getDictObj']
+  const getDictOptions: typeof import('../hooks/useDict')['getDictOptions']
+  const getIntDictOptions: typeof import('../hooks/useDict')['getIntDictOptions']
+  const getStrDictOptions: typeof import('../hooks/useDict')['getStrDictOptions']
   const h: typeof import('vue')['h']
   const inject: typeof import('vue')['inject']
   const isProxy: typeof import('vue')['isProxy']
@@ -77,6 +83,7 @@ declare global {
   const toValue: typeof import('vue')['toValue']
   const triggerRef: typeof import('vue')['triggerRef']
   const unref: typeof import('vue')['unref']
+  const useAccess: typeof import('../hooks/useAccess')['default']
   const useAttrs: typeof import('vue')['useAttrs']
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVars: typeof import('vue')['useCssVars']
@@ -97,6 +104,9 @@ declare global {
   // @ts-ignore
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, ShallowRef, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
+  // @ts-ignore
+  export type { DictDataType, NumberDictDataType, StringDictDataType } from '../hooks/useDict'
+  import('../hooks/useDict')
 }
 
 // for vue template auto import
@@ -111,9 +121,15 @@ declare module 'vue' {
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
+    readonly getBoolDictOptions: UnwrapRef<typeof import('../hooks/useDict')['getBoolDictOptions']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentWatcher: UnwrapRef<typeof import('vue')['getCurrentWatcher']>
+    readonly getDictLabel: UnwrapRef<typeof import('../hooks/useDict')['getDictLabel']>
+    readonly getDictObj: UnwrapRef<typeof import('../hooks/useDict')['getDictObj']>
+    readonly getDictOptions: UnwrapRef<typeof import('../hooks/useDict')['getDictOptions']>
+    readonly getIntDictOptions: UnwrapRef<typeof import('../hooks/useDict')['getIntDictOptions']>
+    readonly getStrDictOptions: UnwrapRef<typeof import('../hooks/useDict')['getStrDictOptions']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
@@ -175,6 +191,7 @@ declare module 'vue' {
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
+    readonly useAccess: UnwrapRef<typeof import('../hooks/useAccess')['default']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>

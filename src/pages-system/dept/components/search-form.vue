@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -59,59 +59,40 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 
-/** 搜索表单数据 */
-export interface SearchFormData {
-  name?: string
-  status?: number
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
-}>()
-
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  name: undefined,
-  status: -1,
+const formData = reactive({
+  name: undefined as string | undefined,
+  status: -1, // -1 表示全部
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.name) {
-    conditions.push(`名称:${props.searchParams.name}`)
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
   }
-  if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, props.searchParams.status)}`)
+  if (formData.status !== -1) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索部门'
-})
-
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.name = props.searchParams.name
-    formData.status = props.searchParams.status !== undefined ? props.searchParams.status : -1
-  }
 })
 
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  const params = { ...formData }
-  if (params.status === -1) {
-    params.status = undefined
-  }
-  emit('search', params)
+  emit('search', {
+    ...formData,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置 */

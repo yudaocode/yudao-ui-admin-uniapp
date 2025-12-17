@@ -1,8 +1,7 @@
-<!-- TODO @AI：参考 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages/message/components/search-form.vue 和 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages/message/index.vue，实现对 time + 范围的处理； -->
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -133,72 +132,46 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { formatDate } from '@/utils/date'
-
-/** 搜索表单数据 */
-export interface SearchFormData {
-  userId?: number
-  type?: string
-  subType?: string
-  bizId?: number
-  action?: string
-  createTime?: [number | undefined, number | undefined]
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData>
-}>()
+import { computed, reactive, ref } from 'vue'
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  userId: undefined,
-  type: undefined,
-  subType: undefined,
-  bizId: undefined,
-  action: undefined,
+const formData = reactive({
+  userId: undefined as number | undefined,
+  type: undefined as string | undefined,
+  subType: undefined as string | undefined,
+  bizId: undefined as number | undefined,
+  action: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.userId !== undefined) {
-    conditions.push(`用户编号:${props.searchParams.userId}`)
+  if (formData.userId !== undefined) {
+    conditions.push(`用户编号:${formData.userId}`)
   }
-  if (props.searchParams?.type) {
-    conditions.push(`操作模块类型:${props.searchParams.type}`)
+  if (formData.type) {
+    conditions.push(`操作模块类型:${formData.type}`)
   }
-  if (props.searchParams?.subType) {
-    conditions.push(`操作名:${props.searchParams.subType}`)
+  if (formData.subType) {
+    conditions.push(`操作名:${formData.subType}`)
   }
-  if (props.searchParams?.bizId !== undefined) {
-    conditions.push(`操作数据模块编号:${props.searchParams.bizId}`)
+  if (formData.bizId !== undefined) {
+    conditions.push(`操作数据模块编号:${formData.bizId}`)
   }
-  if (props.searchParams?.action) {
-    conditions.push(`操作内容:${props.searchParams.action}`)
+  if (formData.action) {
+    conditions.push(`操作内容:${formData.action}`)
   }
-  if (props.searchParams?.createTime?.[0] && props.searchParams?.createTime?.[1]) {
-    conditions.push(`创建时间:${formatDate(props.searchParams.createTime[0])}~${formatDate(props.searchParams.createTime[1])}`)
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`创建时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索操作日志'
-})
-
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.userId = props.searchParams.userId
-    formData.type = props.searchParams.type
-    formData.subType = props.searchParams.subType
-    formData.bizId = props.searchParams.bizId
-    formData.action = props.searchParams.action
-    formData.createTime = props.searchParams.createTime ?? [undefined, undefined]
-  }
 })
 
 // 时间范围选择器状态
@@ -230,7 +203,10 @@ function handleCreateTime1Cancel() {
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData } as SearchFormData)
+  emit('search', {
+    ...formData,
+    createTime: formatDateRange(formData.createTime),
+  })
 }
 
 /** 重置 */

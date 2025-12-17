@@ -1,11 +1,7 @@
 <template>
   <view>
     <!-- 搜索组件 -->
-    <DoneSearchForm
-      :search-params="queryParams"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
+    <DoneSearchForm @search="handleSearch" @reset="handleReset" />
 
     <view class="bpm-list">
       <view
@@ -52,16 +48,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { DoneSearchFormData } from './done-search-form.vue'
 import type { Task } from '@/api/bpm/task'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { getTaskDonePage } from '@/api/bpm/task'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateRange, formatDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import DoneSearchForm from './done-search-form.vue'
-import './index.scss'
+import '../styles/index.scss'
 
 const props = defineProps<{
   active?: boolean
@@ -71,25 +66,21 @@ const total = ref(0)
 const list = ref<Task[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
 const isFirstLoad = ref(true)
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  name: undefined as string | undefined,
-  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 查询列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const params: any = { ...queryParams }
-    params.createTime = formatDateRange(queryParams.createTime)
-    const data = await getTaskDonePage(params)
+    const data = await getTaskDonePage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
@@ -99,15 +90,17 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 
 /** 搜索 */
-function handleSearch(data?: DoneSearchFormData) {
-  queryParams.name = data?.name
-  queryParams.createTime = data?.createTime ?? [undefined, undefined]
-  queryParams.pageNo = 1
+function handleSearch(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
   list.value = []
   getList()
 }
@@ -130,7 +123,7 @@ onReachBottom(() => {
 /** 监听激活状态，刷新数据 */
 watch(() => props.active, (val) => {
   if (val && !isFirstLoad.value) {
-    queryParams.pageNo = 1
+    queryParams.value.pageNo = 1
     list.value = []
     getList()
   }

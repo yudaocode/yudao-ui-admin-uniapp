@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 面包屑导航 -->
     <Breadcrumb ref="breadcrumbRef" v-model="currentParentId" />
@@ -72,10 +68,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { Dept } from '@/api/system/dept'
 import type { User } from '@/api/system/user'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getDeptList } from '@/api/system/dept'
 import { getSimpleUserList } from '@/api/system/user'
 import { navigateBackPlus } from '@/utils'
@@ -104,10 +99,7 @@ const currentList = computed(() => {
 }) // 当前层级的部门列表
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>()
 
-const queryParams = reactive<SearchFormData>({
-  name: undefined,
-  status: undefined,
-})
+const queryParams = ref<Record<string, any>>({})
 
 /** 返回上一页或上一层级 */
 function handleBack() {
@@ -134,7 +126,7 @@ function handleEnterChildren(item: Dept) {
 async function getList() {
   loading.value = true
   try {
-    const data = await getDeptList(queryParams)
+    const data = await getDeptList(queryParams.value)
     list.value = handleTree(data)
   } finally {
     loading.value = false
@@ -142,9 +134,8 @@ async function getList() {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.name = data?.name
-  queryParams.status = data?.status
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = { ...data }
   // 重置面包屑
   currentParentId.value = 0
   breadcrumbRef.value?.reset()

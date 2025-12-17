@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 日志列表 -->
     <view class="p-24rpx">
@@ -72,11 +68,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { ApiAccessLog } from '@/api/infra/apiAccessLog'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getApiAccessLogPage } from '@/api/infra/apiAccessLog'
 import { navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
@@ -92,11 +87,9 @@ definePage({
 const total = ref(0)
 const list = ref<ApiAccessLog[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  userId: undefined as number | undefined,
-  applicationName: undefined as string | undefined,
 })
 
 /** 返回上一页 */
@@ -108,24 +101,24 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const data = await getApiAccessLogPage({
-      ...queryParams,
-    })
+    const data = await getApiAccessLogPage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.userId = data?.userId
-  queryParams.applicationName = data?.applicationName
-  queryParams.pageNo = 1
-  list.value = [] // 清空列表
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
+  list.value = []
   getList()
 }
 
@@ -139,7 +132,7 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 

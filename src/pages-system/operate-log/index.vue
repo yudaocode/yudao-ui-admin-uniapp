@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 操作日志列表 -->
     <view class="p-24rpx">
@@ -66,16 +62,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './modules/search-form.vue'
 import type { OperateLog } from '@/api/system/operate-log'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getOperateLogPage } from '@/api/system/operate-log'
-import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateRange, formatDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import SearchForm from './modules/search-form.vue'
 
 definePage({
@@ -85,20 +79,13 @@ definePage({
   },
 })
 
-const { hasAccessByCodes } = useAccess()
 const total = ref(0)
 const list = ref<OperateLog[]>([])
 const loadMoreState = ref<LoadMoreState>('loading') // 加载更多状态
 
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  userId: undefined as number | undefined,
-  type: undefined as string | undefined,
-  subType: undefined as string | undefined,
-  bizId: undefined as number | undefined,
-  action: undefined as string | undefined,
-  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 返回上一页 */
@@ -110,27 +97,23 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const params: any = { ...queryParams }
-    params.createTime = formatDateRange(queryParams.createTime)
-    const data = await getOperateLogPage(params)
+    const data = await getOperateLogPage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.userId = data?.userId
-  queryParams.type = data?.type
-  queryParams.subType = data?.subType
-  queryParams.bizId = data?.bizId
-  queryParams.action = data?.action
-  queryParams.createTime = data?.createTime
-  queryParams.pageNo = 1
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
   list.value = []
   getList()
 }
@@ -145,7 +128,7 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 

@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -70,60 +70,43 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
-
-/** 搜索表单数据 */
-export interface SearchFormData {
-  userId?: number
-  applicationName?: string
-  processStatus: number // -1 表示全部
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
-}>()
+import { computed, reactive, ref } from 'vue'
 
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  userId: undefined,
-  applicationName: undefined,
-  processStatus: -1,
+const formData = reactive({
+  userId: undefined as number | undefined,
+  applicationName: undefined as string | undefined,
+  processStatus: -1, // -1 表示全部
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.userId) {
-    conditions.push(`用户编号:${props.searchParams.userId}`)
+  if (formData.userId) {
+    conditions.push(`用户编号:${formData.userId}`)
   }
-  if (props.searchParams?.applicationName) {
-    conditions.push(`应用名:${props.searchParams.applicationName}`)
+  if (formData.applicationName) {
+    conditions.push(`应用名:${formData.applicationName}`)
   }
-  if (props.searchParams?.processStatus !== undefined && props.searchParams?.processStatus !== -1) {
+  if (formData.processStatus !== -1) {
     const statusMap: Record<number, string> = { 0: '未处理', 1: '已处理', 2: '已忽略' }
-    conditions.push(`状态:${statusMap[props.searchParams.processStatus]}`)
+    conditions.push(`状态:${statusMap[formData.processStatus]}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索日志'
-})
-
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.userId = props.searchParams.userId
-    formData.applicationName = props.searchParams.applicationName
-    formData.processStatus = props.searchParams.processStatus ?? -1
-  }
 })
 
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    ...formData,
+    processStatus: formData.processStatus === -1 ? undefined : formData.processStatus,
+  })
 }
 
 /** 重置 */

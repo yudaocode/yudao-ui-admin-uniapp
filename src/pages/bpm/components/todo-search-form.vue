@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -132,51 +132,38 @@
 <script lang="ts" setup>
 import type { Category } from '@/api/bpm/category'
 import type { ProcessDefinition } from '@/api/bpm/definition'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinitionList } from '@/api/bpm/definition'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDate } from '@/utils/date'
-
-/** 搜索表单数据 */
-export interface TodoSearchFormData {
-  name?: string
-  processDefinitionKey?: string
-  category?: string
-  status: number // -1 表示全部
-  createTime?: [number | undefined, number | undefined]
-}
-
-const props = defineProps<{
-  searchParams?: Partial<TodoSearchFormData>
-}>()
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
-  search: [data: TodoSearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<TodoSearchFormData>({
-  name: undefined,
-  processDefinitionKey: undefined,
-  category: undefined,
-  status: -1,
-  createTime: [undefined, undefined],
+const formData = reactive({
+  name: undefined as string | undefined,
+  processDefinitionKey: undefined as string | undefined,
+  category: undefined as string | undefined,
+  status: -1, // -1 表示全部
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.name) {
-    conditions.push(`名称:${props.searchParams.name}`)
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
   }
-  if (props.searchParams?.status !== undefined && props.searchParams.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS, props.searchParams.status)}`)
+  if (formData.status !== -1) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS, formData.status)}`)
   }
-  if (props.searchParams?.createTime?.[0] && props.searchParams?.createTime?.[1]) {
-    conditions.push(`时间:${formatDate(props.searchParams.createTime[0])}~${formatDate(props.searchParams.createTime[1])}`)
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索待办任务'
 })
@@ -228,21 +215,14 @@ async function getProcessDefinitions() {
   }
 }
 
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.name = props.searchParams.name
-    formData.processDefinitionKey = props.searchParams.processDefinitionKey
-    formData.category = props.searchParams.category
-    formData.status = props.searchParams.status ?? -1
-    formData.createTime = props.searchParams.createTime ?? [undefined, undefined]
-  }
-})
-
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    ...formData,
+    status: formData.status === -1 ? undefined : formData.status,
+    createTime: formatDateRange(formData.createTime),
+  })
 }
 
 /** 重置 */

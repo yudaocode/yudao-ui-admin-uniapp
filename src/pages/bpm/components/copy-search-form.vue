@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -92,41 +92,30 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { formatDate } from '@/utils/date'
-
-/** 搜索表单数据 */
-export interface CopySearchFormData {
-  processInstanceName?: string
-  createTime?: [number | undefined, number | undefined]
-}
-
-const props = defineProps<{
-  searchParams?: Partial<CopySearchFormData>
-}>()
+import { computed, reactive, ref } from 'vue'
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
-  search: [data: CopySearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-
-/** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
-  const conditions: string[] = []
-  if (props.searchParams?.processInstanceName) {
-    conditions.push(`名称:${props.searchParams.processInstanceName}`)
-  }
-  if (props.searchParams?.createTime?.[0] && props.searchParams?.createTime?.[1]) {
-    conditions.push(`时间:${formatDate(props.searchParams.createTime[0])}~${formatDate(props.searchParams.createTime[1])}`)
-  }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索抄送任务'
+const formData = reactive({
+  processInstanceName: undefined as string | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
-const formData = reactive<CopySearchFormData>({
-  processInstanceName: undefined,
-  createTime: [undefined, undefined],
+/** 搜索条件 placeholder 拼接 */
+const placeholder = computed(() => {
+  const conditions: string[] = []
+  if (formData.processInstanceName) {
+    conditions.push(`名称:${formData.processInstanceName}`)
+  }
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索抄送任务'
 })
 
 // 时间选择器状态
@@ -155,18 +144,13 @@ function handleCreateTime1Cancel() {
   visibleCreateTime.value[1] = false
 }
 
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.processInstanceName = props.searchParams.processInstanceName
-    formData.createTime = props.searchParams.createTime ?? [undefined, undefined]
-  }
-})
-
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    ...formData,
+    createTime: formatDateRange(formData.createTime),
+  })
 }
 
 /** 重置 */

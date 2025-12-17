@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 面包屑导航 -->
     <Breadcrumb ref="breadcrumbRef" v-model="currentParentId" />
@@ -72,9 +68,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { Menu } from '@/api/system/menu'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getMenuList } from '@/api/system/menu'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
@@ -101,10 +96,7 @@ const currentList = computed(() => {
 }) // 当前层级的菜单列表
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>()
 
-const queryParams = reactive<SearchFormData>({
-  name: undefined,
-  status: undefined,
-})
+const queryParams = ref<Record<string, any>>({})
 
 /** 返回上一页或上一层级 */
 function handleBack() {
@@ -164,7 +156,7 @@ function handleEnterChildren(item: Menu) {
 async function getList() {
   loading.value = true
   try {
-    const data = await getMenuList(queryParams)
+    const data = await getMenuList(queryParams.value)
     list.value = handleTree(data)
   } finally {
     loading.value = false
@@ -172,9 +164,8 @@ async function getList() {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.name = data?.name
-  queryParams.status = data?.status
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = { ...data }
   // 重置面包屑
   currentParentId.value = 0
   breadcrumbRef.value?.reset()

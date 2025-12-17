@@ -1,7 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
   <wd-search
-    :placeholder="searchPlaceholder"
+    :placeholder="placeholder"
     :hide-cancel="true"
     disabled
     @click="visible = true"
@@ -53,47 +53,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
-
-/** 搜索表单数据 */
-export interface SearchFormData {
-  userId?: number
-  applicationName?: string
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
-}>()
+import { computed, reactive, ref } from 'vue'
 
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  userId: undefined,
-  applicationName: undefined,
+const formData = reactive({
+  userId: undefined as number | undefined,
+  applicationName: undefined as string | undefined,
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.userId) {
-    conditions.push(`用户编号:${props.searchParams.userId}`)
+  if (formData.userId) {
+    conditions.push(`用户编号:${formData.userId}`)
   }
-  if (props.searchParams?.applicationName) {
-    conditions.push(`应用名:${props.searchParams.applicationName}`)
+  if (formData.applicationName) {
+    conditions.push(`应用名:${formData.applicationName}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索日志'
-})
-
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.userId = props.searchParams.userId
-    formData.applicationName = props.searchParams.applicationName
-  }
 })
 
 /** 搜索 */

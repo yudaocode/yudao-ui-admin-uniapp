@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 用户列表 -->
     <view class="p-24rpx">
@@ -79,11 +75,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { User } from '@/api/system/user'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getUserPage } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
@@ -102,11 +97,9 @@ const { hasAccessByCodes } = useAccess()
 const total = ref(0)
 const list = ref<User[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  username: undefined as string | undefined,
-  nickname: undefined as string | undefined,
 })
 
 /** 返回上一页 */
@@ -118,21 +111,23 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const data = await getUserPage(queryParams)
+    const data = await getUserPage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.username = data?.username
-  queryParams.nickname = data?.nickname
-  queryParams.pageNo = 1
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
   list.value = [] // 清空列表
   getList()
 }
@@ -147,7 +142,7 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 

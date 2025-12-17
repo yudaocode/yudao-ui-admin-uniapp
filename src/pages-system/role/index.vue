@@ -8,11 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm
-      :search-params="queryParams"
-      @search="handleQuery"
-      @reset="handleReset"
-    />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 角色列表 -->
     <view class="p-24rpx">
@@ -63,11 +59,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchFormData } from './components/search-form.vue'
 import type { Role } from '@/api/system/role'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getRolePage } from '@/api/system/role'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
@@ -85,12 +80,9 @@ const { hasAccessByCodes } = useAccess()
 const total = ref(0)
 const list = ref<Role[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const queryParams = reactive({
+const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  name: undefined as string | undefined,
-  code: undefined as string | undefined,
-  status: -1 as number, // -1 表示全部
 })
 
 /** 返回上一页 */
@@ -102,25 +94,27 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const data = await getRolePage({
-      ...queryParams,
-      status: queryParams.status === -1 ? undefined : queryParams.status,
-    })
+    const params = { ...queryParams.value }
+    if ((params as any).status === -1) {
+      delete (params as any).status
+    }
+    const data = await getRolePage(params)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
   } catch {
-    queryParams.pageNo = queryParams.pageNo > 1 ? queryParams.pageNo - 1 : 1
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
     loadMoreState.value = 'error'
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: SearchFormData) {
-  queryParams.name = data?.name
-  queryParams.code = data?.code
-  queryParams.status = data?.status
-  queryParams.pageNo = 1
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
   list.value = [] // 清空列表
   getList()
 }
@@ -135,7 +129,7 @@ function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
   }
-  queryParams.pageNo++
+  queryParams.value.pageNo++
   getList()
 }
 

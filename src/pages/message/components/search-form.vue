@@ -3,7 +3,7 @@
   <view class="flex items-center bg-white pr-30rpx">
     <view class="flex-1">
       <wd-search
-        :placeholder="searchPlaceholder"
+        :placeholder="placeholder"
         :hide-cancel="true"
         disabled
         @click="visible = true"
@@ -34,10 +34,10 @@
           <wd-radio :value="-1">
             全部
           </wd-radio>
-          <wd-radio :value="1">
+          <wd-radio :value="true">
             已读
           </wd-radio>
-          <wd-radio :value="0">
+          <wd-radio :value="false">
             未读
           </wd-radio>
         </wd-radio-group>
@@ -105,41 +105,31 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { formatDate } from '@/utils/date'
-
-/** 搜索表单数据 */
-export interface SearchFormData {
-  readStatus: number // -1 表示全部, 0 未读, 1 已读
-  createTime?: [number | undefined, number | undefined]
-}
-
-const props = defineProps<{
-  searchParams?: Partial<SearchFormData> // 初始搜索参数
-}>()
+import { computed, reactive, ref } from 'vue'
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
-  search: [data: SearchFormData]
+  search: [data: Record<string, any>]
   reset: []
   readAll: []
 }>()
 
 const visible = ref(false)
-const formData = reactive<SearchFormData>({
-  readStatus: -1,
-  createTime: [undefined, undefined],
+const formData = reactive({
+  readStatus: -1 as -1 | boolean, // -1 表示全部, true 已读, false 未读
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 搜索条件 placeholder 拼接 */
-const searchPlaceholder = computed(() => {
+const placeholder = computed(() => {
   const conditions: string[] = []
-  if (props.searchParams?.readStatus === 1) {
+  if (formData.readStatus === true) {
     conditions.push('已读')
-  } else if (props.searchParams?.readStatus === 0) {
+  } else if (formData.readStatus === false) {
     conditions.push('未读')
   }
-  if (props.searchParams?.createTime?.[0] && props.searchParams?.createTime?.[1]) {
-    conditions.push(`${formatDate(props.searchParams.createTime[0])}~${formatDate(props.searchParams.createTime[1])}`)
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索消息'
 })
@@ -175,18 +165,13 @@ function handleCreateTime1Cancel() {
   visibleCreateTime.value[1] = false
 }
 
-/** 监听弹窗打开，同步外部参数 */
-watch(visible, (val) => {
-  if (val && props.searchParams) {
-    formData.readStatus = props.searchParams.readStatus ?? -1
-    formData.createTime = props.searchParams.createTime ?? [undefined, undefined]
-  }
-})
-
 /** 搜索 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    readStatus: formData.readStatus === -1 ? undefined : formData.readStatus,
+    createTime: formatDateRange(formData.createTime),
+  })
 }
 
 /** 重置 */
