@@ -75,7 +75,7 @@ import { getOperateLogPage } from '@/api/system/operate-log'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateTime } from '@/utils/date'
+import { formatDateRange, formatDateTime } from '@/utils/date'
 import SearchForm from './modules/search-form.vue'
 
 definePage({
@@ -98,7 +98,7 @@ const queryParams = reactive({
   subType: undefined as string | undefined,
   bizId: undefined as number | undefined,
   action: undefined as string | undefined,
-  createTime: undefined as string | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 返回上一页 */
@@ -110,9 +110,9 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const data = await getOperateLogPage({
-      ...queryParams,
-    })
+    const params: any = { ...queryParams }
+    params.createTime = formatDateRange(queryParams.createTime)
+    const data = await getOperateLogPage(params)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
