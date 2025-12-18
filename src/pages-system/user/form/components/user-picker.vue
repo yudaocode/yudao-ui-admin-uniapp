@@ -2,10 +2,11 @@
   <wd-select-picker
     v-model="selectedId"
     :label="label"
-    label-width="180rpx"
+    :label-width="label ? '180rpx' : '0'"
     :columns="columns"
     :type="type"
     filterable
+    :placeholder="placeholder"
     @confirm="handleConfirm"
   />
 </template>
@@ -19,14 +20,27 @@ const props = withDefaults(defineProps<{
   modelValue?: number | number[]
   type?: 'radio' | 'checkbox'
   label?: string
+  placeholder?: string
 }>(), {
   type: 'checkbox',
-  label: '负责人',
+  label: '',
+  placeholder: '请选择',
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number | number[] | undefined): void
 }>()
+
+/** 根据用户 ID 获取昵称 */
+function getUserNickname(userId: number | undefined): string {
+  if (!userId) return ''
+  const user = userList.value.find(u => u.id === userId)
+  return user?.nickname || ''
+}
+
+defineExpose({
+  getUserNickname,
+})
 
 const userList = ref<User[]>([])
 const selectedId = ref<number | string | number[]>([])

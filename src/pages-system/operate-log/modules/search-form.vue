@@ -21,21 +21,22 @@
       </view>
       <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          用户编号
+          操作人
         </view>
-        <wd-input
+        <UserPicker
+          ref="userPickerRef"
           v-model="formData.userId"
-          placeholder="请输入用户编号"
-          clearable
+          type="radio"
+          placeholder="请选择操作人员"
         />
       </view>
       <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          操作模块类型
+          操作模块
         </view>
         <wd-input
           v-model="formData.type"
-          placeholder="请输入操作模块类型"
+          placeholder="请输入操作模块"
           clearable
         />
       </view>
@@ -51,16 +52,6 @@
       </view>
       <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          操作数据模块编号
-        </view>
-        <wd-input
-          v-model="formData.bizId"
-          placeholder="请输入操作数据模块编号"
-          clearable
-        />
-      </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
           操作内容
         </view>
         <wd-input
@@ -69,9 +60,9 @@
           clearable
         />
       </view>
-      <view class="mb-32rpx">
+      <view class="mb-24rpx">
         <view class="mb-12rpx text-28rpx text-[#666]">
-          创建时间
+          操作时间
         </view>
         <view class="flex items-center gap-16rpx">
           <view class="flex-1" @click="visibleCreateTime[0] = true">
@@ -119,6 +110,16 @@
           </wd-button>
         </view>
       </view>
+      <view class="mb-32rpx">
+        <view class="mb-12rpx text-28rpx text-[#666]">
+          业务编号
+        </view>
+        <wd-input
+          v-model="formData.bizId"
+          placeholder="请输入业务编号"
+          clearable
+        />
+      </view>
       <view class="w-full flex justify-center gap-24rpx">
         <wd-button class="flex-1" plain @click="handleReset">
           重置
@@ -133,6 +134,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/pages-system/user/form/components/user-picker.vue'
 import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
@@ -141,35 +143,37 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const userPickerRef = ref<InstanceType<typeof UserPicker>>()
 const formData = reactive({
   userId: undefined as number | undefined,
   type: undefined as string | undefined,
   subType: undefined as string | undefined,
-  bizId: undefined as number | undefined,
   action: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
+  bizId: undefined as number | undefined,
 })
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.userId !== undefined) {
-    conditions.push(`用户编号:${formData.userId}`)
+    const nickname = userPickerRef.value?.getUserNickname(formData.userId)
+    conditions.push(`操作人:${nickname || formData.userId}`)
   }
   if (formData.type) {
-    conditions.push(`操作模块类型:${formData.type}`)
+    conditions.push(`操作模块:${formData.type}`)
   }
   if (formData.subType) {
     conditions.push(`操作名:${formData.subType}`)
-  }
-  if (formData.bizId !== undefined) {
-    conditions.push(`操作数据模块编号:${formData.bizId}`)
   }
   if (formData.action) {
     conditions.push(`操作内容:${formData.action}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
-    conditions.push(`创建时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
+    conditions.push(`操作时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
+  }
+  if (formData.bizId !== undefined) {
+    conditions.push(`业务编号:${formData.bizId}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索操作日志'
 })
@@ -178,24 +182,24 @@ const placeholder = computed(() => {
 const visibleCreateTime = ref<[boolean, boolean]>([false, false])
 const tempCreateTime = ref<[number, number]>([Date.now(), Date.now()])
 
-/** 创建时间[0]确认 */
+/** 操作时间[0]确认 */
 function handleCreateTime0Confirm() {
   formData.createTime = [tempCreateTime.value[0], formData.createTime?.[1]]
   visibleCreateTime.value[0] = false
 }
 
-/** 创建时间[0]取消 */
+/** 操作时间[0]取消 */
 function handleCreateTime0Cancel() {
   visibleCreateTime.value[0] = false
 }
 
-/** 创建时间[1]确认 */
+/** 操作时间[1]确认 */
 function handleCreateTime1Confirm() {
   formData.createTime = [formData.createTime?.[0], tempCreateTime.value[1]]
   visibleCreateTime.value[1] = false
 }
 
-/** 创建时间[1]取消 */
+/** 操作时间[1]取消 */
 function handleCreateTime1Cancel() {
   visibleCreateTime.value[1] = false
 }
@@ -214,10 +218,12 @@ function handleReset() {
   formData.userId = undefined
   formData.type = undefined
   formData.subType = undefined
-  formData.bizId = undefined
   formData.action = undefined
   formData.createTime = [undefined, undefined]
+  formData.bizId = undefined
   visible.value = false
   emit('reset')
 }
+
+
 </script>

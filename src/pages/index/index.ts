@@ -80,7 +80,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'operateLog',
         name: '操作日志',
-        icon: 'notes',
+        icon: 'rootlist',
         url: '/pages-system/operate-log/index',
         iconColor: '#722ed1',
         permission: 'system:operate-log:query',
