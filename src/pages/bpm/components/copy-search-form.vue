@@ -36,7 +36,7 @@
         </view>
         <wd-datetime-picker-view v-if="visibleCreateTime[0]" v-model="tempCreateTime[0]" type="date" />
         <view v-if="visibleCreateTime[0]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" plain @click="handleCreateTime0Cancel">
+          <wd-button size="small" plain @click="visibleCreateTime[0] = false">
             取消
           </wd-button>
           <wd-button size="small" type="primary" @click="handleCreateTime0Confirm">
@@ -45,7 +45,7 @@
         </view>
         <wd-datetime-picker-view v-if="visibleCreateTime[1]" v-model="tempCreateTime[1]" type="date" />
         <view v-if="visibleCreateTime[1]" class="yd-search-form-date-range-actions">
-          <wd-button size="small" plain @click="handleCreateTime1Cancel">
+          <wd-button size="small" plain @click="visibleCreateTime[1] = false">
             取消
           </wd-button>
           <wd-button size="small" type="primary" @click="handleCreateTime1Confirm">
@@ -103,19 +103,9 @@ function handleCreateTime0Confirm() {
   visibleCreateTime.value[0] = false
 }
 
-/** 创建时间[0]取消 */
-function handleCreateTime0Cancel() {
-  visibleCreateTime.value[0] = false
-}
-
 /** 创建时间[1]确认 */
 function handleCreateTime1Confirm() {
   formData.createTime = [formData.createTime?.[0], tempCreateTime.value[1]]
-  visibleCreateTime.value[1] = false
-}
-
-/** 创建时间[1]取消 */
-function handleCreateTime1Cancel() {
   visibleCreateTime.value[1] = false
 }
 
