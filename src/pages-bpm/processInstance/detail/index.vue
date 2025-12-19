@@ -1,6 +1,6 @@
 <template>
   <!-- TODO @芋艿：功能待 review；先从老版本迁移过来！ -->
-  <view class="page-container">
+  <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="审批详情"

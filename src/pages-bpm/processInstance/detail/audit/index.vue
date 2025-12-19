@@ -1,5 +1,5 @@
 <template>
-  <view class="page-container">
+  <view class="yd-page-container">
     <!-- TODO @芋艿：还有一些细节，在审批通过没搞完！ -->
     <!-- 顶部导航栏 -->
     <wd-navbar
