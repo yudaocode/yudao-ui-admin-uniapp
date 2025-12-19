@@ -1,24 +1,12 @@
 <template>
   <!-- 搜索框入口 -->
-  <wd-search
-    :placeholder="placeholder"
-    :hide-cancel="true"
-    disabled
-    @click="visible = true"
-  />
+  <view @click="visible = true">
+    <wd-search :placeholder="placeholder" hide-cancel disabled />
+  </view>
 
   <!-- 搜索弹窗 -->
-  <wd-popup
-    v-model="visible"
-    position="top"
-    custom-style="border-radius: var(--yd-search-form-popup-radius);"
-    safe-area-inset-top
-    @close="visible = false"
-  >
-    <view class="yd-search-form-container">
-      <view class="yd-search-form-title">
-        搜索流程
-      </view>
+  <wd-popup v-model="visible" position="top" @close="visible = false">
+    <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           流程名称
@@ -58,12 +46,7 @@
             </view>
           </view>
         </view>
-        <wd-datetime-picker-view
-          v-if="visibleCreateTime[0]"
-          v-model="tempCreateTime[0]"
-          type="date"
-          :columns-height="200"
-        />
+        <wd-datetime-picker-view v-if="visibleCreateTime[0]" v-model="tempCreateTime[0]" type="date" />
         <view v-if="visibleCreateTime[0]" class="yd-search-form-date-range-actions">
           <wd-button size="small" plain @click="handleCreateTime0Cancel">
             取消
@@ -72,12 +55,7 @@
             确定
           </wd-button>
         </view>
-        <wd-datetime-picker-view
-          v-if="visibleCreateTime[1]"
-          v-model="tempCreateTime[1]"
-          type="date"
-          :columns-height="200"
-        />
+        <wd-datetime-picker-view v-if="visibleCreateTime[1]" v-model="tempCreateTime[1]" type="date" />
         <view v-if="visibleCreateTime[1]" class="yd-search-form-date-range-actions">
           <wd-button size="small" plain @click="handleCreateTime1Cancel">
             取消
@@ -131,6 +109,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { getCategorySimpleList } from '@/api/bpm/category'
 import { getProcessDefinitionList } from '@/api/bpm/definition'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
 

@@ -224,3 +224,20 @@ export function navigateBackPlus(fallbackUrl?: string) {
     uni.reLaunch({ url: targetUrl })
   }
 }
+
+/** 获取 wd-navbar 导航栏高度 */
+export function getNavbarHeight() {
+  const systemInfo = uni.getSystemInfoSync()
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+  // #ifdef MP-WEIXIN
+  // 小程序：根据胶囊按钮位置计算导航栏高度，确保内容与胶囊垂直居中
+  const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
+  // 导航栏高度 = (胶囊顶部到状态栏底部的距离) * 2 + 胶囊高度
+  const navBarHeight = (menuButtonInfo.top - statusBarHeight) * 2 + menuButtonInfo.height
+  return statusBarHeight + navBarHeight
+  // #endif
+  // #ifndef MP-WEIXIN
+  // H5/App：状态栏高度 + 导航栏高度（44px）
+  return statusBarHeight + 44
+  // #endif
+}

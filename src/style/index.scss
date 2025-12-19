@@ -16,9 +16,6 @@ page {
 
   // 修改按钮背景色
   // --wot-button-primary-bg-color: green;
-
-  // yd-search-form：搜索表单弹窗圆角
-  --yd-search-form-popup-radius: 0 0 24rpx 24rpx;
 }
 
 /*
@@ -48,6 +45,11 @@ border-t-1
 
 // ==================== 搜索表单弹窗样式 ====================
 .yd-search-form {
+  // 弹窗圆角
+  &-popup {
+    @apply rounded-t-24rpx;
+  }
+
   // 弹窗容器
   &-container {
     @apply p-32rpx;
@@ -61,7 +63,7 @@ border-t-1
 
   // 表单项
   &-item {
-    @apply mb-24rpx;
+    @apply mt-24rpx;
   }
 
   // 表单项标签
@@ -72,7 +74,7 @@ border-t-1
 
   // 底部按钮组
   &-actions {
-    @apply w-full flex justify-center gap-24rpx;
+    @apply w-full flex justify-center gap-24rpx mt-24rpx;
   }
 
   // 日期范围选择器

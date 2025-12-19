@@ -1,24 +1,12 @@
 <template>
   <!-- 搜索框入口 -->
-  <wd-search
-    :placeholder="placeholder"
-    :hide-cancel="true"
-    disabled
-    @click="visible = true"
-  />
+  <view @click="visible = true">
+    <wd-search :placeholder="placeholder" hide-cancel disabled />
+  </view>
 
   <!-- 搜索弹窗 -->
-  <wd-popup
-    v-model="visible"
-    position="top"
-    custom-style="border-radius: var(--yd-search-form-popup-radius);"
-    safe-area-inset-top
-    @close="visible = false"
-  >
-    <view class="yd-search-form-container">
-      <view class="yd-search-form-title">
-        搜索菜单
-      </view>
+  <wd-popup v-model="visible" position="top" @close="visible = false">
+    <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           菜单名称
@@ -54,6 +42,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { getIntDictOptions } from '@/hooks/useDict'
+import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
