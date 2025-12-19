@@ -11,16 +11,16 @@
   <wd-popup
     v-model="visible"
     position="top"
-    custom-style="border-radius: 0 0 24rpx 24rpx;"
+    custom-style="border-radius: var(--yd-search-form-popup-radius);"
     safe-area-inset-top
     @close="visible = false"
   >
-    <view class="p-32rpx">
-      <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
+    <view class="yd-search-form-container">
+      <view class="yd-search-form-title">
         搜索岗位
       </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           岗位名称
         </view>
         <wd-input
@@ -29,8 +29,8 @@
           clearable
         />
       </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           岗位编码
         </view>
         <wd-input
@@ -39,8 +39,8 @@
           clearable
         />
       </view>
-      <view class="mb-32rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           状态
         </view>
         <wd-radio-group v-model="formData.status" shape="button">
@@ -56,7 +56,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="w-full flex justify-center gap-24rpx">
+      <view class="yd-search-form-actions">
         <wd-button class="flex-1" plain @click="handleReset">
           重置
         </wd-button>

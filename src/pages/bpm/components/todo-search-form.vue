@@ -11,16 +11,16 @@
   <wd-popup
     v-model="visible"
     position="top"
-    custom-style="border-radius: 0 0 24rpx 24rpx;"
+    custom-style="border-radius: var(--yd-search-form-popup-radius);"
     safe-area-inset-top
     @close="visible = false"
   >
-    <view class="p-32rpx">
-      <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
+    <view class="yd-search-form-container">
+      <view class="yd-search-form-title">
         搜索任务
       </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           任务名称
         </view>
         <wd-input
@@ -29,8 +29,8 @@
           clearable
         />
       </view>
-      <view v-if="processDefinitionList.length > 0" class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view v-if="processDefinitionList.length > 0" class="yd-search-form-item">
+        <view class="yd-search-form-label">
           所属流程
         </view>
         <wd-picker
@@ -41,8 +41,8 @@
           label=""
         />
       </view>
-      <view v-if="categoryList.length > 0" class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view v-if="categoryList.length > 0" class="yd-search-form-item">
+        <view class="yd-search-form-label">
           流程分类
         </view>
         <wd-picker
@@ -53,8 +53,8 @@
           label=""
         />
       </view>
-      <view class="mb-24rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           流程状态
         </view>
         <wd-radio-group v-model="formData.status" shape="button">
@@ -66,24 +66,19 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- DONE @AI：时时间范围，参考下 /Users/yunai/Java/yudao-ui-admin-uniapp-next/src/pages/message/components/search-form.vue -->
-      <view class="mb-32rpx">
-        <view class="mb-12rpx text-28rpx text-[#666]">
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           发起时间
         </view>
-        <view class="flex items-center gap-16rpx">
+        <view class="yd-search-form-date-range-container">
           <view class="flex-1" @click="visibleCreateTime[0] = true">
-            <view
-              class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
-            >
+            <view class="yd-search-form-date-range-picker">
               {{ formatDate(formData.createTime?.[0]) || '开始日期' }}
             </view>
           </view>
-          <text class="text-28rpx text-[#999]">至</text>
+          -
           <view class="flex-1" @click="visibleCreateTime[1] = true">
-            <view
-              class="h-72rpx flex items-center justify-center rounded-8rpx bg-[#f5f5f5] px-24rpx text-28rpx"
-            >
+            <view class="yd-search-form-date-range-picker">
               {{ formatDate(formData.createTime?.[1]) || '结束日期' }}
             </view>
           </view>
@@ -94,7 +89,7 @@
           type="date"
           :columns-height="200"
         />
-        <view v-if="visibleCreateTime[0]" class="mt-16rpx flex justify-end gap-16rpx">
+        <view v-if="visibleCreateTime[0]" class="yd-search-form-date-range-actions">
           <wd-button size="small" plain @click="handleCreateTime0Cancel">
             取消
           </wd-button>
@@ -108,7 +103,7 @@
           type="date"
           :columns-height="200"
         />
-        <view v-if="visibleCreateTime[1]" class="mt-16rpx flex justify-end gap-16rpx">
+        <view v-if="visibleCreateTime[1]" class="yd-search-form-date-range-actions">
           <wd-button size="small" plain @click="handleCreateTime1Cancel">
             取消
           </wd-button>
@@ -117,7 +112,7 @@
           </wd-button>
         </view>
       </view>
-      <view class="w-full flex justify-center gap-24rpx">
+      <view class="yd-search-form-actions">
         <wd-button class="flex-1" plain @click="handleReset">
           重置
         </wd-button>
