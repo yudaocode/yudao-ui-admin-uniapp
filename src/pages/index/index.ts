@@ -101,6 +101,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#36cfc9',
         permission: 'system:sms-channel:query',
       },
+      {
+        key: 'mail',
+        name: '邮件管理',
+        icon: 'mail',
+        url: '/pages-system/mail/index',
+        iconColor: '#40a9ff',
+        permission: 'system:mail-account:query',
+      },
     ],
   },
   {

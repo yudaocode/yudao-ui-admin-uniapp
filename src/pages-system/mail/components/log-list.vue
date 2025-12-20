@@ -1,0 +1,118 @@
+<template>
+  <view>
+    <LogSearchForm @search="handleQuery" @reset="handleReset" />
+
+    <view class="p-24rpx">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+        @click="handleDetail(item)"
+      >
+        <view class="p-24rpx">
+          <view class="mb-16rpx flex items-center justify-between">
+            <view class="text-32rpx text-[#333] font-semibold">
+              {{ item.templateTitle || '-' }}
+            </view>
+            <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="item.sendStatus" />
+          </view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">发送邮箱：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.fromMail || '-' }}</text>
+          </view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">收件人：</text>
+            <text class="min-w-0 flex-1 truncate">{{ formatMails(item.toMails) }}</text>
+          </view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">发送时间：</text>
+            <text>{{ formatDateTime(item.sendTime) || '-' }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
+        <wd-status-tip image="content" tip="暂无邮件日志数据" />
+      </view>
+      <wd-loadmore
+        v-if="list.length > 0"
+        :state="loadMoreState"
+        @reload="loadMore"
+      />
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import type { MailLog } from '@/api/system/mail/log/index'
+import type { LoadMoreState } from '@/http/types'
+import { onMounted, ref } from 'vue'
+import { getMailLogPage } from '@/api/system/mail/log/index'
+import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
+import LogSearchForm from './log-search-form.vue'
+
+const total = ref(0)
+const list = ref<MailLog[]>([])
+const loadMoreState = ref<LoadMoreState>('loading')
+const queryParams = ref({
+  pageNo: 1,
+  pageSize: 10,
+})
+
+function formatMails(mails?: string[]) {
+  if (!mails || mails.length === 0) {
+    return '-'
+  }
+  return mails.join('、')
+}
+
+async function getList() {
+  loadMoreState.value = 'loading'
+  try {
+    const data = await getMailLogPage(queryParams.value)
+    list.value = [...list.value, ...data.list]
+    total.value = data.total
+    loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
+  } catch {
+    queryParams.value.pageNo = queryParams.value.pageNo > 1 ? queryParams.value.pageNo - 1 : 1
+    loadMoreState.value = 'error'
+  }
+}
+
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = {
+    ...data,
+    pageNo: 1,
+    pageSize: queryParams.value.pageSize,
+  }
+  list.value = []
+  getList()
+}
+
+function handleReset() {
+  handleQuery()
+}
+
+function loadMore() {
+  if (loadMoreState.value === 'finished') {
+    return
+  }
+  queryParams.value.pageNo++
+  getList()
+}
+
+function handleDetail(item: MailLog) {
+  uni.navigateTo({
+    url: `/pages-system/mail/log/detail/index?id=${item.id}`,
+  })
+}
+
+onReachBottom(() => {
+  loadMore()
+})
+
+onMounted(() => {
+  getList()
+})
+</script>
