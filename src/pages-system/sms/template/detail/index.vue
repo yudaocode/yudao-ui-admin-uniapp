@@ -29,6 +29,9 @@
       </wd-cell-group>
     </view>
 
+    <!-- 发送测试短信弹窗 -->
+    <SendForm v-model="sendVisible" :template="formData" />
+
     <!-- 底部操作按钮 -->
     <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
@@ -52,61 +55,19 @@
         </wd-button>
       </view>
     </view>
-
-    <!-- 发送测试短信弹窗 -->
-    <wd-popup v-model="sendVisible" position="bottom" closable custom-style="border-radius: 16rpx 16rpx 0 0;">
-      <view class="p-24rpx">
-        <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
-          发送测试短信
-        </view>
-        <wd-form ref="sendFormRef" :model="sendFormData" :rules="sendFormRules">
-          <wd-cell-group border>
-            <wd-textarea
-              v-model="sendFormData.content"
-              label="模板内容"
-              label-width="180rpx"
-              disabled
-              :rows="3"
-            />
-            <wd-input
-              v-model="sendFormData.mobile"
-              label="手机号码"
-              label-width="180rpx"
-              prop="mobile"
-              clearable
-              placeholder="请输入手机号码"
-            />
-            <template v-for="param in formData?.params" :key="param">
-              <wd-input
-                v-model="sendFormData.templateParams[param]"
-                :label="`参数 ${param}`"
-                label-width="180rpx"
-                :prop="`templateParams.${param}`"
-                clearable
-                :placeholder="`请输入参数 ${param}`"
-              />
-            </template>
-          </wd-cell-group>
-        </wd-form>
-        <view class="mt-24rpx">
-          <wd-button type="primary" block :loading="sendLoading" @click="handleSendSubmit">
-            发送
-          </wd-button>
-        </view>
-      </view>
-    </wd-popup>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { SmsTemplate } from '@/api/system/sms'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteSmsTemplate, getSmsTemplate, sendSms } from '@/api/system/sms'
+import { deleteSmsTemplate, getSmsTemplate } from '@/api/system/sms'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import SendForm from './components/send-form.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -126,16 +87,6 @@ const deleting = ref(false)
 
 // 发送测试短信相关
 const sendVisible = ref(false)
-const sendLoading = ref(false)
-const sendFormRef = ref()
-const sendFormData = ref({
-  content: '',
-  mobile: '',
-  templateParams: {} as Record<string, string>,
-})
-const sendFormRules = {
-  mobile: [{ required: true, message: '手机号码不能为空' }],
-}
 
 /** 返回上一页 */
 function handleBack() {
@@ -190,39 +141,7 @@ function handleDelete() {
 
 /** 打开发送测试短信弹窗 */
 function handleSendTest() {
-  sendFormData.value = {
-    content: formData.value?.content || '',
-    mobile: '',
-    templateParams: {},
-  }
-  // 初始化模板参数
-  if (formData.value?.params) {
-    formData.value.params.forEach((param) => {
-      sendFormData.value.templateParams[param] = ''
-    })
-  }
   sendVisible.value = true
-}
-
-/** 发送测试短信 */
-async function handleSendSubmit() {
-  const { valid } = await sendFormRef.value.validate()
-  if (!valid) {
-    return
-  }
-
-  sendLoading.value = true
-  try {
-    await sendSms({
-      mobile: sendFormData.value.mobile,
-      templateCode: formData.value?.code || '',
-      templateParams: sendFormData.value.templateParams,
-    })
-    toast.success('短信发送成功')
-    sendVisible.value = false
-  } finally {
-    sendLoading.value = false
-  }
 }
 
 /** 初始化 */
