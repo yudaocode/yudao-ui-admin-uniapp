@@ -93,6 +93,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#1677ff',
         permission: 'system:login-log:query',
       },
+      {
+        key: 'sms',
+        name: '短信管理',
+        icon: 'chat1',
+        url: '/pages-system/sms/index',
+        iconColor: '#36cfc9',
+        permission: 'system:sms-channel:query',
+      },
     ],
   },
   {
