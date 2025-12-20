@@ -17,9 +17,9 @@
     </view>
 
     <!-- 列表内容 -->
-    <ChannelList v-show="tabType === 'channel'" :active="tabType === 'channel'" />
-    <TemplateList v-show="tabType === 'template'" :active="tabType === 'template'" />
-    <LogList v-show="tabType === 'log'" :active="tabType === 'log'" />
+    <ChannelList v-show="tabType === 'channel'" />
+    <TemplateList v-show="tabType === 'template'" />
+    <LogList v-show="tabType === 'log'" />
   </view>
 </template>
 

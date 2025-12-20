@@ -51,7 +51,42 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- TODO @AI：参考 /Users/yunai/Java/yudao-ui-admin-vben-v5/apps/web-antd/src/views/system/sms/log/data.ts 很多搜搜项，没搞过来 -->
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          发送时间
+        </view>
+        <view class="yd-search-form-date-range-container">
+          <view class="flex-1" @click="visibleSendTime[0] = true">
+            <view class="yd-search-form-date-range-picker">
+              {{ formatDate(formData.sendTime?.[0]) || '开始日期' }}
+            </view>
+          </view>
+          -
+          <view class="flex-1" @click="visibleSendTime[1] = true">
+            <view class="yd-search-form-date-range-picker">
+              {{ formatDate(formData.sendTime?.[1]) || '结束日期' }}
+            </view>
+          </view>
+        </view>
+        <wd-datetime-picker-view v-if="visibleSendTime[0]" v-model="tempSendTime[0]" type="date" />
+        <view v-if="visibleSendTime[0]" class="yd-search-form-date-range-actions">
+          <wd-button size="small" plain @click="visibleSendTime[0] = false">
+            取消
+          </wd-button>
+          <wd-button size="small" type="primary" @click="handleSendTime0Confirm">
+            确定
+          </wd-button>
+        </view>
+        <wd-datetime-picker-view v-if="visibleSendTime[1]" v-model="tempSendTime[1]" type="date" />
+        <view v-if="visibleSendTime[1]" class="yd-search-form-date-range-actions">
+          <wd-button size="small" plain @click="visibleSendTime[1] = false">
+            取消
+          </wd-button>
+          <wd-button size="small" type="primary" @click="handleSendTime1Confirm">
+            确定
+          </wd-button>
+        </view>
+      </view>
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" plain @click="handleReset">
           重置
@@ -69,6 +104,7 @@ import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -80,6 +116,7 @@ const formData = reactive({
   mobile: undefined as string | undefined,
   sendStatus: -1,
   receiveStatus: -1,
+  sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
 /** 搜索条件 placeholder 拼接 */
@@ -94,8 +131,27 @@ const placeholder = computed(() => {
   if (formData.receiveStatus !== -1) {
     conditions.push(`接收:${getDictLabel(DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS, formData.receiveStatus)}`)
   }
+  if (formData.sendTime?.[0] && formData.sendTime?.[1]) {
+    conditions.push(`时间:${formatDate(formData.sendTime[0])}~${formatDate(formData.sendTime[1])}`)
+  }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索短信日志'
 })
+
+// 时间范围选择器状态
+const visibleSendTime = ref<[boolean, boolean]>([false, false])
+const tempSendTime = ref<[number, number]>([Date.now(), Date.now()])
+
+/** 发送时间[0]确认 */
+function handleSendTime0Confirm() {
+  formData.sendTime = [tempSendTime.value[0], formData.sendTime?.[1]]
+  visibleSendTime.value[0] = false
+}
+
+/** 发送时间[1]确认 */
+function handleSendTime1Confirm() {
+  formData.sendTime = [formData.sendTime?.[0], tempSendTime.value[1]]
+  visibleSendTime.value[1] = false
+}
 
 /** 搜索 */
 function handleSearch() {
@@ -104,6 +160,7 @@ function handleSearch() {
     mobile: formData.mobile || undefined,
     sendStatus: formData.sendStatus === -1 ? undefined : formData.sendStatus,
     receiveStatus: formData.receiveStatus === -1 ? undefined : formData.receiveStatus,
+    sendTime: formatDateRange(formData.sendTime),
   })
 }
 
@@ -112,6 +169,7 @@ function handleReset() {
   formData.mobile = undefined
   formData.sendStatus = -1
   formData.receiveStatus = -1
+  formData.sendTime = [undefined, undefined]
   visible.value = false
   emit('reset')
 }

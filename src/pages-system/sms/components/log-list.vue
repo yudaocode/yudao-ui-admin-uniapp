@@ -53,7 +53,7 @@
 <script lang="ts" setup>
 import type { SmsLog } from '@/api/system/sms'
 import type { LoadMoreState } from '@/http/types'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { getSmsLogPage } from '@/api/system/sms'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -70,7 +70,6 @@ const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
 })
-const initialized = ref(false)
 
 /** 查询列表 */
 async function getList() {
@@ -118,15 +117,13 @@ function handleDetail(item: SmsLog) {
   })
 }
 
-/** 监听 active 变化，首次激活时加载数据 */
-watch(
-  () => props.active,
-  (val) => {
-    if (val && !initialized.value) {
-      initialized.value = true
-      getList()
-    }
-  },
-  { immediate: true },
-)
+/** 触底加载更多 */
+onReachBottom(() => {
+  loadMore()
+})
+
+/** 初始化 */
+onMounted(() => {
+  getList()
+})
 </script>
