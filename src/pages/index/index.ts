@@ -100,6 +100,13 @@ const menuGroupsData: MenuGroup[] = [
     name: '基础设施',
     menus: [
       {
+        key: 'codegen',
+        name: '代码生成',
+        icon: 'chevron-up-rectangle',
+        url: '/pages/error/pc-only',
+        iconColor: '#1677ff',
+      },
+      {
         key: 'accessLog',
         name: '访问日志',
         icon: 'laptop',
