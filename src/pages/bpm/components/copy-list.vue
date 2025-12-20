@@ -53,20 +53,15 @@
 import type { ProcessInstanceCopy } from '@/api/bpm/processInstance'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getProcessInstanceCopyPage } from '@/api/bpm/processInstance'
 import { formatDateTime } from '@/utils/date'
 import CopySearchForm from './copy-search-form.vue'
 import '../styles/index.scss'
 
-const props = defineProps<{
-  active?: boolean
-}>()
-
 const total = ref(0)
 const list = ref<ProcessInstanceCopy[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const isFirstLoad = ref(true)
 const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
@@ -121,18 +116,8 @@ onReachBottom(() => {
   loadMore()
 })
 
-/** 监听激活状态，刷新数据 */
-watch(() => props.active, (val) => {
-  if (val && !isFirstLoad.value) {
-    queryParams.value.pageNo = 1
-    list.value = []
-    getList()
-  }
-})
-
 /** 初始化 */
 onMounted(() => {
   getList()
-  isFirstLoad.value = false
 })
 </script>

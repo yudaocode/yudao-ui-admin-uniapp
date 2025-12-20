@@ -15,7 +15,6 @@
         <wd-tab title="短信日志" />
       </wd-tabs>
     </view>
-
     <!-- 列表内容 -->
     <ChannelList v-show="tabType === 'channel'" />
     <TemplateList v-show="tabType === 'template'" />

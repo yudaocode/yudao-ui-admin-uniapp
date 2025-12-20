@@ -62,7 +62,7 @@
 import type { ProcessInstance } from '@/api/bpm/processInstance'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getProcessInstanceMyPage } from '@/api/bpm/processInstance'
 import { useUserStore } from '@/store'
 import { DICT_TYPE } from '@/utils/constants'
@@ -70,17 +70,12 @@ import { formatDateTime } from '@/utils/date'
 import MySearchForm from './my-search-form.vue'
 import '../styles/index.scss'
 
-const props = defineProps<{
-  active?: boolean
-}>()
-
 const userStore = useUserStore()
 const userNickname = computed(() => userStore.userInfo?.nickname || '')
 
 const total = ref(0)
 const list = ref<ProcessInstance[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
-const isFirstLoad = ref(true)
 
 const queryParams = ref({
   pageNo: 1,
@@ -141,18 +136,8 @@ onReachBottom(() => {
   loadMore()
 })
 
-/** 监听激活状态，刷新数据 */
-watch(() => props.active, (val) => {
-  if (val && !isFirstLoad.value) {
-    queryParams.value.pageNo = 1
-    list.value = []
-    getList()
-  }
-})
-
 /** 初始化 */
 onMounted(() => {
   getList()
-  isFirstLoad.value = false
 })
 </script>
