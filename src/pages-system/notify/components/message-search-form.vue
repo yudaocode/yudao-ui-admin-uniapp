@@ -7,7 +7,6 @@
   <!-- 搜索弹窗 -->
   <wd-popup v-model="visible" position="top" @close="visible = false">
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
-      <!-- 用户编号 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           用户编号
@@ -18,7 +17,6 @@
           clearable
         />
       </view>
-      <!-- 用户类型 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           用户类型
@@ -36,7 +34,6 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- 模板编码 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           模板编码
@@ -47,7 +44,6 @@
           clearable
         />
       </view>
-      <!-- 模版类型 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           模版类型
@@ -65,7 +61,6 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <!-- 创建时间 -->
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           创建时间

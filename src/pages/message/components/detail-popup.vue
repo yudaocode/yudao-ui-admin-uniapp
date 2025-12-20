@@ -2,11 +2,11 @@
   <wd-popup
     v-model="visible"
     position="bottom"
-    custom-style="border-radius: 24rpx 24rpx 0 0; max-height: 80vh;"
+    custom-style="border-radius: 24rpx 24rpx 0 0; height: 50%"
     safe-area-inset-bottom
     @close="visible = false"
   >
-    <view class="p-32rpx">
+    <view class="h-full flex flex-col p-32rpx">
       <!-- 标题 -->
       <view class="mb-32rpx flex items-center justify-between">
         <view class="text-36rpx text-[#333] font-semibold">
@@ -18,7 +18,7 @@
       </view>
 
       <!-- 详情内容 -->
-      <view v-if="formData" class="space-y-24rpx">
+      <view v-if="formData" class="flex flex-1 flex-col overflow-hidden space-y-24rpx">
         <view class="flex items-start">
           <text class="w-160rpx shrink-0 text-28rpx text-[#999]">发送人</text>
           <text class="text-28rpx text-[#333]">{{ formData.templateNickname || '-' }}</text>
@@ -46,9 +46,9 @@
           <text class="w-160rpx shrink-0 text-28rpx text-[#999]">阅读时间</text>
           <text class="text-28rpx text-[#333]">{{ formatDateTime(formData.readTime) || '-' }}</text>
         </view>
-        <view class="flex flex-col">
+        <view class="flex flex-1 flex-col overflow-hidden">
           <text class="mb-12rpx w-160rpx shrink-0 text-28rpx text-[#999]">消息内容</text>
-          <view class="rounded-12rpx bg-[#f5f5f5] p-24rpx">
+          <view class="flex-1 rounded-12rpx bg-[#f5f5f5] p-24rpx">
             <text class="text-28rpx text-[#333]">{{ formData.templateContent || '-' }}</text>
           </view>
         </view>
