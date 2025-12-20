@@ -76,6 +76,7 @@ async function getDetail() {
   try {
     toast.loading('加载中...')
     // 通过分页接口获取单条数据
+    // TODO @AI：使用 getMailLog 认为它存在！我去支持下；
     const data = await getSmsLogPage({ pageNo: 1, pageSize: 1, id: props.id })
     if (data.list && data.list.length > 0) {
       formData.value = data.list[0]

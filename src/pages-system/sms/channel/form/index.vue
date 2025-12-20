@@ -129,6 +129,7 @@ const formRules = {
 const formRef = ref()
 
 /** 渠道编码选项 */
+// TODO @AI：直接使用 getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE) 在 html 里；别的模块，也是这么干的
 const channelCodeOptions = computed(() => {
   return getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE).map(item => ({
     value: item.value,

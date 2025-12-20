@@ -78,6 +78,7 @@ const sendFormData = ref({
   templateParams: {} as Record<string, string>,
 })
 
+/** 发送表单校验规则 */
 const sendFormRules = computed(() => {
   const rules: Record<string, any> = {
     mobile: [{ required: true, message: '手机号码不能为空' }],
@@ -90,6 +91,7 @@ const sendFormRules = computed(() => {
   return rules
 })
 
+/** 初始化发送表单 */
 function initSendForm() {
   sendFormData.value = {
     content: props.template?.content || '',
@@ -112,6 +114,7 @@ watch(
   },
 )
 
+/** 提交发送 */
 async function handleSendSubmit() {
   const { valid } = await sendFormRef.value.validate()
   if (!valid) {

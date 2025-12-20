@@ -1,7 +1,9 @@
 <template>
   <view>
+    <!-- 搜索组件 -->
     <TemplateSearchForm @search="handleQuery" @reset="handleReset" />
 
+    <!-- 模板列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -31,6 +33,7 @@
         </view>
       </view>
 
+      <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
         <wd-status-tip image="content" tip="暂无邮件模板数据" />
       </view>
@@ -41,6 +44,7 @@
       />
     </view>
 
+    <!-- 新增按钮 -->
     <wd-fab
       v-if="hasAccessByCodes(['system:mail-template:create'])"
       position="right-bottom"
@@ -52,10 +56,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailTemplate } from '@/api/system/mail/template/index'
+import type { MailTemplate } from '@/api/system/mail/template'
 import type { LoadMoreState } from '@/http/types'
-import { onMounted, ref } from 'vue'
-import { getMailTemplatePage } from '@/api/system/mail/template/index'
+import { ref } from 'vue'
+import { getMailTemplatePage } from '@/api/system/mail/template'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -70,6 +74,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
+/** 查询列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
@@ -83,6 +88,7 @@ async function getList() {
   }
 }
 
+/** 搜索按钮操作 */
 function handleQuery(data?: Record<string, any>) {
   queryParams.value = {
     ...data,
@@ -93,10 +99,12 @@ function handleQuery(data?: Record<string, any>) {
   getList()
 }
 
+/** 重置按钮操作 */
 function handleReset() {
   handleQuery()
 }
 
+/** 加载更多 */
 function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
@@ -105,22 +113,26 @@ function loadMore() {
   getList()
 }
 
+/** 新增 */
 function handleAdd() {
   uni.navigateTo({
     url: '/pages-system/mail/template/form/index',
   })
 }
 
+/** 查看详情 */
 function handleDetail(item: MailTemplate) {
   uni.navigateTo({
     url: `/pages-system/mail/template/detail/index?id=${item.id}`,
   })
 }
 
+/** 触底加载更多 */
 onReachBottom(() => {
   loadMore()
 })
 
+/** 初始化 */
 onMounted(() => {
   getList()
 })

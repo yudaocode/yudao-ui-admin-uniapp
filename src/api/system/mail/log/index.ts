@@ -1,6 +1,7 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
+/** 邮件日志信息 */
 export interface MailLog {
   id?: number
   userId?: number

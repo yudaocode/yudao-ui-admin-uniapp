@@ -1,7 +1,9 @@
 <template>
   <view>
+    <!-- 搜索组件 -->
     <LogSearchForm @search="handleQuery" @reset="handleReset" />
 
+    <!-- 日志列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -31,6 +33,7 @@
         </view>
       </view>
 
+      <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
         <wd-status-tip image="content" tip="暂无邮件日志数据" />
       </view>
@@ -44,10 +47,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailLog } from '@/api/system/mail/log/index'
+import type { MailLog } from '@/api/system/mail/log'
 import type { LoadMoreState } from '@/http/types'
-import { onMounted, ref } from 'vue'
-import { getMailLogPage } from '@/api/system/mail/log/index'
+import { ref } from 'vue'
+import { getMailLogPage } from '@/api/system/mail/log'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import LogSearchForm from './log-search-form.vue'
@@ -60,6 +63,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
+/** 格式化邮件列表 */
 function formatMails(mails?: string[]) {
   if (!mails || mails.length === 0) {
     return '-'
@@ -67,6 +71,7 @@ function formatMails(mails?: string[]) {
   return mails.join('、')
 }
 
+/** 查询列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
@@ -80,6 +85,7 @@ async function getList() {
   }
 }
 
+/** 搜索按钮操作 */
 function handleQuery(data?: Record<string, any>) {
   queryParams.value = {
     ...data,
@@ -90,10 +96,12 @@ function handleQuery(data?: Record<string, any>) {
   getList()
 }
 
+/** 重置按钮操作 */
 function handleReset() {
   handleQuery()
 }
 
+/** 加载更多 */
 function loadMore() {
   if (loadMoreState.value === 'finished') {
     return
@@ -102,16 +110,19 @@ function loadMore() {
   getList()
 }
 
+/** 查看详情 */
 function handleDetail(item: MailLog) {
   uni.navigateTo({
     url: `/pages-system/mail/log/detail/index?id=${item.id}`,
   })
 }
 
+/** 触底加载更多 */
 onReachBottom(() => {
   loadMore()
 })
 
+/** 初始化 */
 onMounted(() => {
   getList()
 })

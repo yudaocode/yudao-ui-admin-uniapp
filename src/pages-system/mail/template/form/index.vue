@@ -1,11 +1,13 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar
       :title="getTitle"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
+    <!-- 表单区域 -->
     <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
         <wd-cell-group border>
@@ -78,8 +80,14 @@
       </wd-form>
     </view>
 
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+    <!-- 底部保存按钮 -->
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+      <wd-button
+        type="primary"
+        block
+        :loading="formLoading"
+        @click="handleSubmit"
+      >
         保存
       </wd-button>
     </view>
@@ -87,12 +95,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailAccount } from '@/api/system/mail/account/index'
-import type { MailTemplate } from '@/api/system/mail/template/index'
+import type { MailAccount } from '@/api/system/mail/account'
+import type { MailTemplate } from '@/api/system/mail/template'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getSimpleMailAccountList } from '@/api/system/mail/account/index'
-import { createMailTemplate, getMailTemplate, updateMailTemplate } from '@/api/system/mail/template/index'
+import { getSimpleMailAccountList } from '@/api/system/mail/account'
+import { createMailTemplate, getMailTemplate, updateMailTemplate } from '@/api/system/mail/template'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -109,7 +117,7 @@ definePage({
 })
 
 const toast = useToast()
-const getTitle = computed(() => (props.id ? '编辑邮件模板' : '新增邮件模板'))
+const getTitle = computed(() => props.id ? '编辑邮件模板' : '新增邮件模板')
 const formLoading = ref(false)
 const formData = ref<MailTemplate>({
   id: undefined,
@@ -122,7 +130,6 @@ const formData = ref<MailTemplate>({
   status: 0,
   remark: '',
 })
-
 const formRules = {
   name: [{ required: true, message: '模板名称不能为空' }],
   code: [{ required: true, message: '模板编码不能为空' }],
@@ -131,10 +138,13 @@ const formRules = {
   content: [{ required: true, message: '模板内容不能为空' }],
   status: [{ required: true, message: '开启状态不能为空' }],
 }
+const formRef = ref()
 
-const formRef = ref<any>()
-
+/** 邮箱账号列表 */
 const accountList = ref<MailAccount[]>([])
+
+/** 邮箱账号选项 */
+// TODO @AI：直接使用 accountList，参考 https://wot-ui.cn/component/picker.html ，支持通过 label-key 和 value-key；
 const accountOptions = computed(() => {
   return accountList.value.map(item => ({
     value: item.id,
@@ -142,14 +152,17 @@ const accountOptions = computed(() => {
   }))
 })
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/mail/index')
 }
 
+/** 加载邮箱账号列表 */
 async function loadAccountList() {
   accountList.value = await getSimpleMailAccountList()
 }
 
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -157,6 +170,7 @@ async function getDetail() {
   formData.value = await getMailTemplate(props.id)
 }
 
+/** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
   if (!valid) {
@@ -180,6 +194,7 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(async () => {
   await loadAccountList()
   await getDetail()

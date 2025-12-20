@@ -1,21 +1,39 @@
 <template>
+  <!-- 搜索框入口 -->
   <view @click="visible = true">
     <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
 
+  <!-- 搜索弹窗 -->
   <wd-popup v-model="visible" position="top" @close="visible = false">
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
-        <view class="yd-search-form-label">邮箱</view>
-        <wd-input v-model="formData.mail" placeholder="请输入邮箱" clearable />
+        <view class="yd-search-form-label">
+          邮箱
+        </view>
+        <wd-input
+          v-model="formData.mail"
+          placeholder="请输入邮箱"
+          clearable
+        />
       </view>
       <view class="yd-search-form-item">
-        <view class="yd-search-form-label">用户名</view>
-        <wd-input v-model="formData.username" placeholder="请输入用户名" clearable />
+        <view class="yd-search-form-label">
+          用户名
+        </view>
+        <wd-input
+          v-model="formData.username"
+          placeholder="请输入用户名"
+          clearable
+        />
       </view>
       <view class="yd-search-form-actions">
-        <wd-button class="flex-1" plain @click="handleReset">重置</wd-button>
-        <wd-button class="flex-1" type="primary" @click="handleSearch">搜索</wd-button>
+        <wd-button class="flex-1" plain @click="handleReset">
+          重置
+        </wd-button>
+        <wd-button class="flex-1" type="primary" @click="handleSearch">
+          搜索
+        </wd-button>
       </view>
     </view>
   </wd-popup>
@@ -36,6 +54,7 @@ const formData = reactive({
   username: undefined as string | undefined,
 })
 
+/** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.mail) {
@@ -47,6 +66,7 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索邮箱账号'
 })
 
+/** 搜索 */
 function handleSearch() {
   visible.value = false
   emit('search', {
@@ -55,6 +75,7 @@ function handleSearch() {
   })
 }
 
+/** 重置 */
 function handleReset() {
   formData.mail = undefined
   formData.username = undefined

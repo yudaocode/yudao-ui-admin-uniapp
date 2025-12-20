@@ -1,11 +1,13 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar
       title="邮件模板详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
+    <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
         <wd-cell title="模板编号" :value="String(formData?.id ?? '-')" />
@@ -23,9 +25,11 @@
       </wd-cell-group>
     </view>
 
+    <!-- 发送测试邮件弹窗 -->
     <SendForm v-model="sendVisible" :template="formData" />
 
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <!-- 底部操作按钮 -->
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button
           v-if="hasAccessByCodes(['system:mail-template:send-mail'])"
@@ -51,12 +55,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailAccount } from '@/api/system/mail/account/index'
-import type { MailTemplate } from '@/api/system/mail/template/index'
+import type { MailAccount } from '@/api/system/mail/account'
+import type { MailTemplate } from '@/api/system/mail/template'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getSimpleMailAccountList } from '@/api/system/mail/account/index'
-import { deleteMailTemplate, getMailTemplate } from '@/api/system/mail/template/index'
+import { getSimpleMailAccountList } from '@/api/system/mail/account'
+import { deleteMailTemplate, getMailTemplate } from '@/api/system/mail/template'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -78,17 +82,24 @@ const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const formData = ref<MailTemplate>()
 const deleting = ref(false)
+
+// 发送测试邮件相关
 const sendVisible = ref(false)
 
+/** 邮箱账号列表 */
 const accountList = ref<MailAccount[]>([])
+
+/** 获取邮箱账号名称 */
 function getAccountMail(accountId?: number) {
-  return accountList.value.find(item => item.id === accountId)?.mail
+  return accountList.value.find((item: MailAccount) => item.id === accountId)?.mail
 }
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/mail/index')
 }
 
+/** 加载邮箱账号列表 */
 async function loadAccountList() {
   try {
     accountList.value = await getSimpleMailAccountList()
@@ -97,6 +108,7 @@ async function loadAccountList() {
   }
 }
 
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -109,12 +121,14 @@ async function getDetail() {
   }
 }
 
+/** 编辑 */
 function handleEdit() {
   uni.navigateTo({
     url: `/pages-system/mail/template/form/index?id=${props.id}`,
   })
 }
 
+/** 删除 */
 function handleDelete() {
   if (!props.id) {
     return
@@ -140,10 +154,12 @@ function handleDelete() {
   })
 }
 
+/** 打开发送测试邮件弹窗 */
 function handleSendTest() {
   sendVisible.value = true
 }
 
+/** 初始化 */
 onMounted(async () => {
   await loadAccountList()
   await getDetail()

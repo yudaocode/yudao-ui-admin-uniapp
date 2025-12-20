@@ -1,11 +1,13 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar
       :title="getTitle"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
+    <!-- 表单区域 -->
     <view>
       <wd-form ref="formRef" :model="formData" :rules="formRules">
         <wd-cell-group border>
@@ -67,19 +69,19 @@
               </wd-radio>
             </wd-radio-group>
           </wd-cell>
-          <wd-textarea
-            v-model="formData.remark"
-            label="备注"
-            label-width="220rpx"
-            clearable
-            placeholder="请输入备注"
-          />
         </wd-cell-group>
       </wd-form>
     </view>
 
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+    <!-- 底部保存按钮 -->
+    <!-- TODO @芋艿： -->
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+      <wd-button
+        type="primary"
+        block
+        :loading="formLoading"
+        @click="handleSubmit"
+      >
         保存
       </wd-button>
     </view>
@@ -87,10 +89,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailAccount } from '@/api/system/mail/account/index'
+import type { MailAccount } from '@/api/system/mail/account'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createMailAccount, getMailAccount, updateMailAccount } from '@/api/system/mail/account/index'
+import { createMailAccount, getMailAccount, updateMailAccount } from '@/api/system/mail/account'
 import { getBoolDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -107,7 +109,7 @@ definePage({
 })
 
 const toast = useToast()
-const getTitle = computed(() => (props.id ? '编辑邮箱账号' : '新增邮箱账号'))
+const getTitle = computed(() => props.id ? '编辑邮箱账号' : '新增邮箱账号')
 const formLoading = ref(false)
 const formData = ref<MailAccount>({
   id: undefined,
@@ -118,9 +120,7 @@ const formData = ref<MailAccount>({
   port: 25,
   sslEnable: true,
   starttlsEnable: false,
-  remark: '',
 })
-
 const formRules = {
   mail: [{ required: true, message: '邮箱不能为空' }],
   username: [{ required: true, message: '用户名不能为空' }],
@@ -130,23 +130,22 @@ const formRules = {
   sslEnable: [{ required: true, message: '是否开启 SSL 不能为空' }],
   starttlsEnable: [{ required: true, message: '是否开启 STARTTLS 不能为空' }],
 }
+const formRef = ref()
 
-const formRef = ref<any>()
-
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/mail/index')
 }
 
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
   }
   formData.value = await getMailAccount(props.id)
-  if (formData.value.password === undefined) {
-    formData.value.password = ''
-  }
 }
 
+/** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
   if (!valid) {
@@ -170,6 +169,7 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
 })

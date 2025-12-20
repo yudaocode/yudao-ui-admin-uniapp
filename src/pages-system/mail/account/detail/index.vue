@@ -1,11 +1,13 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar
       title="邮箱账号详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
+    <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
         <wd-cell title="编号" :value="String(formData?.id ?? '-')" />
@@ -19,12 +21,12 @@
         <wd-cell title="是否开启 STARTTLS">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData?.starttlsEnable" />
         </wd-cell>
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
     </view>
 
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <!-- 底部操作按钮 -->
+    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button
           v-if="hasAccessByCodes(['system:mail-account:update'])"
@@ -44,10 +46,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailAccount } from '@/api/system/mail/account/index'
+import type { MailAccount } from '@/api/system/mail/account'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteMailAccount, getMailAccount } from '@/api/system/mail/account/index'
+import { deleteMailAccount, getMailAccount } from '@/api/system/mail/account'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -69,10 +71,12 @@ const toast = useToast()
 const formData = ref<MailAccount>()
 const deleting = ref(false)
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/mail/index')
 }
 
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -85,12 +89,14 @@ async function getDetail() {
   }
 }
 
+/** 编辑 */
 function handleEdit() {
   uni.navigateTo({
     url: `/pages-system/mail/account/form/index?id=${props.id}`,
   })
 }
 
+/** 删除 */
 function handleDelete() {
   if (!props.id) {
     return
@@ -116,6 +122,7 @@ function handleDelete() {
   })
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
 })

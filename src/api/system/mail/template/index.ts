@@ -1,6 +1,7 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
+/** 邮件模板信息 */
 export interface MailTemplate {
   id?: number
   name: string
@@ -15,6 +16,7 @@ export interface MailTemplate {
   createTime?: string
 }
 
+/** 发送邮件请求 */
 export interface MailSendReqVO {
   templateCode: string
   templateParams: Record<string, any>

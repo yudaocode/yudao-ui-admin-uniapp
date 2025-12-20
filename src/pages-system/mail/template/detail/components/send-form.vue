@@ -2,7 +2,7 @@
   <wd-popup v-model="visible" position="bottom" closable custom-style="border-radius: 16rpx 16rpx 0 0;">
     <view class="p-24rpx">
       <view class="mb-24rpx text-32rpx text-[#333] font-semibold">
-        测试发送邮件
+        发送测试邮件
       </view>
       <wd-form ref="sendFormRef" :model="sendFormData" :rules="sendFormRules">
         <wd-cell-group border>
@@ -47,7 +47,6 @@
           </template>
         </wd-cell-group>
       </wd-form>
-
       <view class="mt-24rpx">
         <wd-button type="primary" block :loading="sendLoading" @click="handleSendSubmit">
           发送
@@ -58,10 +57,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailTemplate } from '@/api/system/mail/template/index'
+import type { MailTemplate } from '@/api/system/mail/template'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { sendMail } from '@/api/system/mail/template/index'
+import { sendMail } from '@/api/system/mail/template'
 
 const props = defineProps<{
   modelValue: boolean
@@ -94,6 +93,7 @@ const sendFormData = ref({
   templateParams: {} as Record<string, string>,
 })
 
+/** 发送表单校验规则 */
 const sendFormRules = computed(() => {
   const rules: Record<string, any> = {
     toMails: [{ required: true, message: '收件邮箱不能为空' }],
@@ -106,6 +106,8 @@ const sendFormRules = computed(() => {
   return rules
 })
 
+/** 格式化邮箱列表 */
+// TODO @AI：需要 isEmail 校验下，validator 里有
 function normalizeMailList(text: string) {
   return text
     .split(/[,，;；\s]+/)
@@ -113,6 +115,7 @@ function normalizeMailList(text: string) {
     .filter(Boolean)
 }
 
+/** 初始化发送表单 */
 function initSendForm() {
   sendFormData.value = {
     content: props.template?.content || '',
@@ -137,6 +140,7 @@ watch(
   },
 )
 
+/** 提交发送 */
 async function handleSendSubmit() {
   const { valid } = await sendFormRef.value.validate()
   if (!valid) {

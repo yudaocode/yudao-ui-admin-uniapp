@@ -1,15 +1,21 @@
 <template>
+  <!-- 搜索框入口 -->
   <view @click="visible = true">
     <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
 
+  <!-- 搜索弹窗 -->
   <wd-popup v-model="visible" position="top" @close="visible = false">
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           用户编号
         </view>
-        <wd-input v-model="formData.userId" placeholder="请输入用户编号" clearable />
+        <wd-input
+          v-model="formData.userId"
+          placeholder="请输入用户编号"
+          clearable
+        />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -59,7 +65,11 @@
         <view class="yd-search-form-label">
           模板编号
         </view>
-        <wd-input v-model="formData.templateId" placeholder="请输入模板编号" clearable />
+        <wd-input
+          v-model="formData.templateId"
+          placeholder="请输入模板编号"
+          clearable
+        />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -111,7 +121,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleMailAccountList } from '@/api/system/mail/account/index'
+import { getSimpleMailAccountList } from '@/api/system/mail/account'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -132,17 +142,23 @@ const formData = reactive({
   templateId: undefined as number | undefined,
 })
 
+/** 邮箱账号列表 */
 const accountList = ref<{ id?: number, mail: string }[]>([])
+
+/** 邮箱账号选项 */
 const accountOptions = computed(() => {
   return accountList.value.map(item => ({
     value: item.id,
     label: item.mail,
   }))
 })
+
+/** 获取邮箱账号名称 */
 function getAccountMail(accountId?: number) {
   return accountList.value.find(item => item.id === accountId)?.mail
 }
 
+/** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.sendTime?.[0] && formData.sendTime?.[1]) {
@@ -166,19 +182,23 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索邮件日志'
 })
 
+// 时间范围选择器状态
 const visibleSendTime = ref<[boolean, boolean]>([false, false])
 const tempSendTime = ref<[number, number]>([Date.now(), Date.now()])
 
+/** 发送时间[0]确认 */
 function handleSendTime0Confirm() {
   formData.sendTime = [tempSendTime.value[0], formData.sendTime?.[1]]
   visibleSendTime.value[0] = false
 }
 
+/** 发送时间[1]确认 */
 function handleSendTime1Confirm() {
   formData.sendTime = [formData.sendTime?.[0], tempSendTime.value[1]]
   visibleSendTime.value[1] = false
 }
 
+/** 搜索 */
 function handleSearch() {
   visible.value = false
   const dateRange = formatDateRange(formData.sendTime)
@@ -193,6 +213,7 @@ function handleSearch() {
   })
 }
 
+/** 重置 */
 function handleReset() {
   formData.sendTime = [undefined, undefined]
   formData.userId = undefined
@@ -204,6 +225,7 @@ function handleReset() {
   emit('reset')
 }
 
+/** 初始化 */
 onMounted(async () => {
   try {
     accountList.value = await getSimpleMailAccountList()

@@ -1,11 +1,13 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar
       title="邮件日志详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
+    <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
         <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
@@ -28,10 +30,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { MailLog } from '@/api/system/mail/log/index'
+import type { MailLog } from '@/api/system/mail/log'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getMailLogPage } from '@/api/system/mail/log/index'
+import { getMailLogPage } from '@/api/system/mail/log'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -50,10 +52,12 @@ definePage({
 const toast = useToast()
 const formData = ref<MailLog>()
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/mail/index')
 }
 
+/** 格式化接收信息 */
 function formatReceiveInfo(data?: MailLog) {
   if (!data) {
     return '-'
@@ -71,12 +75,15 @@ function formatReceiveInfo(data?: MailLog) {
   return lines.length > 0 ? lines.join('；') : '-'
 }
 
+/** 加载详情 - 由于没有单独的获取详情接口，通过列表接口获取 */
 async function getDetail() {
   if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
+    // 通过分页接口获取单条数据
+    // TODO @AI：使用 getMailLog 认为它存在！我去支持下；
     const data = await getMailLogPage({ pageNo: 1, pageSize: 1, id: props.id })
     if (data.list && data.list.length > 0) {
       formData.value = data.list[0]
@@ -86,6 +93,7 @@ async function getDetail() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
 })

@@ -1,21 +1,31 @@
 <template>
+  <!-- 搜索框入口 -->
   <view @click="visible = true">
     <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
 
+  <!-- 搜索弹窗 -->
   <wd-popup v-model="visible" position="top" @close="visible = false">
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           模板编码
         </view>
-        <wd-input v-model="formData.code" placeholder="请输入模板编码" clearable />
+        <wd-input
+          v-model="formData.code"
+          placeholder="请输入模板编码"
+          clearable
+        />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           模板名称
         </view>
-        <wd-input v-model="formData.name" placeholder="请输入模板名称" clearable />
+        <wd-input
+          v-model="formData.name"
+          placeholder="请输入模板名称"
+          clearable
+        />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -94,7 +104,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleMailAccountList } from '@/api/system/mail/account/index'
+import { getSimpleMailAccountList } from '@/api/system/mail/account'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -114,17 +124,23 @@ const formData = reactive({
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
+/** 邮箱账号列表 */
 const accountList = ref<{ id?: number, mail: string }[]>([])
+
+/** 邮箱账号选项 */
 const accountOptions = computed(() => {
   return accountList.value.map(item => ({
     value: item.id,
     label: item.mail,
   }))
 })
+
+/** 获取邮箱账号名称 */
 function getAccountMail(accountId?: number) {
   return accountList.value.find(item => item.id === accountId)?.mail
 }
 
+/** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.status !== -1) {
@@ -145,19 +161,23 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索邮件模板'
 })
 
+// 时间范围选择器状态
 const visibleCreateTime = ref<[boolean, boolean]>([false, false])
 const tempCreateTime = ref<[number, number]>([Date.now(), Date.now()])
 
+/** 创建时间[0]确认 */
 function handleCreateTime0Confirm() {
   formData.createTime = [tempCreateTime.value[0], formData.createTime?.[1]]
   visibleCreateTime.value[0] = false
 }
 
+/** 创建时间[1]确认 */
 function handleCreateTime1Confirm() {
   formData.createTime = [formData.createTime?.[0], tempCreateTime.value[1]]
   visibleCreateTime.value[1] = false
 }
 
+/** 搜索 */
 function handleSearch() {
   visible.value = false
   const dateRange = formatDateRange(formData.createTime)
@@ -171,6 +191,7 @@ function handleSearch() {
   })
 }
 
+/** 重置 */
 function handleReset() {
   formData.status = -1
   formData.code = undefined
@@ -181,6 +202,7 @@ function handleReset() {
   emit('reset')
 }
 
+/** 初始化 */
 onMounted(async () => {
   try {
     accountList.value = await getSimpleMailAccountList()
