@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="API 访问日志"
+      title="API 错误日志"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -19,18 +19,16 @@
         @click="handleDetail(item)"
       >
         <view class="p-24rpx">
-          <view class="mb-16rpx flex items-center justify-between gap-16rpx">
-            <view class="min-w-0 flex-1 truncate text-28rpx text-[#333] font-semibold">
-              {{ item.requestMethod }} {{ item.requestUrl }}
+          <view class="mb-16rpx flex items-center justify-between">
+            <view class="line-clamp-1 mr-16rpx flex-1 text-28rpx text-[#333] font-semibold">
+              {{ item.exceptionName }}
             </view>
-            <view class="flex-shrink-0">
-              <wd-tag v-if="item.resultCode === 0" type="success" plain>
-                成功
-              </wd-tag>
-              <wd-tag v-else type="danger" plain>
-                失败
-              </wd-tag>
-            </view>
+            <!-- DONE @芽艺：字典 -->
+            <dict-tag :type="DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS" :value="item.processStatus" />
+          </view>
+          <view class="mb-12rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx flex-shrink-0 text-[#999]">请求：</text>
+            <text class="line-clamp-2 break-all">{{ item.requestMethod }} {{ item.requestUrl }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-26rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">应用名：</text>
@@ -40,16 +38,8 @@
             <text class="mr-8rpx text-[#999]">用户编号：</text>
             <text>{{ item.userId }}</text>
           </view>
-          <view class="mb-12rpx flex items-center text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">执行时长：</text>
-            <text>{{ item.duration }} ms</text>
-          </view>
-          <view v-if="item.operateName" class="mb-12rpx flex items-center text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">操作名：</text>
-            <text class="line-clamp-1">{{ item.operateName }}</text>
-          </view>
           <view class="flex items-center text-24rpx text-[#999]">
-            <text>{{ formatDateTime(item.beginTime) }}</text>
+            <text>{{ formatDateTime(item.exceptionTime) }}</text>
           </view>
         </view>
       </view>
@@ -68,12 +58,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiAccessLog } from '@/api/infra/apiAccessLog'
+import type { ApiErrorLog } from '@/api/infra/api-error-log'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getApiAccessLogPage } from '@/api/infra/apiAccessLog'
+import { getApiErrorLogPage } from '@/api/infra/api-error-log'
 import { navigateBackPlus } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -85,7 +76,7 @@ definePage({
 })
 
 const total = ref(0)
-const list = ref<ApiAccessLog[]>([])
+const list = ref<ApiErrorLog[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
 const queryParams = ref({
   pageNo: 1,
@@ -101,7 +92,7 @@ function handleBack() {
 async function getList() {
   loadMoreState.value = 'loading'
   try {
-    const data = await getApiAccessLogPage(queryParams.value)
+    const data = await getApiErrorLogPage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
@@ -137,9 +128,9 @@ function loadMore() {
 }
 
 /** 查看详情 */
-function handleDetail(item: ApiAccessLog) {
+function handleDetail(item: ApiErrorLog) {
   uni.navigateTo({
-    url: `/pages-infra/apiAccessLog/detail/index?id=${item.id}`,
+    url: `/pages-infra/api-error-log/detail/index?id=${item.id}`,
   })
 }
 

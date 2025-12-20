@@ -52,10 +52,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiAccessLog } from '@/api/infra/apiAccessLog'
+import type { ApiAccessLog } from '@/api/infra/api-access-log'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getApiAccessLog } from '@/api/infra/apiAccessLog'
+import { getApiAccessLog } from '@/api/infra/api-access-log'
 import { getDictLabel } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -77,7 +77,7 @@ const toast = useToast()
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-infra/apiAccessLog/index')
+  navigateBackPlus('/pages-infra/api-access-log/index')
 }
 
 /** 复制文本并提示 */

@@ -60,10 +60,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiErrorLog } from '@/api/infra/apiErrorLog'
+import type { ApiErrorLog } from '@/api/infra/api-error-log'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getApiErrorLog, updateApiErrorLogStatus } from '@/api/infra/apiErrorLog'
+import { getApiErrorLog, updateApiErrorLogStatus } from '@/api/infra/api-error-log'
 import { getDictLabel } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, InfraApiErrorLogProcessStatusEnum } from '@/utils/constants'
@@ -86,7 +86,7 @@ const processing = ref(false) // 处理中
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-infra/apiErrorLog/index')
+  navigateBackPlus('/pages-infra/api-error-log/index')
 }
 
 /** 复制文本并提示 */
