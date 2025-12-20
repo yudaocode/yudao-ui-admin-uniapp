@@ -21,21 +21,12 @@ export interface FileCreateReqVO {
   size?: number
 }
 
-/**
- * 获取文件预签名地址
- *
- * @param name 文件名
- * @param directory 目录（可选）
- */
+/** 获取文件预签名地址 */
 export function getFilePresignedUrl(name: string, directory?: string) {
   return http.get<FilePresignedUrlRespVO>('/infra/file/presigned-url', { name, directory })
 }
 
-/**
- * 创建文件记录
- *
- * @param data 文件信息
- */
+/** 创建文件记录 */
 export function createFile(data: FileCreateReqVO) {
   return http.post<string>('/infra/file/create', data)
 }
