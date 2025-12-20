@@ -70,14 +70,6 @@ const menuGroupsData: MenuGroup[] = [
         permission: 'system:post:query',
       },
       {
-        key: 'notice',
-        name: '通知公告',
-        icon: 'spool',
-        url: '/pages-system/notice/index',
-        iconColor: '#faad14',
-        permission: 'system:notice:query',
-      },
-      {
         key: 'operateLog',
         name: '操作日志',
         icon: 'format-horizontal-align-top',
@@ -92,6 +84,14 @@ const menuGroupsData: MenuGroup[] = [
         url: '/pages-system/login-log/index',
         iconColor: '#1677ff',
         permission: 'system:login-log:query',
+      },
+      {
+        key: 'notice',
+        name: '通知公告',
+        icon: 'spool',
+        url: '/pages-system/notice/index',
+        iconColor: '#faad14',
+        permission: 'system:notice:query',
       },
       {
         key: 'sms',
@@ -112,7 +112,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'notify',
         name: '站内信管理',
-        icon: 'bell',
+        icon: 'read',
         url: '/pages-system/notify/index',
         iconColor: '#ff85c0',
         permission: 'system:notify-template:query',
@@ -123,13 +123,6 @@ const menuGroupsData: MenuGroup[] = [
     key: 'infra',
     name: '基础设施',
     menus: [
-      {
-        key: 'codegen',
-        name: '代码生成',
-        icon: 'chevron-up-rectangle',
-        url: '/pages/error/pc-only',
-        iconColor: '#1677ff',
-      },
       {
         key: 'accessLog',
         name: '访问日志',
@@ -152,6 +145,34 @@ const menuGroupsData: MenuGroup[] = [
         icon: 'chat',
         url: '/pages-infra/web-socket/index',
         iconColor: '#36cfc9',
+      },
+      {
+        key: 'codegen',
+        name: '代码生成',
+        icon: 'chevron-up-rectangle',
+        url: '/pages/error/pc-only',
+        iconColor: '#1677ff',
+      },
+      {
+        key: 'build',
+        name: '表单构建',
+        icon: 'edit-outline',
+        url: '/pages/error/pc-only',
+        iconColor: '#722ed1',
+      },
+      {
+        key: 'swagger',
+        name: 'API 接口',
+        icon: 'link',
+        url: '/pages/error/pc-only',
+        iconColor: '#52c41a',
+      },
+      {
+        key: 'druid',
+        name: '监控中心',
+        icon: 'computer',
+        url: '/pages/error/pc-only',
+        iconColor: '#fa8c16',
       },
     ],
   },
