@@ -1,7 +1,7 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** 站内信消息 */
+/** 站内信消息信息 */
 export interface NotifyMessage {
   id: number
   userId: number
@@ -17,9 +17,24 @@ export interface NotifyMessage {
   createTime?: Date
 }
 
+/** 查询站内信消息列表 */
+export function getNotifyMessagePage(params: PageParam) {
+  return http.get<PageResult<NotifyMessage>>('/system/notify-message/page', params)
+}
+
+/** 查询站内信消息详情 */
+export function getNotifyMessage(id: number) {
+  return http.get<NotifyMessage>(`/system/notify-message/get`, { id })
+}
+
 /** 获取我的站内信分页 */
 export function getMyNotifyMessagePage(params: PageParam) {
   return http.get<PageResult<NotifyMessage>>('/system/notify-message/my-page', params)
+}
+
+/** 获取我的站内信详情 */
+export function getMyNotifyMessage(id: number) {
+  return http.get<NotifyMessage>(`/system/notify-message/get`, { id })
 }
 
 /** 批量标记站内信已读 */

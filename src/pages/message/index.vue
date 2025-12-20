@@ -76,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { NotifyMessage } from '@/api/system/notify'
+import type { NotifyMessage } from '@/api/system/notify/message'
 import type { LoadMoreState } from '@/http/types'
 import { onReachBottom } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -85,7 +85,7 @@ import {
   getMyNotifyMessagePage,
   updateAllNotifyMessageRead,
   updateNotifyMessageRead,
-} from '@/api/system/notify'
+} from '@/api/system/notify/message'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

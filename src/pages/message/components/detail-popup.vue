@@ -58,7 +58,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { NotifyMessage } from '@/api/system/notify'
+import type { NotifyMessage } from '@/api/system/notify/message'
 import { ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'

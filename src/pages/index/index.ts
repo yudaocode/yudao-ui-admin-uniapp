@@ -109,6 +109,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#40a9ff',
         permission: 'system:mail-account:query',
       },
+      {
+        key: 'notify',
+        name: '站内信管理',
+        icon: 'bell',
+        url: '/pages-system/notify/index',
+        iconColor: '#ff85c0',
+        permission: 'system:notify-template:query',
+      },
     ],
   },
   {
