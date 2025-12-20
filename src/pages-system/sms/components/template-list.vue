@@ -60,10 +60,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsTemplate } from '@/api/system/sms'
+import type { SmsTemplate } from '@/api/system/sms/template'
 import type { LoadMoreState } from '@/http/types'
 import { ref } from 'vue'
-import { getSmsTemplatePage } from '@/api/system/sms'
+import { getSmsTemplatePage } from '@/api/system/sms/template'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

@@ -56,10 +56,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsChannel } from '@/api/system/sms'
+import type { SmsChannel } from '@/api/system/sms/channel'
 import type { LoadMoreState } from '@/http/types'
 import { ref } from 'vue'
-import { getSmsChannelPage } from '@/api/system/sms'
+import { getSmsChannelPage } from '@/api/system/sms/channel'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

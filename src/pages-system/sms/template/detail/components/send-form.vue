@@ -44,10 +44,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsTemplate } from '@/api/system/sms'
+import type { SmsTemplate } from '@/api/system/sms/template'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { sendSms } from '@/api/system/sms'
+import { sendSms } from '@/api/system/sms/template'
 
 const props = defineProps<{
   modelValue: boolean

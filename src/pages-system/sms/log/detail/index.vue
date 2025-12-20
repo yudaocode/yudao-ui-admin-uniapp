@@ -41,10 +41,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsLog } from '@/api/system/sms'
+import type { SmsLog } from '@/api/system/sms/log'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getSmsLogPage } from '@/api/system/sms'
+import { getSmsLogPage } from '@/api/system/sms/log'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

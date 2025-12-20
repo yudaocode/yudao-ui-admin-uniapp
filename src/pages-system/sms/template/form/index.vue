@@ -96,10 +96,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsChannel, SmsTemplate } from '@/api/system/sms'
+import type { SmsChannel } from '@/api/system/sms/channel'
+import type { SmsTemplate } from '@/api/system/sms/template'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createSmsTemplate, getSimpleSmsChannelList, getSmsTemplate, updateSmsTemplate } from '@/api/system/sms'
+import { getSimpleSmsChannelList } from '@/api/system/sms/channel'
+import { createSmsTemplate, getSmsTemplate, updateSmsTemplate } from '@/api/system/sms/template'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

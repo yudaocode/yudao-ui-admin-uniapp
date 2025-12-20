@@ -88,10 +88,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsChannel } from '@/api/system/sms'
+import type { SmsChannel } from '@/api/system/sms/channel'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createSmsChannel, getSmsChannel, updateSmsChannel } from '@/api/system/sms'
+import { createSmsChannel, getSmsChannel, updateSmsChannel } from '@/api/system/sms/channel'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

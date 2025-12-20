@@ -59,10 +59,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsTemplate } from '@/api/system/sms'
+import type { SmsTemplate } from '@/api/system/sms/template'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteSmsTemplate, getSmsTemplate } from '@/api/system/sms'
+import { deleteSmsTemplate, getSmsTemplate } from '@/api/system/sms/template'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

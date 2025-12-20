@@ -47,10 +47,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SmsChannel } from '@/api/system/sms'
+import type { SmsChannel } from '@/api/system/sms/channel'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteSmsChannel, getSmsChannel } from '@/api/system/sms'
+import { deleteSmsChannel, getSmsChannel } from '@/api/system/sms/channel'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
