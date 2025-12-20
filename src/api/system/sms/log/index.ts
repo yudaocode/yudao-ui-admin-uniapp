@@ -32,3 +32,8 @@ export interface SmsLog {
 export function getSmsLogPage(params: PageParam) {
   return http.get<PageResult<SmsLog>>('/system/sms-log/page', params)
 }
+
+/** 获取短信日志详情 */
+export function getSmsLog(id: number) {
+  return http.get<SmsLog>(`/system/sms-log/get?id=${id}`)
+}

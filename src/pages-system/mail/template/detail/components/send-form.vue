@@ -61,6 +61,7 @@ import type { MailTemplate } from '@/api/system/mail/template'
 import { computed, ref, watch } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { sendMail } from '@/api/system/mail/template'
+import { isEmail } from '@/utils/validator'
 
 const props = defineProps<{
   modelValue: boolean
@@ -107,12 +108,17 @@ const sendFormRules = computed(() => {
 })
 
 /** 格式化邮箱列表 */
-// TODO @AI：需要 isEmail 校验下，validator 里有
 function normalizeMailList(text: string) {
-  return text
+  const list = text
     .split(/[,，;；\s]+/)
     .map(s => s.trim())
     .filter(Boolean)
+  const invalid = list.find(item => !isEmail(item))
+  if (invalid) {
+    toast.warning(`邮箱格式不正确：${invalid}`)
+    return null
+  }
+  return list
 }
 
 /** 初始化发送表单 */
@@ -146,15 +152,27 @@ async function handleSendSubmit() {
   if (!valid) {
     return
   }
+  const toMails = normalizeMailList(sendFormData.value.toMails)
+  if (!toMails || toMails.length === 0) {
+    return
+  }
+  const ccMails = normalizeMailList(sendFormData.value.ccMails)
+  if (ccMails === null) {
+    return
+  }
+  const bccMails = normalizeMailList(sendFormData.value.bccMails)
+  if (bccMails === null) {
+    return
+  }
 
   sendLoading.value = true
   try {
     await sendMail({
       templateCode: props.template?.code || '',
       templateParams: sendFormData.value.templateParams,
-      toMails: normalizeMailList(sendFormData.value.toMails),
-      ccMails: normalizeMailList(sendFormData.value.ccMails),
-      bccMails: normalizeMailList(sendFormData.value.bccMails),
+      toMails,
+      ccMails: ccMails.length > 0 ? ccMails : undefined,
+      bccMails: bccMails.length > 0 ? bccMails : undefined,
     })
     toast.success('邮件发送成功')
     emit('success')

@@ -25,26 +25,32 @@ export interface MailSendReqVO {
   bccMails?: string[]
 }
 
+/** 获取邮件模板分页列表 */
 export function getMailTemplatePage(params: PageParam) {
   return http.get<PageResult<MailTemplate>>('/system/mail-template/page', params)
 }
 
+/** 获取邮件模板详情 */
 export function getMailTemplate(id: number) {
   return http.get<MailTemplate>(`/system/mail-template/get?id=${id}`)
 }
 
+/** 创建邮件模板 */
 export function createMailTemplate(data: MailTemplate) {
   return http.post<number>('/system/mail-template/create', data)
 }
 
+/** 更新邮件模板 */
 export function updateMailTemplate(data: MailTemplate) {
   return http.put<boolean>('/system/mail-template/update', data)
 }
 
+/** 删除邮件模板 */
 export function deleteMailTemplate(id: number) {
   return http.delete<boolean>(`/system/mail-template/delete?id=${id}`)
 }
 
+/** 发送邮件 */
 export function sendMail(data: MailSendReqVO) {
   return http.post<number>('/system/mail-template/send-mail', data)
 }

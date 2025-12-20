@@ -33,7 +33,7 @@
 import type { MailLog } from '@/api/system/mail/log'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getMailLogPage } from '@/api/system/mail/log'
+import { getMailLog } from '@/api/system/mail/log'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -75,19 +75,14 @@ function formatReceiveInfo(data?: MailLog) {
   return lines.length > 0 ? lines.join('；') : '-'
 }
 
-/** 加载详情 - 由于没有单独的获取详情接口，通过列表接口获取 */
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    // 通过分页接口获取单条数据
-    // TODO @AI：使用 getMailLog 认为它存在！我去支持下；
-    const data = await getMailLogPage({ pageNo: 1, pageSize: 1, id: props.id })
-    if (data.list && data.list.length > 0) {
-      formData.value = data.list[0]
-    }
+    formData.value = await getMailLog(Number(props.id))
   } finally {
     toast.close()
   }

@@ -22,7 +22,9 @@
           <wd-cell title="渠道编码" title-width="200rpx" prop="code" center>
             <wd-picker
               v-model="formData.code"
-              :columns="channelCodeOptions"
+              :columns="getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE)"
+              label-key="label"
+              value-key="value"
               placeholder="请选择渠道编码"
             />
           </wd-cell>
@@ -127,15 +129,6 @@ const formRules = {
   apiKey: [{ required: true, message: 'API 账号不能为空' }],
 }
 const formRef = ref()
-
-/** 渠道编码选项 */
-// TODO @AI：直接使用 getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE) 在 html 里；别的模块，也是这么干的
-const channelCodeOptions = computed(() => {
-  return getStrDictOptions(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE).map(item => ({
-    value: item.value,
-    label: item.label,
-  }))
-})
 
 /** 返回上一页 */
 function handleBack() {

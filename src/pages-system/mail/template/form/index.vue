@@ -30,7 +30,9 @@
           <wd-cell title="邮箱账号" title-width="200rpx" prop="accountId" center>
             <wd-picker
               v-model="formData.accountId"
-              :columns="accountOptions"
+              :columns="accountList"
+              label-key="mail"
+              value-key="id"
               placeholder="请选择邮箱账号"
             />
           </wd-cell>
@@ -142,15 +144,6 @@ const formRef = ref()
 
 /** 邮箱账号列表 */
 const accountList = ref<MailAccount[]>([])
-
-/** 邮箱账号选项 */
-// TODO @AI：直接使用 accountList，参考 https://wot-ui.cn/component/picker.html ，支持通过 label-key 和 value-key；
-const accountOptions = computed(() => {
-  return accountList.value.map(item => ({
-    value: item.id,
-    label: item.mail,
-  }))
-})
 
 /** 返回上一页 */
 function handleBack() {

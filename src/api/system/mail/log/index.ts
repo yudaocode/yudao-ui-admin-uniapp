@@ -23,6 +23,12 @@ export interface MailLog {
   createTime?: string
 }
 
+/** 获取邮件日志分页列表 */
 export function getMailLogPage(params: PageParam) {
   return http.get<PageResult<MailLog>>('/system/mail-log/page', params)
+}
+
+/** 获取邮件日志详情 */
+export function getMailLog(id: number) {
+  return http.get<MailLog>(`/system/mail-log/get?id=${id}`)
 }
