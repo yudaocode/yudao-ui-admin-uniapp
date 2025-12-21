@@ -210,6 +210,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#36cfc9',
       },
       {
+        key: 'job',
+        name: '定时任务',
+        icon: 'clock',
+        url: '/pages-infra/job/index',
+        iconColor: '#eb2f96',
+        permission: 'infra:job:query',
+      },
+      {
         key: 'codegen',
         name: '代码生成',
         icon: 'chevron-up-rectangle',

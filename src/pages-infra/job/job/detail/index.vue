@@ -29,12 +29,6 @@
     <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
       <view class="w-full flex gap-24rpx">
         <wd-button
-          v-if="hasAccessByCodes(['infra:job:trigger'])"
-          class="flex-1" type="success" :loading="running" @click="handleRun"
-        >
-          执行一次
-        </wd-button>
-        <wd-button
           v-if="hasAccessByCodes(['infra:job:update'])"
           class="flex-1" type="warning" @click="handleEdit"
         >
@@ -46,19 +40,28 @@
         >
           删除
         </wd-button>
+        <wd-button
+          v-if="hasMoreActions"
+          class="flex-1" type="info" @click="moreActionVisible = true"
+        >
+          更多
+        </wd-button>
       </view>
     </view>
+
+    <!-- 更多操作菜单 -->
+    <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { Job } from '@/api/infra/job'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteJob, getJob, runJob } from '@/api/infra/job'
+import { deleteJob, getJob, runJob, updateJobStatus } from '@/api/infra/job'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, InfraJobStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -76,11 +79,30 @@ const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const formData = ref<Job>()
 const deleting = ref(false)
-const running = ref(false)
+
+const moreActionVisible = ref(false) // 更多操作菜单
+const moreActions = computed(() => {
+  const actions = []
+  // 执行一次权限
+  if (hasAccessByCodes(['infra:job:trigger'])) {
+    actions.push({ name: '执行一次', value: 'run' })
+  }
+  // 更新状态权限
+  if (hasAccessByCodes(['infra:job:update'])) {
+    const isRunning = formData.value?.status === InfraJobStatusEnum.NORMAL
+    actions.push({ name: isRunning ? '暂停任务' : '开启任务', value: 'update-status' })
+  }
+  // 查看调度日志权限
+  if (hasAccessByCodes(['infra:job:query'])) {
+    actions.push({ name: '调度日志', value: 'view-log' })
+  }
+  return actions
+})
+const hasMoreActions = computed(() => moreActions.value.length > 0)
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-system/job/index')
+  navigateBackPlus('/pages-infra/job/index')
 }
 
 /** 加载详情 */
@@ -108,12 +130,12 @@ function handleRun() {
       if (!res.confirm) {
         return
       }
-      running.value = true
       try {
+        toast.loading('执行中...')
         await runJob(props.id)
         toast.success('执行成功')
       } finally {
-        running.value = false
+        toast.close()
       }
     },
   })
@@ -122,7 +144,7 @@ function handleRun() {
 /** 编辑 */
 function handleEdit() {
   uni.navigateTo({
-    url: `/pages-system/job/job/form/index?id=${props.id}`,
+    url: `/pages-infra/job/job/form/index?id=${props.id}`,
   })
 }
 
@@ -149,6 +171,51 @@ function handleDelete() {
         deleting.value = false
       }
     },
+  })
+}
+
+/** 更多操作 */
+function handleMoreAction({ item }: { item: { value: string } }) {
+  if (item.value === 'run') {
+    handleRun()
+  } else if (item.value === 'update-status') {
+    handleUpdateStatus()
+  } else if (item.value === 'view-log') {
+    handleViewLog()
+  }
+}
+
+/** 更新任务状态 */
+function handleUpdateStatus() {
+  if (!props.id) {
+    return
+  }
+  const isRunning = formData.value?.status === InfraJobStatusEnum.NORMAL
+  const statusText = isRunning ? '暂停' : '开启'
+  uni.showModal({
+    title: '提示',
+    content: `确定要${statusText}该任务吗？`,
+    success: async (res) => {
+      if (!res.confirm) {
+        return
+      }
+      try {
+        toast.loading(`正在${statusText}中...`)
+        const newStatus = isRunning ? InfraJobStatusEnum.STOP : InfraJobStatusEnum.NORMAL
+        await updateJobStatus(props.id, newStatus)
+        toast.success(`${statusText}成功`)
+        await getDetail()
+      } finally {
+        toast.close()
+      }
+    },
+  })
+}
+
+/** 查看调度日志 */
+function handleViewLog() {
+  uni.navigateTo({
+    url: `/pages-infra/job/index?tab=log&jobId=${props.id}`,
   })
 }
 

@@ -1,7 +1,7 @@
 <template>
   <view>
     <!-- 搜索组件 -->
-    <LogSearchForm @search="handleQuery" @reset="handleReset" />
+    <LogSearchForm :job-id="jobId" @search="handleQuery" @reset="handleReset" />
 
     <!-- 日志列表 -->
     <view class="p-24rpx">
@@ -53,11 +53,15 @@
 <script lang="ts" setup>
 import type { JobLog } from '@/api/infra/job/log'
 import type { LoadMoreState } from '@/http/types'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { getJobLogPage } from '@/api/infra/job/log'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import LogSearchForm from './log-search-form.vue'
+
+const props = defineProps<{
+  jobId?: number
+}>()
 
 const total = ref(0)
 const list = ref<JobLog[]>([])
@@ -109,7 +113,7 @@ function loadMore() {
 /** 查看详情 */
 function handleDetail(item: JobLog) {
   uni.navigateTo({
-    url: `/pages-system/job/log/detail/index?id=${item.id}`,
+    url: `/pages-infra/job/log/detail/index?id=${item.id}`,
   })
 }
 
@@ -122,4 +126,16 @@ onReachBottom(() => {
 onMounted(() => {
   getList()
 })
+
+/** 监听 jobId 变化，重新查询 */
+watch(
+  () => props.jobId,
+  () => {
+    if (props.jobId) {
+      queryParams.value.pageNo = 1
+      list.value = []
+      getList()
+    }
+  },
+)
 </script>

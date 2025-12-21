@@ -34,6 +34,12 @@
             <text class="mr-8rpx text-[#999]">创建时间：</text>
             <text>{{ formatDateTime(item.createTime) || '-' }}</text>
           </view>
+          <!-- 查看日志按钮 -->
+          <view class="flex justify-end -mt-8">
+            <wd-button size="small" type="info" @click.stop="handleViewLog(item)">
+              调度日志
+            </wd-button>
+          </view>
         </view>
       </view>
 
@@ -68,6 +74,10 @@ import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import JobSearchForm from './job-search-form.vue'
+
+const emit = defineEmits<{
+  viewLog: [jobId: number]
+}>()
 
 const { hasAccessByCodes } = useAccess()
 const total = ref(0)
@@ -120,15 +130,20 @@ function loadMore() {
 /** 新增 */
 function handleAdd() {
   uni.navigateTo({
-    url: '/pages-system/job/job/form/index',
+    url: '/pages-infra/job/job/form/index',
   })
 }
 
 /** 查看详情 */
 function handleDetail(item: Job) {
   uni.navigateTo({
-    url: `/pages-system/job/job/detail/index?id=${item.id}`,
+    url: `/pages-infra/job/job/detail/index?id=${item.id}`,
   })
+}
+
+/** 查看调度日志 */
+function handleViewLog(item: Job) {
+  emit('viewLog', item.id)
 }
 
 /** 触底加载更多 */

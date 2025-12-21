@@ -131,7 +131,7 @@ const formRef = ref()
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-system/job/index')
+  navigateBackPlus('/pages-infra/job/index')
 }
 
 /** 加载详情 */

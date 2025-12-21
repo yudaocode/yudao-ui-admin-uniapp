@@ -93,11 +93,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+
+const props = defineProps<{
+  jobId?: number
+}>()
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -106,7 +110,7 @@ const emit = defineEmits<{
 
 const visible = ref(false)
 const formData = reactive({
-  jobId: undefined as string | undefined,
+  jobId: undefined as number | undefined,
   handlerName: undefined as string | undefined,
   status: -1, // -1 表示全部
   beginTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -166,4 +170,13 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
+
+/** 监听外部 jobId 变化 */
+watch(
+  () => props.jobId,
+  (val) => {
+    formData.jobId = val
+  },
+  { immediate: true },
+)
 </script>
