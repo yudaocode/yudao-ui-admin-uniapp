@@ -12,8 +12,11 @@
       <wd-cell-group border>
         <wd-cell title="主键编号" :value="String(formData?.id ?? '-')" />
         <wd-cell title="数据源名称" :value="String(formData?.name ?? '-')" />
-        <!-- TODO @AI：参考 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-infra/api-access-log/detail/index.vue 复制的处理 -->
-        <wd-cell title="数据源连接" :value="String(formData?.url ?? '-')" />
+        <wd-cell title="数据源连接" is-link @click="handleCopyText(formData?.url, '数据源连接')">
+          <view class="max-w-400rpx truncate text-right">
+            {{ formData?.url || '-' }}
+          </view>
+        </wd-cell>
         <wd-cell title="用户名" :value="String(formData?.username ?? '-')" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
@@ -67,6 +70,20 @@ const deleting = ref(false)
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-infra/data-source-config/index')
+}
+
+/** 复制文本并提示 */
+function handleCopyText(text?: string, title?: string) {
+  if (!text || text === '-') {
+    return
+  }
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.hideToast()
+      toast.success(`${title || '内容'}已复制`)
+    },
+  })
 }
 
 /** 加载数据源配置详情 */
