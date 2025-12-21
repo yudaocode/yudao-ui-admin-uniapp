@@ -56,10 +56,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TenantPackage } from '@/api/system/tenant-package'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import type { LoadMoreState } from '@/http/types'
 import { onMounted, ref } from 'vue'
-import { getTenantPackagePage } from '@/api/system/tenant-package'
+import { getTenantPackagePage } from '@/api/system/tenant/package'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

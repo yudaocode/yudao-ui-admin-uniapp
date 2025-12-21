@@ -60,7 +60,7 @@
             label="用户密码"
             label-width="200rpx"
             prop="password"
-            type="password"
+            show-password
             clearable
             placeholder="请输入用户密码"
           />
@@ -111,11 +111,11 @@
 
 <script lang="ts" setup>
 import type { Tenant } from '@/api/system/tenant'
-import type { TenantPackage } from '@/api/system/tenant-package'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createTenant, getTenant, updateTenant } from '@/api/system/tenant'
-import { getTenantPackageList } from '@/api/system/tenant-package'
+import { getTenantPackageList } from '@/api/system/tenant/package'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -135,7 +135,7 @@ const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑租户' : '新增租户')
 const formLoading = ref(false)
 const packageOptions = ref<TenantPackage[]>([])
-const formData = ref<Tenant & { username?: string; password?: string }>({
+const formData = ref<Tenant & { username?: string, password?: string }>({
   id: undefined,
   name: '',
   packageId: 0,

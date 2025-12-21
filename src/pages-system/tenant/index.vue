@@ -24,8 +24,8 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import { navigateBackPlus } from '@/utils'
-import TenantList from './components/tenant-list.vue'
 import PackageList from './components/package-list.vue'
+import TenantList from './components/tenant-list.vue'
 
 definePage({
   style: {

@@ -57,10 +57,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TenantPackage } from '@/api/system/tenant-package'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createTenantPackage, getTenantPackage, updateTenantPackage } from '@/api/system/tenant-package'
+import { createTenantPackage, getTenantPackage, updateTenantPackage } from '@/api/system/tenant/package'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -130,6 +130,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
+// TODO @芋艿：这里有个租户套餐的设置；只支持 pc 操作；
 onMounted(() => {
   getDetail()
 })

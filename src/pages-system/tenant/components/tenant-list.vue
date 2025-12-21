@@ -23,6 +23,10 @@
             <text class="min-w-0 flex-1 truncate">{{ item.contactName || '-' }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">租户套餐：</text>
+            <text>{{ getPackageName(item.packageId) }}</text>
+          </view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">联系手机：</text>
             <text>{{ item.contactMobile || '-' }}</text>
           </view>
@@ -65,9 +69,11 @@
 
 <script lang="ts" setup>
 import type { Tenant } from '@/api/system/tenant'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import type { LoadMoreState } from '@/http/types'
 import { onMounted, ref } from 'vue'
 import { getTenantPage } from '@/api/system/tenant'
+import { getTenantPackageList } from '@/api/system/tenant/package'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -76,11 +82,26 @@ import TenantSearchForm from './tenant-search-form.vue'
 const { hasAccessByCodes } = useAccess()
 const total = ref(0)
 const list = ref<Tenant[]>([])
+const packageList = ref<TenantPackage[]>([])
 const loadMoreState = ref<LoadMoreState>('loading')
 const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
 })
+
+/** 获取套餐名称 */
+function getPackageName(packageId?: number) {
+  if (packageId === 0) {
+    return '系统租户'
+  }
+  const pkg = packageList.value.find(item => item.id === packageId)
+  return pkg?.name || '-'
+}
+
+/** 加载租户套餐列表 */
+async function loadPackageList() {
+  packageList.value = await getTenantPackageList()
+}
 
 /** 查询租户列表 */
 async function getList() {
@@ -141,7 +162,8 @@ onReachBottom(() => {
 })
 
 /** 初始化 */
-onMounted(() => {
+onMounted(async () => {
+  await loadPackageList()
   getList()
 })
 </script>

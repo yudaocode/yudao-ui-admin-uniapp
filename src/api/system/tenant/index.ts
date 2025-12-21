@@ -9,7 +9,7 @@ export interface Tenant {
   contactName: string
   contactMobile: string
   accountCount: number
-  expireTime: Date
+  expireTime: Date | any
   websites: string[]
   status: number
   createTime?: Date

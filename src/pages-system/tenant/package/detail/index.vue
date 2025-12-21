@@ -41,10 +41,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TenantPackage } from '@/api/system/tenant-package'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteTenantPackage, getTenantPackage } from '@/api/system/tenant-package'
+import { deleteTenantPackage, getTenantPackage } from '@/api/system/tenant/package'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

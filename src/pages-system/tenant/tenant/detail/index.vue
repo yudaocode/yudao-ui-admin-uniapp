@@ -47,11 +47,11 @@
 
 <script lang="ts" setup>
 import type { Tenant } from '@/api/system/tenant'
-import type { TenantPackage } from '@/api/system/tenant-package'
+import type { TenantPackage } from '@/api/system/tenant/package'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { deleteTenant, getTenant } from '@/api/system/tenant'
-import { getTenantPackageList } from '@/api/system/tenant-package'
+import { getTenantPackageList } from '@/api/system/tenant/package'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
