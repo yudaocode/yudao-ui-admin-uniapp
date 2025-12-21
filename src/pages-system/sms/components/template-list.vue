@@ -32,7 +32,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>

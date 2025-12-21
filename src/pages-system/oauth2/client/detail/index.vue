@@ -10,19 +10,19 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="客户端编号" :value="String(formData?.clientId ?? '-')" />
-        <wd-cell title="客户端密钥" :value="String(formData?.secret ?? '-')" />
-        <wd-cell title="应用名" :value="String(formData?.name ?? '-')" />
-        <wd-cell title="应用描述" :value="String(formData?.description ?? '-')" />
+        <wd-cell title="客户端编号" :value="formData?.clientId" />
+        <wd-cell title="客户端密钥" :value="formData?.secret" />
+        <wd-cell title="应用名" :value="formData?.name" />
+        <wd-cell title="应用描述" :value="formData?.description ?? '-'" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="访问令牌有效期" :value="`${formData?.accessTokenValiditySeconds ?? '-'} 秒`" />
-        <wd-cell title="刷新令牌有效期" :value="`${formData?.refreshTokenValiditySeconds ?? '-'} 秒`" />
+        <wd-cell title="访问令牌有效期" :value="`${formData?.accessTokenValiditySeconds} 秒`" />
+        <wd-cell title="刷新令牌有效期" :value="`${formData?.refreshTokenValiditySeconds} 秒`" />
         <wd-cell title="授权类型" :value="formData?.authorizedGrantTypes?.join(', ') || '-'" />
         <wd-cell title="授权范围" :value="formData?.scopes?.join(', ') || '-'" />
         <wd-cell title="可重定向 URI" :value="formData?.redirectUris?.join(', ') || '-'" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

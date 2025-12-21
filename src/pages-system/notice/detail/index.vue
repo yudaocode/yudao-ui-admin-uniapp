@@ -10,16 +10,16 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="公告编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="公告标题" :value="String(formData?.title ?? '-')" />
-        <wd-cell title="公告内容" :value="String(formData?.content ?? '-')" />
+        <wd-cell title="公告编号" :value="formData?.id" />
+        <wd-cell title="公告标题" :value="formData?.title" />
+        <wd-cell title="公告内容" :value="formData?.content" />
         <wd-cell title="公告类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTICE_TYPE" :value="formData?.type" />
         </wd-cell>
         <wd-cell title="公告状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

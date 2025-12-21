@@ -10,22 +10,22 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="应用名" :value="String(formData?.name ?? '-')" />
+        <wd-cell title="编号" :value="formData?.id" />
+        <wd-cell title="应用名" :value="formData?.name" />
         <wd-cell title="社交平台">
           <dict-tag :type="DICT_TYPE.SYSTEM_SOCIAL_TYPE" :value="formData?.socialType" />
         </wd-cell>
         <wd-cell title="用户类型">
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="formData?.userType" />
         </wd-cell>
-        <wd-cell title="应用编号" :value="String(formData?.clientId ?? '-')" />
-        <wd-cell title="应用密钥" :value="String(formData?.clientSecret ?? '-')" />
-        <wd-cell title="agentId" :value="String(formData?.agentId ?? '-')" />
-        <wd-cell title="publicKey" :value="String(formData?.publicKey ?? '-')" />
+        <wd-cell title="应用编号" :value="formData?.clientId" />
+        <wd-cell title="应用密钥" :value="formData?.clientSecret" />
+        <wd-cell title="agentId" :value="formData?.agentId ?? '-'" />
+        <wd-cell title="publicKey" :value="formData?.publicKey ?? '-'" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

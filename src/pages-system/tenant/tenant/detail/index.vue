@@ -10,18 +10,18 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="租户编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="租户名称" :value="String(formData?.name ?? '-')" />
+        <wd-cell title="租户编号" :value="formData?.id" />
+        <wd-cell title="租户名称" :value="formData?.name" />
         <wd-cell title="租户套餐" :value="getPackageName(formData?.packageId)" />
-        <wd-cell title="联系人" :value="String(formData?.contactName ?? '-')" />
-        <wd-cell title="联系手机" :value="String(formData?.contactMobile ?? '-')" />
-        <wd-cell title="账号额度" :value="String(formData?.accountCount ?? '-')" />
-        <wd-cell title="过期时间" :value="formatDateTime(formData?.expireTime) || '-'" />
+        <wd-cell title="联系人" :value="formData?.contactName ?? '-'" />
+        <wd-cell title="联系手机" :value="formData?.contactMobile ?? '-'" />
+        <wd-cell title="账号额度" :value="formData?.accountCount" />
+        <wd-cell title="过期时间" :value="formatDateTime(formData?.expireTime)" />
         <wd-cell title="绑定域名" :value="formData?.websites?.join(', ') || '-'" />
         <wd-cell title="租户状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

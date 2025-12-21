@@ -23,7 +23,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">文件类型：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.type || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.type }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">文件大小：</text>
@@ -31,7 +31,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">上传时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
           <view v-if="item.type && item.type.includes('image')" class="mb-12rpx">
             <wd-img

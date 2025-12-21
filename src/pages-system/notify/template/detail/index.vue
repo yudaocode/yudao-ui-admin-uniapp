@@ -10,19 +10,19 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="模板编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="模板名称" :value="String(formData?.name ?? '-')" />
-        <wd-cell title="模板编码" :value="String(formData?.code ?? '-')" />
-        <wd-cell title="发送人名称" :value="String(formData?.nickname ?? '-')" />
+        <wd-cell title="模板编号" :value="formData?.id" />
+        <wd-cell title="模板名称" :value="formData?.name" />
+        <wd-cell title="模板编码" :value="formData?.code" />
+        <wd-cell title="发送人名称" :value="formData?.nickname" />
         <wd-cell title="模板类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE" :value="formData?.type" />
         </wd-cell>
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="模板内容" :value="String(formData?.content ?? '-')" />
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="模板内容" :value="formData?.content" />
+        <wd-cell title="备注" :value="formData?.remark ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

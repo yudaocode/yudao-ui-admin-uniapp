@@ -15,7 +15,7 @@
           <dict-tag :type="DICT_TYPE.SYSTEM_MENU_TYPE" :value="formData?.type" />
         </wd-cell>
         <wd-cell title="上级菜单" :value="parentMenuName" />
-        <wd-cell title="显示排序" :value="String(formData?.sort ?? '-')" />
+        <wd-cell title="显示排序" :value="formData?.sort" />
         <wd-cell title="路由地址" :value="formData?.path || '-'" />
         <wd-cell v-if="formData?.type === SystemMenuTypeEnum.MENU" title="组件路径" :value="formData?.component || '-'" />
         <wd-cell v-if="formData?.type === SystemMenuTypeEnum.MENU" title="组件名称" :value="formData?.componentName || '-'" />
@@ -39,7 +39,7 @@
             不缓存
           </wd-tag>
         </wd-cell>
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

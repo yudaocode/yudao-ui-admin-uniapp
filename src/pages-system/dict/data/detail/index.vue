@@ -10,11 +10,11 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="字典编码" :value="formData?.id ?? '-'" />
-        <wd-cell title="字典类型" :value="formData?.dictType ?? '-'" />
-        <wd-cell title="字典标签" :value="formData?.label ?? '-'" />
-        <wd-cell title="字典键值" :value="formData?.value ?? '-'" />
-        <wd-cell title="字典排序" :value="formData?.sort ?? '-'" />
+        <wd-cell title="字典编码" :value="formData?.id" />
+        <wd-cell title="字典类型" :value="formData?.dictType" />
+        <wd-cell title="字典标签" :value="formData?.label" />
+        <wd-cell title="字典键值" :value="formData?.value" />
+        <wd-cell title="字典排序" :value="formData?.sort" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
@@ -30,8 +30,8 @@
           </view>
           <text v-else>-</text>
         </wd-cell>
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="备注" :value="formData?.remark ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

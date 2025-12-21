@@ -30,11 +30,11 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">登录地址：</text>
-            <text class="line-clamp-1">{{ item.userIp || '-' }}</text>
+            <text class="line-clamp-1">{{ item.userIp }}</text>
           </view>
           <view class="mb-12rpx flex text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">登录时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>

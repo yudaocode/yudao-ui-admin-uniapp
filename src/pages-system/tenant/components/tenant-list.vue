@@ -32,15 +32,15 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">账号额度：</text>
-            <text>{{ item.accountCount || '-' }}</text>
+            <text>{{ item.accountCount }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">过期时间：</text>
-            <text>{{ formatDateTime(item.expireTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.expireTime) }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>

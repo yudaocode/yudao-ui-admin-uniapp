@@ -10,43 +10,43 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="配置编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="配置名" :value="String(formData?.name ?? '-')" />
+        <wd-cell title="配置编号" :value="formData?.id" />
+        <wd-cell title="配置名" :value="formData?.name" />
         <wd-cell title="存储器">
           <dict-tag :type="DICT_TYPE.INFRA_FILE_STORAGE" :value="formData?.storage" />
         </wd-cell>
         <wd-cell title="主配置">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData?.master" />
         </wd-cell>
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="备注" :value="formData?.remark ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
 
       <!-- 存储配置详情 -->
       <wd-cell-group v-if="formData?.config" border title="存储配置">
         <!-- DB / Local / FTP / SFTP 配置 -->
         <template v-if="formData.storage && formData.storage >= 10 && formData.storage <= 12">
-          <wd-cell title="基础路径" :value="String(formData.config.basePath ?? '-')" />
+          <wd-cell title="基础路径" :value="formData.config.basePath ?? '-'" />
           <template v-if="formData.storage >= 11 && formData.storage <= 12">
-            <wd-cell title="主机地址" :value="String(formData.config.host ?? '-')" />
-            <wd-cell title="主机端口" :value="String(formData.config.port ?? '-')" />
-            <wd-cell title="用户名" :value="String(formData.config.username ?? '-')" />
-            <wd-cell title="密码" :value="String(formData.config.password ?? '-')" />
+            <wd-cell title="主机地址" :value="formData.config.host ?? '-'" />
+            <wd-cell title="主机端口" :value="formData.config.port ?? '-'" />
+            <wd-cell title="用户名" :value="formData.config.username ?? '-'" />
+            <wd-cell title="密码" :value="formData.config.password ?? '-'" />
           </template>
           <wd-cell v-if="formData.storage === 11" title="连接模式" :value="formData.config.mode === 'Active' ? '主动模式' : '被动模式'" />
         </template>
         <!-- S3 配置 -->
         <template v-if="formData.storage === 20">
-          <wd-cell title="节点地址" :value="String(formData.config.endpoint ?? '-')" />
-          <wd-cell title="存储 bucket" :value="String(formData.config.bucket ?? '-')" />
-          <wd-cell title="accessKey" :value="String(formData.config.accessKey ?? '-')" />
-          <wd-cell title="accessSecret" :value="String(formData.config.accessSecret ?? '-')" />
+          <wd-cell title="节点地址" :value="formData.config.endpoint" />
+          <wd-cell title="存储 bucket" :value="formData.config.bucket" />
+          <wd-cell title="accessKey" :value="formData.config.accessKey" />
+          <wd-cell title="accessSecret" :value="formData.config.accessSecret" />
           <wd-cell title="Path Style" :value="formData.config.enablePathStyleAccess ? '启用' : '禁用'" />
           <wd-cell title="公开访问" :value="formData.config.enablePublicAccess ? '公开' : '私有'" />
-          <wd-cell title="区域" :value="String(formData.config.region ?? '-')" />
+          <wd-cell title="区域" :value="formData.config.region ?? '-'" />
         </template>
         <!-- 通用配置 -->
-        <wd-cell title="自定义域名" :value="String(formData.config.domain ?? '-')" />
+        <wd-cell title="自定义域名" :value="formData.config.domain ?? '-'" />
       </wd-cell-group>
     </view>
 

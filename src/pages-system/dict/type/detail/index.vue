@@ -10,14 +10,14 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="字典编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="字典名称" :value="String(formData?.name ?? '-')" />
-        <wd-cell title="字典类型" :value="String(formData?.type ?? '-')" />
+        <wd-cell title="字典编号" :value="formData?.id" />
+        <wd-cell title="字典名称" :value="formData?.name" />
+        <wd-cell title="字典类型" :value="formData?.type" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="备注" :value="formData?.remark ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

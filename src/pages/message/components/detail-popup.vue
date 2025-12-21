@@ -21,11 +21,11 @@
       <view v-if="formData" class="flex flex-1 flex-col overflow-hidden space-y-24rpx">
         <view class="flex items-start">
           <text class="w-160rpx shrink-0 text-28rpx text-[#999]">发送人</text>
-          <text class="text-28rpx text-[#333]">{{ formData.templateNickname || '-' }}</text>
+          <text class="text-28rpx text-[#333]">{{ formData.templateNickname }}</text>
         </view>
         <view class="flex items-start">
           <text class="w-160rpx shrink-0 text-28rpx text-[#999]">发送时间</text>
-          <text class="text-28rpx text-[#333]">{{ formatDateTime(formData.createTime) || '-' }}</text>
+          <text class="text-28rpx text-[#333]">{{ formatDateTime(formData.createTime) }}</text>
         </view>
         <view class="flex items-start">
           <text class="w-160rpx shrink-0 text-28rpx text-[#999]">消息类型</text>
@@ -49,7 +49,7 @@
         <view class="flex flex-1 flex-col overflow-hidden">
           <text class="mb-12rpx w-160rpx shrink-0 text-28rpx text-[#999]">消息内容</text>
           <view class="flex-1 rounded-12rpx bg-[#f5f5f5] p-24rpx">
-            <text class="text-28rpx text-[#333]">{{ formData.templateContent || '-' }}</text>
+            <text class="text-28rpx text-[#333]">{{ formData.templateContent }}</text>
           </view>
         </view>
       </view>

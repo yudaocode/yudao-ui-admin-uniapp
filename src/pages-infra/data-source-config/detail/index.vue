@@ -10,15 +10,15 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="主键编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="数据源名称" :value="String(formData?.name ?? '-')" />
+        <wd-cell title="主键编号" :value="formData?.id" />
+        <wd-cell title="数据源名称" :value="formData?.name" />
         <wd-cell title="数据源连接" is-link @click="handleCopyText(formData?.url, '数据源连接')">
           <view class="max-w-400rpx truncate text-right">
-            {{ formData?.url || '-' }}
+            {{ formData?.url }}
           </view>
         </wd-cell>
-        <wd-cell title="用户名" :value="String(formData?.username ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="用户名" :value="formData?.username" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

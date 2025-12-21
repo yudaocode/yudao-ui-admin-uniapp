@@ -10,19 +10,19 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="渠道编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="短信签名" :value="String(formData?.signature ?? '-')" />
+        <wd-cell title="渠道编号" :value="formData?.id" />
+        <wd-cell title="短信签名" :value="formData?.signature" />
         <wd-cell title="渠道编码">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="formData?.code" />
         </wd-cell>
         <wd-cell title="启用状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="短信 API 账号" :value="String(formData?.apiKey ?? '-')" />
-        <wd-cell title="短信 API 密钥" :value="String(formData?.apiSecret ?? '-')" />
-        <wd-cell title="回调 URL" :value="String(formData?.callbackUrl ?? '-')" />
-        <wd-cell title="备注" :value="String(formData?.remark ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="短信 API 账号" :value="formData?.apiKey" />
+        <wd-cell title="短信 API 密钥" :value="formData?.apiSecret" />
+        <wd-cell title="回调 URL" :value="formData?.callbackUrl" />
+        <wd-cell title="备注" :value="formData?.remark ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

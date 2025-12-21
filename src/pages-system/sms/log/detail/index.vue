@@ -10,31 +10,31 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="手机号" :value="String(formData?.mobile ?? '-')" />
+        <wd-cell title="日志编号" :value="formData?.id" />
+        <wd-cell title="手机号" :value="formData?.mobile" />
         <wd-cell title="短信渠道">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="formData?.channelCode" />
         </wd-cell>
-        <wd-cell title="模板编号" :value="String(formData?.templateId ?? '-')" />
+        <wd-cell title="模板编号" :value="formData?.templateId" />
         <wd-cell title="模板类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE" :value="formData?.templateType" />
         </wd-cell>
-        <wd-cell title="短信内容" :value="String(formData?.templateContent ?? '-')" />
+        <wd-cell title="短信内容" :value="formData?.templateContent" />
         <wd-cell title="发送状态">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_SEND_STATUS" :value="formData?.sendStatus" />
         </wd-cell>
-        <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime) || '-'" />
-        <wd-cell title="API 发送编码" :value="String(formData?.apiSendCode ?? '-')" />
-        <wd-cell title="API 发送消息" :value="String(formData?.apiSendMsg ?? '-')" />
+        <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime)" />
+        <wd-cell title="API 发送编码" :value="formData?.apiSendCode" />
+        <wd-cell title="API 发送消息" :value="formData?.apiSendMsg" />
         <wd-cell title="接收状态">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS" :value="formData?.receiveStatus" />
         </wd-cell>
         <wd-cell title="接收时间" :value="formatDateTime(formData?.receiveTime) || '-'" />
-        <wd-cell title="API 接收编码" :value="String(formData?.apiReceiveCode ?? '-')" />
-        <wd-cell title="API 接收消息" :value="String(formData?.apiReceiveMsg ?? '-')" />
-        <wd-cell title="API 请求 ID" :value="String(formData?.apiRequestId ?? '-')" />
-        <wd-cell title="API 序列号" :value="String(formData?.apiSerialNo ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="API 接收编码" :value="formData?.apiReceiveCode ?? '-'" />
+        <wd-cell title="API 接收消息" :value="formData?.apiReceiveMsg ?? '-'" />
+        <wd-cell title="API 请求 ID" :value="formData?.apiRequestId ?? '-'" />
+        <wd-cell title="API 序列号" :value="formData?.apiSerialNo ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
   </view>

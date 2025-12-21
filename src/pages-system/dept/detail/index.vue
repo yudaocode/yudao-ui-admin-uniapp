@@ -10,12 +10,12 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="部门名称" :value="formData?.name || '-'" />
+        <wd-cell title="部门名称" :value="formData?.name" />
         <wd-cell title="上级部门" :value="getParentName() || '-'" />
         <wd-cell title="负责人" :value="getLeaderName() || '-'" />
         <wd-cell title="联系电话" :value="formData?.phone || '-'" />
         <wd-cell title="邮箱" :value="formData?.email || '-'" />
-        <wd-cell title="显示顺序" :value="String(formData?.sort ?? '-')" />
+        <wd-cell title="显示顺序" :value="formData?.sort" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>

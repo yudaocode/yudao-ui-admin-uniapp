@@ -10,15 +10,15 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="任务编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="任务名称" :value="String(formData?.name ?? '-')" />
+        <wd-cell title="任务编号" :value="formData?.id" />
+        <wd-cell title="任务名称" :value="formData?.name" />
         <wd-cell title="任务状态">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="处理器名称" :value="String(formData?.handlerName ?? '-')" />
-        <wd-cell title="处理器参数" :value="String(formData?.handlerParam ?? '-')" />
-        <wd-cell title="CRON 表达式" :value="String(formData?.cronExpression ?? '-')" />
-        <wd-cell title="重试次数" :value="String(formData?.retryCount ?? '-')" />
+        <wd-cell title="处理器名称" :value="formData?.handlerName" />
+        <wd-cell title="处理器参数" :value="formData?.handlerParam ?? '-'" />
+        <wd-cell title="CRON 表达式" :value="formData?.cronExpression" />
+        <wd-cell title="重试次数" :value="formData?.retryCount" />
         <wd-cell title="重试间隔" :value="formData?.retryInterval ? `${formData.retryInterval} ms` : '-'" />
         <wd-cell title="监控超时" :value="formData?.monitorTimeout ? `${formData.monitorTimeout} ms` : '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />

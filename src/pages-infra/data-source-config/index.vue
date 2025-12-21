@@ -30,15 +30,15 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">数据源连接：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.url || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.url }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">用户名：</text>
-            <text>{{ item.username || '-' }}</text>
+            <text>{{ item.username }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>

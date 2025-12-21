@@ -10,7 +10,7 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
+        <wd-cell title="日志编号" :value="formData?.id" />
         <wd-cell title="登录类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_TYPE" :value="formData?.logType" />
         </wd-cell>

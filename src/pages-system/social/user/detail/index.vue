@@ -13,34 +13,34 @@
         <wd-cell title="三方平台">
           <dict-tag :type="DICT_TYPE.SYSTEM_SOCIAL_TYPE" :value="formData?.type" />
         </wd-cell>
-        <wd-cell title="用户昵称" :value="String(formData?.nickname ?? '-')" />
+        <wd-cell title="用户昵称" :value="formData?.nickname ?? '-'" />
         <wd-cell v-if="formData?.avatar" title="用户头像">
           <wd-img :src="formData.avatar" width="120rpx" height="120rpx" />
         </wd-cell>
         <wd-cell title="社交 openid" is-link @click="handleCopyText(formData?.openid, '社交 openid')">
           <view class="max-w-400rpx truncate text-right">
-            {{ formData?.openid || '-' }}
+            {{ formData?.openid }}
           </view>
         </wd-cell>
         <wd-cell title="社交 token" is-link @click="handleCopyText(formData?.token, '社交 token')">
           <view class="max-w-400rpx truncate text-right">
-            {{ formData?.token || '-' }}
+            {{ formData?.token }}
           </view>
         </wd-cell>
         <wd-cell title="原始 Token 数据" is-link @click="handleCopyText(formData?.rawTokenInfo, '原始 Token 数据')">
           <view class="max-w-400rpx truncate text-right">
-            {{ formData?.rawTokenInfo || '-' }}
+            {{ formData?.rawTokenInfo }}
           </view>
         </wd-cell>
         <wd-cell title="原始 User 数据" is-link @click="handleCopyText(formData?.rawUserInfo, '原始 User 数据')">
           <view class="max-w-400rpx truncate text-right">
-            {{ formData?.rawUserInfo || '-' }}
+            {{ formData?.rawUserInfo }}
           </view>
         </wd-cell>
-        <wd-cell title="最后一次的认证 code" :value="String(formData?.code ?? '-')" />
-        <wd-cell title="最后一次的认证 state" :value="String(formData?.state ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
-        <wd-cell title="更新时间" :value="formatDateTime(formData?.updateTime) || '-'" />
+        <wd-cell title="最后一次的认证 code" :value="formData?.code ?? '-'" />
+        <wd-cell title="最后一次的认证 state" :value="formData?.state ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
+        <wd-cell title="更新时间" :value="formatDateTime(formData?.updateTime)" />
       </wd-cell-group>
     </view>
   </view>

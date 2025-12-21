@@ -10,15 +10,15 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="编号" :value="String(formData?.id ?? '-')" />
+        <wd-cell title="编号" :value="formData?.id" />
         <wd-cell title="用户类型">
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="formData?.userType" />
         </wd-cell>
-        <wd-cell title="用户编号" :value="String(formData?.userId ?? '-')" />
-        <wd-cell title="模版编号" :value="String(formData?.templateId ?? '-')" />
-        <wd-cell title="模板编码" :value="String(formData?.templateCode ?? '-')" />
-        <wd-cell title="发送人名称" :value="String(formData?.templateNickname ?? '-')" />
-        <wd-cell title="模版内容" :value="String(formData?.templateContent ?? '-')" />
+        <wd-cell title="用户编号" :value="formData?.userId" />
+        <wd-cell title="模版编号" :value="formData?.templateId" />
+        <wd-cell title="模板编码" :value="formData?.templateCode" />
+        <wd-cell title="发送人名称" :value="formData?.templateNickname" />
+        <wd-cell title="模版内容" :value="formData?.templateContent" />
         <wd-cell title="模版参数" :value="formatTemplateParams(formData?.templateParams)" />
         <wd-cell title="模版类型">
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE" :value="formData?.templateType" />
@@ -27,7 +27,7 @@
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData?.readStatus" />
         </wd-cell>
         <wd-cell title="阅读时间" :value="formatDateTime(formData?.readTime) || '-'" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
   </view>

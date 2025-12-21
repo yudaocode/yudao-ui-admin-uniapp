@@ -10,20 +10,20 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="任务编号" :value="String(formData?.jobId ?? '-')" />
-        <wd-cell title="处理器名称" :value="String(formData?.handlerName ?? '-')" />
-        <wd-cell title="处理器参数" :value="String(formData?.handlerParam ?? '-')" />
-        <wd-cell title="CRON 表达式" :value="String(formData?.cronExpression ?? '-')" />
-        <wd-cell title="执行索引" :value="String(formData?.executeIndex ?? '-')" />
+        <wd-cell title="日志编号" :value="formData?.id" />
+        <wd-cell title="任务编号" :value="formData?.jobId" />
+        <wd-cell title="处理器名称" :value="formData?.handlerName" />
+        <wd-cell title="处理器参数" :value="formData?.handlerParam ?? '-'" />
+        <wd-cell title="CRON 表达式" :value="formData?.cronExpression" />
+        <wd-cell title="执行索引" :value="formData?.executeIndex" />
         <wd-cell title="执行状态">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_LOG_STATUS" :value="formData?.status" />
         </wd-cell>
-        <wd-cell title="开始时间" :value="formatDateTime(formData?.beginTime) || '-'" />
-        <wd-cell title="结束时间" :value="formatDateTime(formData?.endTime) || '-'" />
+        <wd-cell title="开始时间" :value="formatDateTime(formData?.beginTime)" />
+        <wd-cell title="结束时间" :value="formatDateTime(formData?.endTime)" />
         <wd-cell title="执行时长" :value="formData?.duration ? `${formData.duration} ms` : '-'" />
-        <wd-cell title="执行结果" :value="String(formData?.result ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="执行结果" :value="formData?.result" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
   </view>

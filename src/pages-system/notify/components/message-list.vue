@@ -14,7 +14,7 @@
         <view class="p-24rpx">
           <view class="mb-16rpx flex items-center justify-between">
             <view class="text-32rpx text-[#333] font-semibold">
-              {{ item.templateNickname || '-' }}
+              {{ item.templateNickname }}
             </view>
             <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="item.readStatus" />
           </view>
@@ -40,7 +40,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>

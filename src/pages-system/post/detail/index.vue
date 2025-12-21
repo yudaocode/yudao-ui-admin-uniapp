@@ -10,14 +10,14 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="岗位名称" :value="formData?.name || '-'" />
-        <wd-cell title="岗位编码" :value="formData?.code || '-'" />
-        <wd-cell title="显示顺序" :value="String(formData?.sort ?? '-')" />
+        <wd-cell title="岗位名称" :value="formData?.name" />
+        <wd-cell title="岗位编码" :value="formData?.code" />
+        <wd-cell title="显示顺序" :value="formData?.sort" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

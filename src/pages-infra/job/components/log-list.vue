@@ -20,7 +20,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">任务编号：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.jobId || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.jobId }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">处理器参数：</text>
@@ -32,7 +32,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">开始时间：</text>
-            <text>{{ formatDateTime(item.beginTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.beginTime) }}</text>
           </view>
         </view>
       </view>

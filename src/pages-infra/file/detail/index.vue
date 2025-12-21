@@ -10,13 +10,13 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="文件编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="文件名" :value="String(formData?.name ?? '-')" />
-        <wd-cell title="文件路径" :value="String(formData?.path ?? '-')" />
-        <wd-cell title="文件 URL" :value="String(formData?.url ?? '-')" />
+        <wd-cell title="文件编号" :value="formData?.id" />
+        <wd-cell title="文件名" :value="formData?.name" />
+        <wd-cell title="文件路径" :value="formData?.path" />
+        <wd-cell title="文件 URL" :value="formData?.url" />
         <wd-cell title="文件大小" :value="formatFileSize(formData?.size)" />
-        <wd-cell title="文件类型" :value="String(formData?.type ?? '-')" />
-        <wd-cell title="上传时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="文件类型" :value="formData?.type" />
+        <wd-cell title="上传时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
       <!-- 文件预览 -->
       <view v-if="formData?.type && formData.type.includes('image')" class="m-24rpx">

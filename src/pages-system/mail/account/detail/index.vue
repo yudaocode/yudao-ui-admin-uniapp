@@ -10,18 +10,18 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="邮箱" :value="String(formData?.mail ?? '-')" />
-        <wd-cell title="用户名" :value="String(formData?.username ?? '-')" />
-        <wd-cell title="SMTP 服务器域名" :value="String(formData?.host ?? '-')" />
-        <wd-cell title="SMTP 服务器端口" :value="String(formData?.port ?? '-')" />
+        <wd-cell title="编号" :value="formData?.id" />
+        <wd-cell title="邮箱" :value="formData?.mail" />
+        <wd-cell title="用户名" :value="formData?.username" />
+        <wd-cell title="SMTP 服务器域名" :value="formData?.host" />
+        <wd-cell title="SMTP 服务器端口" :value="formData?.port" />
         <wd-cell title="是否开启 SSL">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData?.sslEnable" />
         </wd-cell>
         <wd-cell title="是否开启 STARTTLS">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="formData?.starttlsEnable" />
         </wd-cell>
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
 

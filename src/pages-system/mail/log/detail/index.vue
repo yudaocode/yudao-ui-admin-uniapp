@@ -10,20 +10,20 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="日志编号" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="发送邮箱" :value="String(formData?.fromMail ?? '-')" />
+        <wd-cell title="日志编号" :value="formData?.id" />
+        <wd-cell title="发送邮箱" :value="formData?.fromMail" />
         <wd-cell title="接收信息" :value="formatReceiveInfo(formData)" />
-        <wd-cell title="模板编号" :value="String(formData?.templateId ?? '-')" />
-        <wd-cell title="模板编码" :value="String(formData?.templateCode ?? '-')" />
-        <wd-cell title="邮件标题" :value="String(formData?.templateTitle ?? '-')" />
-        <wd-cell title="邮件内容" :value="String(formData?.templateContent ?? '-')" />
+        <wd-cell title="模板编号" :value="formData?.templateId" />
+        <wd-cell title="模板编码" :value="formData?.templateCode" />
+        <wd-cell title="邮件标题" :value="formData?.templateTitle" />
+        <wd-cell title="邮件内容" :value="formData?.templateContent" />
         <wd-cell title="发送状态">
           <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="formData?.sendStatus" />
         </wd-cell>
-        <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime) || '-'" />
-        <wd-cell title="发送消息编号" :value="String(formData?.sendMessageId ?? '-')" />
-        <wd-cell title="发送异常" :value="String(formData?.sendException ?? '-')" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="发送时间" :value="formatDateTime(formData?.sendTime)" />
+        <wd-cell title="发送消息编号" :value="formData?.sendMessageId ?? '-'" />
+        <wd-cell title="发送异常" :value="formData?.sendException ?? '-'" />
+        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime)" />
       </wd-cell-group>
     </view>
   </view>

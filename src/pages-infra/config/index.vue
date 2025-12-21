@@ -27,15 +27,15 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">参数分类：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.category || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.category }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">参数键名：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.key || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.key }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">参数键值：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.value || '-' }}</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.value }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">是否可见：</text>
@@ -43,7 +43,7 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
-            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <text>{{ formatDateTime(item.createTime) }}</text>
           </view>
         </view>
       </view>
