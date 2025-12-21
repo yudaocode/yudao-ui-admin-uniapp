@@ -13,7 +13,7 @@
       >
         <view class="p-24rpx">
           <view class="mb-16rpx flex items-center justify-between">
-            <view class="text-32rpx text-[#333] font-semibold line-clamp-1">
+            <view class="line-clamp-1 text-32rpx text-[#333] font-semibold">
               {{ item.name || item.path }}
             </view>
           </view>
@@ -29,18 +29,19 @@
             <text class="mr-8rpx shrink-0 text-[#999]">文件大小：</text>
             <text>{{ formatFileSize(item.size) }}</text>
           </view>
-          <!-- 文件预览 -->
-          <view v-if="item.type && item.type.includes('image')" class="mb-12rpx">
-            <image
-              :src="item.url"
-              mode="aspectFit"
-              class="h-200rpx w-full rounded-8rpx"
-              @click.stop="handlePreviewImage(item.url)"
-            />
-          </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">上传时间：</text>
             <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+          </view>
+          <view v-if="item.type && item.type.includes('image')" class="mb-12rpx">
+            <wd-img
+              :src="item.url"
+              mode="aspectFit"
+              width="100%"
+              height="200rpx"
+              enable-preview
+              @click.stop
+            />
           </view>
           <!-- 操作按钮 -->
           <view class="mt-16rpx flex justify-end gap-16rpx">
@@ -86,6 +87,7 @@ import { uploadFile } from '@/api/infra/file'
 import { useAccess } from '@/hooks/useAccess'
 import { http } from '@/http/http'
 import { formatDateTime } from '@/utils/date'
+import { formatFileSize } from '@/utils/download'
 import FileSearchForm from './file-search-form.vue'
 
 /** 文件信息 */
@@ -109,15 +111,6 @@ const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
 })
-
-/** 格式化文件大小 */
-function formatFileSize(size?: number) {
-  if (!size) return '-'
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`
-  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(2)} MB`
-  return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`
-}
 
 /** 查询列表 */
 async function getList() {
@@ -188,14 +181,6 @@ function handleCopyUrl(item: FileInfo) {
     success: () => {
       toast.success('复制成功')
     },
-  })
-}
-
-/** 预览图片 */
-function handlePreviewImage(url?: string) {
-  if (!url) return
-  uni.previewImage({
-    urls: [url],
   })
 }
 

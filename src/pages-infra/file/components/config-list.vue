@@ -38,16 +38,16 @@
           <!-- 操作按钮 -->
           <view class="mt-16rpx flex justify-end gap-16rpx">
             <wd-button
+              v-if="hasAccessByCodes(['infra:file-config:update']) && !item.master"
+              size="small" type="info" @click.stop="handleMaster(item)"
+            >
+              设为主配置
+            </wd-button>
+            <wd-button
               v-if="hasAccessByCodes(['infra:file-config:update'])"
               size="small" type="info" @click.stop="handleTest(item)"
             >
               测试
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['infra:file-config:update']) && !item.master"
-              size="small" type="warning" @click.stop="handleMaster(item)"
-            >
-              设为主配置
             </wd-button>
           </view>
         </view>
@@ -151,30 +151,27 @@ function handleDetail(item: FileConfig) {
 
 /** 测试文件配置 */
 async function handleTest(item: FileConfig) {
-  try {
-    toast.loading('测试上传中...')
-    const url = await testFileConfig(item.id!)
-    toast.close()
-    uni.showModal({
-      title: '测试上传成功',
-      content: '是否要访问该文件？',
-      confirmText: '访问',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm && url) {
-          // 复制链接到剪贴板
-          uni.setClipboardData({
-            data: url,
-            success: () => {
-              toast.success('链接已复制，请在浏览器中打开')
-            },
-          })
-        }
-      },
-    })
-  } catch {
-    toast.show('测试失败')
-  }
+  toast.loading('测试上传中...')
+  const url = await testFileConfig(item.id!)
+  toast.close()
+  uni.showModal({
+    title: '测试上传成功',
+    content: '是否要访问该文件？',
+    confirmText: '访问',
+    success: (res) => {
+      if (!res.confirm || !url) {
+        return
+      }
+      // 复制链接到剪贴板
+      uni.setClipboardData({
+        data: url,
+        success: () => {
+          uni.hideToast()
+          toast.success('链接已复制，请在浏览器中打开')
+        },
+      })
+    },
+  })
 }
 
 /** 设为主配置 */
@@ -193,7 +190,7 @@ function handleMaster(item: FileConfig) {
         // 刷新列表
         handleQuery()
       } catch {
-        toast.show('设置失败')
+        toast.close()
       }
     },
   })

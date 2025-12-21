@@ -18,17 +18,17 @@
         <wd-cell title="文件类型" :value="String(formData?.type ?? '-')" />
         <wd-cell title="上传时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
-
       <!-- 文件预览 -->
       <view v-if="formData?.type && formData.type.includes('image')" class="m-24rpx">
         <view class="mb-16rpx text-28rpx text-[#999]">
           文件预览
         </view>
-        <image
+        <wd-img
           :src="formData.url"
           mode="aspectFit"
-          class="w-full rounded-8rpx"
-          @click="handlePreviewImage"
+          width="100%"
+          height="400rpx"
+          enable-preview
         />
       </view>
     </view>
@@ -57,6 +57,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { http } from '@/http/http'
 import { navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
+import { formatFileSize } from '@/utils/download'
 
 /** 文件信息 */
 interface FileInfo {
@@ -86,15 +87,6 @@ const toast = useToast()
 const formData = ref<FileInfo>()
 const deleting = ref(false)
 
-/** 格式化文件大小 */
-function formatFileSize(size?: number) {
-  if (!size) return '-'
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`
-  if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(2)} MB`
-  return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-infra/file/index')
@@ -122,16 +114,9 @@ function handleCopyUrl() {
   uni.setClipboardData({
     data: formData.value.url,
     success: () => {
+      uni.hideToast()
       toast.success('复制成功')
     },
-  })
-}
-
-/** 预览图片 */
-function handlePreviewImage() {
-  if (!formData.value?.url) return
-  uni.previewImage({
-    urls: [formData.value.url],
   })
 }
 
