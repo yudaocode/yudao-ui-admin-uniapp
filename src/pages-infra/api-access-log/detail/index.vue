@@ -88,6 +88,7 @@ function handleCopyText(text?: string, title?: string) {
   uni.setClipboardData({
     data: text,
     success: () => {
+      uni.hideToast()
       toast.success(`${title || '内容'}已复制`)
     },
   })

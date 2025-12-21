@@ -144,9 +144,13 @@ async function handleUserClick(item: User) {
       if (selected.startsWith('手机')) {
         uni.makePhoneCall({ phoneNumber: userInfo.mobile! })
       } else if (selected.startsWith('邮箱')) {
-        uni.setClipboardData({ data: userInfo.email!, success: () => {
-          toast.success('邮箱已复制')
-        } })
+        uni.setClipboardData({
+          data: userInfo.email!,
+          success: () => {
+            uni.hideToast()
+            toast.success('邮箱已复制')
+          },
+        })
       }
     },
   })

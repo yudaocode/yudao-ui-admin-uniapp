@@ -127,7 +127,7 @@ const menuGroupsData: MenuGroup[] = [
       },
       {
         key: 'social',
-        name: '社交用户',
+        name: '三方用户',
         icon: 'share',
         url: '/pages-system/social/index',
         iconColor: '#08979c',
@@ -135,8 +135,8 @@ const menuGroupsData: MenuGroup[] = [
       },
       {
         key: 'oauth2',
-        name: 'OAuth2 管理',
-        icon: 'shield-check',
+        name: 'OAuth2.0',
+        icon: 'transfer',
         url: '/pages-system/oauth2/index',
         iconColor: '#d48806',
         permission: 'system:oauth2-client:query',
