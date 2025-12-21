@@ -72,7 +72,7 @@ import { useToast } from 'wot-design-uni'
 import { createDictType, getDictType, updateDictType } from '@/api/system/dict/type'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -92,7 +92,7 @@ const formData = ref<DictType>({
   id: undefined,
   name: '',
   type: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   remark: '',
 })
 const formRules = {

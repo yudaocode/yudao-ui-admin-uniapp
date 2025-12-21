@@ -31,9 +31,9 @@
             <text>{{ formatDateTime(item.createTime) || '-' }}</text>
           </view>
           <!-- 查看数据按钮 -->
-          <view class="mt-16rpx flex justify-end">
+          <view class="flex justify-end -mt-8">
             <wd-button size="small" type="info" @click.stop="handleSelectType(item)">
-              查看数据
+              字典数据
             </wd-button>
           </view>
         </view>

@@ -60,7 +60,7 @@
           <wd-cell title="颜色类型" title-width="200rpx" prop="colorType" center>
             <wd-picker
               v-model="formData.colorType"
-              :columns="colorOptions"
+              :columns="getStrDictOptions(DICT_TYPE.SYSTEM_DICT_COLOR_TYPE)"
               label-key="label"
               value-key="value"
               placeholder="请选择颜色类型"
@@ -106,7 +106,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createDictData, getDictData, updateDictData } from '@/api/system/dict/data'
 import { getSimpleDictTypeList } from '@/api/system/dict/type'
-import { getIntDictOptions } from '@/hooks/useDict'
+import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
@@ -147,23 +147,6 @@ const formRef = ref()
 
 /** 字典类型选项 */
 const dictTypeOptions = ref<{ label: string, value: string }[]>([])
-
-/** 颜色类型选项 */
-const colorOptions = [
-  { value: '', label: '无' },
-  { value: 'processing', label: '主要' },
-  { value: 'success', label: '成功' },
-  { value: 'default', label: '默认' },
-  { value: 'warning', label: '警告' },
-  { value: 'error', label: '危险' },
-  { value: 'pink', label: 'pink' },
-  { value: 'red', label: 'red' },
-  { value: 'orange', label: 'orange' },
-  { value: 'green', label: 'green' },
-  { value: 'cyan', label: 'cyan' },
-  { value: 'blue', label: 'blue' },
-  { value: 'purple', label: 'purple' },
-]
 
 /** 返回上一页 */
 function handleBack() {

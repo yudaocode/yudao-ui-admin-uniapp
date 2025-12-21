@@ -141,6 +141,14 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#d48806',
         permission: 'system:oauth2-client:query',
       },
+      {
+        key: 'dict',
+        name: '字典管理',
+        icon: 'hourglass',
+        url: '/pages-system/dict/index',
+        iconColor: '#faad14',
+        permission: 'system:dict:query',
+      },
     ],
   },
   {
@@ -178,6 +186,14 @@ const menuGroupsData: MenuGroup[] = [
         url: '/pages-infra/data-source-config/index',
         iconColor: '#13c2c2',
         permission: 'infra:data-source-config:query',
+      },
+      {
+        key: 'file',
+        name: '文件管理',
+        icon: 'folder',
+        url: '/pages-infra/file/index',
+        iconColor: '#1890ff',
+        permission: 'infra:file:query',
       },
       {
         key: 'websocket',

@@ -10,18 +10,18 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
-        <wd-cell title="字典编码" :value="String(formData?.id ?? '-')" />
-        <wd-cell title="字典类型" :value="String(formData?.dictType ?? '-')" />
-        <wd-cell title="字典标签" :value="String(formData?.label ?? '-')" />
-        <wd-cell title="字典键值" :value="String(formData?.value ?? '-')" />
-        <wd-cell title="字典排序" :value="String(formData?.sort ?? '-')" />
+        <wd-cell title="字典编码" :value="formData?.id ?? '-'" />
+        <wd-cell title="字典类型" :value="formData?.dictType ?? '-'" />
+        <wd-cell title="字典标签" :value="formData?.label ?? '-'" />
+        <wd-cell title="字典键值" :value="formData?.value ?? '-'" />
+        <wd-cell title="字典排序" :value="formData?.sort ?? '-'" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
         <wd-cell title="颜色类型">
-          <view v-if="formData?.colorType" class="rounded-4rpx px-8rpx py-2rpx text-24rpx text-white" :style="{ backgroundColor: getColorStyle(formData.colorType) }">
+          <wd-tag v-if="formData?.colorType" :type="getTagType(formData.colorType)">
             {{ formData.colorType }}
-          </view>
+          </wd-tag>
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="CSS Class">
@@ -56,6 +56,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { TagType } from 'wot-design-uni/components/wd-tag/types'
 import type { DictData } from '@/api/system/dict/data'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
@@ -81,25 +82,21 @@ const toast = useToast()
 const formData = ref<DictData>()
 const deleting = ref(false)
 
-/** 颜色类型映射 */
-const colorMap: Record<string, string> = {
-  processing: '#1890ff',
-  success: '#52c41a',
-  default: '#d9d9d9',
-  warning: '#faad14',
-  error: '#ff4d4f',
-  pink: '#eb2f96',
-  red: '#f5222d',
-  orange: '#fa8c16',
-  green: '#52c41a',
-  cyan: '#13c2c2',
-  blue: '#1890ff',
-  purple: '#722ed1',
+/** 颜色类型 => wd-tag 的 type 映射 */
+const COLOR_TYPE_MAP: Record<string, TagType> = {
+  default: 'default',
+  primary: 'primary',
+  success: 'success',
+  info: 'default',
+  warning: 'warning',
+  danger: 'danger',
+  error: 'danger',
+  processing: 'primary',
 }
 
-/** 获取颜色样式 */
-function getColorStyle(colorType: string) {
-  return colorMap[colorType] || colorType
+/** 获取标签类型 */
+function getTagType(colorType: string): TagType {
+  return COLOR_TYPE_MAP[colorType] || 'default'
 }
 
 /** 返回上一页 */

@@ -9,6 +9,18 @@
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
+          字典类型
+        </view>
+        <wd-picker
+          v-model="formData.dictType"
+          :columns="dictTypeOptions"
+          label-key="label"
+          value-key="value"
+          placeholder="请选择字典类型"
+        />
+      </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
           字典标签
         </view>
         <wd-input
@@ -47,10 +59,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { getSimpleDictTypeList } from '@/api/system/dict/type'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getNavbarHeight } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+
+const props = defineProps<{
+  dictType?: string
+}>()
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -59,13 +76,30 @@ const emit = defineEmits<{
 
 const visible = ref(false)
 const formData = reactive({
+  dictType: undefined as string | undefined,
   label: undefined as string | undefined,
   status: -1,
 })
 
+/** 字典类型选项 */
+const dictTypeOptions = ref<{ label: string, value: string }[]>([])
+
+/** 加载字典类型列表 */
+async function loadDictTypeList() {
+  const list = await getSimpleDictTypeList()
+  dictTypeOptions.value = list.map(item => ({
+    label: item.name,
+    value: item.type,
+  }))
+}
+
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
+  if (formData.dictType) {
+    const dictTypeItem = dictTypeOptions.value.find(item => item.value === formData.dictType)
+    conditions.push(`类型:${dictTypeItem?.label || formData.dictType}`)
+  }
   if (formData.label) {
     conditions.push(`标签:${formData.label}`)
   }
@@ -79,6 +113,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
+    dictType: formData.dictType || undefined,
     label: formData.label || undefined,
     status: formData.status === -1 ? undefined : formData.status,
   })
@@ -86,9 +121,24 @@ function handleSearch() {
 
 /** 重置 */
 function handleReset() {
+  formData.dictType = props.dictType
   formData.label = undefined
   formData.status = -1
   visible.value = false
   emit('reset')
 }
+
+/** 监听外部 dictType 变化 */
+watch(
+  () => props.dictType,
+  (val) => {
+    formData.dictType = val
+  },
+  { immediate: true },
+)
+
+/** 初始化 */
+onMounted(() => {
+  loadDictTypeList()
+})
 </script>

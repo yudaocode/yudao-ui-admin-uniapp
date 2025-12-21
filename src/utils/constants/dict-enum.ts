@@ -23,6 +23,7 @@ const SYSTEM_DICT = {
   SYSTEM_MAIL_SEND_STATUS: 'system_mail_send_status',
   SYSTEM_NOTIFY_TEMPLATE_TYPE: 'system_notify_template_type',
   SYSTEM_SOCIAL_TYPE: 'system_social_type',
+  SYSTEM_DICT_COLOR_TYPE: 'system_dict_color_type', // 字典颜色类型
 } as const
 
 /** ========== INFRA - 基础设施模块 ========== */

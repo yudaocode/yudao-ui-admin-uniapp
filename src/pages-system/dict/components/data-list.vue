@@ -1,18 +1,10 @@
 <template>
   <view>
     <!-- 搜索组件 -->
-    <DataSearchForm @search="handleQuery" @reset="handleReset" />
+    <DataSearchForm :dict-type="dictType" @search="handleQuery" @reset="handleReset" />
 
     <!-- 字典数据列表 -->
     <view class="p-24rpx">
-      <!-- 当前字典类型提示 -->
-      <view v-if="dictType" class="mb-24rpx rounded-12rpx bg-blue-50 p-16rpx text-28rpx text-blue-600">
-        当前字典类型：{{ dictType }}
-      </view>
-      <view v-else class="mb-24rpx rounded-12rpx bg-orange-50 p-16rpx text-28rpx text-orange-600">
-        请先在"字典类型"中选择一个字典类型
-      </view>
-
       <view
         v-for="item in list"
         :key="item.id"
@@ -36,9 +28,9 @@
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">颜色类型：</text>
-            <view v-if="item.colorType" class="rounded-4rpx px-8rpx py-2rpx text-24rpx text-white" :style="{ backgroundColor: getColorStyle(item.colorType) }">
+            <wd-tag v-if="item.colorType" :type="getTagType(item.colorType)">
               {{ item.colorType }}
-            </view>
+            </wd-tag>
             <text v-else>-</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
@@ -78,6 +70,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { TagType } from 'wot-design-uni/components/wd-tag/types'
 import type { DictData } from '@/api/system/dict/data'
 import type { LoadMoreState } from '@/http/types'
 import { ref, watch } from 'vue'
@@ -101,40 +94,31 @@ const queryParams = ref({
   dictType: undefined as string | undefined,
 })
 
-/** 颜色类型映射 */
-const colorMap: Record<string, string> = {
-  processing: '#1890ff',
-  success: '#52c41a',
-  default: '#d9d9d9',
-  warning: '#faad14',
-  error: '#ff4d4f',
-  pink: '#eb2f96',
-  red: '#f5222d',
-  orange: '#fa8c16',
-  green: '#52c41a',
-  cyan: '#13c2c2',
-  blue: '#1890ff',
-  purple: '#722ed1',
+/** 颜色类型 => wd-tag 的 type 映射，和 src/components/dict-tag/dict-tag.vue 是一致的 */
+const COLOR_TYPE_MAP: Record<string, TagType> = {
+  default: 'default',
+  primary: 'primary',
+  success: 'success',
+  info: 'default', // wd-tag 无 info，映射为 default
+  warning: 'warning',
+  danger: 'danger',
 }
 
-/** 获取颜色样式 */
-function getColorStyle(colorType: string) {
-  return colorMap[colorType] || colorType
+/** 获取标签类型 */
+function getTagType(colorType: string): TagType {
+  return COLOR_TYPE_MAP[colorType] || 'default'
 }
 
 /** 查询列表 */
 async function getList() {
-  if (!props.dictType) {
+  if (!queryParams.value.dictType) {
     list.value = []
     loadMoreState.value = 'finished'
     return
   }
   loadMoreState.value = 'loading'
   try {
-    const data = await getDictDataPage({
-      ...queryParams.value,
-      dictType: props.dictType,
-    })
+    const data = await getDictDataPage(queryParams.value)
     list.value = [...list.value, ...data.list]
     total.value = data.total
     loadMoreState.value = list.value.length >= total.value ? 'finished' : 'loading'
@@ -150,7 +134,7 @@ function handleQuery(data?: Record<string, any>) {
     ...data,
     pageNo: 1,
     pageSize: queryParams.value.pageSize,
-    dictType: props.dictType,
+    dictType: data?.dictType || props.dictType,
   }
   list.value = []
   getList()
@@ -190,6 +174,7 @@ watch(
   () => {
     if (props.dictType) {
       queryParams.value.pageNo = 1
+      queryParams.value.dictType = props.dictType
       list.value = []
       getList()
     }
@@ -203,8 +188,7 @@ onReachBottom(() => {
 
 /** 初始化 */
 onMounted(() => {
-  if (props.dictType) {
-    getList()
-  }
+  queryParams.value.dictType = props.dictType
+  getList()
 })
 </script>
