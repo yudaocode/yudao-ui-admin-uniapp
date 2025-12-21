@@ -191,10 +191,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { FileConfig } from '@/api/infra/file-config'
+import type { FileConfig } from '@/api/infra/file/config'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { createFileConfig, getFileConfig, updateFileConfig } from '@/api/infra/file-config'
+import { createFileConfig, getFileConfig, updateFileConfig } from '@/api/infra/file/config'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

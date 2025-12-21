@@ -76,11 +76,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { FileConfig } from '@/api/infra/file-config'
+import type { FileConfig } from '@/api/infra/file/config'
 import type { LoadMoreState } from '@/http/types'
 import { ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { getFileConfigPage, testFileConfig, updateFileConfigMaster } from '@/api/infra/file-config'
+import { getFileConfigPage, testFileConfig, updateFileConfigMaster } from '@/api/infra/file/config'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

@@ -71,10 +71,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { FileConfig } from '@/api/infra/file-config'
+import type { FileConfig } from '@/api/infra/file/config'
 import { onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { deleteFileConfig, getFileConfig } from '@/api/infra/file-config'
+import { deleteFileConfig, getFileConfig } from '@/api/infra/file/config'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
