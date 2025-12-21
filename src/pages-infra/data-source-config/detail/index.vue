@@ -12,6 +12,7 @@
       <wd-cell-group border>
         <wd-cell title="主键编号" :value="String(formData?.id ?? '-')" />
         <wd-cell title="数据源名称" :value="String(formData?.name ?? '-')" />
+        <!-- TODO @AI：参考 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-infra/api-access-log/detail/index.vue 复制的处理 -->
         <wd-cell title="数据源连接" :value="String(formData?.url ?? '-')" />
         <wd-cell title="用户名" :value="String(formData?.username ?? '-')" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />

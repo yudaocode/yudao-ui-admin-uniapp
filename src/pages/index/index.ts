@@ -174,7 +174,7 @@ const menuGroupsData: MenuGroup[] = [
       {
         key: 'dataSourceConfig',
         name: '数据源配置',
-        icon: 'database',
+        icon: 'setting',
         url: '/pages-infra/data-source-config/index',
         iconColor: '#13c2c2',
         permission: 'infra:data-source-config:query',
