@@ -149,6 +149,13 @@ const menuGroupsData: MenuGroup[] = [
         iconColor: '#faad14',
         permission: 'system:dict:query',
       },
+      {
+        key: 'area',
+        name: '地区管理',
+        icon: 'location',
+        url: '/pages-system/area/index',
+        iconColor: '#d50f0f',
+      },
     ],
   },
   {
