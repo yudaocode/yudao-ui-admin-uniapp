@@ -3,7 +3,7 @@
     <!-- 搜索组件 -->
     <ClientSearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- OAuth2 客户端列表 -->
+    <!-- 应用列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -13,18 +13,14 @@
       >
         <view class="p-24rpx">
           <view class="mb-16rpx flex items-center justify-between">
-            <view class="text-32rpx text-[#333] font-semibold">
+            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
               {{ item.name }}
             </view>
-            <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
+            <dict-tag class="ml-16rpx shrink-0" :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx shrink-0 text-[#999]">客户端编号：</text>
             <text class="min-w-0 flex-1 truncate">{{ item.clientId || '-' }}</text>
-          </view>
-          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">客户端密钥：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.secret || '-' }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">访问令牌有效期：</text>
@@ -43,7 +39,7 @@
 
       <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
-        <wd-status-tip image="content" tip="暂无 OAuth2 客户端数据" />
+        <wd-status-tip image="content" tip="暂无应用数据" />
       </view>
       <wd-loadmore
         v-if="list.length > 0"
@@ -82,7 +78,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
-/** 查询 OAuth2 客户端列表 */
+/** 查询应用列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
@@ -121,7 +117,7 @@ function loadMore() {
   getList()
 }
 
-/** 新增 OAuth2 客户端 */
+/** 新增应用 */
 function handleAdd() {
   uni.navigateTo({
     url: '/pages-system/oauth2/client/form/index',

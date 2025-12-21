@@ -84,9 +84,9 @@ const placeholder = computed(() => {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.USER_TYPE, formData.userType)}`)
   }
   if (formData.clientId) {
-    conditions.push(`客户端:${formData.clientId}`)
+    conditions.push(`应用:${formData.clientId}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索 OAuth2 令牌'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索令牌'
 })
 
 /** 搜索 */

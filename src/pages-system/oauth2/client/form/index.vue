@@ -111,7 +111,7 @@ definePage({
 })
 
 const toast = useToast()
-const getTitle = computed(() => props.id ? '编辑 OAuth2 客户端' : '新增 OAuth2 客户端')
+const getTitle = computed(() => props.id ? '编辑应用' : '新增应用')
 const formLoading = ref(false)
 const formData = ref<OAuth2Client>({
   id: undefined,
@@ -145,7 +145,7 @@ function handleBack() {
   navigateBackPlus('/pages-system/oauth2/index')
 }
 
-/** 加载 OAuth2 客户端详情 */
+/** 加载应用详情 */
 async function getDetail() {
   if (!props.id) {
     return

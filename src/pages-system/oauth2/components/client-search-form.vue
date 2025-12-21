@@ -72,7 +72,7 @@ const placeholder = computed(() => {
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索 OAuth2 客户端'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索应用'
 })
 
 /** 搜索 */

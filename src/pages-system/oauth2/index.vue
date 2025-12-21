@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="OAuth2 管理"
+      title="OAuth2.0 管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -10,8 +10,8 @@
     <!-- Tab 切换 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
-        <wd-tab title="OAuth2 客户端" />
-        <wd-tab title="OAuth2 令牌" />
+        <wd-tab title="应用管理" />
+        <wd-tab title="令牌管理" />
       </wd-tabs>
     </view>
 

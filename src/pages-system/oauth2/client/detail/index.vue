@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="OAuth2 客户端详情"
+      title="应用详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -77,7 +77,7 @@ function handleBack() {
   navigateBackPlus('/pages-system/oauth2/index')
 }
 
-/** 加载 OAuth2 客户端详情 */
+/** 加载应用详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -90,21 +90,21 @@ async function getDetail() {
   }
 }
 
-/** 编辑 OAuth2 客户端 */
+/** 编辑应用 */
 function handleEdit() {
   uni.navigateTo({
     url: `/pages-system/oauth2/client/form/index?id=${props.id}`,
   })
 }
 
-/** 删除 OAuth2 客户端 */
+/** 删除应用 */
 function handleDelete() {
   if (!props.id) {
     return
   }
   uni.showModal({
     title: '提示',
-    content: '确定要删除该 OAuth2 客户端吗？',
+    content: '确定要删除该应用吗？',
     success: async (res) => {
       if (!res.confirm) {
         return

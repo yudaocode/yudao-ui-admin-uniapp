@@ -3,7 +3,7 @@
     <!-- 搜索组件 -->
     <TokenSearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- OAuth2 令牌列表 -->
+    <!-- 令牌列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -40,10 +40,10 @@
           <!-- 删除按钮 -->
           <view
             v-if="hasAccessByCodes(['system:oauth2-token:delete'])"
-            class="mt-16rpx flex justify-end"
+            class="-mt-8 flex justify-end"
           >
             <wd-button size="small" type="error" @click="handleDelete(item)">
-              删除
+              强退
             </wd-button>
           </view>
         </view>
@@ -51,7 +51,7 @@
 
       <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
-        <wd-status-tip image="content" tip="暂无 OAuth2 令牌数据" />
+        <wd-status-tip image="content" tip="暂无令牌数据" />
       </view>
       <wd-loadmore
         v-if="list.length > 0"
@@ -83,7 +83,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
-/** 查询 OAuth2 令牌列表 */
+/** 查询令牌列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
@@ -122,7 +122,7 @@ function loadMore() {
   getList()
 }
 
-/** 删除 OAuth2 令牌 */
+/** 删除令牌 */
 function handleDelete(item: OAuth2Token) {
   uni.showModal({
     title: '提示',
@@ -131,14 +131,10 @@ function handleDelete(item: OAuth2Token) {
       if (!res.confirm) {
         return
       }
-      try {
-        await deleteOAuth2Token(item.accessToken)
-        toast.success('删除成功')
-        // 刷新列表
-        handleQuery()
-      } catch {
-        // 错误处理
-      }
+      await deleteOAuth2Token(item.accessToken)
+      toast.success('删除成功')
+      // 刷新列表
+      handleQuery()
     },
   })
 }
