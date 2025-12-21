@@ -74,7 +74,7 @@ import { useToast } from 'wot-design-uni'
 import { createNotice, getNotice, updateNotice } from '@/api/system/notice'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -94,8 +94,8 @@ const formData = ref<Notice>({
   id: undefined,
   title: '',
   content: '',
-  type: 0,
-  status: 0,
+  type: undefined,
+  status: CommonStatusEnum.ENABLE,
 })
 const formRules = {
   title: [{ required: true, message: '公告标题不能为空' }],

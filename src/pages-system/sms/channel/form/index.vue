@@ -96,7 +96,7 @@ import { useToast } from 'wot-design-uni'
 import { createSmsChannel, getSmsChannel, updateSmsChannel } from '@/api/system/sms/channel'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -116,7 +116,7 @@ const formData = ref<SmsChannel>({
   id: undefined,
   signature: '',
   code: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   apiKey: '',
   apiSecret: '',
   callbackUrl: '',

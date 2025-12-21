@@ -105,7 +105,7 @@ import { getSimpleMailAccountList } from '@/api/system/mail/account'
 import { createMailTemplate, getMailTemplate, updateMailTemplate } from '@/api/system/mail/template'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -129,7 +129,7 @@ const formData = ref<MailTemplate>({
   nickname: '',
   title: '',
   content: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   remark: '',
 })
 const formRules = {

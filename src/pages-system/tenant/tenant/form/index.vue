@@ -118,7 +118,7 @@ import { createTenant, getTenant, updateTenant } from '@/api/system/tenant'
 import { getTenantPackageList } from '@/api/system/tenant/package'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -138,13 +138,13 @@ const packageOptions = ref<TenantPackage[]>([])
 const formData = ref<Tenant & { username?: string, password?: string }>({
   id: undefined,
   name: '',
-  packageId: 0,
+  packageId: undefined,
   contactName: '',
   contactMobile: '',
-  accountCount: 0,
+  accountCount: undefined,
   expireTime: new Date(),
   websites: [],
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   username: '',
   password: '',
 })

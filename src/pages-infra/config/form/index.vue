@@ -106,7 +106,7 @@ const formData = ref<Config>({
   name: '',
   key: '',
   value: '',
-  type: 0,
+  type: undefined,
   visible: true,
   remark: '',
 })

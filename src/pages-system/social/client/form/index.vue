@@ -109,7 +109,7 @@ import { useToast } from 'wot-design-uni'
 import { createSocialClient, getSocialClient, updateSocialClient } from '@/api/system/social/client'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -134,7 +134,7 @@ const formData = ref<SocialClient>({
   clientSecret: '',
   agentId: '',
   publicKey: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
 })
 const formRules = {
   name: [{ required: true, message: '应用名不能为空' }],

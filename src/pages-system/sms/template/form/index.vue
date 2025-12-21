@@ -104,7 +104,7 @@ import { getSimpleSmsChannelList } from '@/api/system/sms/channel'
 import { createSmsTemplate, getSmsTemplate, updateSmsTemplate } from '@/api/system/sms/template'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -126,7 +126,7 @@ const formData = ref<SmsTemplate>({
   name: '',
   code: '',
   channelId: undefined,
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   content: '',
   apiTemplateId: '',
   remark: '',

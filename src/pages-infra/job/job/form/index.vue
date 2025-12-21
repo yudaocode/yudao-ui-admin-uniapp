@@ -94,6 +94,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createJob, getJob, updateJob } from '@/api/infra/job'
 import { navigateBackPlus } from '@/utils'
+import {CommonStatusEnum} from '@/utils/constants/biz-system-enum';
 
 const props = defineProps<{
   id?: number | any
@@ -112,7 +113,7 @@ const formLoading = ref(false)
 const formData = ref<Job>({
   id: undefined,
   name: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   handlerName: '',
   handlerParam: '',
   cronExpression: '',

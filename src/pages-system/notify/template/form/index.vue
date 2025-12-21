@@ -95,7 +95,7 @@ import { useToast } from 'wot-design-uni'
 import { createNotifyTemplate, getNotifyTemplate, updateNotifyTemplate } from '@/api/system/notify/template'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -118,7 +118,7 @@ const formData = ref<NotifyTemplate>({
   nickname: '',
   content: '',
   type: undefined,
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   remark: '',
 })
 const formRules = {

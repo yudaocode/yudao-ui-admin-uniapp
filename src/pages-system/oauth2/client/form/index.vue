@@ -97,7 +97,7 @@ import { useToast } from 'wot-design-uni'
 import { createOAuth2Client, getOAuth2Client, updateOAuth2Client } from '@/api/system/oauth2/client'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -120,7 +120,7 @@ const formData = ref<OAuth2Client>({
   name: '',
   logo: '',
   description: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   accessTokenValiditySeconds: 1800,
   refreshTokenValiditySeconds: 43200,
   redirectUris: [],

@@ -63,7 +63,7 @@ import { useToast } from 'wot-design-uni'
 import { createTenantPackage, getTenantPackage, updateTenantPackage } from '@/api/system/tenant/package'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -82,7 +82,7 @@ const formLoading = ref(false)
 const formData = ref<TenantPackage>({
   id: undefined,
   name: '',
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   remark: '',
   menuIds: [],
 })

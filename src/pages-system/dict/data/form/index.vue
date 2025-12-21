@@ -108,7 +108,7 @@ import { createDictData, getDictData, updateDictData } from '@/api/system/dict/d
 import { getSimpleDictTypeList } from '@/api/system/dict/type'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{
   id?: number | any
@@ -131,7 +131,7 @@ const formData = ref<DictData>({
   label: '',
   value: '',
   sort: 0,
-  status: 0,
+  status: CommonStatusEnum.ENABLE,
   colorType: '',
   cssClass: '',
   remark: '',
