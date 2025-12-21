@@ -9,7 +9,7 @@
     <view class="yd-search-form-container" :style="{ paddingTop: `${getNavbarHeight()}px` }">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          社交平台
+          三方平台
         </view>
         <wd-radio-group v-model="formData.type" shape="button">
           <wd-radio :value="-1">
@@ -86,7 +86,7 @@ const placeholder = computed(() => {
   if (formData.openid) {
     conditions.push(`openid:${formData.openid}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索社交用户'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索三方用户'
 })
 
 /** 搜索 */

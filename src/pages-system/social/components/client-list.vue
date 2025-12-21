@@ -3,7 +3,7 @@
     <!-- 搜索组件 -->
     <ClientSearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 社交客户端列表 -->
+    <!-- 三方应用列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -19,7 +19,7 @@
             <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
-            <text class="mr-8rpx shrink-0 text-[#999]">社交平台：</text>
+            <text class="mr-8rpx shrink-0 text-[#999]">三方平台：</text>
             <dict-tag :type="DICT_TYPE.SYSTEM_SOCIAL_TYPE" :value="item.socialType" />
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
@@ -27,7 +27,7 @@
             <dict-tag :type="DICT_TYPE.USER_TYPE" :value="item.userType" />
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">客户端编号：</text>
+            <text class="mr-8rpx text-[#999]">应用编号：</text>
             <text class="min-w-0 flex-1 truncate">{{ item.clientId || '-' }}</text>
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
@@ -39,7 +39,7 @@
 
       <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
-        <wd-status-tip image="content" tip="暂无社交客户端数据" />
+        <wd-status-tip image="content" tip="暂无三方应用数据" />
       </view>
       <wd-loadmore
         v-if="list.length > 0"
@@ -78,7 +78,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
-/** 查询社交客户端列表 */
+/** 查询三方应用列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {
@@ -117,7 +117,7 @@ function loadMore() {
   getList()
 }
 
-/** 新增社交客户端 */
+/** 新增三方应用 */
 function handleAdd() {
   uni.navigateTo({
     url: '/pages-system/social/client/form/index',

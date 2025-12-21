@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="社交用户管理"
+      title="三方用户管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -10,8 +10,8 @@
     <!-- Tab 切换 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
-        <wd-tab title="社交客户端" />
-        <wd-tab title="社交用户" />
+        <wd-tab title="三方应用" />
+        <wd-tab title="三方用户" />
       </wd-tabs>
     </view>
 

@@ -19,7 +19,7 @@
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          社交平台
+          三方平台
         </view>
         <wd-radio-group v-model="formData.socialType" shape="button">
           <wd-radio :value="-1">
@@ -114,7 +114,7 @@ const placeholder = computed(() => {
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
-  return conditions.length > 0 ? conditions.join(' | ') : '搜索社交客户端'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索三方应用'
 })
 
 /** 搜索 */

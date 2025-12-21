@@ -41,27 +41,37 @@
           </wd-cell>
           <wd-input
             v-model="formData.clientId"
-            label="客户端编号"
+            label="应用编号"
             label-width="200rpx"
             prop="clientId"
             clearable
-            placeholder="请输入客户端编号，对应各平台的 appKey"
+            placeholder="请输入应用编号，对应各平台的 appKey"
           />
           <wd-input
             v-model="formData.clientSecret"
-            label="客户端密钥"
+            label="应用密钥"
             label-width="200rpx"
             prop="clientSecret"
             clearable
-            placeholder="请输入客户端密钥，对应各平台的 appSecret"
+            placeholder="请输入应用密钥，对应各平台的 appSecret"
           />
           <wd-input
+            v-show="formData.socialType === 30"
             v-model="formData.agentId"
             label="agentId"
             label-width="200rpx"
             prop="agentId"
             clearable
             placeholder="授权方的网页应用 ID，有则填"
+          />
+          <wd-input
+            v-show="formData.socialType === 40"
+            v-model="formData.publicKey"
+            label="publicKey"
+            label-width="200rpx"
+            prop="publicKey"
+            clearable
+            placeholder="请输入 publicKey 公钥"
           />
           <wd-cell title="状态" title-width="200rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" shape="button">
@@ -113,24 +123,25 @@ definePage({
 })
 
 const toast = useToast()
-const getTitle = computed(() => props.id ? '编辑社交客户端' : '新增社交客户端')
+const getTitle = computed(() => props.id ? '编辑三方应用' : '新增三方应用')
 const formLoading = ref(false)
 const formData = ref<SocialClient>({
   id: undefined,
   name: '',
-  socialType: 0,
+  socialType: undefined,
   userType: 1,
   clientId: '',
   clientSecret: '',
   agentId: '',
+  publicKey: '',
   status: 0,
 })
 const formRules = {
   name: [{ required: true, message: '应用名不能为空' }],
   socialType: [{ required: true, message: '社交平台不能为空' }],
   userType: [{ required: true, message: '用户类型不能为空' }],
-  clientId: [{ required: true, message: '客户端编号不能为空' }],
-  clientSecret: [{ required: true, message: '客户端密钥不能为空' }],
+  clientId: [{ required: true, message: '应用编号不能为空' }],
+  clientSecret: [{ required: true, message: '应用密钥不能为空' }],
 }
 const formRef = ref()
 
@@ -139,7 +150,7 @@ function handleBack() {
   navigateBackPlus('/pages-system/social/index')
 }
 
-/** 加载社交客户端详情 */
+/** 加载三方应用详情 */
 async function getDetail() {
   if (!props.id) {
     return

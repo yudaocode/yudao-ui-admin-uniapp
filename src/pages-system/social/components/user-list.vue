@@ -3,7 +3,7 @@
     <!-- 搜索组件 -->
     <UserSearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 社交用户列表 -->
+    <!-- 三方用户列表 -->
     <view class="p-24rpx">
       <view
         v-for="item in list"
@@ -24,7 +24,7 @@
           </view>
           <view v-if="item.avatar" class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">头像：</text>
-            <image :src="item.avatar" class="h-80rpx w-80rpx rounded-8rpx" mode="aspectFill" />
+            <wd-img :src="item.avatar" width="60rpx" height="60rpx" />
           </view>
           <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">创建时间：</text>
@@ -35,7 +35,7 @@
 
       <!-- 加载更多 -->
       <view v-if="loadMoreState !== 'loading' && list.length === 0" class="py-100rpx text-center">
-        <wd-status-tip image="content" tip="暂无社交用户数据" />
+        <wd-status-tip image="content" tip="暂无三方用户数据" />
       </view>
       <wd-loadmore
         v-if="list.length > 0"
@@ -63,7 +63,7 @@ const queryParams = ref({
   pageSize: 10,
 })
 
-/** 查询社交用户列表 */
+/** 查询三方用户列表 */
 async function getList() {
   loadMoreState.value = 'loading'
   try {

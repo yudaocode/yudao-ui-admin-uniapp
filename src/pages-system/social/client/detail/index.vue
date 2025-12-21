@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="社交客户端详情"
+      title="三方应用详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -18,9 +18,10 @@
         <wd-cell title="用户类型">
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="formData?.userType" />
         </wd-cell>
-        <wd-cell title="客户端编号" :value="String(formData?.clientId ?? '-')" />
-        <wd-cell title="客户端密钥" :value="String(formData?.clientSecret ?? '-')" />
+        <wd-cell title="应用编号" :value="String(formData?.clientId ?? '-')" />
+        <wd-cell title="应用密钥" :value="String(formData?.clientSecret ?? '-')" />
         <wd-cell title="agentId" :value="String(formData?.agentId ?? '-')" />
+        <wd-cell title="publicKey" :value="String(formData?.publicKey ?? '-')" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
         </wd-cell>
@@ -79,7 +80,7 @@ function handleBack() {
   navigateBackPlus('/pages-system/social/index')
 }
 
-/** 加载社交客户端详情 */
+/** 加载三方应用详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -92,21 +93,21 @@ async function getDetail() {
   }
 }
 
-/** 编辑社交客户端 */
+/** 编辑三方应用 */
 function handleEdit() {
   uni.navigateTo({
     url: `/pages-system/social/client/form/index?id=${props.id}`,
   })
 }
 
-/** 删除社交客户端 */
+/** 删除三方应用 */
 function handleDelete() {
   if (!props.id) {
     return
   }
   uni.showModal({
     title: '提示',
-    content: '确定要删除该社交客户端吗？',
+    content: '确定要删除该三方应用吗？',
     success: async (res) => {
       if (!res.confirm) {
         return
