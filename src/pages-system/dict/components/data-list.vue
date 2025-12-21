@@ -91,7 +91,6 @@ const loadMoreState = ref<LoadMoreState>('loading')
 const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
-  dictType: undefined as string | undefined,
 })
 
 /** 颜色类型 => wd-tag 的 type 映射，和 src/components/dict-tag/dict-tag.vue 是一致的 */
@@ -111,11 +110,6 @@ function getTagType(colorType: string): TagType {
 
 /** 查询列表 */
 async function getList() {
-  if (!queryParams.value.dictType) {
-    list.value = []
-    loadMoreState.value = 'finished'
-    return
-  }
   loadMoreState.value = 'loading'
   try {
     const data = await getDictDataPage(queryParams.value)
@@ -134,7 +128,6 @@ function handleQuery(data?: Record<string, any>) {
     ...data,
     pageNo: 1,
     pageSize: queryParams.value.pageSize,
-    dictType: data?.dictType || props.dictType,
   }
   list.value = []
   getList()
@@ -174,7 +167,6 @@ watch(
   () => {
     if (props.dictType) {
       queryParams.value.pageNo = 1
-      queryParams.value.dictType = props.dictType
       list.value = []
       getList()
     }
@@ -188,7 +180,6 @@ onReachBottom(() => {
 
 /** 初始化 */
 onMounted(() => {
-  queryParams.value.dictType = props.dictType
   getList()
 })
 </script>

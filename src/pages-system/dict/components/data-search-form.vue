@@ -121,7 +121,7 @@ function handleSearch() {
 
 /** 重置 */
 function handleReset() {
-  formData.dictType = props.dictType
+  formData.dictType = undefined
   formData.label = undefined
   formData.status = -1
   visible.value = false
