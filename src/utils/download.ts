@@ -123,3 +123,15 @@ export function formatFileSize(size?: number): string {
   }
   return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`
 }
+
+/**
+ * 获取静态资源完整 URL 地址
+ * @param path 资源路径
+ * @returns 完整的静态资源 URL 地址
+ */
+export function staticUrl(path: string): string {
+  const baseUrl = import.meta.env.VITE_STATIC_BASEURL || ''
+  // 确保 path 以 / 开头
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${baseUrl}${normalizedPath}`
+}

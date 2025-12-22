@@ -14,15 +14,17 @@
 </template>
 
 <script lang="ts" setup>
+import { staticUrl } from '@/utils/download'
+
 defineOptions({
   name: 'HomeBanner',
 })
 
 /** Banner 轮播图数据 */
 const banners: string[] = [
-  '/static/images/banner/banner01.jpg',
-  '/static/images/banner/banner02.jpg',
-  '/static/images/banner/banner03.jpg',
+  staticUrl('/static/banner/banner01.png'),
+  staticUrl('/static/banner/banner02.png'),
+  staticUrl('/static/banner/banner03.png'),
 ]
 
 /** 处理点击 */
