@@ -75,7 +75,7 @@
 
     <!-- 底部保存按钮 -->
     <!-- TODO @芋艿： -->
-    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="yd-detail-footer">
       <wd-button
         type="primary"
         block

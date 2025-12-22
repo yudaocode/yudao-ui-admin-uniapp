@@ -43,6 +43,21 @@ border-t-1
   background-color: #f5f5f5;
 }
 
+// ==================== 详情页底部操作按钮 ====================
+.yd-detail-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  padding: 24rpx;
+
+  // 按钮容器
+  &-actions {
+    @apply w-full flex gap-24rpx;
+  }
+}
+
 // ==================== 搜索表单弹窗样式 ====================
 .yd-search-form {
   // 弹窗圆角

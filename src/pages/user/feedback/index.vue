@@ -38,7 +38,7 @@
     </view>
 
     <!-- 底部提交按钮 -->
-    <view class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="yd-detail-footer">
       <wd-button
         type="primary"
         block

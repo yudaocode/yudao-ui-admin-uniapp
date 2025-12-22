@@ -96,13 +96,15 @@
     </view>
 
     <!-- 底部操作栏 -->
-    <view v-if="runningTask" class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 flex gap-24rpx bg-white p-24rpx">
-      <wd-button type="error" plain class="flex-1" @click="handleReject">
-        拒绝
-      </wd-button>
-      <wd-button type="primary" class="flex-1" @click="handleApprove">
-        同意
-      </wd-button>
+    <view v-if="runningTask" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="error" plain class="flex-1" @click="handleReject">
+          拒绝
+        </wd-button>
+        <wd-button type="primary" class="flex-1" @click="handleApprove">
+          同意
+        </wd-button>
+      </view>
     </view>
   </view>
 </template>

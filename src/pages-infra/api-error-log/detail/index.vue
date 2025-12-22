@@ -46,8 +46,8 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="formData?.processStatus === InfraApiErrorLogProcessStatusEnum.INIT" class="safe-area-inset-bottom fixed bottom-0 left-0 right-0 bg-white p-24rpx">
-      <view class="w-full flex gap-24rpx">
+    <view v-if="formData?.processStatus === InfraApiErrorLogProcessStatusEnum.INIT" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
         <wd-button class="flex-1" type="success" :loading="processing" @click="handleProcess(InfraApiErrorLogProcessStatusEnum.DONE)">
           已处理
         </wd-button>
@@ -157,7 +157,4 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.safe-area-inset-bottom {
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-}
 </style>

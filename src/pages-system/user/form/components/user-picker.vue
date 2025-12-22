@@ -33,7 +33,8 @@ const emit = defineEmits<{
 
 /** 根据用户 ID 获取昵称 */
 function getUserNickname(userId: number | undefined): string {
-  if (!userId) return ''
+  if (!userId)
+    return ''
   const user = userList.value.find(u => u.id === userId)
   return user?.nickname || ''
 }

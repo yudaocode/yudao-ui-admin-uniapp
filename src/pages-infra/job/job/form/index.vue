@@ -75,7 +75,7 @@
     </view>
 
     <!-- 底部保存按钮 -->
-    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
+    <view class="yd-detail-footer">
       <wd-button
         type="primary"
         block
@@ -94,7 +94,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { createJob, getJob, updateJob } from '@/api/infra/job'
 import { navigateBackPlus } from '@/utils'
-import {CommonStatusEnum} from '@/utils/constants/biz-system-enum';
+import { CommonStatusEnum } from '@/utils/constants/biz-system-enum'
 
 const props = defineProps<{
   id?: number | any

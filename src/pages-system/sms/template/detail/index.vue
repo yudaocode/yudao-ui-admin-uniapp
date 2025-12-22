@@ -33,8 +33,8 @@
     <SendForm v-model="sendVisible" :template="formData" />
 
     <!-- 底部操作按钮 -->
-    <view class="fixed bottom-0 left-0 right-0 bg-white p-24rpx">
-      <view class="w-full flex gap-24rpx">
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
         <wd-button
           v-if="hasAccessByCodes(['system:sms-template:send-sms'])"
           class="flex-1" type="primary" @click="handleSendTest"
