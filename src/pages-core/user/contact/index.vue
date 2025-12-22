@@ -55,7 +55,7 @@
 import { ref } from 'vue'
 import { useToast } from 'wot-design-uni'
 import { navigateBackPlus } from '@/utils'
-import { saveImageToAlbum } from '@/utils/download'
+import { saveImageToAlbum, staticUrl } from '@/utils/download'
 
 definePage({
   style: {
@@ -66,7 +66,7 @@ definePage({
 
 const toast = useToast()
 
-const qrCodeUrl = ref('/static/images/qrcode.png') // 客服二维码图片地址
+const qrCodeUrl = ref(staticUrl('/static/qrcode.png')) // 客服二维码图片地址
 const servicePhone = ref('18818818818') // 客服电话号码
 
 /** 返回上一页 */
@@ -78,7 +78,7 @@ function handleBack() {
 function handleCallPhone() {
   uni.makePhoneCall({
     phoneNumber: servicePhone.value,
-    fail: (err) => {
+    fail: (_err) => {
       toast.show('拨打失败')
     },
   })

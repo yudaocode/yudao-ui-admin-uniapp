@@ -94,12 +94,12 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { Verify } from '@/components/verifition'
 import { LOGIN_PAGE } from '@/router/config'
 import { useTokenStore } from '@/store/token'
 import { redirectAfterLogin } from '@/utils'
 import Header from './components/header.vue'
 import TenantPicker from './components/tenant-picker.vue'
+import { Verify } from './components/verifition'
 
 defineOptions({
   name: 'RegisterPage',
@@ -197,12 +197,12 @@ function goToLogin() {
 
 /** 跳转到用户协议 */
 function goToUserAgreement() {
-  uni.navigateTo({ url: '/pages/user/settings/agreement/index' })
+  uni.navigateTo({ url: '/pages-core/user/settings/agreement/index' })
 }
 
 /** 跳转到隐私政策 */
 function goToPrivacyPolicy() {
-  uni.navigateTo({ url: '/pages/user/settings/privacy/index' })
+  uni.navigateTo({ url: '/pages-core/user/settings/privacy/index' })
 }
 </script>
 

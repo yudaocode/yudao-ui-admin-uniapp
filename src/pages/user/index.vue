@@ -102,32 +102,32 @@ onMounted(async () => {
 
 /** 跳转到个人资料 */
 function handleGoProfile() {
-  uni.navigateTo({ url: '/pages/user/profile/index' })
+  uni.navigateTo({ url: '/pages-core/user/profile/index' })
 }
 
 /** 跳转到账号安全 */
 function handleGoSecurity() {
-  uni.navigateTo({ url: '/pages/user/security/index' })
+  uni.navigateTo({ url: '/pages-core/user/security/index' })
 }
 
 /** 跳转到常见问题 */
 function handleGoFaq() {
-  uni.navigateTo({ url: '/pages/user/faq/index' })
+  uni.navigateTo({ url: '/pages-core/user/faq/index' })
 }
 
 /** 跳转到意见反馈 */
 function handleGoFeedback() {
-  uni.navigateTo({ url: '/pages/user/feedback/index' })
+  uni.navigateTo({ url: '/pages-core/user/feedback/index' })
 }
 
 /** 跳转联系客服 */
 function handleGoContact() {
-  uni.navigateTo({ url: '/pages/user/contact/index' })
+  uni.navigateTo({ url: '/pages-core/user/contact/index' })
 }
 
 /** 跳转到应用设置 */
 function handleGoSettings() {
-  uni.navigateTo({ url: '/pages/user/settings/index' })
+  uni.navigateTo({ url: '/pages-core/user/settings/index' })
 }
 
 /** 退出登录 */

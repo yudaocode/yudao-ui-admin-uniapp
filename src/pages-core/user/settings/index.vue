@@ -125,12 +125,12 @@ function handleClearCache() {
 
 /** 跳转到用户协议 */
 function handleGoAgreement() {
-  uni.navigateTo({ url: '/pages/user/settings/agreement/index' })
+  uni.navigateTo({ url: '/pages-core/user/settings/agreement/index' })
 }
 
 /** 跳转到隐私协议 */
 function handleGoPrivacy() {
-  uni.navigateTo({ url: '/pages/user/settings/privacy/index' })
+  uni.navigateTo({ url: '/pages-core/user/settings/privacy/index' })
 }
 
 /** 初始化 */

@@ -7,23 +7,26 @@
     <view class="form-container">
       <TenantPicker ref="tenantPickerRef" />
       <view class="input-item">
-        <wd-icon name="phone" size="20px" color="#1890ff" />
+        <wd-icon name="user" size="20px" color="#1890ff" />
         <wd-input
-          v-model="formData.mobile"
-          placeholder="请输入手机号"
+          v-model="formData.username"
+          placeholder="请输入用户名"
           clearable
           clear-trigger="focus"
           no-border
-          type="number"
-          :maxlength="11"
         />
       </view>
-      <CodeInput
-        v-model="formData.code"
-        :mobile="formData.mobile"
-        :scene="21"
-        :before-send="validateBeforeSend"
-      />
+      <view class="input-item">
+        <wd-icon name="lock-on" size="20px" color="#1890ff" />
+        <wd-input
+          v-model="formData.password"
+          placeholder="请输入密码"
+          clearable
+          clear-trigger="focus"
+          show-password
+          no-border
+        />
+      </view>
       <view v-if="captchaEnabled">
         <Verify
           ref="verifyRef"
@@ -37,8 +40,8 @@
 
       <!-- 登录按钮 -->
       <view class="mb-2 mt-2 flex justify-between">
-        <text class="text-28rpx text-[#1890ff]" @click="goToLogin">
-          账号登录
+        <text class="text-28rpx text-[#1890ff]" @click="goToSmsLogin">
+          验证码登录
         </text>
         <text class="text-28rpx text-[#1890ff]" @click="goToForgetPassword">
           忘记密码？
@@ -47,6 +50,31 @@
       <wd-button block :loading="loading" type="primary" @click="handleLogin">
         登录
       </wd-button>
+
+      <!-- 第三方登录 -->
+      <view class="mt-100rpx">
+        <view class="divider mb-40rpx flex items-center justify-center">
+          <view class="h-1rpx flex-1 bg-[#e5e5e5]" />
+          <text class="px-24rpx text-26rpx text-[#999]">其他登录方式</text>
+          <view class="h-1rpx flex-1 bg-[#e5e5e5]" />
+        </view>
+        <!-- TODO @芋艿：图标换下！ -->
+        <view class="icons flex justify-center gap-60rpx">
+          <view class="icon-item" @click="handleWechatLogin">
+            <wd-icon name="chat" size="24px" color="#07c160" />
+          </view>
+          <view class="icon-item" @click="handleDingTalkLogin">
+            <wd-icon name="computer" size="24px" color="#3370ff" />
+          </view>
+        </view>
+      </view>
+      <!-- 创建账号 -->
+      <view class="mt-40rpx flex items-center justify-center">
+        <text class="text-28rpx text-[#666]">还没有账号？</text>
+        <text class="text-28rpx text-[#1890ff]" @click="goToRegister">
+          创建账号
+        </text>
+      </view>
     </view>
   </view>
 </template>
@@ -54,24 +82,28 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 import { useToast } from 'wot-design-uni'
-import { Verify } from '@/components/verifition'
-import { FORGET_PASSWORD_PAGE, LOGIN_PAGE } from '@/router/config'
+import {
+  CODE_LOGIN_PAGE,
+  FORGET_PASSWORD_PAGE,
+  REGISTER_PAGE,
+} from '@/router/config'
 import { useTokenStore } from '@/store/token'
 import { ensureDecodeURIComponent, redirectAfterLogin } from '@/utils'
-import { isMobile } from '@/utils/validator'
-import CodeInput from './components/code-input.vue'
 import Header from './components/header.vue'
 import TenantPicker from './components/tenant-picker.vue'
+import { Verify } from './components/verifition'
 
 defineOptions({
-  name: 'SmsLoginPage',
+  name: 'LoginPage',
+  style: {
+    navigationStyle: 'custom',
+  },
 })
 
 definePage({
   style: {
     navigationStyle: 'custom',
   },
-  excludeLoginPath: true,
 })
 
 const toast = useToast()
@@ -83,8 +115,8 @@ const verifyRef = ref()
 const captchaType = ref('blockPuzzle') // 滑块验证码 blockPuzzle|clickWord
 
 const formData = reactive({
-  mobile: '',
-  code: '',
+  username: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || '',
+  password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || '',
   captchaVerification: '', // 验证码校验值
 }) // 表单数据
 
@@ -94,11 +126,6 @@ onLoad((options) => {
     redirectUrl.value = ensureDecodeURIComponent(options.redirect)
   }
 })
-
-/** 发送验证码前的校验 */
-function validateBeforeSend(): boolean {
-  return tenantPickerRef.value?.validate() ?? false
-}
 
 /** 获取验证码 */
 async function getCode() {
@@ -114,34 +141,28 @@ async function getCode() {
 
 /** 登录处理 */
 async function handleLogin() {
-  // 校验租户
   if (!tenantPickerRef.value?.validate()) {
     return
   }
-  if (!formData.mobile) {
-    toast.warning('请输入手机号')
+  if (!formData.username) {
+    toast.warning('请输入用户名')
     return
   }
-  if (!isMobile(formData.mobile)) {
-    toast.warning('请输入正确的手机号')
-    return
-  }
-  if (!formData.code) {
-    toast.warning('请输入验证码')
+  if (!formData.password) {
+    toast.warning('请输入密码')
     return
   }
   await getCode()
 }
 
-/** 验证码验证成功回调 */
 async function verifySuccess(params: any) {
   loading.value = true
   try {
-    // 调用短信登录接口
+    // 调用登录接口
     const tokenStore = useTokenStore()
     formData.captchaVerification = params.captchaVerification
     await tokenStore.login({
-      type: 'sms',
+      type: 'username',
       ...formData,
     })
     // 处理跳转
@@ -151,17 +172,45 @@ async function verifySuccess(params: any) {
   }
 }
 
-/** 跳转到账号密码登录 */
-function goToLogin() {
-  uni.navigateTo({ url: LOGIN_PAGE })
+/** 跳转到注册页面 */
+function goToRegister() {
+  uni.navigateTo({ url: REGISTER_PAGE })
+}
+
+/** 跳转到验证码登录 */
+function goToSmsLogin() {
+  uni.navigateTo({ url: CODE_LOGIN_PAGE })
 }
 
 /** 跳转到忘记密码 */
 function goToForgetPassword() {
   uni.navigateTo({ url: FORGET_PASSWORD_PAGE })
 }
+
+/** 微信登录 */
+// TODO @芋艿：后续开发
+function handleWechatLogin() {
+  toast.info('微信登录功能开发中')
+}
+
+/** 钉钉登录 */
+// TODO @芋艿：后续开发
+function handleDingTalkLogin() {
+  toast.info('钉钉登录功能开发中')
+}
 </script>
 
 <style lang="scss" scoped>
 @import './styles/auth.scss';
+
+// 第三方登录图标
+.icon-item {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f5f7fa;
+}
 </style>
