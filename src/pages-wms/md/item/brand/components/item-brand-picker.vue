@@ -3,18 +3,17 @@
     :title="label"
     :title-width="labelWidth"
     :prop="prop || undefined"
-    :disabled="disabled"
     is-link
     :value="selectedLabel"
     :placeholder="placeholder"
-    @click="handleOpen"
+    @click="visible = true"
   />
 
   <wd-select-picker
     v-model="selectedId"
     v-model:visible="visible"
     :title="label"
-    :columns="warehouseList"
+    :columns="brandList"
     value-key="id"
     label-key="name"
     type="radio"
@@ -24,40 +23,37 @@
 </template>
 
 <script lang="ts" setup>
-import type { Warehouse } from '@/api/wms/md/warehouse'
+import type { ItemBrand } from '@/api/wms/md/item/brand'
 import { computed, onMounted, ref, watch } from 'vue'
-import { getWarehouseSimpleList } from '@/api/wms/md/warehouse'
+import { getSimpleItemBrandList } from '@/api/wms/md/item/brand'
 
 const props = withDefaults(defineProps<{
-  disabled?: boolean
   label?: string
   labelWidth?: string
   modelValue?: number
   placeholder?: string
   prop?: string
 }>(), {
-  disabled: false,
-  label: '仓库',
+  label: '商品品牌',
   labelWidth: '180rpx',
-  placeholder: '请选择仓库',
+  placeholder: '请选择商品品牌',
   prop: '',
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number | undefined): void
-  (e: 'confirm', warehouse?: Warehouse): void
-  (e: 'change', warehouse?: Warehouse): void
+  (e: 'confirm', brand?: ItemBrand): void
 }>()
 
-const warehouseList = ref<Warehouse[]>([]) // 仓库列表
-const selectedId = ref<number | string>('') // 当前选中仓库编号
+const brandList = ref<ItemBrand[]>([]) // 品牌列表
+const selectedId = ref<number | string>('') // 当前选中品牌编号
 const visible = ref(false) // 选择器显示状态
 
 const selectedLabel = computed(() => {
   if (!selectedId.value) {
     return ''
   }
-  return warehouseList.value.find(item => item.id === Number(selectedId.value))?.name || ''
+  return brandList.value.find(item => item.id === Number(selectedId.value))?.name || ''
 })
 
 watch(
@@ -68,30 +64,20 @@ watch(
   { immediate: true },
 )
 
-/** 打开选择器 */
-function handleOpen() {
-  if (props.disabled) {
-    return
-  }
-  visible.value = true
-}
-
-/** 加载仓库列表 */
-async function loadWarehouseList() {
-  warehouseList.value = await getWarehouseSimpleList()
+/** 加载品牌列表 */
+async function loadBrandList() {
+  brandList.value = await getSimpleItemBrandList()
 }
 
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
-  const warehouseId = value ? Number(value) : undefined
-  const warehouse = warehouseList.value.find(item => item.id === warehouseId)
-  emit('update:modelValue', warehouseId)
-  emit('confirm', warehouse)
-  emit('change', warehouse)
+  const brandId = value ? Number(value) : undefined
+  emit('update:modelValue', brandId)
+  emit('confirm', brandList.value.find(item => item.id === brandId))
 }
 
 /** 初始化 */
 onMounted(() => {
-  loadWarehouseList()
+  loadBrandList()
 })
 </script>

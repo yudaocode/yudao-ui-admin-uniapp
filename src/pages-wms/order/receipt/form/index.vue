@@ -12,7 +12,7 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border title="单据信息">
           <wd-form-item title="入库单号" title-width="180rpx" prop="no">
-            <wd-input v-model="formData.no" clearable placeholder="请输入入库单号" />
+            <wd-input v-model="formData.no" :maxlength="64" clearable placeholder="请输入入库单号" />
           </wd-form-item>
           <yd-form-picker
             v-model="formData.type"
@@ -46,7 +46,7 @@
             supplier
           />
           <wd-form-item title="业务单号" title-width="180rpx">
-            <wd-input v-model="formData.bizOrderNo" clearable placeholder="请输入业务单号" />
+            <wd-input v-model="formData.bizOrderNo" :maxlength="64" clearable placeholder="请输入业务单号" />
           </wd-form-item>
           <wd-form-item title="备注" title-width="180rpx">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="255" clearable />
@@ -79,13 +79,13 @@
           </view>
           <wd-cell-group border>
             <wd-form-item title="数量" title-width="160rpx">
-              <wd-input v-model.number="detail.quantity" type="digit" placeholder="请输入数量" @blur="handleDetailQuantityChange(detail)" />
+              <wd-input-number v-model="detail.quantity" :min="0" :precision="QUANTITY_PRECISION" allow-null @change="handleDetailQuantityChange(detail)" />
             </wd-form-item>
             <wd-form-item title="单价" title-width="160rpx">
-              <wd-input v-model.number="detail.price" type="digit" placeholder="请输入单价" @blur="handleDetailPriceChange(detail)" />
+              <wd-input-number v-model="detail.price" :min="0" :precision="PRICE_PRECISION" allow-null @change="handleDetailPriceChange(detail)" />
             </wd-form-item>
             <wd-form-item title="金额" title-width="160rpx">
-              <wd-input v-model.number="detail.totalPrice" type="digit" placeholder="请输入金额" @blur="handleDetailTotalPriceChange(detail)" />
+              <wd-input-number v-model="detail.totalPrice" :min="0" :precision="PRICE_PRECISION" allow-null @change="handleDetailTotalPriceChange(detail)" />
             </wd-form-item>
             <wd-cell title="单位" :value="detail.unit || '-'" />
           </wd-cell-group>
@@ -101,7 +101,7 @@
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+      <wd-button v-if="canSave" type="primary" block :loading="formLoading" @click="handleSubmit">
         保存
       </wd-button>
     </view>
@@ -113,19 +113,23 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ItemSku } from '@/api/wms/md/item/sku'
 import type { ReceiptOrder } from '@/api/wms/order/receipt'
 import type { ReceiptOrderDetail } from '@/api/wms/order/receipt/detail'
+import type { InputNumberValue } from '@/pages-wms/utils/format'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { createReceiptOrder, getReceiptOrder, updateReceiptOrder } from '@/api/wms/order/receipt'
-import ItemSkuPicker from '@/pages-wms/components/item-sku-picker.vue'
-import MerchantPicker from '@/pages-wms/components/merchant-picker.vue'
-import WarehousePicker from '@/pages-wms/components/warehouse-picker.vue'
-import { WmsOrderStatusEnum } from '@/pages-wms/utils/constants'
-import { dividePrice, multiplyPrice } from '@/pages-wms/utils/format'
+import ItemSkuPicker from '@/pages-wms/md/item/components/item-sku-picker.vue'
+import MerchantPicker from '@/pages-wms/md/merchant/components/merchant-picker.vue'
+import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import { dividePrice, multiplyPrice, PRICE_PRECISION, QUANTITY_PRECISION, toOptionalNumber } from '@/pages-wms/utils/format'
 import { generateOrderNo } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, WmsOrderStatusEnum, WmsOrderUpdateStatusList } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
+
+type DetailNumberKey = 'quantity' | 'price' | 'totalPrice'
+type ReceiptOrderFormDetail = Omit<ReceiptOrderDetail, DetailNumberKey> & Record<DetailNumberKey, InputNumberValue>
+type ReceiptOrderFormData = Omit<ReceiptOrder, 'details'> & { details?: ReceiptOrderFormDetail[] }
 
 const props = defineProps<{
   id?: number | any
@@ -144,18 +148,21 @@ const formLoading = ref(false) // 表单提交状态
 const pickerVisible = reactive({
   orderTime: false,
 }) // 选择器显示状态
-const formData = ref<ReceiptOrder>({
+const formData = ref<ReceiptOrderFormData>({
   id: undefined,
   no: generateOrderNo('RK'),
   type: undefined,
-  orderTime: undefined,
-  status: WmsOrderStatusEnum.PREPARE,
+  orderTime: '',
+  status: props.id ? undefined : WmsOrderStatusEnum.PREPARE,
   bizOrderNo: '',
   merchantId: undefined,
   warehouseId: undefined,
   remark: '',
   details: [],
 }) // 表单数据
+const canSave = computed(() => !props.id || (
+  formData.value.status !== undefined && WmsOrderUpdateStatusList.includes(formData.value.status)
+)) // 仅草稿单据可保存
 const formSchema = createFormSchema({
   no: [{ required: true, message: '入库单号不能为空' }],
   type: [{ required: true, message: '入库类型不能为空' }],
@@ -183,7 +190,7 @@ async function getDetail() {
 }
 
 /** 构建入库明细 */
-function buildDetail(sku: ItemSku): ReceiptOrderDetail {
+function buildDetail(sku: ItemSku): ReceiptOrderFormDetail {
   return {
     id: undefined,
     itemId: sku.itemId,
@@ -193,17 +200,19 @@ function buildDetail(sku: ItemSku): ReceiptOrderDetail {
     skuId: sku.id,
     skuCode: sku.code,
     skuName: sku.name,
-    quantity: undefined,
-    price: undefined,
-    totalPrice: undefined,
+    quantity: '',
+    price: '',
+    totalPrice: '',
   }
 }
 
 /** 规范明细金额 */
-function normalizeDetails(details: ReceiptOrderDetail[]) {
+function normalizeDetails(details: ReceiptOrderDetail[]): ReceiptOrderFormDetail[] {
   return details.map(detail => ({
     ...detail,
-    totalPrice: detail.totalPrice ?? multiplyPrice(detail.quantity, detail.price),
+    quantity: detail.quantity ?? '',
+    price: detail.price ?? '',
+    totalPrice: detail.totalPrice ?? multiplyPrice(detail.quantity, detail.price) ?? '',
   }))
 }
 
@@ -238,8 +247,8 @@ function handleDeleteDetail(index: number) {
 }
 
 /** 明细数量变化 */
-function handleDetailQuantityChange(detail: ReceiptOrderDetail) {
-  if (detail.price !== undefined && detail.price !== null) {
+function handleDetailQuantityChange(detail: ReceiptOrderFormDetail) {
+  if (toOptionalNumber(detail.price) !== undefined) {
     detail.totalPrice = multiplyPrice(detail.quantity, detail.price)
     return
   }
@@ -247,12 +256,12 @@ function handleDetailQuantityChange(detail: ReceiptOrderDetail) {
 }
 
 /** 明细单价变化 */
-function handleDetailPriceChange(detail: ReceiptOrderDetail) {
+function handleDetailPriceChange(detail: ReceiptOrderFormDetail) {
   detail.totalPrice = multiplyPrice(detail.quantity, detail.price)
 }
 
 /** 明细金额变化 */
-function handleDetailTotalPriceChange(detail: ReceiptOrderDetail) {
+function handleDetailTotalPriceChange(detail: ReceiptOrderFormDetail) {
   detail.price = dividePrice(detail.totalPrice, detail.quantity)
 }
 
@@ -261,7 +270,8 @@ function validateDetails() {
   const details = formData.value.details || []
   for (let i = 0; i < details.length; i++) {
     const detail = details[i]
-    if (!detail.quantity || detail.quantity <= 0) {
+    const quantity = toOptionalNumber(detail.quantity)
+    if (!quantity || quantity <= 0) {
       toast.error(`第 ${i + 1} 行明细入库数量必须大于 0`)
       return false
     }
@@ -274,12 +284,21 @@ function buildSubmitData(): ReceiptOrder {
   const { totalQuantity: _totalQuantity, totalPrice: _totalPrice, details, ...order } = formData.value
   return {
     ...order,
-    details: details || [],
+    details: (details || []).map(detail => ({
+      ...detail,
+      quantity: toOptionalNumber(detail.quantity),
+      price: toOptionalNumber(detail.price),
+      totalPrice: toOptionalNumber(detail.totalPrice),
+    })),
   }
 }
 
 /** 提交表单 */
 async function handleSubmit() {
+  if (!canSave.value) {
+    toast.error('当前单据状态不可编辑')
+    return
+  }
   const { valid } = await formRef.value.validate()
   if (!valid || !validateDetails()) {
     return

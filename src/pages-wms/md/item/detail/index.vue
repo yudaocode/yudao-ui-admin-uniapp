@@ -101,12 +101,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    formData.value = await getItem(Number(props.id))
-  } finally {
-    toast.close()
-  }
+  formData.value = await getItem(Number(props.id))
 }
 
 /** 编辑商品 */

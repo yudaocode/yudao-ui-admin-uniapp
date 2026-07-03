@@ -15,8 +15,10 @@
 <script lang="ts" setup>
 import type { ItemCategory } from '@/api/wms/md/item/category'
 import { computed, onMounted, ref, watch } from 'vue'
-import { getItemCategorySimpleList } from '@/api/wms/md/item/category'
+import { getSimpleItemCategoryList } from '@/api/wms/md/item/category'
 import { handleTree } from '@/utils/tree'
+
+type ItemCategoryTreeItem = ItemCategory & { children?: ItemCategoryTreeItem[] }
 
 const props = withDefaults(defineProps<{
   disabled?: boolean
@@ -39,7 +41,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: number | undefined): void
 }>()
 
-const categoryList = ref<ItemCategory[]>([]) // 分类列表
+const categoryList = ref<ItemCategoryTreeItem[]>([]) // 分类列表
 const selectedValue = ref<number | undefined>(props.showRoot ? 0 : undefined) // 当前选中分类编号
 const treeProps = {
   children: 'children',
@@ -48,8 +50,8 @@ const treeProps = {
 } // 树字段映射
 
 /** 分类树形选项 */
-const categoryOptions = computed(() => {
-  const topCategories = handleTree(categoryList.value)
+const categoryOptions = computed<ItemCategoryTreeItem[]>(() => {
+  const topCategories = handleTree<ItemCategoryTreeItem>(categoryList.value)
   return props.showRoot
     ? [{ id: 0, name: '顶级分类' }, ...topCategories]
     : topCategories
@@ -69,7 +71,7 @@ watch(selectedValue, (value) => {
 
 /** 加载分类列表 */
 async function loadCategoryList() {
-  categoryList.value = await getItemCategorySimpleList()
+  categoryList.value = await getSimpleItemCategoryList()
 }
 
 /** 初始化 */

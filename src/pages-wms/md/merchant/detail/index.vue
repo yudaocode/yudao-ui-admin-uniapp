@@ -86,12 +86,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    formData.value = await getMerchant(Number(props.id))
-  } finally {
-    toast.close()
-  }
+  formData.value = await getMerchant(Number(props.id))
 }
 
 /** 编辑往来企业 */

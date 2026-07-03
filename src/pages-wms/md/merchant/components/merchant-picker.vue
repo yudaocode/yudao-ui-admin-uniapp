@@ -26,8 +26,8 @@
 <script lang="ts" setup>
 import type { Merchant } from '@/api/wms/md/merchant'
 import { computed, onMounted, ref, watch } from 'vue'
-import { getMerchantSimpleList } from '@/api/wms/md/merchant'
-import { WmsCustomerMerchantTypeList, WmsSupplierMerchantTypeList } from '@/pages-wms/utils/constants'
+import { getSimpleMerchantList } from '@/api/wms/md/merchant'
+import { WmsCustomerMerchantTypeList, WmsSupplierMerchantTypeList } from '@/utils/constants'
 
 const props = withDefaults(defineProps<{
   customer?: boolean
@@ -88,7 +88,7 @@ async function loadMerchantList() {
     : props.customer
       ? WmsCustomerMerchantTypeList
       : undefined
-  merchantList.value = await getMerchantSimpleList(types ? { types } : undefined)
+  merchantList.value = await getSimpleMerchantList(types ? { types } : undefined)
 }
 
 /** 选择确认 */

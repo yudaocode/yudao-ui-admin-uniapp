@@ -46,7 +46,7 @@ import type { ItemCategory } from '@/api/wms/md/item/category'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { deleteItemCategory, getItemCategory, getItemCategorySimpleList } from '@/api/wms/md/item/category'
+import { deleteItemCategory, getItemCategory, getSimpleItemCategoryList } from '@/api/wms/md/item/category'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -87,17 +87,12 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const [detail, categories] = await Promise.all([
-      getItemCategory(Number(props.id)),
-      getItemCategorySimpleList(),
-    ])
-    formData.value = detail
-    categoryList.value = categories
-  } finally {
-    toast.close()
-  }
+  const [detail, categories] = await Promise.all([
+    getItemCategory(Number(props.id)),
+    getSimpleItemCategoryList(),
+  ])
+  formData.value = detail
+  categoryList.value = categories
 }
 
 /** 编辑商品分类 */

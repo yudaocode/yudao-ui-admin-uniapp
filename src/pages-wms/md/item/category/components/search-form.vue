@@ -45,7 +45,7 @@ import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  search: [data: Record<string, any>]
+  search: [data: Record<string, unknown>]
   reset: []
 }>()
 

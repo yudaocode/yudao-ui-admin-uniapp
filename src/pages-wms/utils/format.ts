@@ -1,4 +1,5 @@
-type DecimalValue = number | string | null | undefined
+export type DecimalValue = number | string | null | undefined
+export type InputNumberValue = number | string | undefined
 
 /** 数量小数位 */
 export const QUANTITY_PRECISION = 2
@@ -25,6 +26,11 @@ function toFiniteDecimal(value: DecimalValue) {
     return undefined
   }
   return decimalValue
+}
+
+/** 转换为接口可选数字 */
+export function toOptionalNumber(value?: DecimalValue) {
+  return toFiniteDecimal(value)
 }
 
 function sumDecimal<T>(list: T[], getter: (item: T) => DecimalValue) {

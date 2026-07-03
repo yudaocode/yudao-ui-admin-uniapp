@@ -50,6 +50,34 @@
               <text class="mr-8rpx shrink-0 text-[#999]">单位：</text>
               <text class="min-w-0 flex-1 truncate">{{ item.unit || '-' }}</text>
             </view>
+            <view v-if="item.skus?.length" class="mt-18rpx rounded-8rpx bg-[#f8fafc] p-16rpx">
+              <view class="mb-12rpx flex items-center justify-between text-24rpx text-[#999]">
+                <text>规格 {{ item.skus.length }} 个</text>
+                <text>创建时间：{{ formatDateTime(item.createTime) || '-' }}</text>
+              </view>
+              <view
+                v-for="sku in getPreviewSkus(item)"
+                :key="sku.id || sku.code || sku.name"
+                class="border-t border-[#eef2f7] py-12rpx first:border-t-0 first:pt-0 last:pb-0"
+              >
+                <view class="mb-8rpx flex items-center justify-between gap-12rpx text-26rpx">
+                  <text class="min-w-0 flex-1 truncate text-[#333]">{{ sku.name || '默认规格' }}</text>
+                  <text class="shrink-0 text-[#999]">{{ sku.code || '-' }}</text>
+                </view>
+                <view class="grid grid-cols-2 gap-y-6rpx text-22rpx text-[#999]">
+                  <text>成本：{{ formatPrice(sku.costPrice) || '-' }}</text>
+                  <text>销售：{{ formatPrice(sku.sellingPrice) || '-' }}</text>
+                  <text>净重：{{ formatWeight(sku.netWeight) || '-' }}</text>
+                  <text>毛重：{{ formatWeight(sku.grossWeight) || '-' }}</text>
+                </view>
+                <view v-if="formatDimensionText(sku.length, sku.width, sku.height)" class="mt-6rpx text-22rpx text-[#999]">
+                  长宽高：{{ formatDimensionText(sku.length, sku.width, sku.height) }}
+                </view>
+              </view>
+              <view v-if="item.skus.length > previewSkuLimit" class="mt-12rpx text-22rpx text-[#999]">
+                还有 {{ item.skus.length - previewSkuLimit }} 个规格，进入详情查看
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -68,11 +96,14 @@
 
 <script lang="ts" setup>
 import type { Item } from '@/api/wms/md/item'
+import type { ItemSku } from '@/api/wms/md/item/sku'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getItemPage } from '@/api/wms/md/item'
 import { useAccess } from '@/hooks/useAccess'
+import { formatDimensionText, formatPrice, formatWeight } from '@/pages-wms/utils/format'
 import { navigateBackPlus } from '@/utils'
+import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -83,6 +114,7 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
+const previewSkuLimit = 2 // 列表中预览的规格数量
 const list = ref<Item[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
@@ -120,6 +152,11 @@ function handleReset() {
 /** 重新加载 */
 function reload() {
   pagingRef.value?.reload()
+}
+
+/** 获取列表预览规格 */
+function getPreviewSkus(item: Item): ItemSku[] {
+  return (item.skus || []).slice(0, previewSkuLimit)
 }
 
 /** 新增商品 */

@@ -31,7 +31,7 @@
         >
           <view class="p-24rpx">
             <view class="mb-16rpx flex items-center justify-between">
-              <view class="text-32rpx text-[#333] font-semibold">
+              <view class="min-w-0 flex-1 text-32rpx text-[#333] font-semibold" :style="{ paddingLeft: `${item.depth * 32}rpx` }">
                 {{ item.name || '-' }}
               </view>
               <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
@@ -43,6 +43,21 @@
             <view class="flex items-center text-28rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">上级分类：</text>
               <text>{{ getCategoryName(item.parentId) }}</text>
+            </view>
+            <view class="grid grid-cols-2 mt-12rpx gap-12rpx text-24rpx text-[#999]">
+              <text>排序：{{ item.sort ?? 0 }}</text>
+              <text>子分类：{{ getChildrenCount(item.id) }}</text>
+            </view>
+            <view class="mt-12rpx text-24rpx text-[#999]">
+              创建时间：{{ formatDateTime(item.createTime) || '-' }}
+            </view>
+            <view
+              v-if="hasAccessByCodes(['wms:item-category:create'])"
+              class="mt-18rpx flex justify-end"
+            >
+              <wd-button size="small" type="primary" variant="plain" @click.stop="handleAddChild(item)">
+                新增下级
+              </wd-button>
             </view>
           </view>
         </view>
@@ -68,6 +83,8 @@ import { getItemCategoryList } from '@/api/wms/md/item/category'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
+import { handleTree } from '@/utils/tree'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -78,9 +95,12 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ItemCategory[]>([]) // 列表数据
+type ItemCategoryListItem = ItemCategory & { depth: number }
+type ItemCategoryTreeItem = ItemCategory & { children?: ItemCategoryTreeItem[] }
+const list = ref<ItemCategoryListItem[]>([]) // 列表数据
+const categoryList = ref<ItemCategory[]>([]) // 原始分类列表
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, unknown>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
@@ -91,15 +111,16 @@ function handleBack() {
 async function queryList() {
   try {
     const data = await getItemCategoryList(queryParams.value)
-    list.value = data
-    pagingRef.value?.completeByTotal(data, data.length)
+    categoryList.value = data
+    list.value = flattenCategoryTree(handleTree<ItemCategoryTreeItem>(data, 'id', 'parentId'))
+    pagingRef.value?.completeByTotal(list.value, list.value.length)
   } catch {
     pagingRef.value?.complete(false)
   }
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Record<string, any>) {
+function handleQuery(data?: Record<string, unknown>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -119,13 +140,36 @@ function getCategoryName(parentId?: number) {
   if (!parentId) {
     return '顶级分类'
   }
-  return list.value.find(item => item.id === parentId)?.name || '-'
+  return categoryList.value.find(item => item.id === parentId)?.name || '-'
+}
+
+/** 获取子分类数量 */
+function getChildrenCount(id?: number) {
+  if (!id) {
+    return 0
+  }
+  return categoryList.value.filter(item => item.parentId === id).length
+}
+
+/** 展开分类树 */
+function flattenCategoryTree(tree: ItemCategoryTreeItem[], depth = 0): ItemCategoryListItem[] {
+  return tree.flatMap((item) => {
+    const current = { ...item, depth }
+    return [current, ...flattenCategoryTree(item.children || [], depth + 1)]
+  })
 }
 
 /** 新增商品分类 */
 function handleAdd() {
   uni.navigateTo({
     url: '/pages-wms/md/item/category/form/index',
+  })
+}
+
+/** 新增下级分类 */
+function handleAddChild(item: ItemCategory) {
+  uni.navigateTo({
+    url: `/pages-wms/md/item/category/form/index?parentId=${item.id}`,
   })
 }
 

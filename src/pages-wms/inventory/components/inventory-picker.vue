@@ -96,8 +96,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { ZPagingInstance } from 'z-paging'
 import type { Inventory } from '@/api/wms/inventory'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, nextTick, ref } from 'vue'
 import { getInventoryPage } from '@/api/wms/inventory'
 
@@ -114,11 +114,12 @@ const emit = defineEmits<{
   change: [list: InventoryPickerRow[]]
 }>()
 
+const toast = useToast()
 const visible = ref(false) // 选择器显示状态
 const list = ref<InventoryPickerRow[]>([]) // 当前页库存列表
 const selectedMap = ref<Map<string, InventoryPickerRow>>(new Map()) // 跨页已选库存
 const disabledInventoryKeys = ref<Set<string>>(new Set()) // 已在业务明细中使用的库存
-const pagingRef = ref<ZPagingInstance<InventoryPickerRow>>() // 分页组件引用
+const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref({
   itemName: undefined as string | undefined,
   itemCode: undefined as string | undefined,
@@ -136,7 +137,7 @@ function getInventoryKey(row: Pick<Inventory, 'skuId' | 'warehouseId'>) {
 /** 打开选择器 */
 async function open(selectedInventoryKeys: string[] = []) {
   if (!props.warehouseId) {
-    uni.showToast({ icon: 'none', title: '请先选择仓库' })
+    toast.error('请先选择仓库')
     return
   }
   disabledInventoryKeys.value = new Set(selectedInventoryKeys)

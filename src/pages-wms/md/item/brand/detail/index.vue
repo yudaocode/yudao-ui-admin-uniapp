@@ -73,12 +73,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    formData.value = await getItemBrand(Number(props.id))
-  } finally {
-    toast.close()
-  }
+  formData.value = await getItemBrand(Number(props.id))
 }
 
 /** 编辑商品品牌 */

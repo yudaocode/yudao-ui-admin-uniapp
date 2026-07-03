@@ -97,7 +97,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { ZPagingInstance } from 'z-paging'
 import type { ItemSku } from '@/api/wms/md/item/sku'
 import { computed, nextTick, ref } from 'vue'
 import { getItemSkuPage } from '@/api/wms/md/item/sku'
@@ -111,7 +110,7 @@ const list = ref<ItemSku[]>([]) // 当前页 SKU 列表
 const selectedMap = ref<Map<number, ItemSku>>(new Map()) // 跨页已选 SKU
 const disabledSkuIds = ref<Set<number>>(new Set()) // 已在业务明细中使用的 SKU
 const multiple = ref(true) // 是否多选
-const pagingRef = ref<ZPagingInstance<ItemSku>>() // 分页组件引用
+const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref({
   itemName: undefined as string | undefined,
   itemCode: undefined as string | undefined,

@@ -45,6 +45,9 @@
               <text class="mr-8rpx text-[#999]">备注：</text>
               <text class="line-clamp-1">{{ item.remark }}</text>
             </view>
+            <view class="mt-12rpx flex items-center text-24rpx text-[#999]">
+              <text>创建时间：{{ formatDateTime(item.createTime) || '-' }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -68,6 +71,7 @@ import { onMounted, ref } from 'vue'
 import { getWarehousePage } from '@/api/wms/md/warehouse'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
+import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
 definePage({

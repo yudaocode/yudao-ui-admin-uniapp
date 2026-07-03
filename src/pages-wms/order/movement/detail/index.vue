@@ -20,6 +20,9 @@
         <wd-cell title="总数量" :value="formatQuantity(formData?.totalQuantity) || '-'" />
         <wd-cell title="总金额" :value="formatPrice(formData?.totalPrice) || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="创建人" :value="formData?.creatorName || formData?.creator || '-'" />
+        <wd-cell title="更新时间" :value="formatDateTime(formData?.updateTime) || '-'" />
+        <wd-cell title="更新人" :value="formData?.updaterName || formData?.updater || '-'" />
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
@@ -42,7 +45,6 @@
         </view>
         <wd-cell-group border>
           <wd-cell title="数量" :value="formatQuantity(detail.quantity) || '-'" />
-          <wd-cell title="可用库存" :value="formatQuantity(detail.availableQuantity) || '-'" />
           <wd-cell title="单价" :value="formatPrice(detail.price) || '-'" />
           <wd-cell title="总价" :value="formatPrice(detail.totalPrice) || '-'" />
         </wd-cell-group>
@@ -59,14 +61,14 @@
           编辑
         </wd-button>
         <wd-button
-          v-if="canDelete && hasAccessByCodes(['wms:movement-order:delete'])"
-          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+          v-if="canUpdate && hasAccessByCodes(['wms:movement-order:complete'])"
+          class="flex-1" type="primary" :loading="actionLoading" :disabled="deleting" @click="handleComplete"
         >
-          删除
+          完成
         </wd-button>
         <wd-button
           v-if="moreActions.length > 0"
-          class="flex-1" type="info" @click="moreActionVisible = true"
+          class="flex-1" type="info" :disabled="actionLoading || deleting" @click="moreActionVisible = true"
         >
           更多
         </wd-button>
@@ -91,10 +93,9 @@ import {
   getMovementOrder,
 } from '@/api/wms/order/movement'
 import { useAccess } from '@/hooks/useAccess'
-import { WmsOrderDeleteStatusList, WmsOrderUpdateStatusList } from '@/pages-wms/utils/constants'
 import { formatPrice, formatQuantity, multiplyPrice } from '@/pages-wms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, WmsOrderDeleteStatusList, WmsOrderUpdateStatusList } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -117,6 +118,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<MovementOrder>() // 详情数据
 const deleting = ref(false) // 删除状态
+const actionLoading = ref(false) // 单据动作状态
 const moreActionVisible = ref(false) // 更多操作菜单
 
 const detailRows = computed<DetailRow[]>(() => {
@@ -128,15 +130,12 @@ const detailRows = computed<DetailRow[]>(() => {
 const canUpdate = computed(() => formData.value?.status !== undefined && WmsOrderUpdateStatusList.includes(formData.value.status))
 const canDelete = computed(() => formData.value?.status !== undefined && WmsOrderDeleteStatusList.includes(formData.value.status))
 const moreActions = computed(() => {
-  if (!canUpdate.value) {
-    return []
-  }
   const actions = []
-  if (hasAccessByCodes(['wms:movement-order:complete'])) {
-    actions.push({ name: '完成移库', value: 'complete' })
+  if (canDelete.value && hasAccessByCodes(['wms:movement-order:delete'])) {
+    actions.push({ name: '删除', value: 'delete' })
   }
-  if (hasAccessByCodes(['wms:movement-order:cancel'])) {
-    actions.push({ name: '作废移库单', value: 'cancel' })
+  if (canUpdate.value && hasAccessByCodes(['wms:movement-order:cancel'])) {
+    actions.push({ name: '作废', value: 'cancel' })
   }
   return actions
 })
@@ -151,12 +150,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    formData.value = await getMovementOrder(Number(props.id))
-  } finally {
-    toast.close()
-  }
+  formData.value = await getMovementOrder(Number(props.id))
 }
 
 /** 编辑移库单 */
@@ -168,7 +162,7 @@ function handleEdit() {
 
 /** 删除移库单 */
 async function handleDelete() {
-  if (!props.id) {
+  if (!props.id || deleting.value || actionLoading.value) {
     return
   }
   try {
@@ -193,8 +187,11 @@ async function handleDelete() {
 
 /** 更多操作 */
 function handleMoreAction({ item }: { item: { value: string } }) {
-  if (item.value === 'complete') {
-    handleComplete()
+  if (deleting.value || actionLoading.value) {
+    return
+  }
+  if (item.value === 'delete') {
+    handleDelete()
   } else if (item.value === 'cancel') {
     handleCancel()
   }
@@ -202,6 +199,9 @@ function handleMoreAction({ item }: { item: { value: string } }) {
 
 /** 完成移库 */
 async function handleComplete() {
+  if (!props.id || actionLoading.value || deleting.value) {
+    return
+  }
   try {
     await dialog.confirm({
       title: '提示',
@@ -210,14 +210,22 @@ async function handleComplete() {
   } catch {
     return
   }
-  await completeMovementOrder(Number(props.id))
-  toast.success('移库成功')
-  uni.$emit('wms:movement-order:reload')
-  await getDetail()
+  actionLoading.value = true
+  try {
+    await completeMovementOrder(Number(props.id))
+    toast.success('移库成功')
+    uni.$emit('wms:movement-order:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 作废移库单 */
 async function handleCancel() {
+  if (!props.id || actionLoading.value || deleting.value) {
+    return
+  }
   try {
     await dialog.confirm({
       title: '提示',
@@ -226,10 +234,15 @@ async function handleCancel() {
   } catch {
     return
   }
-  await cancelMovementOrder(Number(props.id))
-  toast.success('作废成功')
-  uni.$emit('wms:movement-order:reload')
-  await getDetail()
+  actionLoading.value = true
+  try {
+    await cancelMovementOrder(Number(props.id))
+    toast.success('作废成功')
+    uni.$emit('wms:movement-order:reload')
+    await getDetail()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 /** 初始化 */

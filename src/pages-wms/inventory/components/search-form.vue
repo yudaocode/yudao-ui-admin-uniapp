@@ -61,7 +61,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import WarehousePicker from '@/pages-wms/components/warehouse-picker.vue'
+import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{

@@ -42,6 +42,10 @@
               <text>{{ formatDate(item.orderTime) || '-' }}</text>
             </view>
             <view class="mb-12rpx text-28rpx text-[#666]">
+              <text class="mr-8rpx text-[#999]">业务单号：</text>
+              <text>{{ item.bizOrderNo || '-' }}</text>
+            </view>
+            <view class="mb-12rpx text-28rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">仓库：</text>
               <text>{{ item.warehouseName || '-' }}</text>
             </view>

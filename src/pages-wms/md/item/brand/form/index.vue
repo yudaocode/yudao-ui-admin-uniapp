@@ -13,14 +13,14 @@
         <wd-cell-group border>
           <wd-form-item title="品牌编号" title-width="180rpx" prop="code">
             <view class="flex items-center gap-12rpx">
-              <wd-input v-model="formData.code" class="flex-1" clearable placeholder="请输入品牌编号" />
+              <wd-input v-model="formData.code" class="flex-1" :maxlength="20" clearable placeholder="请输入品牌编号" />
               <wd-button size="small" @click="formData.code = generateWmsCode('B')">
                 生成
               </wd-button>
             </view>
           </wd-form-item>
           <wd-form-item title="品牌名称" title-width="180rpx" prop="name">
-            <wd-input v-model="formData.name" clearable placeholder="请输入品牌名称" />
+            <wd-input v-model="formData.name" :maxlength="30" clearable placeholder="请输入品牌名称" />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -41,7 +41,7 @@ import type { ItemBrand } from '@/api/wms/md/item/brand'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItemBrand, getItemBrand, updateItemBrand } from '@/api/wms/md/item/brand'
-import { generateWmsCode } from '@/pages-wms/utils/constants'
+import { generateWmsCode } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 
@@ -61,8 +61,8 @@ const getTitle = computed(() => props.id ? '编辑商品品牌' : '新增商品�
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<ItemBrand>({
   id: undefined,
-  code: '',
-  name: '',
+  code: undefined,
+  name: undefined,
 }) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '品牌编号不能为空' }],

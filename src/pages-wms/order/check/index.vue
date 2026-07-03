@@ -45,6 +45,10 @@
               <text class="mr-8rpx text-[#999]">单据日期：</text>
               <text>{{ formatDate(item.orderTime) || '-' }}</text>
             </view>
+            <view class="mb-12rpx flex items-center justify-between text-28rpx text-[#666]">
+              <text>总金额：{{ formatPrice(item.totalPrice) || '0.00' }}</text>
+              <text>实际金额：{{ formatPrice(item.actualPrice) || '0.00' }}</text>
+            </view>
             <view class="flex items-center justify-between text-28rpx text-[#666]">
               <text>盈亏数：<text :class="getLossClass(item.totalQuantity)">{{ formatQuantity(item.totalQuantity) || '0.00' }}</text></text>
               <text>盈亏额：<text :class="getLossClass(getDifferencePrice(item))">{{ formatPrice(getDifferencePrice(item)) || '0.00' }}</text></text>

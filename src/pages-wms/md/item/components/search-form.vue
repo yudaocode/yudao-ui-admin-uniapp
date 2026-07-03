@@ -41,8 +41,8 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import ItemBrandPicker from '@/pages-wms/components/item-brand-picker.vue'
-import ItemCategoryPicker from '@/pages-wms/components/item-category-picker.vue'
+import ItemBrandPicker from '@/pages-wms/md/item/brand/components/item-brand-picker.vue'
+import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{

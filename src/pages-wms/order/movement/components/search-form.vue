@@ -39,7 +39,7 @@
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import WarehousePicker from '@/pages-wms/components/warehouse-picker.vue'
+import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
 

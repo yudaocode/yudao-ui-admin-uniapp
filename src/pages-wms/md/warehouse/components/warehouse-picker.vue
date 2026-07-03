@@ -3,17 +3,18 @@
     :title="label"
     :title-width="labelWidth"
     :prop="prop || undefined"
+    :disabled="disabled"
     is-link
     :value="selectedLabel"
     :placeholder="placeholder"
-    @click="visible = true"
+    @click="handleOpen"
   />
 
   <wd-select-picker
     v-model="selectedId"
     v-model:visible="visible"
     :title="label"
-    :columns="brandList"
+    :columns="warehouseList"
     value-key="id"
     label-key="name"
     type="radio"
@@ -23,37 +24,40 @@
 </template>
 
 <script lang="ts" setup>
-import type { ItemBrand } from '@/api/wms/md/item/brand'
+import type { Warehouse } from '@/api/wms/md/warehouse'
 import { computed, onMounted, ref, watch } from 'vue'
-import { getItemBrandSimpleList } from '@/api/wms/md/item/brand'
+import { getSimpleWarehouseList } from '@/api/wms/md/warehouse'
 
 const props = withDefaults(defineProps<{
+  disabled?: boolean
   label?: string
   labelWidth?: string
   modelValue?: number
   placeholder?: string
   prop?: string
 }>(), {
-  label: '商品品牌',
+  disabled: false,
+  label: '仓库',
   labelWidth: '180rpx',
-  placeholder: '请选择商品品牌',
+  placeholder: '请选择仓库',
   prop: '',
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number | undefined): void
-  (e: 'confirm', brand?: ItemBrand): void
+  (e: 'confirm', warehouse?: Warehouse): void
+  (e: 'change', warehouse?: Warehouse): void
 }>()
 
-const brandList = ref<ItemBrand[]>([]) // 品牌列表
-const selectedId = ref<number | string>('') // 当前选中品牌编号
+const warehouseList = ref<Warehouse[]>([]) // 仓库列表
+const selectedId = ref<number | string>('') // 当前选中仓库编号
 const visible = ref(false) // 选择器显示状态
 
 const selectedLabel = computed(() => {
   if (!selectedId.value) {
     return ''
   }
-  return brandList.value.find(item => item.id === Number(selectedId.value))?.name || ''
+  return warehouseList.value.find(item => item.id === Number(selectedId.value))?.name || ''
 })
 
 watch(
@@ -64,20 +68,30 @@ watch(
   { immediate: true },
 )
 
-/** 加载品牌列表 */
-async function loadBrandList() {
-  brandList.value = await getItemBrandSimpleList()
+/** 打开选择器 */
+function handleOpen() {
+  if (props.disabled) {
+    return
+  }
+  visible.value = true
+}
+
+/** 加载仓库列表 */
+async function loadWarehouseList() {
+  warehouseList.value = await getSimpleWarehouseList()
 }
 
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
-  const brandId = value ? Number(value) : undefined
-  emit('update:modelValue', brandId)
-  emit('confirm', brandList.value.find(item => item.id === brandId))
+  const warehouseId = value ? Number(value) : undefined
+  const warehouse = warehouseList.value.find(item => item.id === warehouseId)
+  emit('update:modelValue', warehouseId)
+  emit('confirm', warehouse)
+  emit('change', warehouse)
 }
 
 /** 初始化 */
 onMounted(() => {
-  loadBrandList()
+  loadWarehouseList()
 })
 </script>

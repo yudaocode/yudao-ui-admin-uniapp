@@ -12,19 +12,19 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border title="基础信息">
           <wd-form-item title="商品名称" title-width="180rpx" prop="name">
-            <wd-input v-model="formData.name" clearable placeholder="请输入商品名称" />
+            <wd-input v-model="formData.name" :maxlength="60" clearable placeholder="请输入商品名称" />
           </wd-form-item>
           <ItemCategoryPicker v-model="formData.categoryId" prop="categoryId" />
           <wd-form-item title="商品编号" title-width="180rpx" prop="code">
             <view class="flex items-center gap-12rpx">
-              <wd-input v-model="formData.code" class="flex-1" clearable placeholder="请输入商品编号" />
+              <wd-input v-model="formData.code" class="flex-1" :maxlength="20" clearable placeholder="请输入商品编号" />
               <wd-button size="small" @click="formData.code = generateWmsCode('I')">
                 生成
               </wd-button>
             </view>
           </wd-form-item>
           <wd-form-item title="商品单位" title-width="180rpx" prop="unit">
-            <wd-input v-model="formData.unit" clearable placeholder="请输入单位" />
+            <wd-input v-model="formData.unit" :maxlength="20" clearable placeholder="请输入单位" />
           </wd-form-item>
           <ItemBrandPicker v-model="formData.brandId" />
           <wd-form-item title="备注" title-width="180rpx">
@@ -51,11 +51,11 @@
           </view>
           <wd-cell-group border>
             <wd-form-item title="规格名称" title-width="180rpx">
-              <wd-input v-model="sku.name" clearable placeholder="请输入规格名称" />
+              <wd-input v-model="sku.name" :maxlength="255" clearable placeholder="请输入规格名称" />
             </wd-form-item>
             <wd-form-item title="规格编号" title-width="180rpx">
               <view class="flex items-center gap-12rpx">
-                <wd-input v-model="sku.code" class="flex-1" clearable placeholder="请输入规格编号" />
+                <wd-input v-model="sku.code" class="flex-1" :maxlength="64" clearable placeholder="请输入规格编号" />
                 <wd-button size="small" @click="sku.code = generateWmsCode('S')">
                   生成
                 </wd-button>
@@ -63,7 +63,7 @@
             </wd-form-item>
             <wd-form-item title="条码" title-width="180rpx">
               <view class="flex items-center gap-12rpx">
-                <wd-input v-model="sku.barCode" class="flex-1" clearable placeholder="请输入条码" />
+                <wd-input v-model="sku.barCode" class="flex-1" :maxlength="64" clearable placeholder="请输入条码" />
                 <wd-button size="small" @click="sku.barCode = generateWmsCode()">
                   生成
                 </wd-button>
@@ -71,21 +71,21 @@
             </wd-form-item>
             <wd-form-item title="长/宽/高" title-width="180rpx">
               <view class="grid grid-cols-3 gap-12rpx">
-                <wd-input v-model.number="sku.length" type="digit" placeholder="长" />
-                <wd-input v-model.number="sku.width" type="digit" placeholder="宽" />
-                <wd-input v-model.number="sku.height" type="digit" placeholder="高" />
+                <wd-input-number v-model="sku.length" :min="0" :precision="DIMENSION_PRECISION" allow-null placeholder="长" />
+                <wd-input-number v-model="sku.width" :min="0" :precision="DIMENSION_PRECISION" allow-null placeholder="宽" />
+                <wd-input-number v-model="sku.height" :min="0" :precision="DIMENSION_PRECISION" allow-null placeholder="高" />
               </view>
             </wd-form-item>
             <wd-form-item title="净重/毛重" title-width="180rpx">
               <view class="grid grid-cols-2 gap-12rpx">
-                <wd-input v-model.number="sku.netWeight" type="digit" placeholder="净重" />
-                <wd-input v-model.number="sku.grossWeight" type="digit" placeholder="毛重" />
+                <wd-input-number v-model="sku.netWeight" :min="0" :precision="WEIGHT_PRECISION" allow-null placeholder="净重" />
+                <wd-input-number v-model="sku.grossWeight" :min="0" :precision="WEIGHT_PRECISION" allow-null placeholder="毛重" />
               </view>
             </wd-form-item>
             <wd-form-item title="成本/销售价" title-width="180rpx">
               <view class="grid grid-cols-2 gap-12rpx">
-                <wd-input v-model.number="sku.costPrice" type="digit" placeholder="成本价" />
-                <wd-input v-model.number="sku.sellingPrice" type="digit" placeholder="销售价" />
+                <wd-input-number v-model="sku.costPrice" :min="0" :precision="PRICE_PRECISION" allow-null placeholder="成本价" />
+                <wd-input-number v-model="sku.sellingPrice" :min="0" :precision="PRICE_PRECISION" allow-null placeholder="销售价" />
               </view>
             </wd-form-item>
           </wd-cell-group>
@@ -106,14 +106,20 @@
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Item } from '@/api/wms/md/item'
 import type { ItemSku } from '@/api/wms/md/item/sku'
+import type { InputNumberValue } from '@/pages-wms/utils/format'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItem, getItem, updateItem } from '@/api/wms/md/item'
-import ItemBrandPicker from '@/pages-wms/components/item-brand-picker.vue'
-import ItemCategoryPicker from '@/pages-wms/components/item-category-picker.vue'
-import { generateWmsCode } from '@/pages-wms/utils/constants'
+import ItemBrandPicker from '@/pages-wms/md/item/brand/components/item-brand-picker.vue'
+import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
+import { generateWmsCode } from '@/pages-wms/utils/order'
+import { DIMENSION_PRECISION, PRICE_PRECISION, toOptionalNumber, WEIGHT_PRECISION } from '@/pages-wms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
+
+type SkuNumberKey = 'length' | 'width' | 'height' | 'grossWeight' | 'netWeight' | 'costPrice' | 'sellingPrice'
+type ItemSkuForm = Omit<ItemSku, SkuNumberKey> & Record<SkuNumberKey, InputNumberValue>
+type ItemFormData = Omit<Item, 'skus'> & { skus?: ItemSkuForm[] }
 
 const props = defineProps<{
   id?: number | any
@@ -129,7 +135,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑商品' : '新增商品')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Item>({
+const formData = ref<ItemFormData>({
   id: undefined,
   code: '',
   name: '',
@@ -148,19 +154,33 @@ const formSchema = createFormSchema({
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 构建空规格 */
-function buildEmptySku(): ItemSku {
+function buildEmptySku(): ItemSkuForm {
   return {
     id: undefined,
     name: '',
     barCode: '',
     code: '',
-    length: undefined,
-    width: undefined,
-    height: undefined,
-    grossWeight: undefined,
-    netWeight: undefined,
-    costPrice: undefined,
-    sellingPrice: undefined,
+    length: '',
+    width: '',
+    height: '',
+    grossWeight: '',
+    netWeight: '',
+    costPrice: '',
+    sellingPrice: '',
+  }
+}
+
+/** 转换规格表单数据 */
+function normalizeSkuForm(sku: ItemSku): ItemSkuForm {
+  return {
+    ...sku,
+    length: sku.length ?? '',
+    width: sku.width ?? '',
+    height: sku.height ?? '',
+    grossWeight: sku.grossWeight ?? '',
+    netWeight: sku.netWeight ?? '',
+    costPrice: sku.costPrice ?? '',
+    sellingPrice: sku.sellingPrice ?? '',
   }
 }
 
@@ -177,7 +197,7 @@ async function getDetail() {
   const item = await getItem(Number(props.id))
   formData.value = {
     ...item,
-    skus: item.skus?.length ? item.skus : [buildEmptySku()],
+    skus: item.skus?.length ? item.skus.map(normalizeSkuForm) : [buildEmptySku()],
   }
 }
 
@@ -210,6 +230,23 @@ function validateSkus() {
   return true
 }
 
+/** 构建提交数据 */
+function buildSubmitData(): Item {
+  return {
+    ...formData.value,
+    skus: (formData.value.skus || []).map(sku => ({
+      ...sku,
+      length: toOptionalNumber(sku.length),
+      width: toOptionalNumber(sku.width),
+      height: toOptionalNumber(sku.height),
+      grossWeight: toOptionalNumber(sku.grossWeight),
+      netWeight: toOptionalNumber(sku.netWeight),
+      costPrice: toOptionalNumber(sku.costPrice),
+      sellingPrice: toOptionalNumber(sku.sellingPrice),
+    })),
+  }
+}
+
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
@@ -219,11 +256,12 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
+    const data = buildSubmitData()
     if (props.id) {
-      await updateItem(formData.value)
+      await updateItem(data)
       toast.success('修改成功')
     } else {
-      await createItem(formData.value)
+      await createItem(data)
       toast.success('新增成功')
     }
     uni.$emit('wms:item:reload')

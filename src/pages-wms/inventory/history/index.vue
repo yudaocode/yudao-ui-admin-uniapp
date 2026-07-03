@@ -43,8 +43,17 @@
               <text>{{ item.skuName || '-' }}</text>
             </view>
             <view class="mb-12rpx text-28rpx text-[#666]">
+              <text class="mr-8rpx text-[#999]">仓库：</text>
+              <text>{{ item.warehouseName || '-' }}</text>
+            </view>
+            <view class="mb-12rpx text-28rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">变更：</text>
               <text>{{ formatQuantity(item.beforeQuantity) || '0.00' }} -> {{ formatQuantity(item.afterQuantity) || '0.00' }}</text>
+            </view>
+            <view class="grid grid-cols-3 mb-12rpx gap-12rpx text-24rpx text-[#999]">
+              <text>数量 {{ formatQuantity(item.quantity) || '0.00' }}</text>
+              <text>单价 {{ formatPrice(item.price) || '-' }}</text>
+              <text>金额 {{ formatPrice(item.totalPrice) || '-' }}</text>
             </view>
             <view class="mb-12rpx flex items-center gap-12rpx text-28rpx text-[#666]">
               <dict-tag :type="DICT_TYPE.WMS_ORDER_TYPE" :value="item.orderType" />
@@ -64,7 +73,7 @@
 import type { InventoryHistory } from '@/api/wms/inventory/history'
 import { ref } from 'vue'
 import { getInventoryHistoryPage } from '@/api/wms/inventory/history'
-import { formatQuantity } from '@/pages-wms/utils/format'
+import { formatPrice, formatQuantity } from '@/pages-wms/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

@@ -19,7 +19,7 @@
           />
           <wd-form-item title="分类编号" title-width="180rpx" prop="code">
             <view class="flex items-center gap-12rpx">
-              <wd-input v-model="formData.code" class="flex-1" clearable placeholder="请输入分类编号" />
+              <wd-input v-model="formData.code" class="flex-1" :maxlength="20" clearable placeholder="请输入分类编号" />
               <wd-button size="small" @click="formData.code = generateWmsCode('C')">
                 生成
               </wd-button>
@@ -62,14 +62,15 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItemCategory, getItemCategory, updateItemCategory } from '@/api/wms/md/item/category'
 import { getIntDictOptions } from '@/hooks/useDict'
-import ItemCategoryPicker from '@/pages-wms/components/item-category-picker.vue'
-import { generateWmsCode } from '@/pages-wms/utils/constants'
+import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
+import { generateWmsCode } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
+  parentId?: number | any
 }>()
 
 definePage({
@@ -84,7 +85,7 @@ const getTitle = computed(() => props.id ? '编辑商品分类' : '新增商品�
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<ItemCategory>({
   id: undefined,
-  parentId: 0,
+  parentId: props.parentId ? Number(props.parentId) : 0,
   code: '',
   name: '',
   sort: 0,
