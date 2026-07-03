@@ -12,7 +12,7 @@ export interface ItemCategory {
 }
 
 /** 查询商品分类列表 */
-export function getItemCategoryList(params?: Record<string, unknown>) {
+export function getItemCategoryList(params?: Record<string, any>) {
   return http.get<ItemCategory[]>('/wms/item-category/list', params)
 }
 

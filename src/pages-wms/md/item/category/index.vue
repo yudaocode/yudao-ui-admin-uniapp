@@ -100,7 +100,7 @@ type ItemCategoryTreeItem = ItemCategory & { children?: ItemCategoryTreeItem[] }
 const list = ref<ItemCategoryListItem[]>([]) // 列表数据
 const categoryList = ref<ItemCategory[]>([]) // 原始分类列表
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, unknown>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
@@ -120,7 +120,7 @@ async function queryList() {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Record<string, unknown>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }

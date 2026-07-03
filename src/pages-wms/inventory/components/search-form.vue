@@ -74,8 +74,9 @@ const typeOptions = [
   { label: '仓库', value: 'warehouse' },
   { label: '商品', value: 'item' },
 ] // 统计维度选项
+const defaultType = typeOptions[0].value // 默认统计维度
 const formData = reactive({
-  type: 'warehouse',
+  type: defaultType,
   warehouseId: undefined as number | undefined,
   itemName: undefined as string | undefined,
   itemCode: undefined as string | undefined,
@@ -87,7 +88,7 @@ const formData = reactive({
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  conditions.push(formData.type === 'item' ? '维度:商品' : '维度:仓库')
+  conditions.push(formData.type === typeOptions[1].value ? '维度:商品' : '维度:仓库')
   if (formData.warehouseId) {
     conditions.push('已选仓库')
   }
@@ -120,7 +121,7 @@ function handleSearch() {
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.type = 'warehouse'
+  formData.type = defaultType
   formData.warehouseId = undefined
   formData.itemName = undefined
   formData.itemCode = undefined
