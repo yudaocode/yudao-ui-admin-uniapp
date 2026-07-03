@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
 /** IoT 统计数据 */
-export interface IotStatisticsSummaryRespVO {
+export interface IotStatisticsSummaryResp {
   productCategoryCount: number
   productCount: number
   deviceCount: number
@@ -17,35 +17,24 @@ export interface IotStatisticsSummaryRespVO {
 }
 
 /** IoT 设备消息按时间统计 */
-export interface IotStatisticsDeviceMessageSummaryByDateRespVO {
+export interface IotStatisticsDeviceMessageSummaryByDateResp {
   time: string
   upstreamCount: number
   downstreamCount: number
 }
 
-/** IoT 设备消息统计参数 */
-export interface IotStatisticsDeviceMessageReqVO {
+/** IoT 设备消息统计请求参数 */
+export interface IotStatisticsDeviceMessageReq {
   interval: number
-  times?: string[]
-}
-
-/** 设备位置数据 */
-export interface DeviceLocationRespVO {
-  id: number
-  deviceName: string
-  nickname?: string
-  productName?: string
-  state: number
-  longitude: number
-  latitude: number
+  times?: Array<string | Date>
 }
 
 /** 查询全局统计 */
 export function getStatisticsSummary() {
-  return http.get<IotStatisticsSummaryRespVO>('/iot/statistics/get-summary')
+  return http.get<IotStatisticsSummaryResp>('/iot/statistics/get-summary')
 }
 
 /** 获取设备消息统计 */
-export function getDeviceMessageSummaryByDate(params: IotStatisticsDeviceMessageReqVO) {
-  return http.get<IotStatisticsDeviceMessageSummaryByDateRespVO[]>('/iot/statistics/get-device-message-summary-by-date', params)
+export function getDeviceMessageSummaryByDate(params: IotStatisticsDeviceMessageReq) {
+  return http.get<IotStatisticsDeviceMessageSummaryByDateResp[]>('/iot/statistics/get-device-message-summary-by-date', params)
 }

@@ -10,12 +10,12 @@ export interface AlertConfig {
   status?: number
   sceneRuleIds?: number[]
   receiveUserIds?: number[]
-  receiveUserNames?: string
+  receiveUserNames?: string[]
   receiveTypes?: number[]
   smsTemplateCode?: string
   mailTemplateCode?: string
   notifyTemplateCode?: string
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取告警配置分页列表 */

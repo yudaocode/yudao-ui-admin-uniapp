@@ -8,7 +8,7 @@ export interface DeviceGroup {
   status: number
   description?: string
   deviceCount?: number
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取设备分组分页列表 */

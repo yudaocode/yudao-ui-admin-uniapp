@@ -4,6 +4,7 @@ import { http } from '@/http/http'
 export interface DeviceModbusConfig {
   id?: number
   deviceId: number
+  deviceName?: string
   ip: string
   port: number
   slaveId: number
@@ -12,6 +13,7 @@ export interface DeviceModbusConfig {
   mode: number
   frameFormat: number
   status: number
+  createTime?: Date
 }
 
 /** 获取设备的 Modbus 连接配置 */

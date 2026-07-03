@@ -14,7 +14,7 @@ export interface AlertRecord {
   deviceMessage?: any
   processStatus?: boolean
   processRemark?: string
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取告警记录分页列表 */

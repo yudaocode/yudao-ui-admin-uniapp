@@ -14,8 +14,71 @@ export interface ThingModelData {
   property?: ThingModelProperty
   event?: ThingModelEvent
   service?: ThingModelService
-  createTime?: string
+  createTime?: Date
 }
+
+/** 物模型列表请求参数 */
+export interface ThingModelListReq {
+  productId: number
+  identifier?: string
+  name?: string
+  type?: number
+}
+
+/** dataSpecs 数值型数据结构 */
+export interface DataSpecsNumberData {
+  dataType: string
+  max?: string
+  min?: string
+  step?: string
+  precise?: string
+  defaultValue?: string
+  unit?: string
+  unitName?: string
+}
+
+/** dataSpecs 枚举型数据结构 */
+export interface DataSpecsEnumOrBoolData {
+  dataType: string
+  defaultValue?: string
+  name: string
+  value?: number
+}
+
+/** 文本/时间型数据规范 */
+export interface ThingModelDateOrTextDataSpecs {
+  dataType: 'text' | 'date'
+  length?: number
+  defaultValue?: string
+}
+
+/** 数组型数据规范 */
+export interface ThingModelArrayDataSpecs {
+  dataType: string
+  size?: number
+  childDataType?: string
+  dataSpecsList?: ThingModelDataSpecs[]
+}
+
+/** 结构体型数据规范 */
+export interface ThingModelStructDataSpecs {
+  dataType: string
+  identifier?: string
+  name?: string
+  accessMode?: string
+  required?: boolean
+  childDataType?: string
+  dataSpecs?: ThingModelDataSpecs
+  dataSpecsList?: ThingModelDataSpecs[]
+}
+
+/** dataSpecs 通用数据结构 */
+export type ThingModelDataSpecs
+  = | DataSpecsNumberData
+    | DataSpecsEnumOrBoolData
+    | ThingModelDateOrTextDataSpecs
+    | ThingModelArrayDataSpecs
+    | ThingModelStructDataSpecs
 
 /** 物模型属性 */
 export interface ThingModelProperty {
@@ -25,9 +88,9 @@ export interface ThingModelProperty {
   required?: boolean
   dataType?: string
   description?: string
-  dataSpecs?: any
-  dataSpecsList?: any[]
-  [key: string]: any
+  dataSpecs?: ThingModelDataSpecs
+  dataSpecsList?: ThingModelDataSpecs[]
+  value?: number
 }
 
 /** 物模型事件 */
@@ -39,7 +102,6 @@ export interface ThingModelEvent {
   description?: string
   outputParams?: ThingModelParam[]
   method?: string
-  [key: string]: any
 }
 
 /** 物模型服务 */
@@ -52,7 +114,6 @@ export interface ThingModelService {
   inputParams?: ThingModelParam[]
   outputParams?: ThingModelParam[]
   method?: string
-  [key: string]: any
 }
 
 /** 物模型参数 */
@@ -62,8 +123,8 @@ export interface ThingModelParam {
   direction: string
   paraOrder?: number
   dataType: string
-  dataSpecs?: any
-  dataSpecsList?: any[]
+  dataSpecs?: ThingModelDataSpecs
+  dataSpecsList?: ThingModelDataSpecs[]
 }
 
 /** 物模型 TSL 响应 */
@@ -81,7 +142,7 @@ export function getThingModelPage(params: PageParam) {
 }
 
 /** 获取产品物模型列表 */
-export function getThingModelList(params: Record<string, any>) {
+export function getThingModelList(params: ThingModelListReq) {
   return http.get<ThingModelData[]>('/iot/thing-model/list', params)
 }
 

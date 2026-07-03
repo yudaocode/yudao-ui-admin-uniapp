@@ -6,11 +6,11 @@ export interface IotSceneRule {
   id?: number
   name: string
   description?: string
-  lastTriggerTime?: string
+  lastTriggerTime?: string | Date
   status?: number
   triggers?: Trigger[]
   actions?: Action[]
-  createTime?: string
+  createTime?: Date
 }
 
 /** 场景联动触发器 */

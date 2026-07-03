@@ -16,7 +16,7 @@ export interface OtaTask {
   deviceIds?: number[]
   deviceTotalCount?: number
   deviceSuccessCount?: number
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取 OTA 升级任务分页列表 */

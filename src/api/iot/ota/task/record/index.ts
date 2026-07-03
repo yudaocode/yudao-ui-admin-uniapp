@@ -7,7 +7,7 @@ export interface OtaTaskRecord {
   firmwareId?: number
   firmwareVersion?: string
   taskId?: number
-  deviceId?: number | string
+  deviceId?: number
   deviceName?: string
   currentVersion?: string
   fromFirmwareId?: number
@@ -15,8 +15,8 @@ export interface OtaTaskRecord {
   status?: number
   progress?: number
   description?: string
-  updateTime?: string
-  createTime?: string
+  updateTime?: Date
+  createTime?: Date
 }
 
 /** 获取 OTA 任务记录状态统计 */

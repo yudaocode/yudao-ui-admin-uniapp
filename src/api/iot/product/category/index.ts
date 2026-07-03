@@ -8,7 +8,7 @@ export interface ProductCategory {
   sort: number
   status: number
   description?: string
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取产品分类分页列表 */

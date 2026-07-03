@@ -1,4 +1,5 @@
 import type { PageParam, PageResult } from '@/http/types'
+import type { ThingModelDataSpecs } from '@/api/iot/thingmodel'
 import { http } from '@/http/http'
 
 /** IoT 设备信息 */
@@ -12,34 +13,49 @@ export interface Device {
   nickname?: string
   gatewayId?: number
   state?: number
-  onlineTime?: string
-  offlineTime?: string
-  activeTime?: string
-  createTime?: string
+  onlineTime?: string | Date
+  offlineTime?: string | Date
+  activeTime?: string | Date
+  createTime?: Date
   ip?: string
   firmwareVersion?: string
+  picUrl?: string
   deviceSecret?: string
   mqttClientId?: string
   mqttUsername?: string
   mqttPassword?: string
-  latitude?: number | string
-  longitude?: number | string
+  latitude?: number
+  longitude?: number
   areaId?: number
-  address?: string
   serialNumber?: string
   config?: string
   groupIds?: number[]
 }
 
 /** IoT 设备属性详情 */
-export interface IotDevicePropertyDetailRespVO {
+export interface IotDevicePropertyResp {
   identifier: string
-  value: string
-  updateTime?: string
+  value: any
+  updateTime?: number
+}
+
+/** IoT 设备最新属性请求参数 */
+export interface IotDevicePropertyLatestReq {
+  deviceId: number
+}
+
+/** IoT 设备属性历史列表请求参数 */
+export interface IotDevicePropertyHistoryListReq extends IotDevicePropertyLatestReq {
+  identifier: string
+  times?: Array<string | Date>
+}
+
+/** IoT 设备属性详情 */
+export interface IotDevicePropertyDetailResp extends IotDevicePropertyResp {
   name: string
   dataType: string
-  dataSpecs?: any
-  dataSpecsList?: any[]
+  dataSpecs?: ThingModelDataSpecs
+  dataSpecsList?: ThingModelDataSpecs[]
 }
 
 /** IoT 设备认证参数 */
@@ -50,10 +66,34 @@ export interface IotDeviceAuthInfo {
 }
 
 /** IoT 设备发送消息参数 */
-export interface IotDeviceMessageSendReqVO {
+export interface IotDeviceMessageSendReq {
   deviceId: number
   method: string
   params?: any
+}
+
+/** IoT 设备消息 */
+export interface IotDeviceMessage {
+  id?: string
+  reportTime?: string | Date
+  ts?: string | Date
+  deviceId?: number
+  serverId?: string
+  upstream?: boolean
+  reply?: boolean
+  identifier?: string
+  requestId?: string
+  method?: string
+  params?: any
+  data?: any
+  code?: number
+  msg?: string
+}
+
+/** IoT 设备消息对 */
+export interface IotDeviceMessagePair {
+  request?: IotDeviceMessage
+  reply?: IotDeviceMessage
 }
 
 /** 获取设备分页列表 */
@@ -74,11 +114,6 @@ export function createDevice(data: Device) {
 /** 更新设备 */
 export function updateDevice(data: Device) {
   return http.put<boolean>('/iot/device/update', data)
-}
-
-/** 更新设备分组 */
-export function updateDeviceGroup(data: { ids: number[], groupIds: number[] }) {
-  return http.put<boolean>('/iot/device/update-group', data)
 }
 
 /** 删除设备 */
@@ -112,13 +147,13 @@ export function getDeviceLocationList() {
 }
 
 /** 获取设备属性最新数据 */
-export function getLatestDeviceProperties(params: Record<string, any>) {
-  return http.get<IotDevicePropertyDetailRespVO[]>('/iot/device/property/get-latest', params)
+export function getLatestDeviceProperties(params: IotDevicePropertyLatestReq) {
+  return http.get<IotDevicePropertyDetailResp[]>('/iot/device/property/get-latest', params)
 }
 
 /** 获取设备属性历史数据 */
-export function getHistoryDevicePropertyList(params: Record<string, any>) {
-  return http.get<any[]>('/iot/device/property/history-list', params)
+export function getHistoryDevicePropertyList(params: IotDevicePropertyHistoryListReq) {
+  return http.get<IotDevicePropertyResp[]>('/iot/device/property/history-list', params)
 }
 
 /** 获取设备认证信息 */
@@ -128,16 +163,16 @@ export function getDeviceAuthInfo(id: number) {
 
 /** 查询设备消息分页 */
 export function getDeviceMessagePage(params: PageParam) {
-  return http.get<PageResult<any>>('/iot/device/message/page', params)
+  return http.get<PageResult<IotDeviceMessage>>('/iot/device/message/page', params)
 }
 
 /** 查询设备消息配对分页 */
 export function getDeviceMessagePairPage(params: PageParam) {
-  return http.get<PageResult<any>>('/iot/device/message/pair-page', params)
+  return http.get<PageResult<IotDeviceMessagePair>>('/iot/device/message/pair-page', params)
 }
 
 /** 发送设备消息 */
-export function sendDeviceMessage(params: IotDeviceMessageSendReqVO) {
+export function sendDeviceMessage(params: IotDeviceMessageSendReq) {
   return http.post<boolean>('/iot/device/message/send', params)
 }
 

@@ -9,7 +9,7 @@ export interface DataRule {
   status?: number
   sourceConfigs?: any[]
   sinkIds?: number[]
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取数据流转规则分页列表 */

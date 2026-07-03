@@ -16,6 +16,7 @@ export interface DeviceModbusPoint {
   scale?: number
   pollInterval?: number
   status: number
+  createTime?: Date
 }
 
 /** 获取设备的 Modbus 点位分页 */

@@ -13,7 +13,8 @@ export interface OtaFirmware {
   fileSize?: number
   fileDigestAlgorithm?: string
   fileDigestValue?: string
-  createTime?: string
+  createTime?: Date
+  updateTime?: Date
 }
 
 /** 获取 OTA 固件分页列表 */

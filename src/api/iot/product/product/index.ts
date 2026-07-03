@@ -20,7 +20,7 @@ export interface Product {
   protocolType?: string
   serializeType?: string
   deviceCount?: number
-  createTime?: string
+  createTime?: Date
 }
 
 /** IoT 产品设备类型枚举 */
