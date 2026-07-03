@@ -1,8 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-// MES 计量单位 VO
-export interface MdUnitMeasureVO {
+/** MES 计量单位 */
+export interface MdUnitMeasure {
   id?: number // 单位编号
   code: string // 单位编码
   name: string // 单位名称
@@ -11,39 +11,31 @@ export interface MdUnitMeasureVO {
   changeRate?: number // 与主单位换算比例
   status: number // 状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-export interface MdUnitMeasurePageParam {
-  pageNo?: number // 页码
-  pageSize?: number // 每页数量
-  code?: string // 单位编码
-  name?: string // 单位名称
-  status?: number // 状态
+  createTime?: Date // 创建时间
 }
 
 /** 查询计量单位分页 */
-export function getUnitMeasurePage(params: MdUnitMeasurePageParam & PageParam) {
-  return http.get<PageResult<MdUnitMeasureVO>>(`/mes/md/unit-measure/page`, params)
+export function getUnitMeasurePage(params: PageParam) {
+  return http.get<PageResult<MdUnitMeasure>>(`/mes/md/unit-measure/page`, params)
 }
 
 /** 查询计量单位精简列表 */
 export function getUnitMeasureSimpleList() {
-  return http.get<MdUnitMeasureVO[]>(`/mes/md/unit-measure/simple-list`)
+  return http.get<MdUnitMeasure[]>(`/mes/md/unit-measure/simple-list`)
 }
 
 /** 查询计量单位详情 */
 export function getUnitMeasure(id: number) {
-  return http.get<MdUnitMeasureVO>(`/mes/md/unit-measure/get?id=${id}`)
+  return http.get<MdUnitMeasure>(`/mes/md/unit-measure/get?id=${id}`)
 }
 
 /** 新增计量单位 */
-export function createUnitMeasure(data: MdUnitMeasureVO) {
+export function createUnitMeasure(data: MdUnitMeasure) {
   return http.post<number>(`/mes/md/unit-measure/create`, data)
 }
 
 /** 修改计量单位 */
-export function updateUnitMeasure(data: MdUnitMeasureVO) {
+export function updateUnitMeasure(data: MdUnitMeasure) {
   return http.put<boolean>(`/mes/md/unit-measure/update`, data)
 }
 
@@ -53,16 +45,6 @@ export function deleteUnitMeasure(id: number) {
 }
 
 /** 导出计量单位 Excel */
-export function exportUnitMeasure(params: MdUnitMeasurePageParam) {
+export function exportUnitMeasure(params: Record<string, any>) {
   return http.get<Blob>(`/mes/md/unit-measure/export-excel`, params)
-}
-
-export const MdUnitMeasureApi = {
-  getUnitMeasurePage,
-  getUnitMeasureSimpleList,
-  getUnitMeasure,
-  createUnitMeasure,
-  updateUnitMeasure,
-  deleteUnitMeasure,
-  exportUnitMeasure,
 }

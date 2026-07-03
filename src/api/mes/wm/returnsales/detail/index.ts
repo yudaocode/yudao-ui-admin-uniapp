@@ -1,8 +1,8 @@
 import { http } from '@/http/http'
 
 /** MES 销售退货上架明细 */
-export interface WmReturnSalesDetailVO {
-  id: number // 明细编号
+export interface WmReturnSalesDetail {
+  id?: number // 明细编号
   returnId: number // 退货单编号
   lineId: number // 行编号
   itemId: number // 物料编号
@@ -23,57 +23,30 @@ export interface WmReturnSalesDetailVO {
   areaCode?: string // 库位编码
   areaName?: string // 库位名称
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-/** MES 销售退货上架明细创建参数 */
-export interface WmReturnSalesDetailCreateReqVO {
-  returnId?: number // 退货单编号
-  lineId?: number // 行编号
-  itemId?: number // 物料编号
-  quantity?: number // 数量
-  batchId?: number // 批次编号
-  batchCode?: string // 批次号
-  warehouseId?: number // 仓库编号
-  locationId?: number // 库区编号
-  areaId?: number // 库位编号
-  remark?: string // 备注
-}
-
-/** MES 销售退货上架明细更新参数 */
-export interface WmReturnSalesDetailUpdateReqVO extends WmReturnSalesDetailCreateReqVO {
-  id: number // 明细编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询销售退货明细列表（按行编号） */
 export function getReturnSalesDetailListByLineId(lineId: number) {
-  return http.get<WmReturnSalesDetailVO[]>('/mes/wm/return-sales-detail/list-by-line', { lineId })
+  return http.get<WmReturnSalesDetail[]>('/mes/wm/return-sales-detail/list-by-line', { lineId })
 }
 
 /** 查询销售退货明细详情 */
 export function getReturnSalesDetail(id: number) {
-  return http.get<WmReturnSalesDetailVO>(`/mes/wm/return-sales-detail/get?id=${id}`)
+  return http.get<WmReturnSalesDetail>(`/mes/wm/return-sales-detail/get?id=${id}`)
 }
 
 /** 新增销售退货明细 */
-export function createReturnSalesDetail(data: WmReturnSalesDetailCreateReqVO) {
+export function createReturnSalesDetail(data: WmReturnSalesDetail) {
   return http.post<number>('/mes/wm/return-sales-detail/create', data)
 }
 
 /** 修改销售退货明细 */
-export function updateReturnSalesDetail(data: WmReturnSalesDetailUpdateReqVO) {
+export function updateReturnSalesDetail(data: WmReturnSalesDetail) {
   return http.put<boolean>('/mes/wm/return-sales-detail/update', data)
 }
 
 /** 删除销售退货明细 */
 export function deleteReturnSalesDetail(id: number) {
   return http.delete<boolean>(`/mes/wm/return-sales-detail/delete?id=${id}`)
-}
-
-export const WmReturnSalesDetailApi = {
-  getReturnSalesDetailListByLineId,
-  getReturnSalesDetail,
-  createReturnSalesDetail,
-  updateReturnSalesDetail,
-  deleteReturnSalesDetail,
 }

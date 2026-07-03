@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
-// MES 工艺路线产品 BOM VO
-export interface ProRouteProductBomVO {
+/** MES 工艺路线产品 BOM */
+export interface ProRouteProductBom {
   id?: number // 编号
   routeId: number // 工艺路线编号
   processId: number // 工序编号
@@ -13,20 +13,7 @@ export interface ProRouteProductBomVO {
   unitName?: string // 单位名称
   quantity?: number // 用料比例
   remark?: string // 备注
-  createTime?: number | string // 创建时间
-}
-
-export interface ProRouteProductBomCreateReqVO {
-  routeId: number // 工艺路线编号
-  processId: number // 工序编号
-  productId: number // 产品物料编号
-  itemId: number // BOM 物料编号
-  quantity?: number // 用料比例
-  remark?: string // 备注
-}
-
-export interface ProRouteProductBomUpdateReqVO extends ProRouteProductBomCreateReqVO {
-  id: number // 编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询工艺路线产品 BOM 列表 */
@@ -35,33 +22,25 @@ export function getRouteProductBomList(params: {
   processId?: number
   productId?: number
 }) {
-  return http.get<ProRouteProductBomVO[]>(`/mes/pro/route-product-bom/list`, params)
+  return http.get<ProRouteProductBom[]>(`/mes/pro/route-product-bom/list`, params)
 }
 
 /** 查询工艺路线产品 BOM 详情 */
 export function getRouteProductBom(id: number) {
-  return http.get<ProRouteProductBomVO>(`/mes/pro/route-product-bom/get?id=${id}`)
+  return http.get<ProRouteProductBom>(`/mes/pro/route-product-bom/get?id=${id}`)
 }
 
 /** 新增工艺路线产品 BOM */
-export function createRouteProductBom(data: ProRouteProductBomCreateReqVO) {
+export function createRouteProductBom(data: ProRouteProductBom) {
   return http.post<number>('/mes/pro/route-product-bom/create', data)
 }
 
 /** 修改工艺路线产品 BOM */
-export function updateRouteProductBom(data: ProRouteProductBomUpdateReqVO) {
+export function updateRouteProductBom(data: ProRouteProductBom) {
   return http.put<boolean>('/mes/pro/route-product-bom/update', data)
 }
 
 /** 删除工艺路线产品 BOM */
 export function deleteRouteProductBom(id: number) {
   return http.delete<boolean>(`/mes/pro/route-product-bom/delete?id=${id}`)
-}
-
-export const ProRouteProductBomApi = {
-  getRouteProductBomList,
-  getRouteProductBom,
-  createRouteProductBom,
-  updateRouteProductBom,
-  deleteRouteProductBom,
 }

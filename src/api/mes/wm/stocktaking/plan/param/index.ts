@@ -1,7 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface StockTakingPlanParamVO {
+/** MES 盘点计划参数 */
+export interface StockTakingPlanParam {
   id?: number
   planId?: number
   type?: number
@@ -11,35 +12,27 @@ export interface StockTakingPlanParamVO {
   remark?: string
 }
 
-/** 请求数据 */
+/** 查询盘点计划参数详情 */
 export function getStockTakingPlanParam(id: number) {
-  return http.get<StockTakingPlanParamVO>('/mes/wm/stocktaking-plan-param/get?id=' + id)
+  return http.get<StockTakingPlanParam>(`/mes/wm/stocktaking-plan-param/get?id=${id}`)
 }
 
-/** 请求数据 */
+/** 查询盘点计划参数分页 */
 export function getStockTakingPlanParamPage(params: PageParam) {
-  return http.get<PageResult<StockTakingPlanParamVO>>('/mes/wm/stocktaking-plan-param/page', params)
+  return http.get<PageResult<StockTakingPlanParam>>('/mes/wm/stocktaking-plan-param/page', params)
 }
 
-/** 请求数据 */
-export function createStockTakingPlanParam(data: StockTakingPlanParamVO) {
+/** 新增盘点计划参数 */
+export function createStockTakingPlanParam(data: StockTakingPlanParam) {
   return http.post<number>('/mes/wm/stocktaking-plan-param/create', data)
 }
 
-/** 请求数据 */
-export function updateStockTakingPlanParam(data: StockTakingPlanParamVO) {
+/** 修改盘点计划参数 */
+export function updateStockTakingPlanParam(data: StockTakingPlanParam) {
   return http.put<boolean>('/mes/wm/stocktaking-plan-param/update', data)
 }
 
-/** 请求数据 */
+/** 删除盘点计划参数 */
 export function deleteStockTakingPlanParam(id: number) {
-  return http.delete<boolean>('/mes/wm/stocktaking-plan-param/delete?id=' + id)
-}
-
-export const StockTakingPlanParamApi = {
-  getStockTakingPlanParam,
-  getStockTakingPlanParamPage,
-  createStockTakingPlanParam,
-  updateStockTakingPlanParam,
-  deleteStockTakingPlanParam,
+  return http.delete<boolean>(`/mes/wm/stocktaking-plan-param/delete?id=${id}`)
 }

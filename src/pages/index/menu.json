@@ -1283,6 +1283,20 @@
       "name": "ERP 系统",
       "subGroups": [
         {
+          "key": "overview",
+          "name": "概览",
+          "menus": [
+            {
+              "key": "erpHome",
+              "name": "ERP 首页",
+              "icon": "dashboard",
+              "iconColor": "#1677ff",
+              "url": "/pages-statistics/erp/home/index",
+              "permission": "erp:statistics:query"
+            }
+          ]
+        },
+        {
           "key": "product",
           "name": "产品管理",
           "menus": [
@@ -2059,10 +2073,10 @@
           "menus": [
             {
               "key": "wmsHome",
-              "name": "WMS 工作台",
+              "name": "WMS 首页",
               "icon": "dashboard",
               "iconColor": "#1677ff",
-              "url": "/pages-wms/home/index",
+              "url": "/pages-statistics/wms/home/index",
               "permission": "wms:home:query"
             }
           ]
@@ -2279,7 +2293,7 @@
               "name": "IoT 首页",
               "icon": "dashboard",
               "iconColor": "#1677ff",
-              "url": "/pages-iot/home/index"
+              "url": "/pages-iot/stat/index"
             }
           ]
         },

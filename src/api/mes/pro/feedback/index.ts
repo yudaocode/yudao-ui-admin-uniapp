@@ -1,25 +1,13 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 生产报工分页参数 */
-export interface ProFeedbackQueryParams extends PageParam {
-  code?: string
-  type?: number
-  workOrderId?: number
-  itemId?: number
-  feedbackUserId?: number
-  creator?: number
-  status?: number
-  feedbackTime?: [string, string]
-}
-
-/** MES 生产报工 VO */
-export interface ProFeedbackVO {
-  id: number // 编号
+/** MES 生产报工 */
+export interface ProFeedback {
+  id?: number // 编号
   code?: string // 报工单编号
   type?: number // 报工类型
   channel?: string // 报工途径
-  feedbackTime?: number | string // 报工时间
+  feedbackTime?: Date // 报工时间
   workstationId?: number // 工作站编号
   workstationCode?: string // 工作站编码
   workstationName?: string // 工作站名称
@@ -40,7 +28,7 @@ export interface ProFeedbackVO {
   itemSpecification?: string // 规格型号
   unitMeasureId?: number // 单位编号
   unitMeasureName?: string // 单位名称
-  expireDate?: number | string // 过期日期
+  expireDate?: Date // 过期日期
   scheduledQuantity?: number // 排产数量
   feedbackQuantity?: number // 本次报工数量
   qualifiedQuantity?: number // 合格品数量
@@ -57,28 +45,23 @@ export interface ProFeedbackVO {
   remark?: string // 备注
 }
 
-/** MES 生产报工保存参数 */
-export interface ProFeedbackSaveReqVO extends Omit<ProFeedbackVO, 'id'> {
-  id?: number
-}
-
 /** 查询生产报工分页 */
-export function getFeedbackPage(params: ProFeedbackQueryParams) {
-  return http.get<PageResult<ProFeedbackVO>>('/mes/pro/feedback/page', params)
+export function getFeedbackPage(params: PageParam) {
+  return http.get<PageResult<ProFeedback>>('/mes/pro/feedback/page', params)
 }
 
 /** 查询生产报工详情 */
 export function getFeedback(id: number) {
-  return http.get<ProFeedbackVO>(`/mes/pro/feedback/get?id=${id}`)
+  return http.get<ProFeedback>(`/mes/pro/feedback/get?id=${id}`)
 }
 
 /** 新增生产报工 */
-export function createFeedback(data: ProFeedbackSaveReqVO) {
+export function createFeedback(data: ProFeedback) {
   return http.post<number>('/mes/pro/feedback/create', data)
 }
 
 /** 修改生产报工 */
-export function updateFeedback(data: ProFeedbackSaveReqVO) {
+export function updateFeedback(data: ProFeedback) {
   return http.put<boolean>('/mes/pro/feedback/update', data)
 }
 
@@ -88,7 +71,7 @@ export function deleteFeedback(id: number) {
 }
 
 /** 导出生产报工 Excel */
-export function exportFeedback(params: ProFeedbackQueryParams) {
+export function exportFeedback(params: Record<string, any>) {
   return http.get<Blob>('/mes/pro/feedback/export-excel', params)
 }
 
@@ -105,16 +88,4 @@ export function rejectFeedback(id: number) {
 /** 审批报工（返回审批后的状态） */
 export function approveFeedback(id: number) {
   return http.put<boolean>(`/mes/pro/feedback/approve?id=${id}`)
-}
-
-export const ProFeedbackApi = {
-  getFeedbackPage,
-  getFeedback,
-  createFeedback,
-  updateFeedback,
-  deleteFeedback,
-  exportFeedback,
-  submitFeedback,
-  rejectFeedback,
-  approveFeedback,
 }

@@ -1,66 +1,50 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface DvMachineryQueryParams extends PageParam {
-  code?: string
-  name?: string
-  machineryTypeId?: number
-  workshopId?: number
-  status?: number
-}
-
-export interface DvMachineryVO {
-  id: number
-  code: string
-  name: string
-  brand?: string | null
-  specification?: string | null
-  machineryTypeId: number
-  machineryTypeName?: string
-  workshopId: number
-  workshopName?: string
-  status: number
-  lastMaintenTime?: string | number | null
-  lastCheckTime?: string | number | null
-  remark?: string | null
-  createTime?: string | number
-}
-
-export interface DvMachineryCreateReqVO {
+/** MES 设备 */
+export interface DvMachinery {
+  id?: number
   code: string
   name: string
   brand?: string
   specification?: string
   machineryTypeId: number
+  machineryTypeName?: string
   workshopId: number
+  workshopName?: string
   status: number
+  lastMaintenTime?: Date
+  lastCheckTime?: Date
   remark?: string
+  createTime?: Date
 }
 
-export interface DvMachineryUpdateReqVO extends DvMachineryCreateReqVO {
-  id: number
+/** 查询设备分页 */
+export function getMachineryPage(params: PageParam) {
+  return http.get<PageResult<DvMachinery>>(`/mes/dv/machinery/page`, params)
 }
 
-export function getMachineryPage(params: DvMachineryQueryParams) {
-  return http.get<PageResult<DvMachineryVO>>(`/mes/dv/machinery/page`, params)
-}
-
+/** 查询设备详情 */
 export function getMachinery(id: number) {
-  return http.get<DvMachineryVO>(`/mes/dv/machinery/get?id=${id}`)
+  return http.get<DvMachinery>(`/mes/dv/machinery/get?id=${id}`)
 }
 
-export function exportMachinery(params: DvMachineryQueryParams) {
+/** 导出设备 Excel */
+export function exportMachinery(params: Record<string, any>) {
   return http.get<Blob>(`/mes/dv/machinery/export-excel`, params)
 }
 
-export function createMachinery(data: DvMachineryCreateReqVO) {
+/** 新增设备 */
+export function createMachinery(data: DvMachinery) {
   return http.post<number>(`/mes/dv/machinery/create`, data)
 }
 
-export function updateMachinery(data: DvMachineryUpdateReqVO) {
+/** 修改设备 */
+export function updateMachinery(data: DvMachinery) {
   return http.put<boolean>(`/mes/dv/machinery/update`, data)
 }
 
+/** 删除设备 */
 export function deleteMachinery(id: number) {
   return http.delete<boolean>(`/mes/dv/machinery/delete?id=${id}`)
 }

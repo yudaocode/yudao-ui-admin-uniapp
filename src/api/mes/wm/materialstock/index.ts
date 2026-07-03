@@ -1,22 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 库存台账查询参数 */
-export interface WmMaterialStockQueryParams extends PageParam {
-  virtualFilter?: 'all' | 'exclude' | 'only' // 虚拟仓过滤模式
-  itemTypeId?: number // 物料分类编号
-  itemId?: number // 物料编号
-  batchId?: number // 批次编号
-  batchCode?: string // 批次号
-  warehouseId?: number // 仓库编号
-  locationId?: number // 库区编号
-  areaId?: number // 库位编号
-  vendorId?: number // 供应商编号
-  frozen?: boolean // 是否冻结
-}
-
-/** MES 库存台账 VO */
-export interface WmMaterialStockVO {
+/** MES 库存台账 */
+export interface WmMaterialStock {
   id: number
   itemTypeId?: number
   itemId: number
@@ -36,19 +22,19 @@ export interface WmMaterialStockVO {
   vendorId?: number
   vendorName?: string
   quantity: number
-  receiptTime?: string
+  receiptTime?: Date
   frozen: boolean
-  createTime?: string
+  createTime?: Date
 }
 
 /** 查询库存台账分页 */
-export function getMaterialStockPage(params: WmMaterialStockQueryParams) {
-  return http.get<PageResult<WmMaterialStockVO>>('/mes/wm/material-stock/page', params)
+export function getMaterialStockPage(params: PageParam) {
+  return http.get<PageResult<WmMaterialStock>>('/mes/wm/material-stock/page', params)
 }
 
 /** 查询库存记录详情 */
 export function getMaterialStock(id: number) {
-  return http.get<WmMaterialStockVO>(`/mes/wm/material-stock/get?id=${id}`)
+  return http.get<WmMaterialStock>(`/mes/wm/material-stock/get?id=${id}`)
 }
 
 /** 更新库存冻结状态 */
@@ -57,13 +43,6 @@ export function updateMaterialStockFrozen(data: { frozen: boolean, id: number })
 }
 
 /** 导出库存台账 Excel */
-export function exportMaterialStock(params: WmMaterialStockQueryParams) {
+export function exportMaterialStock(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/material-stock/export-excel', params)
-}
-
-export const WmMaterialStockApi = {
-  getMaterialStockPage,
-  getMaterialStock,
-  updateMaterialStockFrozen,
-  exportMaterialStock,
 }

@@ -1,52 +1,45 @@
 import { http } from '@/http/http'
 
-export interface DvMachineryTypeVO {
-  id: number
+/** MES 设备类型 */
+export interface DvMachineryType {
+  id?: number
   parentId: number
   code: string
   name: string
   sort: number
   status: number
   remark: string | null
-  createTime: string | number
-  children?: DvMachineryTypeVO[]
+  createTime?: Date
+  children?: DvMachineryType[]
   parentName?: string
 }
 
-export interface DvMachineryTypeQueryParams {
-  name?: string
-  status?: number
+/** 查询设备类型列表 */
+export function getMachineryTypeList(params?: Record<string, any>) {
+  return http.get<DvMachineryType[]>(`/mes/dv/machinery-type/list`, params)
 }
 
-export interface DvMachineryTypeCreateReqVO {
-  parentId: number
-  code: string
-  name: string
-  sort: number
-  status: number
-  remark?: string
+/** 查询设备类型精简列表 */
+export function getMachineryTypeSimpleList() {
+  return http.get<DvMachineryType[]>(`/mes/dv/machinery-type/simple-list`)
 }
 
-export interface DvMachineryTypeUpdateReqVO extends DvMachineryTypeCreateReqVO {
-  id: number
-}
-
-export function getMachineryTypeList(params?: DvMachineryTypeQueryParams) {
-  return http.get<DvMachineryTypeVO[]>(`/mes/dv/machinery-type/list`, params)
-}
-
+/** 查询设备类型详情 */
 export function getMachineryType(id: number) {
-  return http.get<DvMachineryTypeVO>(`/mes/dv/machinery-type/get?id=${id}`)
+  return http.get<DvMachineryType>(`/mes/dv/machinery-type/get?id=${id}`)
 }
 
-export function createMachineryType(data: DvMachineryTypeCreateReqVO) {
+/** 新增设备类型 */
+export function createMachineryType(data: DvMachineryType) {
   return http.post<number>(`/mes/dv/machinery-type/create`, data)
 }
 
-export function updateMachineryType(data: DvMachineryTypeUpdateReqVO) {
+/** 修改设备类型 */
+export function updateMachineryType(data: DvMachineryType) {
   return http.put<boolean>(`/mes/dv/machinery-type/update`, data)
 }
 
+/** 删除设备类型 */
 export function deleteMachineryType(id: number) {
   return http.delete<boolean>(`/mes/dv/machinery-type/delete?id=${id}`)
 }

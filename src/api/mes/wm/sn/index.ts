@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
+import { downloadApiFile } from '@/utils/download'
 
-/** MES SN 码分组查询参数 */
-export interface WmSnQueryParams extends PageParam {
-  uuid?: string // 批次 UUID
-  code?: string // SN 码
-  itemId?: number // 物料编号
-  batchCode?: string // 批次号
-  createTime?: string[] // 创建时间范围
-}
-
-/** MES SN 码分组 VO */
-export interface WmSnGroupVO {
+/** MES SN 码分组 */
+export interface WmSnGroup {
   uuid?: string
   count?: number
   itemId?: number
@@ -21,11 +13,11 @@ export interface WmSnGroupVO {
   unitName?: string
   batchCode?: string
   workOrderId?: number
-  createTime?: string
+  createTime?: Date
 }
 
-/** MES SN 码明细 VO */
-export interface WmSnVO {
+/** MES SN 码明细 */
+export interface WmSn {
   id: number
   uuid?: string
   code?: string
@@ -36,11 +28,11 @@ export interface WmSnVO {
   unitName?: string
   batchCode?: string
   workOrderId?: number
-  createTime?: string
+  createTime?: Date
 }
 
 /** MES SN 码生成参数 */
-export interface WmSnGenerateVO {
+export interface WmSnGenerate {
   itemId: number
   batchCode?: string
   workOrderId?: number
@@ -48,21 +40,31 @@ export interface WmSnGenerateVO {
 }
 
 /** 生成 SN 码 */
-export function generateSnCodes(data: WmSnGenerateVO) {
+export function generateSnCodes(data: WmSnGenerate) {
   return http.post<boolean>('/mes/wm/sn/generate', data)
 }
 
 /** 获得 SN 码分组分页 */
-export function getSnGroupPage(params: WmSnQueryParams) {
-  return http.get<PageResult<WmSnGroupVO>>('/mes/wm/sn/group-page', params)
+export function getSnGroupPage(params: PageParam) {
+  return http.get<PageResult<WmSnGroup>>('/mes/wm/sn/group-page', params)
 }
 
 /** 获得批次 SN 码明细列表 */
 export function getSnListByUuid(uuid: string) {
-  return http.get<WmSnVO[]>('/mes/wm/sn/list-by-uuid', { uuid })
+  return http.get<WmSn[]>('/mes/wm/sn/list-by-uuid', { uuid })
 }
 
 /** 批量删除 SN 码（按批次 UUID） */
 export function deleteSnBatch(uuid: string) {
   return http.delete<boolean>('/mes/wm/sn/delete-batch', undefined, { uuid })
+}
+
+/** 导出 SN 码分组 */
+export function exportSnGroupExcel(params: Record<string, any>) {
+  return downloadApiFile('/mes/wm/sn/group-export-excel', params, 'SN码分组.xls')
+}
+
+/** 导出批次 SN 码明细 */
+export function exportSnDetailExcel(uuid: string) {
+  return downloadApiFile('/mes/wm/sn/export-excel', { uuid }, 'SN码明细.xls')
 }

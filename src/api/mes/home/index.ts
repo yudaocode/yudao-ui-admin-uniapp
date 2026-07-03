@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
-// MES 首页汇总统计 VO
-export interface MesHomeSummaryVO {
+/** MES 首页汇总统计 */
+export interface MesHomeSummary {
   workOrderActiveCount: number
   workOrderPrepareCount: number
   workOrderFinishedCount: number
@@ -17,15 +17,15 @@ export interface MesHomeSummaryVO {
   repairActiveCount: number
 }
 
-// MES 工单状态分布 VO
-export interface MesHomeWorkOrderStatusVO {
+/** MES 工单状态分布 */
+export interface MesHomeWorkOrderStatus {
   status: number
   statusName: string
   count: number
 }
 
-// MES 生产趋势 VO
-export interface MesHomeProductionTrendVO {
+/** MES 生产趋势 */
+export interface MesHomeProductionTrend {
   date: string
   quantity: number
   qualifiedQuantity: number
@@ -34,21 +34,15 @@ export interface MesHomeProductionTrendVO {
 
 /** 获得首页汇总统计 */
 export function getHomeSummary() {
-  return http.get<MesHomeSummaryVO>(`/mes/home-statistics/summary`)
+  return http.get<MesHomeSummary>(`/mes/home-statistics/summary`)
 }
 
 /** 获得工单状态分布 */
 export function getWorkOrderStatusDistribution() {
-  return http.get<MesHomeWorkOrderStatusVO[]>(`/mes/home-statistics/work-order-status`)
+  return http.get<MesHomeWorkOrderStatus[]>(`/mes/home-statistics/work-order-status`)
 }
 
 /** 获得生产趋势 */
 export function getProductionTrend(days?: number) {
-  return http.get<MesHomeProductionTrendVO[]>(`/mes/home-statistics/production-trend`, { days })
-}
-
-export const MesHomeStatisticsApi = {
-  getHomeSummary,
-  getWorkOrderStatusDistribution,
-  getProductionTrend,
+  return http.get<MesHomeProductionTrend[]>(`/mes/home-statistics/production-trend`, { days })
 }

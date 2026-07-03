@@ -1,18 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 生产退料单分页参数 */
-export interface WmReturnIssueQueryParams extends PageParam {
-  code?: string
-  name?: string
-  workstationId?: number
-  workOrderId?: number
-  type?: number
-}
-
-/** MES 生产退料单 VO */
-export interface WmReturnIssueVO {
-  id: number
+/** MES 生产退料单 */
+export interface WmReturnIssue {
+  id?: number
   code: string
   name?: string
   workstationId?: number
@@ -21,45 +12,29 @@ export interface WmReturnIssueVO {
   workOrderId?: number
   workOrderCode?: string
   type?: number
-  returnDate?: string | number
+  returnDate?: string
   status?: number
   remark?: string
-  createTime?: string
-}
-
-/** MES 生产退料单创建参数 */
-export interface WmReturnIssueCreateReqVO {
-  code: string
-  name: string
-  workOrderId: number
-  workstationId?: number
-  type: number
-  returnDate?: string | number
-  remark?: string
-}
-
-/** MES 生产退料单更新参数 */
-export interface WmReturnIssueUpdateReqVO extends WmReturnIssueCreateReqVO {
-  id: number
+  createTime?: Date
 }
 
 /** 查询生产退料单分页 */
-export function getReturnIssuePage(params: WmReturnIssueQueryParams) {
-  return http.get<PageResult<WmReturnIssueVO>>('/mes/wm/return-issue/page', params)
+export function getReturnIssuePage(params: PageParam) {
+  return http.get<PageResult<WmReturnIssue>>('/mes/wm/return-issue/page', params)
 }
 
 /** 查询生产退料单详情 */
 export function getReturnIssue(id: number) {
-  return http.get<WmReturnIssueVO>(`/mes/wm/return-issue/get?id=${id}`)
+  return http.get<WmReturnIssue>(`/mes/wm/return-issue/get?id=${id}`)
 }
 
 /** 新增生产退料单 */
-export function createReturnIssue(data: WmReturnIssueCreateReqVO) {
+export function createReturnIssue(data: WmReturnIssue) {
   return http.post<number>('/mes/wm/return-issue/create', data)
 }
 
 /** 修改生产退料单 */
-export function updateReturnIssue(data: WmReturnIssueUpdateReqVO) {
+export function updateReturnIssue(data: WmReturnIssue) {
   return http.put<boolean>('/mes/wm/return-issue/update', data)
 }
 
@@ -89,19 +64,6 @@ export function finishReturnIssue(id: number) {
 }
 
 /** 导出生产退料单 Excel */
-export function exportReturnIssue(params: WmReturnIssueQueryParams) {
+export function exportReturnIssue(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/return-issue/export-excel', params)
-}
-
-export const WmReturnIssueApi = {
-  getReturnIssuePage,
-  getReturnIssue,
-  createReturnIssue,
-  updateReturnIssue,
-  deleteReturnIssue,
-  submitReturnIssue,
-  stockReturnIssue,
-  cancelReturnIssue,
-  finishReturnIssue,
-  exportReturnIssue,
 }

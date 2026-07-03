@@ -1,26 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface BatchPageParam extends PageParam {
-  code?: string
-  itemId?: number
-  vendorId?: number
-  clientId?: number
-  salesOrderCode?: string
-  purchaseOrderCode?: string
-  workOrderId?: number
-  taskId?: number
-  workstationId?: number
-  toolId?: number
-  moldId?: number
-  lotNumber?: string
-  qualityStatus?: number
-  produceDate?: string[]
-  expireDate?: string[]
-  receiptDate?: string[]
-}
-
-export interface BatchVO {
+/** MES 批次 */
+export interface Batch {
   id: number
   code: string
   itemId: number
@@ -28,9 +10,9 @@ export interface BatchVO {
   itemName?: string
   itemSpecification?: string
   unitName?: string
-  produceDate?: string
-  expireDate?: string
-  receiptDate?: string
+  produceDate?: Date
+  expireDate?: Date
+  receiptDate?: Date
   vendorId?: number
   vendorCode?: string
   vendorName?: string
@@ -51,32 +33,25 @@ export interface BatchVO {
   lotNumber?: string
   qualityStatus?: number
   remark?: string
-  createTime?: string
+  createTime?: Date
 }
 
 /** 获取批次详情 */
 export function getBatch(id: number) {
-  return http.get<BatchVO>(`/mes/wm/batch/get?id=${id}`)
+  return http.get<Batch>(`/mes/wm/batch/get?id=${id}`)
 }
 
 /** 获取批次分页 */
-export function getBatchPage(params: BatchPageParam) {
-  return http.get<PageResult<BatchVO>>('/mes/wm/batch/page', params)
+export function getBatchPage(params: PageParam) {
+  return http.get<PageResult<Batch>>('/mes/wm/batch/page', params)
 }
 
 /** 向前追溯 */
 export function getForwardList(code: string) {
-  return http.get<BatchVO[]>('/mes/wm/batch/forward-list', { code })
+  return http.get<Batch[]>('/mes/wm/batch/forward-list', { code })
 }
 
 /** 向后追溯 */
 export function getBackwardList(code: string) {
-  return http.get<BatchVO[]>('/mes/wm/batch/backward-list', { code })
-}
-
-export const BatchApi = {
-  getBatch,
-  getBatchPage,
-  getForwardList,
-  getBackwardList,
+  return http.get<Batch[]>('/mes/wm/batch/backward-list', { code })
 }

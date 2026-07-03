@@ -1,9 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-// MES 转移单 VO
-export interface WmTransferVO {
-  id: number
+/** MES 转移单 */
+export interface WmTransfer {
+  id?: number
   code: string
   name: string
   type: number
@@ -14,54 +14,29 @@ export interface WmTransferVO {
   carrier?: string
   shippingNumber?: string
   confirmFlag?: boolean
-  transferDate: string | Date
-  status: number
-  remark?: string
-  createTime?: string
-}
-
-export interface WmTransferQueryParams extends PageParam {
-  code?: string
-  name?: string
-  type?: number
+  transferDate: Date
   status?: number
-}
-
-export interface WmTransferCreateReqVO {
-  code: string
-  name: string
-  type: number
-  deliveryFlag: boolean
-  recipientName?: string
-  recipientTelephone?: string
-  destinationAddress?: string
-  carrier?: string
-  shippingNumber?: string
-  transferDate: string | Date
   remark?: string
-}
-
-export interface WmTransferUpdateReqVO extends WmTransferCreateReqVO {
-  id: number
+  createTime?: Date
 }
 
 /** 查询转移单分页 */
-export function getTransferPage(params: WmTransferQueryParams) {
-  return http.get<PageResult<WmTransferVO>>('/mes/wm/transfer/page', params)
+export function getTransferPage(params: PageParam) {
+  return http.get<PageResult<WmTransfer>>('/mes/wm/transfer/page', params)
 }
 
 /** 查询转移单详情 */
 export function getTransfer(id: number) {
-  return http.get<WmTransferVO>(`/mes/wm/transfer/get?id=${id}`)
+  return http.get<WmTransfer>(`/mes/wm/transfer/get?id=${id}`)
 }
 
 /** 新增转移单 */
-export function createTransfer(data: WmTransferCreateReqVO) {
+export function createTransfer(data: WmTransfer) {
   return http.post<number>('/mes/wm/transfer/create', data)
 }
 
 /** 修改转移单 */
-export function updateTransfer(data: WmTransferUpdateReqVO) {
+export function updateTransfer(data: WmTransfer) {
   return http.put<boolean>('/mes/wm/transfer/update', data)
 }
 
@@ -96,20 +71,6 @@ export function cancelTransfer(id: number) {
 }
 
 /** 导出转移单 Excel */
-export function exportTransfer(params: WmTransferQueryParams) {
+export function exportTransfer(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/transfer/export-excel', params)
-}
-
-export const WmTransferApi = {
-  getTransferPage,
-  getTransfer,
-  createTransfer,
-  updateTransfer,
-  deleteTransfer,
-  submitTransfer,
-  confirmTransfer,
-  stockTransfer,
-  finishTransfer,
-  cancelTransfer,
-  exportTransfer,
 }

@@ -1,14 +1,15 @@
+import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 产品 BOM VO（查询返回） */
-export interface MdProductBomVO {
-  id: number // BOM 编号
+/** MES 产品 BOM（查询返回） */
+export interface MdProductBom {
+  id?: number // BOM 编号
   itemId: number // 物料产品 ID
   bomItemId: number // BOM 物料 ID
   quantity: number // 物料使用比例
   status?: number // 是否启用
   remark?: string // 备注
-  createTime?: string // 创建时间
+  createTime?: Date // 创建时间
   // 关联展示字段
   bomItemCode?: string // BOM 物料编码
   bomItemName?: string // BOM 物料名称
@@ -17,27 +18,13 @@ export interface MdProductBomVO {
   itemOrProduct?: string // 产品物料标识
 }
 
-/** MES 产品 BOM 创建参数 */
-export interface MdProductBomCreateReqVO {
-  itemId: number // 物料产品 ID
-  bomItemId: number // BOM 物料 ID
-  quantity: number // 物料使用比例
-  status?: number // 是否启用
-  remark?: string // 备注
-}
-
-/** MES 产品 BOM 更新参数 */
-export interface MdProductBomUpdateReqVO extends MdProductBomCreateReqVO {
-  id: number // BOM 编号
-}
-
 /** 创建产品 BOM */
-export function createProductBom(data: MdProductBomCreateReqVO) {
+export function createProductBom(data: MdProductBom) {
   return http.post<number>(`/mes/md/product-bom/create`, data)
 }
 
 /** 更新产品 BOM */
-export function updateProductBom(data: MdProductBomUpdateReqVO) {
+export function updateProductBom(data: MdProductBom) {
   return http.put<boolean>(`/mes/md/product-bom/update`, data)
 }
 
@@ -48,18 +35,15 @@ export function deleteProductBom(id: number) {
 
 /** 获得产品 BOM */
 export function getProductBom(id: number) {
-  return http.get<MdProductBomVO>(`/mes/md/product-bom/get?id=${id}`)
+  return http.get<MdProductBom>(`/mes/md/product-bom/get?id=${id}`)
+}
+
+/** 获得产品 BOM 分页 */
+export function getProductBomPage(params: PageParam) {
+  return http.get<PageResult<MdProductBom>>(`/mes/md/product-bom/page`, params)
 }
 
 /** 根据物料产品编号获得产品 BOM 列表 */
 export function getProductBomListByItemId(itemId: number) {
-  return http.get<MdProductBomVO[]>(`/mes/md/product-bom/list-by-item-id?itemId=${itemId}`)
-}
-
-export const MdProductBomApi = {
-  createProductBom,
-  updateProductBom,
-  deleteProductBom,
-  getProductBom,
-  getProductBomListByItemId,
+  return http.get<MdProductBom[]>(`/mes/md/product-bom/list-by-item-id?itemId=${itemId}`)
 }

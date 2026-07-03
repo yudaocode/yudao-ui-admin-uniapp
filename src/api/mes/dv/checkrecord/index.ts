@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface DvCheckRecordQueryParams extends PageParam {
-  planId?: number
-  machineryId?: number
-  userId?: number
-  status?: number
-  checkTime?: string[]
-}
-
-// MES 设备点检记录 VO
-export interface DvCheckRecordVO {
-  id: number // 编号
+/** MES 设备点检记录 */
+export interface DvCheckRecord {
+  id?: number // 编号
   planId: number // 点检计划编号
   planCode?: string // 计划编码
   planName?: string // 计划名称
@@ -22,43 +14,31 @@ export interface DvCheckRecordVO {
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
-  checkTime?: string | number // 点检时间
+  checkTime?: Date // 点检时间
   userId: number // 点检人编号
   nickname?: string // 点检人名称
-  status: number // 状态
+  status?: number // 状态
   remark?: string // 备注
-  createTime?: string | number
-}
-
-export interface DvCheckRecordCreateReqVO {
-  planId?: number
-  machineryId?: number
-  checkTime?: string | number
-  userId?: number
-  remark?: string
-}
-
-export interface DvCheckRecordUpdateReqVO extends DvCheckRecordCreateReqVO {
-  id: number
+  createTime?: Date
 }
 
 /** 查询设备点检记录分页 */
-export function getCheckRecordPage(params: DvCheckRecordQueryParams) {
-  return http.get<PageResult<DvCheckRecordVO>>('/mes/dv/check-record/page', params)
+export function getCheckRecordPage(params: PageParam) {
+  return http.get<PageResult<DvCheckRecord>>('/mes/dv/check-record/page', params)
 }
 
 /** 查询设备点检记录详情 */
 export function getCheckRecord(id: number) {
-  return http.get<DvCheckRecordVO>(`/mes/dv/check-record/get?id=${id}`)
+  return http.get<DvCheckRecord>(`/mes/dv/check-record/get?id=${id}`)
 }
 
 /** 新增设备点检记录 */
-export function createCheckRecord(data: DvCheckRecordCreateReqVO) {
+export function createCheckRecord(data: DvCheckRecord) {
   return http.post<number>('/mes/dv/check-record/create', data)
 }
 
 /** 修改设备点检记录 */
-export function updateCheckRecord(data: DvCheckRecordUpdateReqVO) {
+export function updateCheckRecord(data: DvCheckRecord) {
   return http.put<boolean>('/mes/dv/check-record/update', data)
 }
 
@@ -73,16 +53,6 @@ export function deleteCheckRecord(id: number) {
 }
 
 /** 导出设备点检记录 Excel */
-export function exportCheckRecord(params: DvCheckRecordQueryParams) {
+export function exportCheckRecord(params: Record<string, any>) {
   return http.get<Blob>('/mes/dv/check-record/export-excel', params)
-}
-
-export const DvCheckRecordApi = {
-  getCheckRecordPage,
-  getCheckRecord,
-  createCheckRecord,
-  updateCheckRecord,
-  submitCheckRecord,
-  deleteCheckRecord,
-  exportCheckRecord,
 }

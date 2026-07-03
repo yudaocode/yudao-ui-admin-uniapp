@@ -1,18 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface QcIpqcPageParam extends PageParam {
-  code?: string
-  type?: number
-  workOrderId?: number
-  itemId?: number
-  checkResult?: number
-  status?: number
-  inspectorUserId?: number
-}
-
-export interface QcIpqcVO {
-  id: number // 编号
+/** MES 过程检验单 */
+export interface QcIpqc {
+  id?: number // 编号
   code: string // 检验单编号
   name: string // 检验单名称
   type: number // IPQC 检验类型
@@ -49,59 +40,31 @@ export interface QcIpqcVO {
   majorQuantity?: number // 严重缺陷数量
   minorQuantity?: number // 轻微缺陷数量
   checkResult?: number // 检测结果
-  inspectDate: Date | string // 检测日期
+  inspectDate: Date // 检测日期
   inspectorUserId: number // 检测人员用户 ID
   inspectorNickname?: string // 检测人员昵称（关联查询）
-  status: number // 状态
+  status?: number // 状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-export interface QcIpqcCreateReqVO {
-  code: string
-  name: string
-  type: number
-  sourceDocType?: number
-  sourceDocId?: number
-  sourceLineId?: number
-  workOrderId: number
-  taskId?: number
-  workstationId: number
-  processId?: number
-  itemId?: number
-  checkQuantity: number
-  qualifiedQuantity: number
-  unqualifiedQuantity: number
-  laborScrapQuantity: number
-  materialScrapQuantity: number
-  otherScrapQuantity: number
-  checkResult?: number
-  inspectDate: string
-  inspectorUserId: number
-  remark?: string
-}
-
-export interface QcIpqcUpdateReqVO extends QcIpqcCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询过程检验单分页 */
-export function getIpqcPage(params: QcIpqcPageParam) {
-  return http.get<PageResult<QcIpqcVO>>(`/mes/qc/ipqc/page`, params)
+export function getIpqcPage(params: PageParam) {
+  return http.get<PageResult<QcIpqc>>(`/mes/qc/ipqc/page`, params)
 }
 
 /** 查询过程检验单详情 */
 export function getIpqc(id: number) {
-  return http.get<QcIpqcVO>(`/mes/qc/ipqc/get?id=${id}`)
+  return http.get<QcIpqc>(`/mes/qc/ipqc/get?id=${id}`)
 }
 
 /** 新增过程检验单 */
-export function createIpqc(data: QcIpqcCreateReqVO) {
+export function createIpqc(data: QcIpqc) {
   return http.post<number>(`/mes/qc/ipqc/create`, data)
 }
 
 /** 修改过程检验单 */
-export function updateIpqc(data: QcIpqcUpdateReqVO) {
+export function updateIpqc(data: QcIpqc) {
   return http.put<boolean>(`/mes/qc/ipqc/update`, data)
 }
 
@@ -116,16 +79,6 @@ export function deleteIpqc(id: number) {
 }
 
 /** 导出过程检验单 Excel */
-export function exportIpqc(params: QcIpqcPageParam) {
+export function exportIpqc(params: Record<string, any>) {
   return http.get<Blob>(`/mes/qc/ipqc/export-excel`, params)
-}
-
-export const QcIpqcApi = {
-  getIpqcPage,
-  getIpqc,
-  createIpqc,
-  updateIpqc,
-  finishIpqc,
-  deleteIpqc,
-  exportIpqc,
 }

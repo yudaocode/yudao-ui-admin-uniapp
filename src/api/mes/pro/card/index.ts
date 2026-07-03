@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 生产流转卡分页参数 */
-export interface ProCardQueryParams extends PageParam {
-  code?: string
-  workOrderId?: number
-  itemId?: number
-  batchCode?: string
-}
-
-/** MES 生产流转卡 VO */
-export interface ProCardVO {
-  id: number // 编号
+/** MES 生产流转卡 */
+export interface ProCard {
+  id?: number // 编号
   code?: string // 流转卡编码
   workOrderId: number // 生产工单编号
   workOrderCode?: string // 工单编码
@@ -26,41 +18,26 @@ export interface ProCardVO {
   transferedQuantity: number // 流转数量
   status?: number // 状态
   remark?: string // 备注
-  createTime?: number | string // 创建时间
-}
-
-/** MES 生产流转卡创建参数 */
-export interface ProCardCreateReqVO {
-  code: string
-  workOrderId: number
-  itemId: number
-  batchCode?: string
-  transferedQuantity: number
-  remark?: string
-}
-
-/** MES 生产流转卡更新参数 */
-export interface ProCardUpdateReqVO extends ProCardCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询生产流转卡分页 */
-export function getCardPage(params: ProCardQueryParams) {
-  return http.get<PageResult<ProCardVO>>('/mes/pro/card/page', params)
+export function getCardPage(params: PageParam) {
+  return http.get<PageResult<ProCard>>('/mes/pro/card/page', params)
 }
 
 /** 查询生产流转卡详情 */
 export function getCard(id: number) {
-  return http.get<ProCardVO>(`/mes/pro/card/get?id=${id}`)
+  return http.get<ProCard>(`/mes/pro/card/get?id=${id}`)
 }
 
 /** 新增生产流转卡 */
-export function createCard(data: ProCardCreateReqVO) {
+export function createCard(data: ProCard) {
   return http.post<number>('/mes/pro/card/create', data)
 }
 
 /** 修改生产流转卡 */
-export function updateCard(data: ProCardUpdateReqVO) {
+export function updateCard(data: ProCard) {
   return http.put<boolean>('/mes/pro/card/update', data)
 }
 
@@ -70,7 +47,7 @@ export function deleteCard(id: number) {
 }
 
 /** 导出生产流转卡 Excel */
-export function exportCard(params: Partial<ProCardQueryParams>) {
+export function exportCard(params: Record<string, any>) {
   return http.get<Blob>('/mes/pro/card/export-excel', params)
 }
 
@@ -87,16 +64,4 @@ export function finishCard(id: number) {
 /** 取消生产流转卡 */
 export function cancelCard(id: number) {
   return http.put<boolean>(`/mes/pro/card/cancel?id=${id}`)
-}
-
-export const ProCardApi = {
-  getCardPage,
-  getCard,
-  createCard,
-  updateCard,
-  deleteCard,
-  exportCard,
-  submitCard,
-  finishCard,
-  cancelCard,
 }

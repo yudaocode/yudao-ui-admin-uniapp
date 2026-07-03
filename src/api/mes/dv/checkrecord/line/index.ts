@@ -1,13 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface DvCheckRecordLineQueryParams extends PageParam {
-  recordId?: number
-}
-
-// MES 设备点检记录明细 VO
-export interface DvCheckRecordLineVO {
-  id: number // 编号
+/** MES 设备点检记录明细 */
+export interface DvCheckRecordLine {
+  id?: number // 编号
   recordId: number // 点检记录编号
   subjectId: number // 点检项目编号
   subjectCode?: string // 项目编码
@@ -19,47 +15,27 @@ export interface DvCheckRecordLineVO {
   remark?: string // 备注
 }
 
-export interface DvCheckRecordLineCreateReqVO {
-  recordId: number
-  subjectId?: number
-  checkStatus?: number
-  checkResult?: string
-  remark?: string
-}
-
-export interface DvCheckRecordLineUpdateReqVO extends DvCheckRecordLineCreateReqVO {
-  id: number
-}
-
 /** 查询设备点检记录明细分页 */
-export function getCheckRecordLinePage(params: DvCheckRecordLineQueryParams) {
-  return http.get<PageResult<DvCheckRecordLineVO>>('/mes/dv/check-record-line/page', params)
+export function getCheckRecordLinePage(params: PageParam) {
+  return http.get<PageResult<DvCheckRecordLine>>('/mes/dv/check-record-line/page', params)
 }
 
 /** 查询设备点检记录明细详情 */
 export function getCheckRecordLine(id: number) {
-  return http.get<DvCheckRecordLineVO>(`/mes/dv/check-record-line/get?id=${id}`)
+  return http.get<DvCheckRecordLine>(`/mes/dv/check-record-line/get?id=${id}`)
 }
 
 /** 新增设备点检记录明细 */
-export function createCheckRecordLine(data: DvCheckRecordLineCreateReqVO) {
+export function createCheckRecordLine(data: DvCheckRecordLine) {
   return http.post<number>('/mes/dv/check-record-line/create', data)
 }
 
 /** 修改设备点检记录明细 */
-export function updateCheckRecordLine(data: DvCheckRecordLineUpdateReqVO) {
+export function updateCheckRecordLine(data: DvCheckRecordLine) {
   return http.put<boolean>('/mes/dv/check-record-line/update', data)
 }
 
 /** 删除设备点检记录明细 */
 export function deleteCheckRecordLine(id: number) {
   return http.delete<boolean>(`/mes/dv/check-record-line/delete?id=${id}`)
-}
-
-export const DvCheckRecordLineApi = {
-  getCheckRecordLinePage,
-  getCheckRecordLine,
-  createCheckRecordLine,
-  updateCheckRecordLine,
-  deleteCheckRecordLine,
 }

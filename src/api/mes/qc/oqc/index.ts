@@ -1,16 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface QcOqcPageParam extends PageParam {
-  code?: string
-  clientId?: number
-  batchCode?: string
-  itemId?: number
-  checkResult?: number
-}
-
-export interface QcOqcVO {
-  id: number // 编号
+/** MES 出货检验单 */
+export interface QcOqc {
+  id?: number // 编号
   code: string // 检验单编号
   name: string // 检验单名称
   templateId?: number // 检验模板 ID
@@ -39,56 +32,32 @@ export interface QcOqcVO {
   majorQuantity?: number // 严重缺陷数量
   minorQuantity?: number // 轻微缺陷数量
   checkResult?: number // 检测结果
-  outDate: Date | string // 出货日期
-  inspectDate: Date | string // 检测日期
+  outDate: Date // 出货日期
+  inspectDate: Date // 检测日期
   inspectorUserId: number // 检测人员用户 ID
   inspectorNickname?: string // 检测人员昵称（关联查询）
-  status: number // 状态
+  status?: number // 状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-export interface QcOqcCreateReqVO {
-  code: string
-  name: string
-  sourceDocType?: number
-  sourceDocId?: number
-  sourceLineId?: number
-  clientId: number
-  batchCode?: string
-  itemId: number
-  outQuantity: number
-  checkQuantity: number
-  qualifiedQuantity: number
-  unqualifiedQuantity: number
-  checkResult?: number
-  outDate: string
-  inspectDate: string
-  inspectorUserId: number
-  remark?: string
-}
-
-export interface QcOqcUpdateReqVO extends QcOqcCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询出货检验单分页 */
-export function getOqcPage(params: QcOqcPageParam) {
-  return http.get<PageResult<QcOqcVO>>(`/mes/qc/oqc/page`, params)
+export function getOqcPage(params: PageParam) {
+  return http.get<PageResult<QcOqc>>(`/mes/qc/oqc/page`, params)
 }
 
 /** 查询出货检验单详情 */
 export function getOqc(id: number) {
-  return http.get<QcOqcVO>(`/mes/qc/oqc/get?id=${id}`)
+  return http.get<QcOqc>(`/mes/qc/oqc/get?id=${id}`)
 }
 
 /** 新增出货检验单 */
-export function createOqc(data: QcOqcCreateReqVO) {
+export function createOqc(data: QcOqc) {
   return http.post<number>(`/mes/qc/oqc/create`, data)
 }
 
 /** 修改出货检验单 */
-export function updateOqc(data: QcOqcUpdateReqVO) {
+export function updateOqc(data: QcOqc) {
   return http.put<boolean>(`/mes/qc/oqc/update`, data)
 }
 
@@ -103,16 +72,6 @@ export function deleteOqc(id: number) {
 }
 
 /** 导出出货检验单 Excel */
-export function exportOqc(params: QcOqcPageParam) {
+export function exportOqc(params: Record<string, any>) {
   return http.get<Blob>(`/mes/qc/oqc/export-excel`, params)
-}
-
-export const QcOqcApi = {
-  getOqcPage,
-  getOqc,
-  createOqc,
-  updateOqc,
-  finishOqc,
-  deleteOqc,
-  exportOqc,
 }

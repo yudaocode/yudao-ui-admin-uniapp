@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
-/** MES 计划班次 VO */
-export interface CalPlanShiftVO {
+/** MES 计划班次 */
+export interface CalPlanShift {
   id?: number
   planId: number // 排班计划编号
   sort: number // 显示顺序
@@ -11,44 +11,22 @@ export interface CalPlanShiftVO {
   remark?: string // 备注
 }
 
-/** MES 计划班次创建参数 */
-export interface CalPlanShiftCreateReqVO {
-  planId: number
-  sort: number
-  name: string
-  startTime: string
-  endTime: string
-  remark?: string
-}
-
-/** MES 计划班次更新参数 */
-export interface CalPlanShiftUpdateReqVO extends CalPlanShiftCreateReqVO {
-  id: number
-}
-
 /** 查询指定排班计划的班次列表 */
 export function getPlanShiftListByPlan(planId: number) {
-  return http.get<CalPlanShiftVO[]>(`/mes/cal/plan-shift/list-by-plan?planId=${planId}`)
+  return http.get<CalPlanShift[]>(`/mes/cal/plan-shift/list-by-plan?planId=${planId}`)
 }
 
 /** 新增计划班次 */
-export function createPlanShift(data: CalPlanShiftCreateReqVO) {
+export function createPlanShift(data: CalPlanShift) {
   return http.post<number>(`/mes/cal/plan-shift/create`, data)
 }
 
 /** 修改计划班次 */
-export function updatePlanShift(data: CalPlanShiftUpdateReqVO) {
+export function updatePlanShift(data: CalPlanShift) {
   return http.put<boolean>(`/mes/cal/plan-shift/update`, data)
 }
 
 /** 删除计划班次 */
 export function deletePlanShift(id: number) {
   return http.delete<boolean>(`/mes/cal/plan-shift/delete?id=${id}`)
-}
-
-export const CalPlanShiftApi = {
-  getPlanShiftListByPlan,
-  createPlanShift,
-  updatePlanShift,
-  deletePlanShift,
 }

@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface DvRepairQueryParams extends PageParam {
-  code?: string
-  name?: string
-  machineryId?: number
-  result?: number
-  status?: number
-}
-
-// MES 维修工单 VO
-export interface DvRepairVO {
-  id: number // 编号
+/** MES 维修工单 */
+export interface DvRepair {
+  id?: number // 编号
   code: string // 维修工单编码
   name: string // 维修工单名称
   machineryId: number // 设备编号
@@ -19,9 +11,9 @@ export interface DvRepairVO {
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
-  requireDate?: string | number // 报修日期
-  finishDate?: string | number // 维修完成日期
-  confirmDate?: string | number // 验收日期
+  requireDate?: Date // 报修日期
+  finishDate?: Date // 维修完成日期
+  confirmDate?: Date // 验收日期
   result?: number // 维修结果
   acceptedUserId?: number // 维修人用户编号
   acceptedUserNickname?: string // 维修人名称
@@ -32,43 +24,32 @@ export interface DvRepairVO {
   sourceDocCode?: string // 来源单据编码
   status?: number // 状态
   remark?: string // 备注
-  createTime?: string | number
+  createTime?: Date
 }
 
-export interface DvRepairCreateReqVO {
-  code?: string
-  name?: string
-  machineryId?: number
-  requireDate?: string | number
-  remark?: string
-}
-
-export interface DvRepairUpdateReqVO extends DvRepairCreateReqVO {
+/** MES 维修完成确认参数 */
+export interface DvRepairConfirmReq {
   id: number
-}
-
-export interface DvRepairConfirmReqVO {
-  id: number
-  finishDate?: string | number
+  finishDate?: string
 }
 
 /** 查询维修工单分页 */
-export function getRepairPage(params: DvRepairQueryParams) {
-  return http.get<PageResult<DvRepairVO>>('/mes/dv/repair/page', params)
+export function getRepairPage(params: PageParam) {
+  return http.get<PageResult<DvRepair>>('/mes/dv/repair/page', params)
 }
 
 /** 查询维修工单详情 */
 export function getRepair(id: number) {
-  return http.get<DvRepairVO>(`/mes/dv/repair/get?id=${id}`)
+  return http.get<DvRepair>(`/mes/dv/repair/get?id=${id}`)
 }
 
 /** 新增维修工单 */
-export function createRepair(data: DvRepairCreateReqVO) {
+export function createRepair(data: DvRepair) {
   return http.post<number>('/mes/dv/repair/create', data)
 }
 
 /** 修改维修工单 */
-export function updateRepair(data: DvRepairUpdateReqVO) {
+export function updateRepair(data: DvRepair) {
   return http.put<boolean>('/mes/dv/repair/update', data)
 }
 
@@ -78,7 +59,7 @@ export function deleteRepair(id: number) {
 }
 
 /** 导出维修工单 Excel */
-export function exportRepair(params: DvRepairQueryParams) {
+export function exportRepair(params: Record<string, any>) {
   return http.get<Blob>('/mes/dv/repair/export-excel', params)
 }
 
@@ -88,23 +69,11 @@ export function submitRepair(id: number) {
 }
 
 /** 确认维修完成（维修中→待验收） */
-export function confirmRepair(data: DvRepairConfirmReqVO) {
+export function confirmRepair(data: DvRepairConfirmReq) {
   return http.put<boolean>('/mes/dv/repair/confirm', data)
 }
 
 /** 完成验收（待验收→已确认） */
 export function finishRepair(id: number, result: number) {
   return http.put<boolean>(`/mes/dv/repair/finish?id=${id}&result=${result}`)
-}
-
-export const DvRepairApi = {
-  getRepairPage,
-  getRepair,
-  createRepair,
-  updateRepair,
-  deleteRepair,
-  exportRepair,
-  submitRepair,
-  confirmRepair,
-  finishRepair,
 }

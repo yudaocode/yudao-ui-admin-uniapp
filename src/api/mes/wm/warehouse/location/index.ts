@@ -1,66 +1,54 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface WmWarehouseLocationQueryParams extends PageParam {
-  code?: string
-  name?: string
-  warehouseId?: number
-}
-
-export interface WmWarehouseLocationVO {
-  id: number
+/** MES 库区 */
+export interface WmWarehouseLocation {
+  id?: number
   code: string
   name: string
   warehouseId: number
-  warehouseName: string | null
+  warehouseName?: string
   area: number | null
   frozen: boolean
   remark: string | null
-  createTime: string | number
+  createTime?: Date
 }
 
-export interface WmWarehouseLocationCreateReqVO {
-  code: string
-  name: string
-  warehouseId: number
-  area?: number
-  frozen: boolean
-  remark?: string
+/** 查询库区分页 */
+export function getWarehouseLocationPage(params: PageParam) {
+  return http.get<PageResult<WmWarehouseLocation>>(`/mes/wm/warehouse-location/page`, params)
 }
 
-export interface WmWarehouseLocationUpdateReqVO extends WmWarehouseLocationCreateReqVO {
-  id: number
-}
-
-export function getWarehouseLocationPage(params: WmWarehouseLocationQueryParams) {
-  return http.get<PageResult<WmWarehouseLocationVO>>(`/mes/wm/warehouse-location/page`, params)
-}
-
+/** 查询库区精简列表 */
 export function getWarehouseLocationSimpleList(warehouseId?: number) {
-  return http.get<WmWarehouseLocationVO[]>(`/mes/wm/warehouse-location/simple-list`, { warehouseId })
+  return http.get<WmWarehouseLocation[]>(`/mes/wm/warehouse-location/simple-list`, { warehouseId })
 }
 
+/** 查询库区详情 */
 export function getWarehouseLocation(id: number) {
-  return http.get<WmWarehouseLocationVO>(`/mes/wm/warehouse-location/get?id=${id}`)
+  return http.get<WmWarehouseLocation>(`/mes/wm/warehouse-location/get?id=${id}`)
 }
 
-export function createWarehouseLocation(data: WmWarehouseLocationCreateReqVO) {
+/** 新增库区 */
+export function createWarehouseLocation(data: WmWarehouseLocation) {
   return http.post<number>(`/mes/wm/warehouse-location/create`, data)
 }
 
-export function updateWarehouseLocation(data: WmWarehouseLocationUpdateReqVO) {
+/** 修改库区 */
+export function updateWarehouseLocation(data: WmWarehouseLocation) {
   return http.put<boolean>(`/mes/wm/warehouse-location/update`, data)
 }
 
-export function deleteWarehouseLocation(id: number) {
-  return http.delete<boolean>(`/mes/wm/warehouse-location/delete?id=${id}`)
+/** 根据库区修改库位混放配置 */
+export function updateAreaByLocationId(locationId: number, allowItemMixing?: boolean, allowBatchMixing?: boolean) {
+  return http.put<boolean>(`/mes/wm/warehouse-location/update-by-location-id`, undefined, {
+    allowBatchMixing,
+    allowItemMixing,
+    locationId,
+  })
 }
 
-export const WmWarehouseLocationApi = {
-  getWarehouseLocationPage,
-  getWarehouseLocationSimpleList,
-  getWarehouseLocation,
-  createWarehouseLocation,
-  updateWarehouseLocation,
-  deleteWarehouseLocation,
+/** 删除库区 */
+export function deleteWarehouseLocation(id: number) {
+  return http.delete<boolean>(`/mes/wm/warehouse-location/delete?id=${id}`)
 }

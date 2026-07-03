@@ -1,13 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface QcPendingInspectPageParam extends PageParam {
-  sourceDocCode?: string
-  qcType?: number
-  itemId?: number
-}
-
-export interface QcPendingInspectVO {
+/** MES 待检任务 */
+export interface QcPendingInspect {
   sourceDocType: number
   sourceDocId: number
   sourceLineId: number
@@ -28,14 +23,10 @@ export interface QcPendingInspectVO {
   taskCode?: string
   clientId?: number
   clientName?: string
-  recordTime: string
+  recordTime: Date
 }
 
 /** 查询待检任务分页 */
-export function getPendingInspectPage(params: QcPendingInspectPageParam) {
-  return http.get<PageResult<QcPendingInspectVO>>('/mes/qc/pending-inspect/page', params)
-}
-
-export const QcPendingInspectApi = {
-  getPendingInspectPage,
+export function getPendingInspectPage(params: PageParam) {
+  return http.get<PageResult<QcPendingInspect>>('/mes/qc/pending-inspect/page', params)
 }

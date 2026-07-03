@@ -1,21 +1,14 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface ProAndonRecordQueryParams extends PageParam {
-  workstationId?: number
-  userId?: number
-  handlerUserId?: number
-  status?: number
-  createTime?: [string, string]
-}
-
-export interface ProAndonRecordVO {
-  id: number
+/** MES 安灯呼叫记录 */
+export interface ProAndonRecord {
+  id?: number
   configId?: number
-  workstationId: number
+  workstationId?: number
   workstationCode?: string
   workstationName?: string
-  userId: number
+  userId?: number
   userNickname?: string
   workOrderId?: number
   workOrderCode?: string
@@ -23,43 +16,26 @@ export interface ProAndonRecordVO {
   processName?: string
   reason?: string
   level?: number
-  status: number
-  handleTime?: string | number
+  status?: number
+  handleTime?: Date
   handlerUserId?: number
   handlerUserNickname?: string
   remark?: string
-  createTime?: string | number
-}
-
-export interface ProAndonRecordCreateReqVO {
-  configId: number
-  workstationId: number
-  userId: number
-  workOrderId?: number
-  processId?: number
-  remark?: string
-}
-
-export interface ProAndonRecordUpdateReqVO {
-  id: number
-  handleTime?: string | number
-  handlerUserId?: number
-  remark?: string
-  status: number
+  createTime?: Date
 }
 
 /** 查询安灯记录分页 */
-export function getAndonRecordPage(params: ProAndonRecordQueryParams) {
-  return http.get<PageResult<ProAndonRecordVO>>(`/mes/pro/andon-record/page`, params)
+export function getAndonRecordPage(params: PageParam) {
+  return http.get<PageResult<ProAndonRecord>>(`/mes/pro/andon-record/page`, params)
 }
 
 /** 查询安灯记录详情 */
 export function getAndonRecord(id: number) {
-  return http.get<ProAndonRecordVO>(`/mes/pro/andon-record/get?id=${id}`)
+  return http.get<ProAndonRecord>(`/mes/pro/andon-record/get?id=${id}`)
 }
 
 /** 新增安灯记录 */
-export function createAndonRecord(data: ProAndonRecordCreateReqVO) {
+export function createAndonRecord(data: ProAndonRecord) {
   return http.post<number>(`/mes/pro/andon-record/create`, data)
 }
 
@@ -69,20 +45,11 @@ export function deleteAndonRecord(id: number) {
 }
 
 /** 更新安灯记录（保存/已处置） */
-export function updateAndonRecord(data: ProAndonRecordUpdateReqVO) {
+export function updateAndonRecord(data: ProAndonRecord) {
   return http.put<boolean>(`/mes/pro/andon-record/update`, data)
 }
 
 /** 导出安灯记录 Excel */
-export function exportAndonRecord(params: Partial<ProAndonRecordQueryParams>) {
+export function exportAndonRecord(params: Record<string, any>) {
   return http.get<Blob>(`/mes/pro/andon-record/export-excel`, params)
-}
-
-export const ProAndonRecordApi = {
-  getAndonRecordPage,
-  getAndonRecord,
-  createAndonRecord,
-  deleteAndonRecord,
-  updateAndonRecord,
-  exportAndonRecord,
 }

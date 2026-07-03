@@ -1,68 +1,39 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 排班计划分页参数 */
-export interface CalPlanQueryParams extends PageParam {
-  code?: string
-  name?: string
-  calendarType?: number
-  startDate?: string[]
-  endDate?: string[]
-  shiftType?: number
-  status?: number
-}
-
-/** MES 排班计划 VO */
-export interface CalPlanVO {
+/** MES 排班计划 */
+export interface CalPlan {
   id?: number
   code: string // 计划编码
   name: string // 计划名称
   calendarType: number // 班组类型
-  startDate: number | string // 开始日期
-  endDate: number | string // 结束日期
+  startDate: string // 开始日期
+  endDate: string // 结束日期
   shiftType: number // 轮班方式
   shiftMethod?: number // 倒班方式
   shiftCount?: number // 倒班天数
   status?: number // 状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-/** MES 排班计划创建参数 */
-export interface CalPlanCreateReqVO {
-  code: string
-  name: string
-  calendarType: number
-  startDate: number | string
-  endDate: number | string
-  shiftType: number
-  shiftMethod?: number
-  shiftCount?: number
-  remark?: string
-}
-
-/** MES 排班计划更新参数 */
-export interface CalPlanUpdateReqVO extends CalPlanCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询排班计划分页 */
-export function getPlanPage(params: CalPlanQueryParams) {
-  return http.get<PageResult<CalPlanVO>>(`/mes/cal/plan/page`, params)
+export function getPlanPage(params: PageParam) {
+  return http.get<PageResult<CalPlan>>(`/mes/cal/plan/page`, params)
 }
 
 /** 查询排班计划详情 */
 export function getPlan(id: number) {
-  return http.get<CalPlanVO>(`/mes/cal/plan/get?id=${id}`)
+  return http.get<CalPlan>(`/mes/cal/plan/get?id=${id}`)
 }
 
 /** 新增排班计划 */
-export function createPlan(data: CalPlanCreateReqVO) {
+export function createPlan(data: CalPlan) {
   return http.post<number>(`/mes/cal/plan/create`, data)
 }
 
 /** 修改排班计划 */
-export function updatePlan(data: CalPlanUpdateReqVO) {
+export function updatePlan(data: CalPlan) {
   return http.put<boolean>(`/mes/cal/plan/update`, data)
 }
 
@@ -77,16 +48,6 @@ export function deletePlan(id: number) {
 }
 
 /** 导出排班计划 Excel */
-export function exportPlan(params: Partial<CalPlanQueryParams>) {
+export function exportPlan(params: Record<string, any>) {
   return http.get<Blob>(`/mes/cal/plan/export-excel`, params)
-}
-
-export const CalPlanApi = {
-  getPlanPage,
-  getPlan,
-  createPlan,
-  updatePlan,
-  confirmPlan,
-  deletePlan,
-  exportPlan,
 }

@@ -1,8 +1,8 @@
 import { http } from '@/http/http'
 
-/** MES 采购入库上架明细 VO */
-export interface WmItemReceiptDetailVO {
-  id: number // 明细编号
+/** MES 采购入库上架明细 */
+export interface WmItemReceiptDetail {
+  id?: number // 明细编号
   lineId: number // 入库单行编号
   receiptId: number // 入库单编号
   itemId: number // 物料编号
@@ -19,56 +19,30 @@ export interface WmItemReceiptDetailVO {
   areaId?: number // 库位编号
   areaName?: string // 库位名称
   remark?: string // 备注
-  createTime?: string | number // 创建时间
-}
-
-/** MES 采购入库上架明细创建参数 */
-export interface WmItemReceiptDetailCreateReqVO {
-  lineId: number // 入库单行编号
-  receiptId: number // 入库单编号
-  itemId?: number // 物料编号
-  quantity?: number // 上架数量
-  batchId?: number // 批次编号
-  warehouseId?: number // 仓库编号
-  locationId?: number // 库区编号
-  areaId?: number // 库位编号
-  remark?: string // 备注
-}
-
-/** MES 采购入库上架明细更新参数 */
-export interface WmItemReceiptDetailUpdateReqVO extends WmItemReceiptDetailCreateReqVO {
-  id: number // 明细编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询采购入库上架明细列表（按行编号） */
 export function getItemReceiptDetailListByLineId(lineId: number) {
-  return http.get<WmItemReceiptDetailVO[]>('/mes/wm/item-receipt-detail/list-by-line', { lineId })
+  return http.get<WmItemReceiptDetail[]>('/mes/wm/item-receipt-detail/list-by-line', { lineId })
 }
 
 /** 查询采购入库上架明细详情 */
 export function getItemReceiptDetail(id: number) {
-  return http.get<WmItemReceiptDetailVO>(`/mes/wm/item-receipt-detail/get?id=${id}`)
+  return http.get<WmItemReceiptDetail>(`/mes/wm/item-receipt-detail/get?id=${id}`)
 }
 
 /** 新增采购入库上架明细 */
-export function createItemReceiptDetail(data: WmItemReceiptDetailCreateReqVO) {
+export function createItemReceiptDetail(data: WmItemReceiptDetail) {
   return http.post<number>('/mes/wm/item-receipt-detail/create', data)
 }
 
 /** 修改采购入库上架明细 */
-export function updateItemReceiptDetail(data: WmItemReceiptDetailUpdateReqVO) {
+export function updateItemReceiptDetail(data: WmItemReceiptDetail) {
   return http.put<boolean>('/mes/wm/item-receipt-detail/update', data)
 }
 
 /** 删除采购入库上架明细 */
 export function deleteItemReceiptDetail(id: number) {
   return http.delete<boolean>(`/mes/wm/item-receipt-detail/delete?id=${id}`)
-}
-
-export const WmItemReceiptDetailApi = {
-  getItemReceiptDetailListByLineId,
-  getItemReceiptDetail,
-  createItemReceiptDetail,
-  updateItemReceiptDetail,
-  deleteItemReceiptDetail,
 }

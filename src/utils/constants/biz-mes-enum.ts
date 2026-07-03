@@ -34,6 +34,11 @@ export const MesDvCheckResultEnum = {
   ABNORMAL: 2,
 } as const
 
+/** MES 设备状态 */
+export const MesDvMachineryStatusEnum = {
+  STOP: 1,
+} as const
+
 /** MES 维修工单状态 */
 export const MesDvRepairStatusEnum = {
   PREPARE: 0,
@@ -55,11 +60,61 @@ export const MesProWorkOrderTypeEnum = {
   PURCHASE: 3,
 } as const
 
+/** MES 工单来源类型 */
+export const MesProWorkOrderSourceTypeEnum = {
+  ORDER: 1,
+  STORE: 2,
+} as const
+
+/** MES 生产工单状态 */
+export const MesProWorkOrderStatusEnum = {
+  PREPARE: 0,
+  CONFIRMED: 1,
+  FINISHED: 2,
+  CANCELED: 3,
+} as const
+
+/** MES 生产任务状态 */
+export const MesProTaskStatusEnum = {
+  PREPARE: 0,
+  FINISHED: 4,
+  CANCELED: 5,
+} as const
+
+/** MES 工作记录类型 */
+export const MesProWorkRecordTypeEnum = {
+  CLOCK_IN: 1,
+  CLOCK_OUT: 2,
+} as const
+
+/** MES 生产流转卡状态 */
+export const MesProCardStatusEnum = {
+  PREPARE: 0,
+  CONFIRMED: 1,
+  FINISHED: 2,
+  CANCELED: 3,
+} as const
+
+/** MES 生产报工状态 */
+export const MesProFeedbackStatusEnum = {
+  PREPARE: 0,
+  APPROVING: 2,
+  UNCHECK: 3,
+  FINISHED: 4,
+  CANCELED: 5,
+} as const
+
 /** MES 安灯级别 */
 export const MesProAndonLevelEnum = {
   LEVEL1: 1,
   LEVEL2: 2,
   LEVEL3: 3,
+} as const
+
+/** MES 安灯处置状态 */
+export const MesProAndonStatusEnum = {
+  ACTIVE: 0,
+  HANDLED: 1,
 } as const
 
 /** MES 到货通知单状态 */
@@ -194,6 +249,53 @@ export const MesWmPackageStatusEnum = {
   FINISHED: 4,
 } as const
 
+/** MES 质检单状态 */
+export const MesQcStatusEnum = {
+  DRAFT: 0,
+} as const
+
+/** MES 质检类型 */
+export const MesQcTypeEnum = {
+  IQC: 1,
+  IPQC: 2,
+  OQC: 3,
+  RQC: 4,
+} as const
+
+/** MES 质检来源单据类型 */
+export const MesQcSourceDocTypeEnum = {
+  RETURN_ISSUE: 116,
+  RETURN_SALES: 119,
+} as const
+
+/** MES 工装状态 */
+export const MesToolStatusEnum = {
+  STORE: 1,
+} as const
+
+/** MES 保养类型 */
+export const MesMaintenTypeEnum = {
+  REGULAR: 1,
+  USAGE: 2,
+} as const
+
+/** MES 排班计划状态 */
+export const MesCalPlanStatusEnum = {
+  PREPARE: 0,
+  CONFIRMED: 1,
+} as const
+
+/** MES 轮班方式 */
+export const MesCalShiftTypeEnum = {
+  SINGLE: 1,
+  THREE: 3,
+} as const
+
+/** MES 倒班方式 */
+export const MesCalShiftMethodEnum = {
+  DAY: 4,
+} as const
+
 /** MES 盘点类型 */
 export const MesWmStockTakingTypeEnum = {
   STATIC: 1,
@@ -253,6 +355,9 @@ export const MesAutoCodeCycleMethodEnum = {
 
 /** MES 自动编码规则 */
 export const MesAutoCodeRuleCode = {
+  CAL_PLAN_CODE: 'CAL_PLAN_CODE',
+  CAL_TEAM_CODE: 'CAL_TEAM_CODE',
+  DV_MACHINERY_CODE: 'DV_MACHINERY_CODE',
   DV_CHECK_PLAN_CODE: 'DV_CHECK_PLAN_CODE',
   DV_SUBJECT_CODE: 'DV_SUBJECT_CODE',
   DV_REPAIR_CODE: 'DV_REPAIR_CODE',
@@ -273,6 +378,30 @@ export const MesAutoCodeRuleCode = {
   WM_STOCK_TAKING_PLAN_CODE: 'WM_STOCK_TAKING_PLAN_CODE',
   WM_STOCK_TAKING_CODE: 'WM_STOCK_TAKING_CODE',
   TRANSFER_CODE: 'TRANSFER_CODE',
+  PRO_WORK_ORDER_CODE: 'PRO_WORK_ORDER_CODE',
+  PRO_PROCESS_CODE: 'PRO_PROCESS_CODE',
+  PRO_ROUTE_CODE: 'PRO_ROUTE_CODE',
+  PRO_FEEDBACK_CODE: 'PRO_FEEDBACK_CODE',
+  PRO_CARD_CODE: 'PRO_CARD_CODE',
+  QC_DEFECT_CODE: 'QC_DEFECT_CODE',
+  QC_INDICATOR_CODE: 'QC_INDICATOR_CODE',
+  QC_INDICATOR_RESULT_CODE: 'QC_INDICATOR_RESULT_CODE',
+  QC_TEMPLATE_CODE: 'QC_TEMPLATE_CODE',
+  QC_IQC_CODE: 'QC_IQC_CODE',
+  QC_IPQC_CODE: 'QC_IPQC_CODE',
+  QC_OQC_CODE: 'QC_OQC_CODE',
+  QC_RQC_CODE: 'QC_RQC_CODE',
+  TM_TOOL_CODE: 'TM_TOOL_CODE',
+  TM_TOOL_TYPE_CODE: 'TM_TOOL_TYPE_CODE',
+} as const
+
+/** MES 质检结果值类型 */
+export const MesQcResultValueTypeEnum = {
+  FLOAT: 1,
+  INTEGER: 2,
+  TEXT: 3,
+  DICT: 4,
+  FILE: 5,
 } as const
 
 /** MES 盘点任务状态 */

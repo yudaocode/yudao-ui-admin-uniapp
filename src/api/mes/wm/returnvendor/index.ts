@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 供应商退货单查询参数 */
-export interface WmReturnVendorQueryParams extends PageParam {
-  code?: string // 退货单编号
-  name?: string // 退货单名称
-  purchaseOrderCode?: string // 采购订单编号
-  vendorId?: number // 供应商编号
-}
-
-/** MES 供应商退货单 VO */
-export interface WmReturnVendorVO {
-  id: number // 退货单编号
+/** MES 供应商退货单 */
+export interface WmReturnVendor {
+  id?: number // 退货单编号
   code: string // 退货单编码
   name: string // 退货单名称
   purchaseOrderCode?: string // 采购订单编号
@@ -19,50 +11,32 @@ export interface WmReturnVendorVO {
   vendorCode?: string // 供应商编码
   vendorName?: string // 供应商名称
   vendorNickname?: string // 供应商简称
-  returnDate?: string | number // 退货日期
+  returnDate?: string // 退货日期
   returnReason?: string // 退货原因
   transportCode?: string // 物流单号
   transportTelephone?: string // 物流联系电话
-  status: number // 单据状态
+  status?: number // 单据状态
   remark?: string // 备注
-  createTime?: string | number // 创建时间
-}
-
-/** MES 供应商退货单创建参数 */
-export interface WmReturnVendorCreateReqVO {
-  code?: string // 退货单编码
-  name?: string // 退货单名称
-  purchaseOrderCode?: string // 采购订单编号
-  vendorId?: number // 供应商编号
-  returnDate?: string | number // 退货日期
-  returnReason?: string // 退货原因
-  transportCode?: string // 物流单号
-  transportTelephone?: string // 物流联系电话
-  remark?: string // 备注
-}
-
-/** MES 供应商退货单更新参数 */
-export interface WmReturnVendorUpdateReqVO extends WmReturnVendorCreateReqVO {
-  id: number // 退货单编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询供应商退货单分页 */
-export function getReturnVendorPage(params: WmReturnVendorQueryParams) {
-  return http.get<PageResult<WmReturnVendorVO>>('/mes/wm/return-vendor/page', params)
+export function getReturnVendorPage(params: PageParam) {
+  return http.get<PageResult<WmReturnVendor>>('/mes/wm/return-vendor/page', params)
 }
 
 /** 查询供应商退货单详情 */
 export function getReturnVendor(id: number) {
-  return http.get<WmReturnVendorVO>(`/mes/wm/return-vendor/get?id=${id}`)
+  return http.get<WmReturnVendor>(`/mes/wm/return-vendor/get?id=${id}`)
 }
 
 /** 新增供应商退货单 */
-export function createReturnVendor(data: WmReturnVendorCreateReqVO) {
+export function createReturnVendor(data: WmReturnVendor) {
   return http.post<number>('/mes/wm/return-vendor/create', data)
 }
 
 /** 修改供应商退货单 */
-export function updateReturnVendor(data: WmReturnVendorUpdateReqVO) {
+export function updateReturnVendor(data: WmReturnVendor) {
   return http.put<boolean>('/mes/wm/return-vendor/update', data)
 }
 
@@ -97,20 +71,6 @@ export function checkReturnVendorQuantity(id: number) {
 }
 
 /** 导出供应商退货单 Excel */
-export function exportReturnVendor(params: WmReturnVendorQueryParams) {
+export function exportReturnVendor(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/return-vendor/export-excel', params)
-}
-
-export const WmReturnVendorApi = {
-  getReturnVendorPage,
-  getReturnVendor,
-  createReturnVendor,
-  updateReturnVendor,
-  deleteReturnVendor,
-  submitReturnVendor,
-  stockReturnVendor,
-  cancelReturnVendor,
-  finishReturnVendor,
-  checkReturnVendorQuantity,
-  exportReturnVendor,
 }

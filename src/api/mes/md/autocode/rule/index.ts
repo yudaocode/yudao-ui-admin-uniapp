@@ -1,14 +1,8 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface AutoCodeRuleQueryParams extends PageParam {
-  code?: string
-  name?: string
-  status?: number
-}
-
-// MES 编码规则 VO
-export interface AutoCodeRuleVO {
+/** MES 编码规则 */
+export interface AutoCodeRule {
   id?: number // 规则编号
   code?: string // 规则编码
   name?: string // 规则名称
@@ -19,42 +13,26 @@ export interface AutoCodeRuleVO {
   paddedMethod?: number // 补齐方式
   status?: number // 状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-export interface AutoCodeRuleCreateReqVO {
-  code?: string
-  name?: string
-  description?: string
-  maxLength?: number
-  padded?: boolean
-  paddedChar?: string
-  paddedMethod?: number
-  status?: number
-  remark?: string
-}
-
-export interface AutoCodeRuleUpdateReqVO extends AutoCodeRuleCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询编码规则分页 */
-export function getAutoCodeRulePage(params: AutoCodeRuleQueryParams) {
-  return http.get<PageResult<AutoCodeRuleVO>>(`/mes/md/auto-code-rule/page`, params)
+export function getAutoCodeRulePage(params: PageParam) {
+  return http.get<PageResult<AutoCodeRule>>(`/mes/md/auto-code-rule/page`, params)
 }
 
 /** 查询编码规则详情 */
 export function getAutoCodeRule(id: number) {
-  return http.get<AutoCodeRuleVO>(`/mes/md/auto-code-rule/get?id=${id}`)
+  return http.get<AutoCodeRule>(`/mes/md/auto-code-rule/get?id=${id}`)
 }
 
 /** 新增编码规则 */
-export function createAutoCodeRule(data: AutoCodeRuleCreateReqVO) {
+export function createAutoCodeRule(data: AutoCodeRule) {
   return http.post<number>(`/mes/md/auto-code-rule/create`, data)
 }
 
 /** 修改编码规则 */
-export function updateAutoCodeRule(data: AutoCodeRuleUpdateReqVO) {
+export function updateAutoCodeRule(data: AutoCodeRule) {
   return http.put<boolean>(`/mes/md/auto-code-rule/update`, data)
 }
 
@@ -64,15 +42,6 @@ export function deleteAutoCodeRule(id: number) {
 }
 
 /** 导出编码规则 Excel */
-export function exportAutoCodeRule(params: AutoCodeRuleQueryParams) {
+export function exportAutoCodeRule(params: Record<string, any>) {
   return http.get<ArrayBuffer>(`/mes/md/auto-code-rule/export-excel`, params)
-}
-
-export const AutoCodeRuleApi = {
-  getAutoCodeRulePage,
-  getAutoCodeRule,
-  createAutoCodeRule,
-  updateAutoCodeRule,
-  deleteAutoCodeRule,
-  exportAutoCodeRule,
 }

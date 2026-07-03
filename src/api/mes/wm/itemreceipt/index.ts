@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 采购入库单查询参数 */
-export interface WmItemReceiptQueryParams extends PageParam {
-  code?: string // 入库单编号
-  name?: string // 入库单名称
-  vendorId?: number // 供应商编号
-  receiptDate?: string[] // 入库日期范围
-}
-
-/** MES 采购入库单 VO */
-export interface WmItemReceiptVO {
-  id: number // 入库单编号
+/** MES 采购入库单 */
+export interface WmItemReceipt {
+  id?: number // 入库单编号
   code: string // 入库单编码
   name?: string // 入库单名称
   iqcId?: number // 来料检验单编号
@@ -21,46 +13,29 @@ export interface WmItemReceiptVO {
   purchaseOrderCode?: string // 采购订单号
   vendorId?: number // 供应商编号
   vendorName?: string // 供应商名称
-  receiptDate?: string | number // 入库日期
+  receiptDate?: string // 入库日期
   status?: number // 单据状态
   remark?: string // 备注
-  createTime?: string | number // 创建时间
-}
-
-/** MES 采购入库单创建参数 */
-export interface WmItemReceiptCreateReqVO {
-  code?: string // 入库单编码
-  name?: string // 入库单名称
-  iqcId?: number // 来料检验单编号
-  noticeId?: number // 到货通知单编号
-  vendorId?: number // 供应商编号
-  receiptDate?: string | number // 入库日期
-  purchaseOrderCode?: string // 采购订单号
-  remark?: string // 备注
-}
-
-/** MES 采购入库单更新参数 */
-export interface WmItemReceiptUpdateReqVO extends WmItemReceiptCreateReqVO {
-  id: number // 入库单编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询采购入库单分页 */
-export function getItemReceiptPage(params: WmItemReceiptQueryParams) {
-  return http.get<PageResult<WmItemReceiptVO>>('/mes/wm/item-receipt/page', params)
+export function getItemReceiptPage(params: PageParam) {
+  return http.get<PageResult<WmItemReceipt>>('/mes/wm/item-receipt/page', params)
 }
 
 /** 查询采购入库单详情 */
 export function getItemReceipt(id: number) {
-  return http.get<WmItemReceiptVO>(`/mes/wm/item-receipt/get?id=${id}`)
+  return http.get<WmItemReceipt>(`/mes/wm/item-receipt/get?id=${id}`)
 }
 
 /** 新增采购入库单 */
-export function createItemReceipt(data: WmItemReceiptCreateReqVO) {
+export function createItemReceipt(data: WmItemReceipt) {
   return http.post<number>('/mes/wm/item-receipt/create', data)
 }
 
 /** 修改采购入库单 */
-export function updateItemReceipt(data: WmItemReceiptUpdateReqVO) {
+export function updateItemReceipt(data: WmItemReceipt) {
   return http.put<boolean>('/mes/wm/item-receipt/update', data)
 }
 
@@ -90,19 +65,6 @@ export function cancelItemReceipt(id: number) {
 }
 
 /** 导出采购入库单 Excel */
-export function exportItemReceipt(params: WmItemReceiptQueryParams) {
+export function exportItemReceipt(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/item-receipt/export-excel', params)
-}
-
-export const WmItemReceiptApi = {
-  getItemReceiptPage,
-  getItemReceipt,
-  createItemReceipt,
-  updateItemReceipt,
-  deleteItemReceipt,
-  submitItemReceipt,
-  stockItemReceipt,
-  finishItemReceipt,
-  cancelItemReceipt,
-  exportItemReceipt,
 }

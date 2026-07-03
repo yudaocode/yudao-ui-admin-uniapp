@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
-// MES 编码规则分段 VO
-export interface AutoCodePartVO {
+/** MES 编码规则分段 */
+export interface AutoCodePart {
   id?: number // 分段编号
   ruleId?: number // 规则编号
   sort?: number // 排序
@@ -14,56 +14,30 @@ export interface AutoCodePartVO {
   cycleFlag?: boolean // 是否循环
   cycleMethod?: number // 循环方式
   remark?: string // 备注
-  createTime?: string // 创建时间
-}
-
-export interface AutoCodePartCreateReqVO {
-  ruleId?: number
-  sort?: number
-  type?: number
-  length?: number
-  dateFormat?: string
-  fixCharacter?: string
-  serialStartNo?: number
-  serialStep?: number
-  cycleFlag?: boolean
-  cycleMethod?: number
-  remark?: string
-}
-
-export interface AutoCodePartUpdateReqVO extends AutoCodePartCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询编码规则分段详情 */
 export function getAutoCodePart(id: number) {
-  return http.get<AutoCodePartVO>(`/mes/md/auto-code-part/get?id=${id}`)
+  return http.get<AutoCodePart>(`/mes/md/auto-code-part/get?id=${id}`)
 }
 
 /** 查询编码规则分段列表 */
 export function getAutoCodePartListByRuleId(ruleId: number) {
-  return http.get<AutoCodePartVO[]>(`/mes/md/auto-code-part/list-by-rule-id?ruleId=${ruleId}`)
+  return http.get<AutoCodePart[]>(`/mes/md/auto-code-part/list-by-rule-id?ruleId=${ruleId}`)
 }
 
 /** 新增编码规则分段 */
-export function createAutoCodePart(data: AutoCodePartCreateReqVO) {
+export function createAutoCodePart(data: AutoCodePart) {
   return http.post<number>(`/mes/md/auto-code-part/create`, data)
 }
 
 /** 修改编码规则分段 */
-export function updateAutoCodePart(data: AutoCodePartUpdateReqVO) {
+export function updateAutoCodePart(data: AutoCodePart) {
   return http.put<boolean>(`/mes/md/auto-code-part/update`, data)
 }
 
 /** 删除编码规则分段 */
 export function deleteAutoCodePart(id: number) {
   return http.delete<boolean>(`/mes/md/auto-code-part/delete?id=${id}`)
-}
-
-export const AutoCodePartApi = {
-  getAutoCodePart,
-  getAutoCodePartListByRuleId,
-  createAutoCodePart,
-  updateAutoCodePart,
-  deleteAutoCodePart,
 }

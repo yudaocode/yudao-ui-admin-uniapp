@@ -1,17 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 产品入库单分页参数 */
-export interface WmProductReceiptQueryParams extends PageParam {
-  code?: string
-  name?: string
-  workOrderId?: number
-  itemId?: number
-}
-
-/** MES 产品入库单 VO */
-export interface WmProductReceiptVO {
-  id: number
+/** MES 产品入库单 */
+export interface WmProductReceipt {
+  id?: number
   code: string
   name?: string
   workOrderId?: number
@@ -21,43 +13,29 @@ export interface WmProductReceiptVO {
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  receiptDate: string | number
-  status: number
+  receiptDate: string
+  status?: number
   remark?: string
-  createTime?: string
-}
-
-/** MES 产品入库单创建参数 */
-export interface WmProductReceiptCreateReqVO {
-  code: string
-  name: string
-  workOrderId?: number
-  receiptDate: string | number
-  remark?: string
-}
-
-/** MES 产品入库单更新参数 */
-export interface WmProductReceiptUpdateReqVO extends WmProductReceiptCreateReqVO {
-  id: number
+  createTime?: Date
 }
 
 /** 查询产品入库单分页 */
-export function getProductReceiptPage(params: WmProductReceiptQueryParams) {
-  return http.get<PageResult<WmProductReceiptVO>>('/mes/wm/product-receipt/page', params)
+export function getProductReceiptPage(params: PageParam) {
+  return http.get<PageResult<WmProductReceipt>>('/mes/wm/product-receipt/page', params)
 }
 
 /** 查询产品入库单详情 */
 export function getProductReceipt(id: number) {
-  return http.get<WmProductReceiptVO>(`/mes/wm/product-receipt/get?id=${id}`)
+  return http.get<WmProductReceipt>(`/mes/wm/product-receipt/get?id=${id}`)
 }
 
 /** 新增产品入库单 */
-export function createProductReceipt(data: WmProductReceiptCreateReqVO) {
+export function createProductReceipt(data: WmProductReceipt) {
   return http.post<number>('/mes/wm/product-receipt/create', data)
 }
 
 /** 修改产品入库单 */
-export function updateProductReceipt(data: WmProductReceiptUpdateReqVO) {
+export function updateProductReceipt(data: WmProductReceipt) {
   return http.put<boolean>('/mes/wm/product-receipt/update', data)
 }
 
@@ -92,20 +70,6 @@ export function checkProductReceiptQuantity(id: number) {
 }
 
 /** 导出产品入库单 Excel */
-export function exportProductReceipt(params: WmProductReceiptQueryParams) {
+export function exportProductReceipt(params: Record<string, any>) {
   return http.get<Blob>('/mes/wm/product-receipt/export-excel', params)
-}
-
-export const WmProductReceiptApi = {
-  getProductReceiptPage,
-  getProductReceipt,
-  createProductReceipt,
-  updateProductReceipt,
-  deleteProductReceipt,
-  submitProductReceipt,
-  stockProductReceipt,
-  finishProductReceipt,
-  cancelProductReceipt,
-  checkProductReceiptQuantity,
-  exportProductReceipt,
 }

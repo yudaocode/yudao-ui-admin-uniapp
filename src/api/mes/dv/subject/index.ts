@@ -1,26 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface DvSubjectQueryParams extends PageParam {
-  code?: string
-  name?: string
-  type?: number
-  status?: number
-}
-
-export interface DvSubjectVO {
-  id: number
-  code: string
-  name?: string | null
-  type: number
-  content: string
-  standard?: string | null
-  status: number
-  remark?: string | null
-  createTime?: string | number
-}
-
-export interface DvSubjectCreateReqVO {
+/** MES 点检保养项目 */
+export interface DvSubject {
+  id?: number
   code: string
   name?: string
   type: number
@@ -28,29 +11,26 @@ export interface DvSubjectCreateReqVO {
   standard?: string
   status: number
   remark?: string
-}
-
-export interface DvSubjectUpdateReqVO extends DvSubjectCreateReqVO {
-  id: number
+  createTime?: Date
 }
 
 /** 查询点检保养项目分页 */
-export function getSubjectPage(params: DvSubjectQueryParams) {
-  return http.get<PageResult<DvSubjectVO>>(`/mes/dv/subject/page`, params)
+export function getSubjectPage(params: PageParam) {
+  return http.get<PageResult<DvSubject>>(`/mes/dv/subject/page`, params)
 }
 
 /** 查询点检保养项目详情 */
 export function getSubject(id: number) {
-  return http.get<DvSubjectVO>(`/mes/dv/subject/get?id=${id}`)
+  return http.get<DvSubject>(`/mes/dv/subject/get?id=${id}`)
 }
 
 /** 新增点检保养项目 */
-export function createSubject(data: DvSubjectCreateReqVO) {
+export function createSubject(data: DvSubject) {
   return http.post<number>(`/mes/dv/subject/create`, data)
 }
 
 /** 修改点检保养项目 */
-export function updateSubject(data: DvSubjectUpdateReqVO) {
+export function updateSubject(data: DvSubject) {
   return http.put<boolean>(`/mes/dv/subject/update`, data)
 }
 
@@ -60,15 +40,6 @@ export function deleteSubject(id: number) {
 }
 
 /** 导出点检保养项目 Excel */
-export function exportSubject(params: DvSubjectQueryParams) {
+export function exportSubject(params: Record<string, any>) {
   return http.get<Blob>(`/mes/dv/subject/export-excel`, params)
-}
-
-export const DvSubjectApi = {
-  getSubjectPage,
-  getSubject,
-  createSubject,
-  updateSubject,
-  deleteSubject,
-  exportSubject,
 }

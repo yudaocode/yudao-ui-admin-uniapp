@@ -1,60 +1,49 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface TmToolTypeQueryParams extends PageParam {
-  code?: string
-  name?: string
-  maintenType?: number
-}
-
-export interface TmToolTypeVO {
-  id: number
-  code: string
-  name: string
-  codeFlag: boolean
-  maintenType?: number | null
-  maintenPeriod?: number | null
-  remark?: string | null
-  createTime?: string | number
-}
-
-export interface TmToolTypeCreateReqVO {
+/** MES 工装类型 */
+export interface TmToolType {
+  id?: number
   code: string
   name: string
   codeFlag: boolean
   maintenType?: number
   maintenPeriod?: number
   remark?: string
+  createTime?: Date
 }
 
-export interface TmToolTypeUpdateReqVO extends TmToolTypeCreateReqVO {
-  id: number
+/** 查询工装类型分页 */
+export function getToolTypePage(params: PageParam) {
+  return http.get<PageResult<TmToolType>>(`/mes/tm/tool-type/page`, params)
 }
 
-export function getToolTypePage(params: TmToolTypeQueryParams) {
-  return http.get<PageResult<TmToolTypeVO>>(`/mes/tm/tool-type/page`, params)
-}
-
+/** 查询工装类型精简列表 */
 export function getToolTypeSimpleList() {
-  return http.get<TmToolTypeVO[]>(`/mes/tm/tool-type/simple-list`)
+  return http.get<TmToolType[]>(`/mes/tm/tool-type/simple-list`)
 }
 
+/** 查询工装类型详情 */
 export function getToolType(id: number) {
-  return http.get<TmToolTypeVO>(`/mes/tm/tool-type/get?id=${id}`)
+  return http.get<TmToolType>(`/mes/tm/tool-type/get?id=${id}`)
 }
 
-export function exportToolType(params: TmToolTypeQueryParams) {
+/** 导出工装类型 Excel */
+export function exportToolType(params: Record<string, any>) {
   return http.get<Blob>(`/mes/tm/tool-type/export-excel`, params)
 }
 
-export function createToolType(data: TmToolTypeCreateReqVO) {
+/** 新增工装类型 */
+export function createToolType(data: TmToolType) {
   return http.post<number>(`/mes/tm/tool-type/create`, data)
 }
 
-export function updateToolType(data: TmToolTypeUpdateReqVO) {
+/** 修改工装类型 */
+export function updateToolType(data: TmToolType) {
   return http.put<boolean>(`/mes/tm/tool-type/update`, data)
 }
 
+/** 删除工装类型 */
 export function deleteToolType(id: number) {
   return http.delete<boolean>(`/mes/tm/tool-type/delete?id=${id}`)
 }

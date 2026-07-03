@@ -1,21 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 生产工单分页参数 */
-export interface ProWorkOrderQueryParams extends PageParam {
-  code?: string
-  name?: string
-  orderSourceCode?: string
-  productId?: number
-  clientId?: number
-  type?: number
-  status?: number
-  requestDate?: [string, string]
-}
-
-/** MES 生产工单 VO */
-export interface ProWorkOrderVO {
-  id: number // 编号
+/** 生产工单 */
+export interface ProWorkOrder {
+  id?: number // 编号
   code: string // 工单编码
   name: string // 工单名称
   type: number // 工单类型
@@ -37,56 +25,34 @@ export interface ProWorkOrderVO {
   vendorName?: string // 供应商名称
   vendorCode?: string // 供应商编码
   batchCode?: string // 批次号
-  requestDate: number | string // 需求日期
+  requestDate: Date // 需求日期
   parentId?: number // 父工单编号
   parentCode?: string // 父工单编码
-  finishDate?: number | string // 完成时间
-  cancelDate?: number | string // 取消时间
-  status: number // 工单状态
+  finishDate?: Date // 完成时间
+  cancelDate?: Date // 取消时间
+  status?: number // 工单状态
   remark?: string // 备注
-  createTime?: string // 创建时间
-  children?: ProWorkOrderVO[] // 子工单
-}
-
-/** MES 生产工单创建参数 */
-export interface ProWorkOrderCreateReqVO {
-  parentId?: number
-  code: string
-  name: string
-  type: number
-  orderSourceType: number
-  orderSourceCode?: string
-  productId: number
-  quantity: number
-  clientId?: number
-  vendorId?: number
-  batchCode?: string
-  requestDate: number | string
-  remark?: string
-}
-
-/** MES 生产工单更新参数 */
-export interface ProWorkOrderUpdateReqVO extends ProWorkOrderCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
+  children?: ProWorkOrder[] // 子工单
 }
 
 /** 查询生产工单分页 */
-export function getWorkOrderPage(params: ProWorkOrderQueryParams) {
-  return http.get<PageResult<ProWorkOrderVO>>(`/mes/pro/work-order/page`, params)
+export function getWorkOrderPage(params: PageParam) {
+  return http.get<PageResult<ProWorkOrder>>(`/mes/pro/work-order/page`, params)
 }
 
 /** 查询生产工单详情 */
 export function getWorkOrder(id: number) {
-  return http.get<ProWorkOrderVO>(`/mes/pro/work-order/get?id=${id}`)
+  return http.get<ProWorkOrder>(`/mes/pro/work-order/get?id=${id}`)
 }
 
 /** 新增生产工单 */
-export function createWorkOrder(data: ProWorkOrderCreateReqVO) {
+export function createWorkOrder(data: ProWorkOrder) {
   return http.post<number>(`/mes/pro/work-order/create`, data)
 }
 
 /** 修改生产工单 */
-export function updateWorkOrder(data: ProWorkOrderUpdateReqVO) {
+export function updateWorkOrder(data: ProWorkOrder) {
   return http.put<boolean>(`/mes/pro/work-order/update`, data)
 }
 
@@ -96,7 +62,7 @@ export function deleteWorkOrder(id: number) {
 }
 
 /** 导出生产工单 Excel */
-export function exportWorkOrder(params: Partial<ProWorkOrderQueryParams>) {
+export function exportWorkOrder(params: Record<string, any>) {
   return http.get<Blob>(`/mes/pro/work-order/export-excel`, params)
 }
 
@@ -113,16 +79,4 @@ export function cancelWorkOrder(id: number) {
 /** 确认工单 */
 export function confirmWorkOrder(id: number) {
   return http.put<boolean>(`/mes/pro/work-order/confirm?id=${id}`)
-}
-
-export const ProWorkOrderApi = {
-  getWorkOrderPage,
-  getWorkOrder,
-  createWorkOrder,
-  updateWorkOrder,
-  deleteWorkOrder,
-  exportWorkOrder,
-  finishWorkOrder,
-  cancelWorkOrder,
-  confirmWorkOrder,
 }

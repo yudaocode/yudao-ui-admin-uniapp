@@ -1,19 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-export interface QcRqcPageParam extends PageParam {
-  code?: string
-  sourceDocType?: number
-  sourceDocCode?: string
-  itemId?: number
-  batchCode?: string
-  checkResult?: number
-  status?: number
-  inspectorUserId?: number
-}
-
-export interface QcRqcVO {
-  id: number // 编号
+/** MES 退货检验单 */
+export interface QcRqc {
+  id?: number // 编号
   code: string // 检验单编号
   name: string // 检验单名称
   templateId?: number // 检验模板 ID
@@ -32,10 +22,10 @@ export interface QcRqcVO {
   qualifiedQuantity: number // 合格品数量
   unqualifiedQuantity: number // 不合格数量
   checkResult?: number // 检测结果
-  inspectDate: Date | string // 检测日期
+  inspectDate: Date // 检测日期
   inspectorUserId: number // 检测人员用户 ID
   inspectorNickname?: string // 检测人员昵称（关联查询）
-  status: number // 状态
+  status?: number // 状态
   remark?: string // 备注
   criticalRate?: number // 致命缺陷率（%）
   majorRate?: number // 严重缺陷率（%）
@@ -43,49 +33,26 @@ export interface QcRqcVO {
   criticalQuantity?: number // 致命缺陷数量
   majorQuantity?: number // 严重缺陷数量
   minorQuantity?: number // 轻微缺陷数量
-  createTime?: string // 创建时间
-}
-
-export interface QcRqcCreateReqVO {
-  code: string
-  name: string
-  templateId?: number
-  sourceDocType?: number
-  sourceDocId?: number
-  sourceLineId?: number
-  type: number
-  itemId: number
-  batchCode?: string
-  checkQuantity: number
-  qualifiedQuantity: number
-  unqualifiedQuantity: number
-  checkResult?: number
-  inspectDate: string
-  inspectorUserId: number
-  remark?: string
-}
-
-export interface QcRqcUpdateReqVO extends QcRqcCreateReqVO {
-  id: number
+  createTime?: Date // 创建时间
 }
 
 /** 查询退货检验单分页 */
-export function getRqcPage(params: QcRqcPageParam) {
-  return http.get<PageResult<QcRqcVO>>(`/mes/qc/rqc/page`, params)
+export function getRqcPage(params: PageParam) {
+  return http.get<PageResult<QcRqc>>(`/mes/qc/rqc/page`, params)
 }
 
 /** 查询退货检验单详情 */
 export function getRqc(id: number) {
-  return http.get<QcRqcVO>(`/mes/qc/rqc/get?id=${id}`)
+  return http.get<QcRqc>(`/mes/qc/rqc/get?id=${id}`)
 }
 
 /** 新增退货检验单 */
-export function createRqc(data: QcRqcCreateReqVO) {
+export function createRqc(data: QcRqc) {
   return http.post<number>(`/mes/qc/rqc/create`, data)
 }
 
 /** 修改退货检验单 */
-export function updateRqc(data: QcRqcUpdateReqVO) {
+export function updateRqc(data: QcRqc) {
   return http.put<boolean>(`/mes/qc/rqc/update`, data)
 }
 
@@ -100,16 +67,6 @@ export function deleteRqc(id: number) {
 }
 
 /** 导出退货检验单 Excel */
-export function exportRqc(params: QcRqcPageParam) {
+export function exportRqc(params: Record<string, any>) {
   return http.get<Blob>(`/mes/qc/rqc/export-excel`, params)
-}
-
-export const QcRqcApi = {
-  getRqcPage,
-  getRqc,
-  createRqc,
-  updateRqc,
-  finishRqc,
-  deleteRqc,
-  exportRqc,
 }

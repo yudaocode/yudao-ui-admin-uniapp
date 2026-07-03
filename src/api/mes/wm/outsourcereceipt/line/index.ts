@@ -1,15 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
-/** MES 外协入库单行查询参数 */
-export interface WmOutsourceReceiptLineQueryParams extends PageParam {
-  receiptId?: number // 入库单编号
-  itemId?: number // 物料编号
-}
-
-/** MES 外协入库单行 VO */
-export interface WmOutsourceReceiptLineVO {
-  id: number // 行编号
+/** MES 外协入库单行 */
+export interface WmOutsourceReceiptLine {
+  id?: number // 行编号
   receiptId: number // 入库单编号
   itemId: number // 物料编号
   itemCode?: string // 物料编码
@@ -19,62 +13,37 @@ export interface WmOutsourceReceiptLineVO {
   quantity?: number // 入库数量
   batchId?: number // 批次编号
   batchCode?: string // 批次编码
-  productionDate?: string | number // 生产日期
-  expireDate?: string | number // 有效期
+  productionDate?: string // 生产日期
+  expireDate?: string // 有效期
   lotNumber?: string // 生产批号
   iqcCheckFlag?: boolean // 是否需要质检
   iqcId?: number // 来料检验单编号
   qualityStatus?: number // 质量状态
   remark?: string // 备注
-  createTime?: string | number // 创建时间
-}
-
-/** MES 外协入库单行创建参数 */
-export interface WmOutsourceReceiptLineCreateReqVO {
-  receiptId: number // 入库单编号
-  itemId?: number // 物料编号
-  quantity?: number // 入库数量
-  productionDate?: string | number // 生产日期
-  expireDate?: string | number // 有效期
-  lotNumber?: string // 生产批号
-  iqcCheckFlag?: boolean // 是否需要质检
-  remark?: string // 备注
-}
-
-/** MES 外协入库单行更新参数 */
-export interface WmOutsourceReceiptLineUpdateReqVO extends WmOutsourceReceiptLineCreateReqVO {
-  id: number // 行编号
+  createTime?: Date // 创建时间
 }
 
 /** 查询外协入库单行分页 */
-export function getOutsourceReceiptLinePage(params: WmOutsourceReceiptLineQueryParams) {
-  return http.get<PageResult<WmOutsourceReceiptLineVO>>('/mes/wm/outsource-receipt-line/page', params)
+export function getOutsourceReceiptLinePage(params: PageParam) {
+  return http.get<PageResult<WmOutsourceReceiptLine>>('/mes/wm/outsource-receipt-line/page', params)
 }
 
 /** 查询外协入库单行详情 */
 export function getOutsourceReceiptLine(id: number) {
-  return http.get<WmOutsourceReceiptLineVO>(`/mes/wm/outsource-receipt-line/get?id=${id}`)
+  return http.get<WmOutsourceReceiptLine>(`/mes/wm/outsource-receipt-line/get?id=${id}`)
 }
 
 /** 新增外协入库单行 */
-export function createOutsourceReceiptLine(data: WmOutsourceReceiptLineCreateReqVO) {
+export function createOutsourceReceiptLine(data: WmOutsourceReceiptLine) {
   return http.post<number>('/mes/wm/outsource-receipt-line/create', data)
 }
 
 /** 修改外协入库单行 */
-export function updateOutsourceReceiptLine(data: WmOutsourceReceiptLineUpdateReqVO) {
+export function updateOutsourceReceiptLine(data: WmOutsourceReceiptLine) {
   return http.put<boolean>('/mes/wm/outsource-receipt-line/update', data)
 }
 
 /** 删除外协入库单行 */
 export function deleteOutsourceReceiptLine(id: number) {
   return http.delete<boolean>(`/mes/wm/outsource-receipt-line/delete?id=${id}`)
-}
-
-export const WmOutsourceReceiptLineApi = {
-  getOutsourceReceiptLinePage,
-  getOutsourceReceiptLine,
-  createOutsourceReceiptLine,
-  updateOutsourceReceiptLine,
-  deleteOutsourceReceiptLine,
 }
