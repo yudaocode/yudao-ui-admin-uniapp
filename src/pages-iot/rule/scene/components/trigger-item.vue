@@ -87,7 +87,7 @@ import { getThingModelList } from '@/api/iot/thingmodel'
 import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
 import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
-import { deviceStatusOptions, IotRuleSceneTriggerTypeEnum, IoTThingModelTypeEnum, isDeviceTrigger, operatorOptions, triggerTypeOptions } from '@/utils/constants'
+import { deviceStatusOptions, IOT_ALL_DEVICE_OPTION, IotRuleSceneTriggerTypeEnum, IoTThingModelTypeEnum, isDeviceTrigger, operatorOptions, triggerTypeOptions } from '@/utils/constants'
 import ConditionGroupEditor from './condition-group-editor.vue'
 
 const props = defineProps<{ trigger: Trigger, productOptions: Product[], index: number }>()
@@ -151,7 +151,8 @@ watch(
 
 /** 产品变化时加载该产品的设备与物模型 */
 watch(() => triggerData.value.productId, async (productId) => {
-  deviceOptions.value = productId ? await getDeviceListByProductId(productId) : []
+  const devices = productId ? await getDeviceListByProductId(productId) : []
+  deviceOptions.value = productId ? [IOT_ALL_DEVICE_OPTION, ...devices] : []
   thingModelList.value = productId ? await getThingModelList({ productId }) : []
 }, { immediate: true })
 

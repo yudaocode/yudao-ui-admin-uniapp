@@ -112,7 +112,7 @@ import AlertConfigPicker from '@/pages-iot/alert/config/components/alert-config-
 import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
 import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
-import { actionTypeOptions, IoTDataSpecsDataTypeEnum, IotRuleSceneActionTypeEnum, IoTThingModelAccessModeEnum } from '@/utils/constants'
+import { actionTypeOptions, IOT_ALL_DEVICE_OPTION, IoTDataSpecsDataTypeEnum, IotRuleSceneActionTypeEnum, IoTThingModelAccessModeEnum } from '@/utils/constants'
 import { formatJson } from '@/utils/format'
 
 const props = defineProps<{
@@ -220,7 +220,7 @@ watch(() => actionData.value.productId, async (productId) => {
     getDeviceListByProductId(productId),
     getThingModelTSLByProductId(productId),
   ])
-  deviceOptions.value = devices
+  deviceOptions.value = [IOT_ALL_DEVICE_OPTION, ...devices]
   propertyList.value = tslData.properties || []
   serviceList.value = tslData.services || []
 }, { immediate: true })

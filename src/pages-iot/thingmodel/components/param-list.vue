@@ -113,7 +113,7 @@ function openForm(item?: any, index = -1) {
 /** 删除参数 */
 function removeParam(index: number) {
   list.value.splice(index, 1)
-  emit('update:modelValue', list.value)
+  emitParamList()
 }
 
 /** 克隆参数数据 */
@@ -137,7 +137,7 @@ async function handleConfirm() {
     identifier: form.identifier,
     name: form.name,
     dataType: form.dataType,
-    paraOrder: 0,
+    paraOrder: editIndex.value >= 0 ? editIndex.value + 1 : list.value.length + 1,
     direction: props.direction,
     dataSpecs: form.dataSpecs && Object.keys(form.dataSpecs).length > 1 ? cloneValue(form.dataSpecs) : undefined,
     dataSpecsList: form.dataSpecsList?.length ? cloneValue(form.dataSpecsList) : undefined,
@@ -147,7 +147,13 @@ async function handleConfirm() {
   } else {
     list.value.push(item)
   }
-  emit('update:modelValue', list.value)
+  emitParamList()
   visible.value = false
+}
+
+/** 提交参数列表 */
+function emitParamList() {
+  list.value = list.value.map((item, index) => ({ ...item, paraOrder: index + 1 }))
+  emit('update:modelValue', list.value)
 }
 </script>

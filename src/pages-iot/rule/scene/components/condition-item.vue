@@ -119,6 +119,7 @@ import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-pick
 import {
   conditionTypeOptions,
   deviceStatusOptions,
+  IOT_ALL_DEVICE_OPTION,
   IotRuleSceneTriggerConditionParameterOperatorEnum,
   IotRuleSceneTriggerConditionTypeEnum,
   IotRuleSceneTriggerTimeOperatorEnum,
@@ -188,7 +189,8 @@ watch(
 
 /** 产品变化时加载设备和物模型 */
 watch(() => conditionData.value.productId, async (productId) => {
-  deviceOptions.value = productId ? await getDeviceListByProductId(productId) : []
+  const devices = productId ? await getDeviceListByProductId(productId) : []
+  deviceOptions.value = productId ? [IOT_ALL_DEVICE_OPTION, ...devices] : []
   thingModelList.value = productId ? await getThingModelList({ productId }) : []
 }, { immediate: true })
 

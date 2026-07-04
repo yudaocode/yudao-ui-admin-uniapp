@@ -126,7 +126,7 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Product } from '@/api/iot/product/product'
-import type { ThingModelData } from '@/api/iot/thingmodel'
+import type { ThingModelData, ThingModelParam } from '@/api/iot/thingmodel'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getSimpleProductList } from '@/api/iot/product/product'
@@ -139,7 +139,7 @@ import DataSpecsForm from '../components/data-specs-form.vue'
 import ParamList from '../components/param-list.vue'
 import { seedDataSpecs, validateThingModelDataSpecs, validateThingModelParamList } from '@/utils/iot/thing-model'
 
-const props = defineProps<{ id?: number | any, productId?: number | any }>()
+const props = defineProps<{ id?: number | string, productId?: number | string }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -160,8 +160,8 @@ const eventTypeOptions = Object.values(IoTThingModelEventTypeEnum) // 事件类�
 const required = ref(false) // 是否必选
 const callType = ref<string>(IoTThingModelServiceCallTypeEnum.ASYNC.value) // 服务调用方式
 const eventType = ref<string>(IoTThingModelEventTypeEnum.INFO.value) // 事件类型
-const inputParams = ref<any[]>([]) // 服务输入参数
-const outputParams = ref<any[]>([]) // 服务/事件输出参数
+const inputParams = ref<ThingModelParam[]>([]) // 服务输入参数
+const outputParams = ref<ThingModelParam[]>([]) // 服务/事件输出参数
 const property = reactive<Record<string, any>>({
   dataType: IoTDataSpecsDataTypeEnum.INT,
   dataSpecs: { dataType: IoTDataSpecsDataTypeEnum.INT },
@@ -264,8 +264,8 @@ function buildSubmitData() {
       callType: callType.value,
       required: required.value,
       description: base.description,
-      inputParams: inputParams.value.map(item => cleanDataSpecs(item)),
-      outputParams: outputParams.value.map(item => cleanDataSpecs(item)),
+      inputParams: buildParamList(inputParams.value),
+      outputParams: buildParamList(outputParams.value),
     }
   } else if (base.type === IoTThingModelTypeEnum.EVENT) {
     base.dataType = undefined
@@ -275,7 +275,7 @@ function buildSubmitData() {
       type: eventType.value,
       required: required.value,
       description: base.description,
-      outputParams: outputParams.value.map(item => cleanDataSpecs(item)),
+      outputParams: buildParamList(outputParams.value),
     }
   }
   return base
@@ -291,6 +291,14 @@ function cleanDataSpecs<T extends Record<string, any>>(source: T): T {
     delete data.dataSpecsList
   }
   return data as T
+}
+
+/** 构建参数列表 */
+function buildParamList(list: ThingModelParam[]) {
+  return list.map((item, index) => cleanDataSpecs({
+    ...item,
+    paraOrder: index + 1,
+  }))
 }
 
 /** 校验业务数据定义 */

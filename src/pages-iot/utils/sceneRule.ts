@@ -139,7 +139,7 @@ export function validateTriggerItem(trigger: Trigger, index: number): string | n
     if (!trigger.productId) {
       return `触发器 ${index + 1}：产品不能为空`
     }
-    if (!trigger.deviceId) {
+    if (isEmptyDeviceId(trigger.deviceId)) {
       return `触发器 ${index + 1}：设备不能为空`
     }
     // 设备状态变更：只校验操作符 + 状态值
@@ -188,7 +188,7 @@ export function validateTriggerCondition(condition: TriggerCondition, path: stri
     if (!condition.productId) {
       return `${path}：产品不能为空`
     }
-    if (!condition.deviceId) {
+    if (isEmptyDeviceId(condition.deviceId)) {
       return `${path}：设备不能为空`
     }
   }
@@ -267,7 +267,7 @@ export function validateActionItem(action: Action, index: number): string | null
     if (!action.productId) {
       return `${prefix}：产品不能为空`
     }
-    if (!action.deviceId) {
+    if (isEmptyDeviceId(action.deviceId)) {
       return `${prefix}：设备不能为空`
     }
     if (action.type === IotRuleSceneActionTypeEnum.DEVICE_SERVICE_INVOKE && !action.identifier) {
@@ -288,4 +288,9 @@ export function validateActionItem(action: Action, index: number): string | null
     return `${prefix}：告警配置不能为空`
   }
   return null
+}
+
+/** 判断设备编号是否为空（0 表示全部设备，不算空） */
+function isEmptyDeviceId(deviceId?: number) {
+  return deviceId === undefined || deviceId === null
 }

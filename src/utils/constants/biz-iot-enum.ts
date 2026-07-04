@@ -11,6 +11,15 @@ export enum ProductStatusEnum {
   PUBLISHED = 1,
 }
 
+/** IoT 设备编号 - 全部设备 */
+export const IOT_DEVICE_ID_ALL = 0
+
+/** IoT 设备选择器 - 全部设备选项 */
+export const IOT_ALL_DEVICE_OPTION = {
+  id: IOT_DEVICE_ID_ALL,
+  deviceName: '全部设备',
+} as const
+
 /** IoT 产品物模型类型枚举 */
 export const IoTThingModelTypeEnum = {
   PROPERTY: 1,

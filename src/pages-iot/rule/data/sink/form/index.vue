@@ -56,12 +56,54 @@
                 </wd-radio>
               </wd-radio-group>
             </wd-form-item>
-            <wd-form-item title="请求头" title-width="200rpx">
-              <wd-textarea v-model="httpHeadersText" placeholder="请输入请求头 JSON" :maxlength="3000" show-word-limit />
-            </wd-form-item>
-            <wd-form-item title="请求参数" title-width="200rpx">
-              <wd-textarea v-model="httpQueryText" placeholder="请输入请求参数 JSON" :maxlength="3000" show-word-limit />
-            </wd-form-item>
+            <view class="border-t border-[#f2f3f5] px-24rpx py-20rpx">
+              <view class="mb-16rpx flex items-center justify-between">
+                <text class="text-28rpx text-[#333]">请求头</text>
+                <wd-button size="small" type="primary" variant="plain" @click="addHttpHeader">
+                  新增
+                </wd-button>
+              </view>
+              <view v-if="httpHeaderRows.length === 0" class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-16rpx text-26rpx text-[#999]">
+                暂无请求头
+              </view>
+              <view
+                v-for="(item, index) in httpHeaderRows"
+                :key="`header-${index}`"
+                class="mb-16rpx rounded-8rpx bg-[#f7f8fa] p-16rpx"
+              >
+                <wd-input v-model="item.key" class="mb-12rpx" placeholder="请输入请求头名称" clearable />
+                <view class="flex items-center gap-12rpx">
+                  <wd-input v-model="item.value" class="min-w-0 flex-1" placeholder="请输入请求头值" clearable />
+                  <wd-button size="small" type="danger" variant="plain" @click="removeHttpHeader(index)">
+                    删除
+                  </wd-button>
+                </view>
+              </view>
+            </view>
+            <view class="border-t border-[#f2f3f5] px-24rpx py-20rpx">
+              <view class="mb-16rpx flex items-center justify-between">
+                <text class="text-28rpx text-[#333]">请求参数</text>
+                <wd-button size="small" type="primary" variant="plain" @click="addHttpQuery">
+                  新增
+                </wd-button>
+              </view>
+              <view v-if="httpQueryRows.length === 0" class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-16rpx text-26rpx text-[#999]">
+                暂无请求参数
+              </view>
+              <view
+                v-for="(item, index) in httpQueryRows"
+                :key="`query-${index}`"
+                class="mb-16rpx rounded-8rpx bg-[#f7f8fa] p-16rpx"
+              >
+                <wd-input v-model="item.key" class="mb-12rpx" placeholder="请输入参数名称" clearable />
+                <view class="flex items-center gap-12rpx">
+                  <wd-input v-model="item.value" class="min-w-0 flex-1" placeholder="请输入参数值" clearable />
+                  <wd-button size="small" type="danger" variant="plain" @click="removeHttpQuery(index)">
+                    删除
+                  </wd-button>
+                </view>
+              </view>
+            </view>
             <wd-form-item title="请求体" title-width="200rpx">
               <wd-textarea v-model="config.body" placeholder="请输入请求体" :maxlength="4000" show-word-limit />
             </wd-form-item>
@@ -301,10 +343,14 @@ import { createDataSink, getDataSink, IotDataSinkTypeEnum, updateDataSink } from
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { formatJson } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number | string }>()
+
+interface KeyValueRow {
+  key: string
+  value: string
+}
 
 definePage({
   style: {
@@ -324,8 +370,8 @@ const formData = ref<DataSink>({
   type: IotDataSinkTypeEnum.HTTP,
   config: createDefaultConfig(IotDataSinkTypeEnum.HTTP),
 }) // 表单数据
-const httpHeadersText = ref('{}') // HTTP 请求头 JSON
-const httpQueryText = ref('{}') // HTTP 请求参数 JSON
+const httpHeaderRows = ref<KeyValueRow[]>([]) // HTTP 请求头
+const httpQueryRows = ref<KeyValueRow[]>([]) // HTTP 请求参数
 const formSchema = createFormSchema({
   name: [{ required: true, message: '目的名称不能为空' }],
   type: [{ required: true, message: '目的类型不能为空' }],
@@ -380,13 +426,24 @@ function normalizeConfig(type?: number, source?: DataSinkConfig) {
   return { ...createDefaultConfig(currentType), ...(source || {}), type: String(currentType) }
 }
 
-/** 同步 HTTP JSON 文本 */
-function syncHttpConfigTexts() {
+/** 对象转换为 Key/Value 行 */
+function objectToKeyValueRows(data?: unknown): KeyValueRow[] {
+  if (!data || Array.isArray(data) || typeof data !== 'object') {
+    return []
+  }
+  return Object.entries(data as Record<string, unknown>).map(([key, value]) => ({
+    key,
+    value: value === undefined || value === null ? '' : String(value),
+  }))
+}
+
+/** 同步 HTTP Key/Value 行 */
+function syncHttpConfigRows() {
   if (formData.value.type !== IotDataSinkTypeEnum.HTTP) {
     return
   }
-  httpHeadersText.value = formatJson(config.value.headers, '{}')
-  httpQueryText.value = formatJson(config.value.query, '{}')
+  httpHeaderRows.value = objectToKeyValueRows(config.value.headers)
+  httpQueryRows.value = objectToKeyValueRows(config.value.query)
 }
 
 /** 返回上一页 */
@@ -402,17 +459,37 @@ async function getDetail() {
   formData.value = await getDataSink(Number(props.id))
   formData.value.type = formData.value.type || IotDataSinkTypeEnum.HTTP
   formData.value.config = normalizeConfig(formData.value.type, formData.value.config)
-  syncHttpConfigTexts()
+  syncHttpConfigRows()
 }
 
 /** 类型变更时重置配置 */
 function handleTypeChange() {
   formData.value.config = createDefaultConfig(formData.value.type)
-  syncHttpConfigTexts()
+  syncHttpConfigRows()
+}
+
+/** 新增 HTTP 请求头 */
+function addHttpHeader() {
+  httpHeaderRows.value.push({ key: '', value: '' })
+}
+
+/** 删除 HTTP 请求头 */
+function removeHttpHeader(index: number) {
+  httpHeaderRows.value.splice(index, 1)
+}
+
+/** 新增 HTTP 请求参数 */
+function addHttpQuery() {
+  httpQueryRows.value.push({ key: '', value: '' })
+}
+
+/** 删除 HTTP 请求参数 */
+function removeHttpQuery(index: number) {
+  httpQueryRows.value.splice(index, 1)
 }
 
 /** 判断字段为空 */
-function isBlank(value: any) {
+function isBlank(value: unknown) {
   return value === undefined || value === null || value === ''
 }
 
@@ -426,19 +503,27 @@ function validateRequired(fields: Array<{ key: string, label: string }>) {
   return true
 }
 
-/** 解析对象 JSON */
-function parseObjectJson(text: string, label: string) {
-  try {
-    const data = text ? JSON.parse(text) : {}
-    if (!data || Array.isArray(data) || typeof data !== 'object') {
-      toast.warning(`${label}必须是对象 JSON`)
+/** 构建 Key/Value 对象 */
+function buildKeyValueObject(rows: KeyValueRow[], label: string) {
+  const data: Record<string, string> = {}
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]
+    const key = String(row.key ?? '').trim()
+    const value = String(row.value ?? '')
+    if (!key && !value.trim()) {
+      continue
+    }
+    if (!key) {
+      toast.warning(`${label}第 ${index + 1} 行名称不能为空`)
       return undefined
     }
-    return data
-  } catch {
-    toast.warning(`${label}格式不正确`)
-    return undefined
+    if (data[key] !== undefined) {
+      toast.warning(`${label}「${key}」不能重复`)
+      return undefined
+    }
+    data[key] = value
   }
+  return data
 }
 
 /** 构建提交配置 */
@@ -448,11 +533,11 @@ function buildSubmitConfig() {
       if (!validateRequired([{ key: 'url', label: '请求地址' }, { key: 'method', label: '请求方法' }])) {
         return undefined
       }
-      const headers = parseObjectJson(httpHeadersText.value, '请求头')
+      const headers = buildKeyValueObject(httpHeaderRows.value, '请求头')
       if (headers === undefined) {
         return undefined
       }
-      const query = parseObjectJson(httpQueryText.value, '请求参数')
+      const query = buildKeyValueObject(httpQueryRows.value, '请求参数')
       if (query === undefined) {
         return undefined
       }

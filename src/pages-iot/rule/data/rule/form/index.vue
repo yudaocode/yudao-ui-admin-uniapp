@@ -120,10 +120,10 @@ import ProductPicker from '@/pages-iot/product/product/components/product-picker
 import DataSinkPicker from '@/pages-iot/rule/data/sink/components/data-sink-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE, IotDeviceMessageMethodEnum, IoTThingModelTypeEnum } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE, IOT_ALL_DEVICE_OPTION, IotDeviceMessageMethodEnum, IoTThingModelTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number | string }>()
 
 definePage({
   style: {
@@ -219,7 +219,7 @@ function getDeviceOptions(productId?: number) {
     ? deviceOptions.value.filter(item => String(item.productId) === String(productId))
     : []
   return [
-    { id: 0, deviceName: '全部设备' },
+    IOT_ALL_DEVICE_OPTION,
     ...devices,
   ]
 }

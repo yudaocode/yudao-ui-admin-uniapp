@@ -108,7 +108,7 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.productId) {
     conditions.push(`产品:${findOptionName(productOptions.value, formData.productId)}`)
   }
-  if (formData.deviceId) {
+  if (formData.deviceId !== undefined) {
     conditions.push(`设备:${findOptionName(allDeviceOptions.value, formData.deviceId, 'deviceName')}`)
   }
   if (formData.processStatus !== -1) {
@@ -133,7 +133,7 @@ function handleSearch() {
     configId: formData.configId,
     configLevel: formData.configLevel === -1 ? undefined : formData.configLevel,
     productId: formData.productId,
-    deviceId: formData.deviceId,
+    deviceId: formData.deviceId === undefined ? undefined : String(formData.deviceId),
     processStatus: formData.processStatus === -1 ? undefined : formData.processStatus,
     createTime: formatDateRange(formData.createTime),
   })
