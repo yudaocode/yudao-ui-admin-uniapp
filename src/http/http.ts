@@ -10,6 +10,7 @@ import { ResultEnum } from './tools/enum'
 // 刷新 token 状态管理
 let refreshing = false // 防止重复刷新 token 标识
 let refreshFailedReason: any = null // 刷新失败处理中的拒绝原因
+let loginExpiredHandling = false // 防止重复处理登录失效
 let taskQueue: RefreshTask[] = [] // 刷新 token 请求队列
 
 interface RefreshTask {
@@ -23,6 +24,48 @@ function rejectTaskQueue(reason?: any) {
   const tasks = [...taskQueue]
   taskQueue = []
   tasks.forEach(task => task.reject(reason))
+}
+
+/** 重放刷新 token 队列 */
+async function replayTaskQueue() {
+  while (taskQueue.length) {
+    const tasks = [...taskQueue]
+    taskQueue = []
+    await Promise.allSettled(
+      tasks.map(task =>
+        http({ ...task.options, __isRefreshTokenRetry: true }).then(task.resolve).catch(task.reject),
+      ),
+    )
+  }
+}
+
+/** 处理登录失效 */
+async function handleLoginExpired(tokenStore: ReturnType<typeof useTokenStore>) {
+  if (loginExpiredHandling) {
+    return
+  }
+  loginExpiredHandling = true
+  await nextTick()
+  // 关闭其他弹窗
+  uni.hideToast()
+  uni.showToast({
+    title: '登录已过期，请重新登录',
+    icon: 'none',
+  })
+  // 清除用户信息
+  await tokenStore.logout()
+  // 跳转到登录页
+  setTimeout(() => {
+    // 优化 by 芋艿：跳转登录页时，携带上次浏览的页面地址，登录成功后可以跳回去
+    const lastPage = getLastPage()
+    let queryString = ''
+    if (lastPage) {
+      const fullPath = lastPage.$page?.fullPath || `/${lastPage.route}`
+      queryString = `?redirect=${encodeURIComponent(fullPath)}`
+    }
+    toLoginPage({ queryString })
+    loginExpiredHandling = false
+  }, 2000)
 }
 
 export function http<T>(options: CustomRequestOptions) {
@@ -56,10 +99,23 @@ export function http<T>(options: CustomRequestOptions) {
 
         if (isTokenExpired) {
           const tokenStore = useTokenStore()
+          // 已在处理登录失效时，后续 401 直接拒绝，避免 logout 等请求再次触发刷新
+          if (loginExpiredHandling) {
+            return reject(res)
+          }
+          // 对应帖子：https://t.zsxq.com/UHHUR
+          // 刷新 token 后重试仍 401，说明不是 accessToken 过期，避免进入无限刷新
+          if (options.__isRefreshTokenRetry) {
+            await handleLoginExpired(tokenStore)
+            return reject(res)
+          }
+          // refresh-token 本身失效时直接抛给外层刷新流程处理
+          if (options.url?.includes('/refresh-token')) {
+            return reject(res)
+          }
           if (!isDoubleTokenMode) {
             // 未启用双token策略，清理用户信息，跳转到登录页
-            tokenStore.logout()
-            toLoginPage()
+            await handleLoginExpired(tokenStore)
             return reject(res)
           }
 
@@ -85,46 +141,20 @@ export function http<T>(options: CustomRequestOptions) {
             try {
               // 发起刷新 token 请求（使用 store 的 refreshToken 方法）
               await tokenStore.refreshToken()
-              // 将任务队列的所有任务重新请求
-              const tasks = [...taskQueue]
-              taskQueue = []
-              refreshing = false
-              tasks.forEach((task) => {
-                http(task.options).then(task.resolve).catch(task.reject)
-              })
+              // 将任务队列的所有任务重新请求；重放期间晚到的旧 401 也纳入同一轮，避免再次刷新
+              await replayTaskQueue()
             } catch (refreshErr) {
               console.error('刷新 token 失败:', refreshErr)
               refreshFailedReason = refreshErr
               rejectTaskQueue(refreshErr)
-              refreshing = false
               // 刷新 token 失败，跳转到登录页
-              await nextTick()
-              // 关闭其他弹窗
-              uni.hideToast()
-              uni.showToast({
-                title: '登录已过期，请重新登录',
-                icon: 'none',
-              })
-              // 清除用户信息
-              await tokenStore.logout()
-              // 跳转到登录页
-              setTimeout(() => {
-                // 优化 by 芋艿：跳转登录页时，携带上次浏览的页面地址，登录成功后可以跳回去
-                const lastPage = getLastPage()
-                let queryString = ''
-                if (lastPage) {
-                  const fullPath = lastPage.$page?.fullPath || `/${lastPage.route}`
-                  queryString = `?redirect=${encodeURIComponent(fullPath)}`
-                }
-                toLoginPage({ queryString })
-              }, 2000)
+              await handleLoginExpired(tokenStore)
             } finally {
               refreshing = false
               // 不管刷新 token 成功与否，都清空任务队列
               if (refreshFailedReason) {
                 rejectTaskQueue(refreshFailedReason)
-              }
-              else {
+              } else {
                 taskQueue = []
               }
               refreshFailedReason = null
@@ -132,6 +162,7 @@ export function http<T>(options: CustomRequestOptions) {
           }
 
           if (!refreshToken) {
+            await handleLoginExpired(tokenStore)
             return reject(res)
           }
           return
