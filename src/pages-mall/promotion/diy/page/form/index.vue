@@ -65,6 +65,7 @@ import {
   updatePromotionDiyPageProperty,
 } from '@/api/mall/promotion/diy/page'
 import { delay, navigateBackPlus } from '@/utils'
+import { formatJson } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
 interface DiyPageFormData {
@@ -136,22 +137,7 @@ async function getDetail() {
     name: detail.name,
     remark: detail.remark,
     previewPicUrls: detail.previewPicUrls || [],
-    property: formatProperty(property.property ?? detail.property),
-  }
-}
-
-/** 格式化装修属性为文本 */
-function formatProperty(value: any) {
-  if (value == null || value === '') {
-    return '{}'
-  }
-  if (typeof value === 'string') {
-    return value
-  }
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return '{}'
+    property: formatJson(property.property ?? detail.property, '{}'),
   }
 }
 

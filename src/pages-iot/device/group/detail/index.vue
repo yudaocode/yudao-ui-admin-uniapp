@@ -20,10 +20,21 @@
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['iot:device-group:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:device-group:update'])"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['iot:device-group:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:device-group:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -45,7 +56,12 @@ import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()

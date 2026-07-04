@@ -1,0 +1,125 @@
+<template>
+  <wd-form-item
+    :title="label"
+    :title-width="labelWidth"
+    :prop="prop"
+    :disabled="disabled"
+    is-link
+    :value="selectedLabel"
+    :placeholder="placeholder"
+    @click="handleOpen"
+  />
+
+  <wd-select-picker
+    v-model="selectedValue"
+    v-model:visible="visible"
+    :title="label"
+    :columns="resolvedColumns"
+    :label-key="labelKey"
+    :value-key="valueKey"
+    :type="type"
+    filterable
+    root-portal
+    @confirm="handleConfirm"
+  />
+</template>
+
+<script lang="ts" setup>
+import type { ThingModelData } from '@/api/iot/thingmodel'
+import { computed, ref, watch } from 'vue'
+import { getThingModelList } from '@/api/iot/thingmodel'
+
+type PickerValue = number | string | number[]
+
+const props = withDefaults(defineProps<{
+  modelValue?: number | number[] | string
+  columns?: Record<string, any>[]
+  label?: string
+  placeholder?: string
+  prop?: string
+  labelKey?: string
+  valueKey?: string
+  labelWidth?: string
+  type?: 'checkbox' | 'radio'
+  disabled?: boolean
+  productId?: number
+  thingModelType?: number
+}>(), {
+  label: '物模型',
+  placeholder: '请选择物模型',
+  prop: '',
+  labelKey: 'name',
+  valueKey: 'id',
+  labelWidth: '200rpx',
+  type: 'radio',
+  disabled: false,
+})
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: number | number[] | string | undefined): void
+}>()
+
+const thingModelOptions = ref<ThingModelData[]>([]) // 物模型选项
+const selectedValue = ref<PickerValue | ''>(props.type === 'checkbox' ? [] : '') // 当前选中值
+const visible = ref(false) // 选择器显示状态
+const resolvedColumns = computed<Record<string, any>[]>(() => {
+  const columns = props.columns ?? thingModelOptions.value
+  if (!props.thingModelType) {
+    return columns
+  }
+  return columns.filter(item => item.type === props.thingModelType)
+})
+const selectedLabel = computed(() => { // 当前选中展示文本
+  if (Array.isArray(selectedValue.value)) {
+    return selectedValue.value.map(value => findLabel(value)).filter(Boolean).join('、')
+  }
+  return findLabel(selectedValue.value)
+})
+
+watch(
+  () => [props.modelValue, props.type] as const,
+  ([value]) => {
+    selectedValue.value = props.type === 'checkbox'
+      ? (Array.isArray(value) ? value : [])
+      : (value ?? '')
+  },
+  { immediate: true },
+)
+
+/** 加载物模型选项 */
+async function loadOptions() {
+  if (props.columns !== undefined) {
+    return
+  }
+  if (!props.productId) {
+    thingModelOptions.value = []
+    return
+  }
+  thingModelOptions.value = await getThingModelList({
+    productId: props.productId,
+    type: props.thingModelType,
+  })
+}
+
+/** 查找选项文本 */
+function findLabel(value: number | string | undefined) {
+  if (value === undefined || value === null || value === '') {
+    return ''
+  }
+  return resolvedColumns.value.find(item => String(item[props.valueKey]) === String(value))?.[props.labelKey] || String(value)
+}
+
+/** 打开选择器 */
+function handleOpen() {
+  if (props.disabled) {
+    return
+  }
+  visible.value = true
+}
+
+/** 选择确认 */
+function handleConfirm({ value }: { value: PickerValue }) {
+  emit('update:modelValue', value === '' ? undefined : value)
+}
+
+watch(() => [props.productId, props.thingModelType], loadOptions, { immediate: true })
+</script>

@@ -4,13 +4,28 @@
     <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 表单区域 -->
-    <view>
+    <view class="pb-180rpx">
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <EntityPicker v-model="formData.productId" label="所属产品" prop="productId" :columns="productOptions" placeholder="请选择产品" label-width="220rpx" :disabled="!!props.id" />
+          <yd-form-picker
+            v-model="formData.productId"
+            label="所属产品"
+            prop="productId"
+            :columns="productOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择产品"
+            label-width="220rpx"
+            :disabled="!!props.id || !!props.productId"
+          />
           <wd-form-item title="功能类型" title-width="220rpx" center prop="type">
             <wd-radio-group v-model="formData.type" type="button" :disabled="!!props.id">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.IOT_THING_MODEL_TYPE)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.IOT_THING_MODEL_TYPE)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
@@ -24,17 +39,23 @@
 
           <!-- 属性配置 -->
           <template v-if="formData.type === IoTThingModelTypeEnum.PROPERTY">
-            <wd-form-item title="数据类型" title-width="220rpx" center>
-              <wd-radio-group v-model="property.dataType" type="button" @change="onPropertyDataTypeChange">
-                <wd-radio v-for="opt in dataTypeOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </wd-radio>
-              </wd-radio-group>
-            </wd-form-item>
-            <DataSpecsForm :target="property" title-width="220rpx" />
+            <yd-form-picker
+              v-model="property.dataType"
+              label="数据类型"
+              :columns="dataTypeOptions"
+              placeholder="请选择数据类型"
+              label-width="220rpx"
+              @confirm="onPropertyDataTypeChange"
+            />
+            <DataSpecsForm :target="property" title-width="220rpx" @update:target="assignPropertyTarget" />
             <wd-form-item title="读写类型" title-width="220rpx" center>
               <wd-radio-group v-model="property.accessMode" type="button">
-                <wd-radio v-for="opt in accessModeOptions" :key="opt.value" :value="opt.value">
+                <wd-radio
+                  v-for="opt in accessModeOptions"
+                  :key="opt.value"
+                  :name="opt.value"
+                  :value="opt.value"
+                >
                   {{ opt.label }}
                 </wd-radio>
               </wd-radio-group>
@@ -44,7 +65,12 @@
           <!-- 服务配置 -->
           <wd-form-item v-else-if="formData.type === IoTThingModelTypeEnum.SERVICE" title="调用方式" title-width="220rpx" center>
             <wd-radio-group v-model="callType" type="button">
-              <wd-radio v-for="opt in callTypeOptions" :key="opt.value" :value="opt.value">
+              <wd-radio
+                v-for="opt in callTypeOptions"
+                :key="opt.value"
+                :name="opt.value"
+                :value="opt.value"
+              >
                 {{ opt.label }}
               </wd-radio>
             </wd-radio-group>
@@ -53,7 +79,12 @@
           <!-- 事件配置 -->
           <wd-form-item v-else-if="formData.type === IoTThingModelTypeEnum.EVENT" title="事件类型" title-width="220rpx" center>
             <wd-radio-group v-model="eventType" type="button">
-              <wd-radio v-for="opt in eventTypeOptions" :key="opt.value" :value="opt.value">
+              <wd-radio
+                v-for="opt in eventTypeOptions"
+                :key="opt.value"
+                :name="opt.value"
+                :value="opt.value"
+              >
                 {{ opt.label }}
               </wd-radio>
             </wd-radio-group>
@@ -101,25 +132,28 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { getSimpleProductList } from '@/api/iot/product/product'
 import { createThingModel, getThingModel, updateThingModel } from '@/api/iot/thingmodel'
 import { getIntDictOptions } from '@/hooks/useDict'
-import EntityPicker from '@/pages-iot/components/entity-picker.vue'
-import { getDataTypeOptions, IoTDataSpecsDataTypeEnum, IoTThingModelAccessModeEnum, IoTThingModelEventTypeEnum, IoTThingModelServiceCallTypeEnum, IoTThingModelTypeEnum } from '@/pages-iot/utils/constants'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, getDataTypeOptions, IoTDataSpecsDataTypeEnum, IoTThingModelAccessModeEnum, IoTThingModelEventTypeEnum, IoTThingModelServiceCallTypeEnum, IoTThingModelTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import DataSpecsForm from '../components/data-specs-form.vue'
 import ParamList from '../components/param-list.vue'
-import { seedDataSpecs } from '../utils'
+import { seedDataSpecs, validateThingModelDataSpecs, validateThingModelParamList } from '@/utils/iot/thing-model'
 
 const props = defineProps<{ id?: number | any, productId?: number | any }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
-const RESERVED_IDENTIFIERS = ['set', 'get', 'post', 'property', 'event', 'service', 'time', 'value'] // 标识符保留字
+const RESERVED_IDENTIFIERS = ['set', 'get', 'post', 'property', 'event', 'time', 'value'] // 标识符保留字
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑物模型' : '新增物模型')
 const formLoading = ref(false) // 表单提交状态
 const productOptions = ref<Product[]>([]) // 产品选项
-const dataTypeOptions = getDataTypeOptions().filter(item => ![IoTDataSpecsDataTypeEnum.STRUCT, IoTDataSpecsDataTypeEnum.ARRAY].includes(item.value as any)) // 移动端暂不支持 struct/array
+const dataTypeOptions = getDataTypeOptions() // 数据类型选项
 const accessModeOptions = Object.values(IoTThingModelAccessModeEnum) // 读写类型选项
 const callTypeOptions = Object.values(IoTThingModelServiceCallTypeEnum) // 调用方式选项
 const eventTypeOptions = Object.values(IoTThingModelEventTypeEnum) // 事件类型选项
@@ -128,12 +162,30 @@ const callType = ref<string>(IoTThingModelServiceCallTypeEnum.ASYNC.value) // �
 const eventType = ref<string>(IoTThingModelEventTypeEnum.INFO.value) // 事件类型
 const inputParams = ref<any[]>([]) // 服务输入参数
 const outputParams = ref<any[]>([]) // 服务/事件输出参数
-const property = reactive<Record<string, any>>({ dataType: IoTDataSpecsDataTypeEnum.INT, dataSpecs: { dataType: IoTDataSpecsDataTypeEnum.INT }, dataSpecsList: [], accessMode: IoTThingModelAccessModeEnum.READ_WRITE.value }) // 属性配置
-const formData = ref<ThingModelData>({ id: undefined, productId: props.productId ? Number(props.productId) : undefined, type: IoTThingModelTypeEnum.PROPERTY, name: '', identifier: '', description: '' }) // 表单数据
+const property = reactive<Record<string, any>>({
+  dataType: IoTDataSpecsDataTypeEnum.INT,
+  dataSpecs: { dataType: IoTDataSpecsDataTypeEnum.INT },
+  dataSpecsList: [],
+  accessMode: IoTThingModelAccessModeEnum.READ_WRITE.value,
+}) // 属性配置
+const formData = ref<ThingModelData>({
+  id: undefined,
+  productId: props.productId ? Number(props.productId) : undefined,
+  type: IoTThingModelTypeEnum.PROPERTY,
+  name: '',
+  identifier: '',
+  description: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   productId: [{ required: true, message: '所属产品不能为空' }],
   type: [{ required: true, message: '功能类型不能为空' }],
-  name: [{ required: true, message: '功能名称不能为空' }],
+  name: [
+    { required: true, message: '功能名称不能为空' },
+    {
+      pattern: /^[\u4E00-\u9FA5a-z0-9][\u4E00-\u9FA5\w\-/\\.]{0,29}$/i,
+      message: '支持中文、字母、数字、短划线、下划线、斜杠和小数点，不超过 30 个字符',
+    },
+  ],
   identifier: [
     { required: true, message: '标识符不能为空' },
     { pattern: /^[a-z]\w{0,31}$/i, message: '标识符必须以字母开头，不超过 32 个字符' },
@@ -152,10 +204,16 @@ function onPropertyDataTypeChange() {
   seedDataSpecs(property, property.dataType)
 }
 
+/** 更新属性数据定义 */
+function assignPropertyTarget(target: Record<string, any>) {
+  Object.assign(property, target)
+}
+
 /** 加载物模型详情 */
 async function getDetail() {
-  if (!props.id)
+  if (!props.id) {
     return
+  }
   formData.value = await getThingModel(Number(props.id))
   const data = formData.value
   if (data.type === IoTThingModelTypeEnum.PROPERTY && data.property) {
@@ -179,37 +237,108 @@ async function getDetail() {
 /** 构建提交数据 */
 function buildSubmitData() {
   const product = productOptions.value.find(item => String(item.id) === String(formData.value.productId))
-  const base: any = { ...formData.value, productKey: formData.value.productKey || product?.productKey, property: undefined, service: undefined, event: undefined }
+  const base: any = {
+    ...formData.value,
+    productKey: formData.value.productKey || product?.productKey,
+    property: undefined,
+    service: undefined,
+    event: undefined,
+  }
   if (base.type === IoTThingModelTypeEnum.PROPERTY) {
     base.dataType = property.dataType
-    base.property = { identifier: base.identifier, name: base.name, accessMode: property.accessMode, required: required.value, dataType: property.dataType, description: base.description, dataSpecs: property.dataSpecs, dataSpecsList: property.dataSpecsList }
+    base.property = cleanDataSpecs({
+      identifier: base.identifier,
+      name: base.name,
+      accessMode: property.accessMode,
+      required: required.value,
+      dataType: property.dataType,
+      description: base.description,
+      dataSpecs: property.dataSpecs,
+      dataSpecsList: property.dataSpecsList,
+    })
   } else if (base.type === IoTThingModelTypeEnum.SERVICE) {
     base.dataType = undefined
-    base.service = { identifier: base.identifier, name: base.name, callType: callType.value, required: required.value, description: base.description, inputParams: inputParams.value, outputParams: outputParams.value }
+    base.service = {
+      identifier: base.identifier,
+      name: base.name,
+      callType: callType.value,
+      required: required.value,
+      description: base.description,
+      inputParams: inputParams.value.map(item => cleanDataSpecs(item)),
+      outputParams: outputParams.value.map(item => cleanDataSpecs(item)),
+    }
   } else if (base.type === IoTThingModelTypeEnum.EVENT) {
     base.dataType = undefined
-    base.event = { identifier: base.identifier, name: base.name, type: eventType.value, required: required.value, description: base.description, outputParams: outputParams.value }
+    base.event = {
+      identifier: base.identifier,
+      name: base.name,
+      type: eventType.value,
+      required: required.value,
+      description: base.description,
+      outputParams: outputParams.value.map(item => cleanDataSpecs(item)),
+    }
   }
   return base
+}
+
+/** 清理空的数据定义 */
+function cleanDataSpecs<T extends Record<string, any>>(source: T): T {
+  const data = { ...source }
+  if (!data.dataSpecs || Object.keys(data.dataSpecs).length === 0) {
+    delete data.dataSpecs
+  }
+  if (!data.dataSpecsList?.length) {
+    delete data.dataSpecsList
+  }
+  return data as T
+}
+
+/** 校验业务数据定义 */
+function validateBusinessData() {
+  if (formData.value.type === IoTThingModelTypeEnum.PROPERTY) {
+    return validateThingModelDataSpecs(property, '属性数据定义')
+  }
+  if (formData.value.type === IoTThingModelTypeEnum.SERVICE) {
+    return validateThingModelParamList(inputParams.value, '输入参数')
+      || validateThingModelParamList(outputParams.value, '输出参数')
+  }
+  if (formData.value.type === IoTThingModelTypeEnum.EVENT) {
+    return validateThingModelParamList(outputParams.value, '输出参数')
+  }
 }
 
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
-  if (!valid)
+  if (!valid) {
     return
+  }
+  const error = validateBusinessData()
+  if (error) {
+    toast.warning(error)
+    return
+  }
+
   formLoading.value = true
   try {
     const data = buildSubmitData()
-    if (props.id) { await updateThingModel(data); toast.success('修改成功') } else { await createThingModel(data); toast.success('新增成功') }
+    if (props.id) {
+      await updateThingModel(data)
+      toast.success('修改成功')
+    } else {
+      await createThingModel(data)
+      toast.success('新增成功')
+    }
     uni.$emit('iot:thingmodel:reload')
     delay(handleBack)
-  } finally { formLoading.value = false }
+  } finally {
+    formLoading.value = false
+  }
 }
 
 /** 初始化 */
 onMounted(async () => {
   productOptions.value = await getSimpleProductList()
-  getDetail()
+  await getDetail()
 })
 </script>

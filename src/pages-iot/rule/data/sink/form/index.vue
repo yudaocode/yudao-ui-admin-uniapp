@@ -12,14 +12,24 @@
           </wd-form-item>
           <wd-form-item title="目的类型" title-width="200rpx" center prop="type">
             <wd-radio-group v-model="formData.type" type="button" @change="handleTypeChange">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.IOT_DATA_SINK_TYPE_ENUM)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.IOT_DATA_SINK_TYPE_ENUM)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
           </wd-form-item>
           <wd-form-item title="目的状态" title-width="200rpx" center prop="status">
             <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
@@ -36,7 +46,12 @@
             </wd-form-item>
             <wd-form-item title="请求方法" title-width="200rpx" center>
               <wd-radio-group v-model="config.method" type="button">
-                <wd-radio v-for="item in requestMethodOptions" :key="item.value" :value="item.value">
+                <wd-radio
+                  v-for="item in requestMethodOptions"
+                  :key="item.value"
+                  :name="item.value"
+                  :value="item.value"
+                >
                   {{ item.label }}
                 </wd-radio>
               </wd-radio-group>
@@ -73,7 +88,12 @@
             </wd-form-item>
             <wd-form-item title="数据格式" title-width="220rpx" center>
               <wd-radio-group v-model="config.dataFormat" type="button">
-                <wd-radio v-for="item in dataFormatOptions" :key="item.value" :value="item.value">
+                <wd-radio
+                  v-for="item in dataFormatOptions"
+                  :key="item.value"
+                  :name="item.value"
+                  :value="item.value"
+                >
                   {{ item.label }}
                 </wd-radio>
               </wd-radio-group>
@@ -116,7 +136,12 @@
             </wd-form-item>
             <wd-form-item title="数据格式" title-width="220rpx" center>
               <wd-radio-group v-model="config.dataFormat" type="button">
-                <wd-radio v-for="item in webSocketDataFormatOptions" :key="item.value" :value="item.value">
+                <wd-radio
+                  v-for="item in webSocketDataFormatOptions"
+                  :key="item.value"
+                  :name="item.value"
+                  :value="item.value"
+                >
                   {{ item.label }}
                 </wd-radio>
               </wd-radio-group>
@@ -276,11 +301,17 @@ import { createDataSink, getDataSink, IotDataSinkTypeEnum, updateDataSink } from
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { formatJson } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑数据目的' : '新增数据目的')
@@ -315,12 +346,7 @@ const webSocketDataFormatOptions = [
   { label: 'JSON', value: 'JSON' },
   { label: 'TEXT', value: 'TEXT' },
 ]
-const config = computed<DataSinkConfig>(() => {
-  if (!formData.value.config) {
-    formData.value.config = createDefaultConfig(formData.value.type)
-  }
-  return formData.value.config
-})
+const config = computed<DataSinkConfig>(() => formData.value.config || createDefaultConfig(formData.value.type)) // 目的配置
 
 /** 创建默认配置 */
 function createDefaultConfig(type: number = IotDataSinkTypeEnum.HTTP): DataSinkConfig {
@@ -359,17 +385,20 @@ function syncHttpConfigTexts() {
   if (formData.value.type !== IotDataSinkTypeEnum.HTTP) {
     return
   }
-  httpHeadersText.value = JSON.stringify(config.value.headers || {}, null, 2)
-  httpQueryText.value = JSON.stringify(config.value.query || {}, null, 2)
+  httpHeadersText.value = formatJson(config.value.headers, '{}')
+  httpQueryText.value = formatJson(config.value.query, '{}')
 }
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/rule/data/sink/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/rule/data/sink/index')
+}
 
 /** 加载数据目的详情 */
 async function getDetail() {
-  if (!props.id)
+  if (!props.id) {
     return
+  }
   formData.value = await getDataSink(Number(props.id))
   formData.value.type = formData.value.type || IotDataSinkTypeEnum.HTTP
   formData.value.config = normalizeConfig(formData.value.type, formData.value.config)
@@ -420,44 +449,54 @@ function buildSubmitConfig() {
         return undefined
       }
       const headers = parseObjectJson(httpHeadersText.value, '请求头')
-      if (headers === undefined)
+      if (headers === undefined) {
         return undefined
+      }
       const query = parseObjectJson(httpQueryText.value, '请求参数')
-      if (query === undefined)
+      if (query === undefined) {
         return undefined
+      }
       return { ...config.value, headers, query }
     }
     case IotDataSinkTypeEnum.TCP:
-      if (!validateRequired([{ key: 'host', label: '服务器地址' }, { key: 'port', label: '端口' }, { key: 'connectTimeoutMs', label: '连接超时' }, { key: 'readTimeoutMs', label: '读取超时' }, { key: 'dataFormat', label: '数据格式' }]))
+      if (!validateRequired([{ key: 'host', label: '服务器地址' }, { key: 'port', label: '端口' }, { key: 'connectTimeoutMs', label: '连接超时' }, { key: 'readTimeoutMs', label: '读取超时' }, { key: 'dataFormat', label: '数据格式' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.WEBSOCKET:
-      if (!validateRequired([{ key: 'serverUrl', label: '服务器地址' }, { key: 'connectTimeoutMs', label: '连接超时' }, { key: 'sendTimeoutMs', label: '发送超时' }, { key: 'dataFormat', label: '数据格式' }]))
+      if (!validateRequired([{ key: 'serverUrl', label: '服务器地址' }, { key: 'connectTimeoutMs', label: '连接超时' }, { key: 'sendTimeoutMs', label: '发送超时' }, { key: 'dataFormat', label: '数据格式' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.MQTT:
-      if (!validateRequired([{ key: 'url', label: '服务地址' }, { key: 'username', label: '用户名' }, { key: 'password', label: '密码' }, { key: 'clientId', label: '客户端 ID' }, { key: 'topic', label: '主题' }]))
+      if (!validateRequired([{ key: 'url', label: '服务地址' }, { key: 'username', label: '用户名' }, { key: 'password', label: '密码' }, { key: 'clientId', label: '客户端 ID' }, { key: 'topic', label: '主题' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.DATABASE:
-      if (!validateRequired([{ key: 'jdbcUrl', label: 'JDBC 地址' }, { key: 'tableName', label: '目标表名' }]))
+      if (!validateRequired([{ key: 'jdbcUrl', label: 'JDBC 地址' }, { key: 'tableName', label: '目标表名' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.ROCKETMQ:
-      if (!validateRequired([{ key: 'nameServer', label: 'NameServer' }, { key: 'accessKey', label: 'AccessKey' }, { key: 'secretKey', label: 'SecretKey' }, { key: 'group', label: '消费组' }, { key: 'topic', label: '主题' }]))
+      if (!validateRequired([{ key: 'nameServer', label: 'NameServer' }, { key: 'accessKey', label: 'AccessKey' }, { key: 'secretKey', label: 'SecretKey' }, { key: 'group', label: '消费组' }, { key: 'topic', label: '主题' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.KAFKA:
-      if (!validateRequired([{ key: 'bootstrapServers', label: '服务地址' }, { key: 'topic', label: '主题' }]))
+      if (!validateRequired([{ key: 'bootstrapServers', label: '服务地址' }, { key: 'topic', label: '主题' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.RABBITMQ:
-      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'virtualHost', label: '虚拟主机' }, { key: 'exchange', label: '交换机' }, { key: 'routingKey', label: '路由键' }, { key: 'queue', label: '队列' }]))
+      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'virtualHost', label: '虚拟主机' }, { key: 'exchange', label: '交换机' }, { key: 'routingKey', label: '路由键' }, { key: 'queue', label: '队列' }])) {
         return undefined
+      }
       return { ...config.value }
     case IotDataSinkTypeEnum.REDIS_STREAM:
-      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'database', label: '数据库' }, { key: 'topic', label: '主题' }]))
+      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'database', label: '数据库' }, { key: 'topic', label: '主题' }])) {
         return undefined
+      }
       return { ...config.value }
     default:
       toast.warning('请选择目的类型')
@@ -468,12 +507,15 @@ function buildSubmitConfig() {
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
-  if (!valid)
+  if (!valid) {
     return
+  }
+
   const submitConfig = buildSubmitConfig()
   if (!submitConfig) {
     return
   }
+
   formLoading.value = true
   try {
     const data = { ...formData.value, config: submitConfig }
@@ -492,5 +534,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(() => { getDetail() })
+onMounted(() => {
+  getDetail()
+})
 </script>

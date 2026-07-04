@@ -12,15 +12,27 @@
         <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
-              <view class="truncate text-32rpx text-[#333] font-semibold">{{ item.deviceName }}</view>
-              <view class="mt-8rpx truncate text-24rpx text-[#999]">{{ item.nickname || '未设置备注' }}</view>
+              <view class="truncate text-32rpx text-[#333] font-semibold">
+                {{ item.deviceName }}
+              </view>
+              <view class="mt-8rpx truncate text-24rpx text-[#999]">
+                {{ item.nickname || '未设置备注' }}
+              </view>
             </view>
             <dict-tag :type="DICT_TYPE.IOT_DEVICE_STATE" :value="item.state" />
           </view>
-          <view class="mb-12rpx flex items-center text-28rpx text-[#666]"><text class="mr-8rpx text-[#999]">所属产品：</text>{{ productLabel(item) }}</view>
-          <view class="mb-12rpx flex items-center text-28rpx text-[#666]"><text class="mr-8rpx text-[#999]">设备类型：</text><dict-tag :type="DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE" :value="item.deviceType" /></view>
-          <view class="mb-12rpx text-28rpx text-[#666]"><text class="mr-8rpx text-[#999]">固件版本：</text>{{ item.firmwareVersion || '-' }}</view>
-          <view class="text-24rpx text-[#999]">创建时间：{{ formatDateTime(item.createTime) || '-' }}</view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">所属产品：</text>{{ productLabel(item) }}
+          </view>
+          <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">设备类型：</text><dict-tag :type="DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE" :value="item.deviceType" />
+          </view>
+          <view class="mb-12rpx text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">固件版本：</text>{{ item.firmwareVersion || '-' }}
+          </view>
+          <view class="text-24rpx text-[#999]">
+            创建时间：{{ formatDateTime(item.createTime) || '-' }}
+          </view>
         </view>
       </view>
     </z-paging>
@@ -42,9 +54,15 @@ import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
-
 const props = defineProps<{ productId?: number | any }>()
+
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
 const { hasAccessByCodes } = useAccess()
 const list = ref<Device[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
@@ -52,7 +70,9 @@ const queryParams = ref<Record<string, any>>({ productId: props.productId ? Numb
 const productMap = ref<Record<string, string>>({}) // 产品 ID→名称
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus() }
+function handleBack() {
+  navigateBackPlus()
+}
 
 /** 查询设备列表 */
 async function queryList(pageNo: number, pageSize: number) {
@@ -65,22 +85,35 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Record<string, any>) { queryParams.value = { ...data }; reload() }
+function handleQuery(data?: Record<string, any>) {
+  queryParams.value = { ...data }
+  reload()
+}
 
 /** 重置按钮操作 */
-function handleReset() { handleQuery() }
+function handleReset() {
+  handleQuery()
+}
 
 /** 重新加载 */
-function reload() { pagingRef.value?.reload() }
+function reload() {
+  pagingRef.value?.reload()
+}
 
 /** 新增设备 */
-function handleAdd() { uni.navigateTo({ url: '/pages-iot/device/device/form/index' }) }
+function handleAdd() {
+  uni.navigateTo({ url: '/pages-iot/device/device/form/index' })
+}
 
 /** 产品名称（列表接口不返回 productName，本地解析） */
-function productLabel(item: Device) { return item.productId != null ? productMap.value[String(item.productId)] || String(item.productId) : '-' }
+function productLabel(item: Device) {
+  return item.productId != null ? productMap.value[String(item.productId)] || String(item.productId) : '-'
+}
 
 /** 查看详情 */
-function handleDetail(item: Device) { uni.navigateTo({ url: `/pages-iot/device/device/detail/index?id=${item.id}` }) }
+function handleDetail(item: Device) {
+  uni.navigateTo({ url: `/pages-iot/device/device/detail/index?id=${item.id}` })
+}
 
 /** 初始化 */
 onMounted(async () => {
@@ -90,5 +123,7 @@ onMounted(async () => {
 })
 
 /** 卸载 */
-onUnload(() => { uni.$off('iot:device:reload', reload) })
+onUnload(() => {
+  uni.$off('iot:device:reload', reload)
+})
 </script>

@@ -10,12 +10,20 @@
           <wd-form-item title="分类名字" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入分类名字" clearable />
           </wd-form-item>
-          <wd-form-item title="分类排序" title-width="200rpx" prop="sort">
-            <wd-input v-model.number="formData.sort" placeholder="请输入分类排序" clearable />
+          <wd-form-item title="分类排序" title-width="200rpx" prop="sort" center>
+            <wd-input-number
+              v-model="formData.sort"
+              :min="0"
+            />
           </wd-form-item>
           <wd-form-item title="分类状态" title-width="200rpx" center prop="status">
             <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
@@ -92,9 +100,10 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = { ...formData.value, sort: Number(formData.value.sort) }
+    const data = { ...formData.value }
     if (props.id) {
       await updateProductCategory(data)
       toast.success('修改成功')

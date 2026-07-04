@@ -1509,7 +1509,7 @@
               "name": "MES 工作台",
               "icon": "dashboard",
               "iconColor": "#1677ff",
-              "url": "/pages-mes/home/index"
+              "url": "/pages-statistics/mes/home/index"
             },
             {
               "key": "mesMdAutocode",
@@ -2293,7 +2293,7 @@
               "name": "IoT 首页",
               "icon": "dashboard",
               "iconColor": "#1677ff",
-              "url": "/pages-iot/stat/index"
+              "url": "/pages-statistics/iot/home/index"
             }
           ]
         },
@@ -2353,23 +2353,15 @@
               "icon": "sound",
               "iconColor": "#5cdbd3",
               "url": "/pages-iot/rule/scene/index",
-              "permission": "iot:scene-rule:query"
+              "permissions": ["iot:scene-rule:query", "iot:rule-scene:query"]
             },
             {
-              "key": "iotDataSink",
-              "name": "数据流转目的",
+              "key": "iotDataFlow",
+              "name": "数据流转",
               "icon": "link",
               "iconColor": "#eb2f96",
-              "url": "/pages-iot/rule/data/sink/index",
-              "permission": "iot:data-sink:query"
-            },
-            {
-              "key": "iotDataRule",
-              "name": "数据流转规则",
-              "icon": "code",
-              "iconColor": "#f759ab",
-              "url": "/pages-iot/rule/data/rule/index",
-              "permission": "iot:data-rule:query"
+              "url": "/pages-iot/rule/data/index",
+              "permissions": ["iot:data-sink:query", "iot:data-rule:query"]
             }
           ]
         },
@@ -2406,14 +2398,6 @@
               "iconColor": "#faad14",
               "url": "/pages-iot/ota/firmware/index",
               "permission": "iot:ota-firmware:query"
-            },
-            {
-              "key": "iotOtaTask",
-              "name": "OTA 任务",
-              "icon": "clock-circle",
-              "iconColor": "#ffc53d",
-              "url": "/pages-iot/ota/task/index",
-              "permission": "iot:ota-task:query"
             }
           ]
         }

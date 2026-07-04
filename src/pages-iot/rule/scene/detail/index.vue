@@ -70,13 +70,33 @@
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['iot:scene-rule:update'])" class="flex-1" type="info" @click="handleToggleStatus">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:scene-rule:update', 'iot:rule-scene:update'])"
+          class="flex-1"
+          type="info"
+          :loading="statusLoading"
+          :disabled="deleting"
+          @click="handleToggleStatus"
+        >
           {{ statusButtonText }}
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['iot:scene-rule:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:scene-rule:update', 'iot:rule-scene:update'])"
+          class="flex-1"
+          type="warning"
+          :disabled="deleting || statusLoading"
+          @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['iot:scene-rule:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:scene-rule:delete', 'iot:rule-scene:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          :disabled="statusLoading"
+          @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -90,24 +110,29 @@ import type { IotSceneRule } from '@/api/iot/rule/scene'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getSimpleAlertConfigList } from '@/api/iot/alert/config'
 import { deleteRuleScene, getRuleScene, updateRuleSceneStatus } from '@/api/iot/rule/scene'
 import { useAccess } from '@/hooks/useAccess'
-import { getActionTypeLabel, getTriggerTypeLabel, IotRuleSceneTriggerTypeEnum, operatorOptions } from '@/pages-iot/utils/constants'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE, getActionTypeLabel, getTriggerTypeLabel, IotRuleSceneTriggerTypeEnum, operatorOptions } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number | string }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
 const formData = ref<IotSceneRule>() // 详情数据
 const deleting = ref(false) // 删除状态
+const statusLoading = ref(false) // 状态变更状态
 const alertConfigOptions = ref<AlertConfig[]>([]) // 告警配置选项
 const statusButtonText = computed(() => formData.value?.status === CommonStatusEnum.ENABLE ? '停用' : '启用')
 
@@ -122,34 +147,61 @@ function alertConfigLabel(id?: number) {
 }
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/rule/scene/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/rule/scene/index')
+}
 
 /** 加载场景联动详情 */
 async function getDetail() {
-  if (!props.id || deleting.value)
+  if (!props.id || deleting.value) {
     return
+  }
   formData.value = await getRuleScene(Number(props.id))
 }
 
+/** 加载告警配置选项 */
+async function loadAlertConfigOptions() {
+  alertConfigOptions.value = await getSimpleAlertConfigList()
+}
+
 /** 编辑场景联动 */
-function handleEdit() { uni.navigateTo({ url: `/pages-iot/rule/scene/form/index?id=${props.id}` }) }
+function handleEdit() {
+  uni.navigateTo({ url: `/pages-iot/rule/scene/form/index?id=${props.id}` })
+}
 
 /** 切换状态 */
 async function handleToggleStatus() {
-  if (!props.id || !formData.value)
+  if (!props.id || !formData.value || deleting.value || statusLoading.value) {
     return
+  }
   const nextStatus = formData.value.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
-  await updateRuleSceneStatus(Number(props.id), nextStatus)
-  toast.success('操作成功')
-  uni.$emit('iot:scene-rule:reload')
-  getDetail()
+  const actionName = formData.value.status === CommonStatusEnum.ENABLE ? '停用' : '启用'
+  try {
+    await dialog.confirm({ title: '提示', msg: `确定要${actionName}该场景联动吗？` })
+  } catch {
+    return
+  }
+  statusLoading.value = true
+  try {
+    await updateRuleSceneStatus(Number(props.id), nextStatus)
+    toast.success(`${actionName}成功`)
+    uni.$emit('iot:scene-rule:reload')
+    await getDetail()
+  } finally {
+    statusLoading.value = false
+  }
 }
 
 /** 删除场景联动 */
 async function handleDelete() {
-  if (!props.id)
+  if (!props.id || deleting.value || statusLoading.value) {
     return
-  try { await dialog.confirm({ title: '提示', msg: '确定要删除该场景联动吗？' }) } catch { return }
+  }
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定要删除该场景联动吗？' })
+  } catch {
+    return
+  }
   deleting.value = true
   try {
     await deleteRuleScene(Number(props.id))
@@ -162,7 +214,12 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onShow(() => { getDetail() })
+onMounted(() => {
+  loadAlertConfigOptions()
+})
 
-getSimpleAlertConfigList().then((list) => { alertConfigOptions.value = list }) // 告警配置名称解析
+/** 页面显示时刷新详情 */
+onShow(() => {
+  getDetail()
+})
 </script>

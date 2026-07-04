@@ -1,7 +1,13 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <wd-navbar title="模拟设备" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+    <wd-navbar
+      title="模拟设备"
+      right-text="设备消息"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+      @click-right="handleDeviceMessage"
+    />
 
     <!-- 调试模式 -->
     <view class="bg-white">
@@ -14,18 +20,28 @@
     <!-- 指令类型 -->
     <view class="p-24rpx pb-0">
       <wd-radio-group v-if="tabType === 'upstream'" v-model="upstreamMethod" type="button">
-        <wd-radio :value="IotDeviceMessageMethodEnum.PROPERTY_POST.method">属性上报</wd-radio>
-        <wd-radio :value="IotDeviceMessageMethodEnum.EVENT_POST.method">事件上报</wd-radio>
-        <wd-radio :value="IotDeviceMessageMethodEnum.STATE_UPDATE.method">状态变更</wd-radio>
+        <wd-radio :name="IotDeviceMessageMethodEnum.PROPERTY_POST.method" :value="IotDeviceMessageMethodEnum.PROPERTY_POST.method">
+          属性上报
+        </wd-radio>
+        <wd-radio :name="IotDeviceMessageMethodEnum.EVENT_POST.method" :value="IotDeviceMessageMethodEnum.EVENT_POST.method">
+          事件上报
+        </wd-radio>
+        <wd-radio :name="IotDeviceMessageMethodEnum.STATE_UPDATE.method" :value="IotDeviceMessageMethodEnum.STATE_UPDATE.method">
+          状态变更
+        </wd-radio>
       </wd-radio-group>
       <wd-radio-group v-else v-model="downstreamMethod" type="button">
-        <wd-radio :value="IotDeviceMessageMethodEnum.PROPERTY_SET.method">属性设置</wd-radio>
-        <wd-radio :value="IotDeviceMessageMethodEnum.SERVICE_INVOKE.method">服务调用</wd-radio>
+        <wd-radio :name="IotDeviceMessageMethodEnum.PROPERTY_SET.method" :value="IotDeviceMessageMethodEnum.PROPERTY_SET.method">
+          属性设置
+        </wd-radio>
+        <wd-radio :name="IotDeviceMessageMethodEnum.SERVICE_INVOKE.method" :value="IotDeviceMessageMethodEnum.SERVICE_INVOKE.method">
+          服务调用
+        </wd-radio>
       </wd-radio-group>
     </view>
 
     <!-- 调试内容 -->
-    <scroll-view scroll-y class="min-h-0 flex-1 p-24rpx">
+    <scroll-view scroll-y class="box-border min-h-0 w-full flex-1 p-24rpx pb-180rpx">
       <wd-loading v-if="loading" />
 
       <view v-else-if="showPropertyPanel">
@@ -43,7 +59,9 @@
                 {{ getThingModelDataType(item) || '-' }}
               </view>
             </view>
-            <view class="mb-16rpx text-24rpx text-[#999]">标识符：{{ item.identifier || '-' }}</view>
+            <view class="mb-16rpx text-24rpx text-[#999]">
+              标识符：{{ item.identifier || '-' }}
+            </view>
             <wd-input
               :model-value="getFormValue(item.identifier)"
               placeholder="请输入属性值"
@@ -51,9 +69,6 @@
               @update:model-value="setFormValue(item.identifier, $event)"
             />
           </view>
-          <wd-button block type="primary" :loading="sending" @click="handlePropertySend">
-            {{ tabType === 'upstream' ? '发送属性上报' : '发送属性设置' }}
-          </wd-button>
         </view>
       </view>
 
@@ -64,8 +79,12 @@
         </view>
         <view v-else>
           <view v-for="item in eventList" :key="item.identifier" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-            <view class="mb-12rpx text-30rpx text-[#333] font-semibold">{{ item.name || item.identifier }}</view>
-            <view class="mb-16rpx text-24rpx text-[#999]">标识符：{{ item.identifier || '-' }}</view>
+            <view class="mb-12rpx text-30rpx text-[#333] font-semibold">
+              {{ item.name || item.identifier }}
+            </view>
+            <view class="mb-16rpx text-24rpx text-[#999]">
+              标识符：{{ item.identifier || '-' }}
+            </view>
             <wd-textarea
               :model-value="getFormValue(item.identifier)"
               placeholder="请输入事件参数 JSON"
@@ -83,7 +102,9 @@
       <view v-else-if="upstreamMethod === IotDeviceMessageMethodEnum.STATE_UPDATE.method && tabType === 'upstream'">
         <!-- 状态变更 -->
         <view class="rounded-12rpx bg-white p-24rpx shadow-sm">
-          <view class="mb-24rpx text-28rpx text-[#666]">模拟设备上线或离线状态变更。</view>
+          <view class="mb-24rpx text-28rpx text-[#666]">
+            模拟设备上线或离线状态变更。
+          </view>
           <view class="flex gap-16rpx">
             <wd-button class="flex-1" type="primary" :loading="sending" @click="handleDeviceState(DeviceStateEnum.ONLINE)">
               设备上线
@@ -102,8 +123,12 @@
         </view>
         <view v-else>
           <view v-for="item in serviceList" :key="item.identifier" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-            <view class="mb-12rpx text-30rpx text-[#333] font-semibold">{{ item.name || item.identifier }}</view>
-            <view class="mb-16rpx text-24rpx text-[#999]">标识符：{{ item.identifier || '-' }}</view>
+            <view class="mb-12rpx text-30rpx text-[#333] font-semibold">
+              {{ item.name || item.identifier }}
+            </view>
+            <view class="mb-16rpx text-24rpx text-[#999]">
+              标识符：{{ item.identifier || '-' }}
+            </view>
             <wd-textarea
               :model-value="getFormValue(item.identifier)"
               placeholder="请输入服务参数 JSON"
@@ -118,6 +143,13 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 底部操作按钮 -->
+    <view v-if="showPropertyPanel" class="yd-detail-footer">
+      <wd-button type="primary" block :loading="sending" :disabled="propertyList.length === 0" @click="handlePropertySend">
+        {{ propertySendText }}
+      </wd-button>
+    </view>
   </view>
 </template>
 
@@ -128,12 +160,17 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getDevice, sendDeviceMessage } from '@/api/iot/device/device'
 import { getThingModelList } from '@/api/iot/thingmodel'
-import { DeviceStateEnum, IotDeviceMessageMethodEnum, IoTThingModelTypeEnum } from '@/pages-iot/utils/constants'
+import { DeviceStateEnum, IotDeviceMessageMethodEnum, IoTThingModelTypeEnum } from '@/utils/constants'
 import { navigateBackPlus } from '@/utils'
 
-const props = defineProps<{ deviceId?: number | any }>()
+const props = defineProps<{ deviceId?: number | string }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
 const tabTypes = ['upstream', 'downstream'] as const
@@ -154,10 +191,19 @@ const showPropertyPanel = computed(() => {
   return (tabType.value === 'upstream' && upstreamMethod.value === IotDeviceMessageMethodEnum.PROPERTY_POST.method)
     || (tabType.value === 'downstream' && downstreamMethod.value === IotDeviceMessageMethodEnum.PROPERTY_SET.method)
 })
+const propertySendText = computed(() => tabType.value === 'upstream' ? '发送属性上报' : '发送属性设置') // 属性调试主操作
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus(`/pages-iot/device/device/detail/index?id=${props.deviceId}`)
+}
+
+/** 跳转设备消息 */
+function handleDeviceMessage() {
+  if (!props.deviceId) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-iot/device/device/message/index?deviceId=${props.deviceId}` })
 }
 
 /** Tab 切换 */
@@ -196,7 +242,7 @@ function parseJsonParams(value: string, label: string) {
   try {
     return value ? JSON.parse(value) : {}
   } catch {
-    toast.warning(label + '格式不正确')
+    toast.warning(`${label}格式不正确`)
     return undefined
   }
 }

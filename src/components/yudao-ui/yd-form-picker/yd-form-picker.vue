@@ -21,28 +21,46 @@
       <view class="min-w-0 flex-1 truncate text-right text-28rpx" :class="displayValue ? 'text-[#333]' : 'text-[#999]'" @click="handleOpen">
         {{ displayValue || placeholder }}
       </view>
-      <wd-button v-if="modelValue != null && modelValue !== ''" size="small" variant="plain" @click.stop="handleClear">
+      <wd-button v-if="!isEmptyValue(modelValue)" size="small" variant="plain" @click.stop="handleClear">
         清空
       </wd-button>
     </view>
   </wd-form-item>
+
+  <!-- 选择弹层：单选使用 wd-picker，多选使用 wd-select-picker -->
   <wd-picker
+    v-if="type !== 'checkbox'"
     v-model:visible="visible"
-    :model-value="modelValue"
+    :model-value="pickerModelValue"
     :columns="resolvedColumns"
     :label-key="labelKey"
     :value-key="valueKey"
+    :root-portal="rootPortal"
     @confirm="handleConfirm"
+  />
+  <wd-select-picker
+    v-else
+    v-model:visible="visible"
+    :model-value="selectPickerModelValue"
+    :title="label || placeholder"
+    :columns="resolvedColumns"
+    :label-key="labelKey"
+    :value-key="valueKey"
+    type="checkbox"
+    :filterable="filterable"
+    :root-portal="rootPortal"
+    @confirm="handleSelectConfirm"
   />
 </template>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { isEmptyValue } from '@/utils/is'
 import { getWotPickerFormValue } from '@/utils/wot'
 
 const props = withDefaults(defineProps<{
-  modelValue?: boolean | number | string // 当前选中值
+  modelValue?: boolean | number | string | Array<boolean | number | string> // 当前选中值
   label?: string // 字段标题
   labelWidth?: string // 标题宽度
   placeholder?: string // 未选择时占位
@@ -53,8 +71,11 @@ const props = withDefaults(defineProps<{
   columns?: any[] // 自定义选项；优先于 dictType
   labelKey?: string // 选项展示字段名
   valueKey?: string // 选项值字段名
+  type?: 'radio' | 'checkbox' // 选择类型；checkbox 使用多选弹层
+  filterable?: boolean // 是否支持搜索
   clearable?: boolean // 是否展示清空按钮
   beforeOpen?: () => boolean | void | Promise<boolean | void> // 打开前校验
+  rootPortal?: boolean // 是否脱离当前层级，避免弹层 fixed 失效
 }>(), {
   label: '',
   labelWidth: '200rpx',
@@ -64,7 +85,10 @@ const props = withDefaults(defineProps<{
   dictKind: 'int',
   labelKey: 'label',
   valueKey: 'value',
+  type: 'radio',
+  filterable: false,
   clearable: false,
+  rootPortal: true,
 })
 
 const emit = defineEmits<{
@@ -74,7 +98,12 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 选择弹层显示状态
-
+const pickerModelValue = computed(() => // Wot picker 使用数组值，业务层保持标量
+  props.modelValue == null || props.modelValue === '' ? [] : [props.modelValue],
+)
+const selectPickerModelValue = computed(() => // Wot select-picker 多选使用数组值
+  Array.isArray(props.modelValue) ? props.modelValue : [],
+)
 const resolvedColumns = computed(() => { // 选项：优先 columns，其次按字典类型生成
   if (props.columns) {
     return props.columns
@@ -107,13 +136,20 @@ async function handleOpen() {
 
 /** 清空选择 */
 function handleClear() {
-  emit('update:modelValue', undefined)
+  emit('update:modelValue', props.type === 'checkbox' ? [] : undefined)
   emit('clear')
 }
 
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
   const next = Array.isArray(value) ? value[0] : value
+  emit('update:modelValue', next)
+  emit('confirm', next)
+}
+
+/** 多选确认 */
+function handleSelectConfirm({ value }: { value: any }) {
+  const next = Array.isArray(value) ? value : []
   emit('update:modelValue', next)
   emit('confirm', next)
 }

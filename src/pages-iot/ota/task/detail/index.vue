@@ -32,10 +32,11 @@
           记录
         </wd-button>
         <wd-button
-          v-if="hasAccessByCodes(['iot:ota-task:cancel'])"
+          v-if="canCancelTask"
           class="flex-1"
           type="danger"
           :loading="canceling"
+          :disabled="canceling"
           @click="handleCancel"
         >
           取消
@@ -50,11 +51,11 @@ import type { OtaTask } from '@/api/iot/ota/task'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelOtaTask, getOtaTask } from '@/api/iot/ota/task'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, IoTOtaTaskStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -73,6 +74,9 @@ const toast = useToast()
 const dialog = useDialog()
 const formData = ref<OtaTask>() // 详情数据
 const canceling = ref(false) // 取消状态
+const canCancelTask = computed(() => { // 仅进行中任务可取消
+  return formData.value?.status === IoTOtaTaskStatusEnum.IN_PROGRESS.value && hasAccessByCodes(['iot:ota-task:cancel'])
+})
 
 /** 返回上一页 */
 function handleBack() {
@@ -94,7 +98,7 @@ function handleRecords() {
 
 /** 取消任务 */
 async function handleCancel() {
-  if (!props.id) {
+  if (!props.id || canceling.value) {
     return
   }
   try {
@@ -107,7 +111,7 @@ async function handleCancel() {
     await cancelOtaTask(Number(props.id))
     toast.success('取消成功')
     uni.$emit('iot:ota-task:reload')
-    getDetail()
+    await getDetail()
   } finally {
     canceling.value = false
   }

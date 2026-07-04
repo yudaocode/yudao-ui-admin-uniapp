@@ -14,12 +14,19 @@
   >
     <view class="yd-search-form-container">
       <view class="yd-search-form-item">
-        <view class="yd-search-form-label">分类名字</view>
+        <view class="yd-search-form-label">
+          分类名字
+        </view>
         <wd-input v-model="formData.name" placeholder="请输入分类名字" clearable />
       </view>
+      <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
-        <wd-button class="flex-1" variant="plain" @click="handleReset">重置</wd-button>
-        <wd-button class="flex-1" type="primary" @click="handleSearch">搜索</wd-button>
+        <wd-button class="flex-1" variant="plain" @click="handleReset">
+          重置
+        </wd-button>
+        <wd-button class="flex-1" type="primary" @click="handleSearch">
+          搜索
+        </wd-button>
       </view>
     </view>
   </wd-popup>
@@ -28,6 +35,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { formatDate, formatDateRange } from '@/utils/date'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -37,19 +45,33 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   name: undefined as string | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
-const placeholder = computed(() => formData.name ? '分类名字:' + formData.name : '搜索产品分类')
+const placeholder = computed(() => { // 搜索条件文案
+  const conditions: string[] = []
+  if (formData.name) {
+    conditions.push(`分类名字:${formData.name}`)
+  }
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索产品分类'
+})
 
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    name: formData.name || undefined,
+    createTime: formatDateRange(formData.createTime),
+  })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.name = undefined
+  formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')
 }

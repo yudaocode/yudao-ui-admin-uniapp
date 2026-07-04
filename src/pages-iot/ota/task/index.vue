@@ -1,11 +1,7 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <wd-navbar
-      title="OTA 任务"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    />
+    <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
@@ -30,11 +26,13 @@
           class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
           @click="handleDetail(item)"
         >
-          <view class="mb-16rpx flex items-center justify-between">
-            <view class="text-32rpx text-[#333] font-semibold">
+          <view class="mb-16rpx flex items-center justify-between gap-16rpx">
+            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
               {{ item.name }}
             </view>
-            <dict-tag :type="DICT_TYPE.IOT_OTA_TASK_STATUS" :value="item.status" />
+            <view class="shrink-0">
+              <dict-tag :type="DICT_TYPE.IOT_OTA_TASK_STATUS" :value="item.status" />
+            </view>
           </view>
           <view class="mb-12rpx text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">固件版本：</text>
@@ -77,6 +75,11 @@ import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
+const props = defineProps<{
+  firmwareId?: number | any
+  productId?: number | any
+}>()
+
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -85,9 +88,12 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
+const firmwareId = props.firmwareId ? Number(props.firmwareId) : undefined // 入口预置固件
+const productId = props.productId ? Number(props.productId) : undefined // 入口预置产品
+const getTitle = firmwareId ? '固件升级任务' : 'OTA 任务'
 const list = ref<OtaTask[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>(getDefaultQuery()) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
@@ -106,7 +112,7 @@ async function queryList(pageNo: number, pageSize: number) {
 
 /** 搜索按钮操作 */
 function handleQuery(data?: Record<string, any>) {
-  queryParams.value = { ...data }
+  queryParams.value = { ...getDefaultQuery(), ...data }
   reload()
 }
 
@@ -122,12 +128,21 @@ function reload() {
 
 /** 新增升级任务 */
 function handleAdd() {
-  uni.navigateTo({ url: '/pages-iot/ota/task/form/index' })
+  const query = [
+    firmwareId ? `firmwareId=${firmwareId}` : '',
+    productId ? `productId=${productId}` : '',
+  ].filter(Boolean).join('&')
+  uni.navigateTo({ url: `/pages-iot/ota/task/form/index${query ? `?${query}` : ''}` })
 }
 
 /** 查看详情 */
 function handleDetail(item: OtaTask) {
   uni.navigateTo({ url: `/pages-iot/ota/task/detail/index?id=${item.id}` })
+}
+
+/** 默认查询参数 */
+function getDefaultQuery() {
+  return firmwareId ? { firmwareId } : {}
 }
 
 /** 初始化 */

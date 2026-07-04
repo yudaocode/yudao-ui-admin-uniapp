@@ -7,22 +7,42 @@
     <view class="p-24rpx pb-0">
       <view class="grid grid-cols-3 gap-16rpx">
         <view v-for="item in statusOptions" :key="item.value" class="rounded-12rpx bg-white p-16rpx text-center shadow-sm" @click="handleStatus(item.value)">
-          <view class="text-34rpx text-[#1677ff] font-semibold">{{ statistics[item.value] || 0 }}</view>
-          <view class="mt-4rpx text-22rpx text-[#666]">{{ item.label }}</view>
+          <view class="text-34rpx text-[#1677ff] font-semibold">
+            {{ statistics[item.value] || 0 }}
+          </view>
+          <view class="mt-4rpx text-22rpx text-[#666]">
+            {{ item.label }}
+          </view>
         </view>
       </view>
     </view>
 
-    <!-- 状态筛选 -->
+    <!-- 状态标签 -->
     <view class="px-24rpx py-16rpx">
-      <wd-radio-group v-model="currentStatus" type="button" @change="handleStatusChange">
-        <wd-radio :value="-1">全部</wd-radio>
-        <wd-radio v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</wd-radio>
-      </wd-radio-group>
+      <view class="overflow-hidden rounded-12rpx bg-white shadow-sm">
+        <wd-tabs v-model="statusTabIndex" slidable="always" line-theme="text" @change="handleStatusChange">
+          <wd-tab
+            v-for="item in statusTabs"
+            :key="item.value"
+            :title="item.label"
+          />
+        </wd-tabs>
+      </view>
     </view>
 
     <!-- 分页列表 -->
-    <z-paging ref="pagingRef" v-model="list" :fixed="false" class="min-h-0 flex-1" :default-page-size="10" :refresher-enabled="true" :inside-more="true" :loading-more-default-as-loading="true" empty-view-text="暂无升级记录数据" @query="queryList">
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      :empty-view-text="listSupported ? '暂无升级记录数据' : '固件维度暂不支持记录列表'"
+      @query="queryList"
+    >
       <view class="p-24rpx">
         <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
           <view class="mb-16rpx flex items-center justify-between gap-16rpx">
@@ -51,6 +71,7 @@
               type="danger"
               variant="plain"
               :loading="cancelingId === item.id"
+              :disabled="!!cancelingId"
               @click="handleCancel(item)"
             >
               取消
@@ -69,14 +90,18 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { cancelOtaTaskRecord, getOtaTaskRecordPage, getOtaTaskRecordStatusStatistics } from '@/api/iot/ota/task/record'
 import { useAccess } from '@/hooks/useAccess'
-import { IoTOtaTaskRecordStatusEnum } from '@/pages-iot/utils/constants'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, IoTOtaTaskRecordStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ taskId?: number | any, firmwareId?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
@@ -84,9 +109,12 @@ const dialog = useDialog()
 const list = ref<OtaTaskRecord[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const statistics = ref<Record<string, number>>({}) // 状态统计
-const currentStatus = ref(-1) // 当前状态筛选
+const statusTabIndex = ref(0) // 当前状态 tab
 const cancelingId = ref<number>() // 取消中的记录编号
 const statusOptions = computed(() => Object.values(IoTOtaTaskRecordStatusEnum))
+const statusTabs = computed(() => [{ label: '全部', value: -1 }, ...statusOptions.value]) // 状态标签
+const currentStatus = computed(() => statusTabs.value[statusTabIndex.value]?.value ?? -1) // 当前状态筛选
+const listSupported = computed(() => !!props.taskId) // 记录分页接口仅支持任务维度
 const inProcessStatuses: number[] = [
   IoTOtaTaskRecordStatusEnum.PENDING.value,
   IoTOtaTaskRecordStatusEnum.PUSHED.value,
@@ -108,12 +136,15 @@ async function getStatistics() {
 
 /** 查询升级记录 */
 async function queryList(pageNo: number, pageSize: number) {
+  if (!props.taskId) {
+    pagingRef.value?.completeByTotal([], 0)
+    return
+  }
   try {
     const data = await getOtaTaskRecordPage({
       pageNo,
       pageSize,
       taskId: props.taskId ? Number(props.taskId) : undefined,
-      firmwareId: props.firmwareId ? Number(props.firmwareId) : undefined,
       status: currentStatus.value === -1 ? undefined : currentStatus.value,
     })
     pagingRef.value?.completeByTotal(data.list, data.total)
@@ -129,18 +160,20 @@ function canCancel(item: OtaTaskRecord) {
 
 /** 切换状态 */
 function handleStatus(status: number) {
-  currentStatus.value = status
+  const index = statusTabs.value.findIndex(item => item.value === status)
+  statusTabIndex.value = index === -1 ? 0 : index
   pagingRef.value?.reload()
 }
 
 /** 状态筛选变更 */
-function handleStatusChange() {
+function handleStatusChange({ index }: { index: number }) {
+  statusTabIndex.value = index
   pagingRef.value?.reload()
 }
 
 /** 取消升级记录 */
 async function handleCancel(item: OtaTaskRecord) {
-  if (!item.id) {
+  if (!item.id || cancelingId.value) {
     return
   }
   try {

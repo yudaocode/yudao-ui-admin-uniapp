@@ -12,10 +12,11 @@
     </view>
     <wd-picker
       v-model:visible="visible"
-      :model-value="modelValue"
+      :model-value="pickerModelValue"
       :columns="resolvedColumns"
       :label-key="labelKey"
       :value-key="valueKey"
+      :root-portal="rootPortal"
       @confirm="handleConfirm"
     />
   </view>
@@ -38,6 +39,7 @@ const props = withDefaults(defineProps<{
   placeholder?: string // 未选择时占位（无 allOption 的自定义选项用，如「请选择邮箱账号」）
   labelKey?: string // 选项展示字段名，默认 label
   valueKey?: string // 选项值字段名，默认 value
+  rootPortal?: boolean // 是否脱离当前层级，避免嵌套弹层 fixed 失效
 }>(), {
   label: '',
   dictKind: 'int',
@@ -47,11 +49,15 @@ const props = withDefaults(defineProps<{
   placeholder: '请选择',
   labelKey: 'label',
   valueKey: 'value',
+  rootPortal: true,
 })
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: any): void }>()
 
 const visible = ref(false) // 选择弹层显示状态
+const pickerModelValue = computed(() => // Wot picker 使用数组值，业务层保持标量
+  props.modelValue == null || props.modelValue === '' ? [] : [props.modelValue],
+)
 
 const resolvedColumns = computed(() => { // 选项：优先 columns，其次按字典生成；allOption 时前插「全部」
   const base = props.columns

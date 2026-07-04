@@ -29,6 +29,11 @@ export function getSmsTemplatePage(params: PageParam) {
   return http.get<PageResult<SmsTemplate>>('/system/sms-template/page', params)
 }
 
+/** 获取短信模板精简列表 */
+export function getSimpleSmsTemplateList() {
+  return http.get<SmsTemplate[]>('/system/sms-template/simple-list')
+}
+
 /** 获取短信模板详情 */
 export function getSmsTemplate(id: number) {
   return http.get<SmsTemplate>(`/system/sms-template/get?id=${id}`)

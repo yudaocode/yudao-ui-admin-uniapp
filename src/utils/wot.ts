@@ -139,7 +139,7 @@ function isFormRuleArray(rules: WotFormRule | readonly WotFormRule[]): rules is 
 
 // ==================== Picker 选择器 ====================
 
-export type WotPickerValue = number | string
+export type WotPickerValue = boolean | number | string
 
 export interface WotPickerDisplayOptions {
   labelKey?: string // 展示文本字段名，默认读取 label
@@ -150,11 +150,16 @@ export interface WotPickerDisplayOptions {
 /** 获取 picker 在 wd-form-item 上展示的 value；未选择时返回空字符串以触发 placeholder 样式 */
 export function getWotPickerFormValue(
   columns: unknown[],
-  value?: null | WotPickerValue,
+  value?: null | WotPickerValue | WotPickerValue[],
   options: WotPickerDisplayOptions = {},
 ) {
   if (value === undefined || value === null || value === '') {
     return ''
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0
+      ? value.map(item => getWotPickerDisplay(columns, item, options)).filter(Boolean).join('、')
+      : ''
   }
   return getWotPickerDisplay(columns, value, options)
 }

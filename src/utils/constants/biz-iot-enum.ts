@@ -173,6 +173,35 @@ export const IotRuleSceneTriggerConditionParameterOperatorEnum = {
 /** 操作符选项（场景联动比较条件） */
 export const operatorOptions = Object.values(IotRuleSceneTriggerConditionParameterOperatorEnum).map(item => ({ label: item.name, value: item.value })) // 操作符选项
 
+/** 场景联动触发条件类型枚举 */
+export const IotRuleSceneTriggerConditionTypeEnum = {
+  DEVICE_STATUS: 1,
+  DEVICE_PROPERTY: 2,
+  CURRENT_TIME: 3,
+} as const
+
+export const conditionTypeOptions = [ // 触发条件类型选项
+  { value: IotRuleSceneTriggerConditionTypeEnum.DEVICE_STATUS, label: '设备状态' },
+  { value: IotRuleSceneTriggerConditionTypeEnum.DEVICE_PROPERTY, label: '设备属性' },
+  { value: IotRuleSceneTriggerConditionTypeEnum.CURRENT_TIME, label: '当前时间' },
+]
+
+/** 场景联动触发时间操作符枚举 */
+export const IotRuleSceneTriggerTimeOperatorEnum = {
+  BEFORE_TIME: { name: '在时间之前', value: 'before_time' },
+  AFTER_TIME: { name: '在时间之后', value: 'after_time' },
+  BETWEEN_TIME: { name: '在时间之间', value: 'between_time' },
+  AT_TIME: { name: '在指定时间', value: 'at_time' },
+  TODAY: { name: '在今日之间', value: 'today' },
+} as const
+
+export const timeOperatorOptions = Object.values(IotRuleSceneTriggerTimeOperatorEnum).map(item => ({ label: item.name, value: item.value })) // 当前时间操作符
+
+export const statusOperatorOptions = [ // 设备状态操作符
+  { label: IotRuleSceneTriggerConditionParameterOperatorEnum.EQUALS.name, value: IotRuleSceneTriggerConditionParameterOperatorEnum.EQUALS.value },
+  { label: IotRuleSceneTriggerConditionParameterOperatorEnum.NOT_EQUALS.name, value: IotRuleSceneTriggerConditionParameterOperatorEnum.NOT_EQUALS.value },
+]
+
 /** 设备在线状态选项（设备状态变更触发器的比较值） */
 export const deviceStatusOptions = [ // 设备在线状态
   { label: '在线', value: '1' },
@@ -245,7 +274,7 @@ export function getModbusFunctionCodeLabel(code?: number) {
   return ModbusFunctionCodeOptions.find(item => item.value === code)?.label || String(code)
 }
 
-/** Modbus 原始数据类型选项 */ // 值与 PC views/iot/utils/constants.ts 1:1
+/** Modbus 原始数据类型选项 */
 export const ModbusRawDataTypeOptions = [
   { value: 'INT16', label: 'INT16', description: '有符号16位整数', registerCount: 1 },
   { value: 'UINT16', label: 'UINT16', description: '无符号16位整数', registerCount: 1 },
@@ -257,13 +286,13 @@ export const ModbusRawDataTypeOptions = [
   { value: 'STRING', label: 'STRING', description: '字符串', registerCount: 0 },
 ]
 
-/** Modbus 字节序选项 - 16位 */ // 值与 PC views/iot/utils/constants.ts 1:1
+/** Modbus 字节序选项 - 16位 */
 export const ModbusByteOrder16Options = [
   { value: 'AB', label: 'AB', description: '大端序' },
   { value: 'BA', label: 'BA', description: '小端序' },
 ]
 
-/** Modbus 字节序选项 - 32位 */ // 值与 PC views/iot/utils/constants.ts 1:1
+/** Modbus 字节序选项 - 32位 */
 export const ModbusByteOrder32Options = [
   { value: 'ABCD', label: 'ABCD', description: '大端序' },
   { value: 'CDAB', label: 'CDAB', description: '大端字交换' },
@@ -271,7 +300,7 @@ export const ModbusByteOrder32Options = [
   { value: 'BADC', label: 'BADC', description: '小端字交换' },
 ]
 
-/** 根据数据类型获取字节序选项 */ // 32 位与 64 位复用 32 位字节序，与 PC 一致
+/** 根据数据类型获取字节序选项 */
 export function getByteOrderOptions(rawDataType?: string) {
   if (rawDataType && ['INT32', 'UINT32', 'FLOAT', 'DOUBLE'].includes(rawDataType)) {
     return ModbusByteOrder32Options

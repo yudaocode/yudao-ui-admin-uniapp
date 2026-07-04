@@ -7,22 +7,56 @@
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 设备分组列表 -->
-    <z-paging ref="pagingRef" v-model="list" :fixed="false" class="min-h-0 flex-1" :default-page-size="10" :refresher-enabled="true" :inside-more="true" :loading-more-default-as-loading="true" empty-view-text="暂无设备分组数据" @query="queryList">
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无设备分组数据"
+      @query="queryList"
+    >
       <view class="p-24rpx">
-        <view v-for="item in list" :key="item.id" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm" @click="handleDetail(item)">
-          <view class="mb-16rpx flex items-center justify-between">
-            <view class="text-32rpx text-[#333] font-semibold">{{ item.name }}</view>
-            <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
+        <view
+          v-for="item in list"
+          :key="item.id"
+          class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          @click="handleDetail(item)"
+        >
+          <view class="mb-16rpx flex items-center justify-between gap-16rpx">
+            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
+              {{ item.name }}
+            </view>
+            <view class="shrink-0">
+              <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
+            </view>
           </view>
-          <view class="mb-12rpx flex text-28rpx text-[#666]"><text class="mr-8rpx text-[#999]">设备数量：</text>{{ item.deviceCount || 0 }}</view>
-          <view class="mb-12rpx text-28rpx text-[#666]"><text class="mr-8rpx text-[#999]">描述：</text>{{ item.description || '-' }}</view>
-          <view class="text-24rpx text-[#999]">创建时间：{{ formatDateTime(item.createTime) || '-' }}</view>
+          <view class="mb-12rpx flex text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">设备数量：</text>
+            {{ item.deviceCount || 0 }}
+          </view>
+          <view class="mb-12rpx text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">描述：</text>
+            {{ item.description || '-' }}
+          </view>
+          <view class="text-24rpx text-[#999]">
+            创建时间：{{ formatDateTime(item.createTime) || '-' }}
+          </view>
         </view>
       </view>
     </z-paging>
 
     <!-- 新增按钮 -->
-    <wd-fab v-if="hasAccessByCodes(['iot:device-group:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+    <wd-fab
+      v-if="hasAccessByCodes(['iot:device-group:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
+      @click="handleAdd"
+    />
   </view>
 </template>
 
@@ -37,7 +71,12 @@ import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const list = ref<DeviceGroup[]>([]) // 列表数据

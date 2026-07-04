@@ -123,10 +123,21 @@
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['iot:data-sink:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:data-sink:update'])"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['iot:data-sink:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:data-sink:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -148,7 +159,12 @@ import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
@@ -165,38 +181,51 @@ function formatValue(value: any) {
 
 /** 格式化布尔值为是/否 */
 function formatBool(value: any) {
-  if (value === undefined || value === null)
+  if (value === undefined || value === null) {
     return '-'
+  }
   return value ? '是' : '否'
 }
 
 /** 格式化对象字段为 JSON 文本 */
 function formatObject(value: any) {
-  if (!value || typeof value !== 'object')
+  if (!value || typeof value !== 'object') {
     return '-'
-  if (!Object.keys(value).length)
+  }
+  if (!Object.keys(value).length) {
     return '-'
+  }
   return JSON.stringify(value)
 }
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/rule/data/sink/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/rule/data/sink/index')
+}
 
 /** 加载数据目的详情 */
 async function getDetail() {
-  if (!props.id || deleting.value)
+  if (!props.id || deleting.value) {
     return
+  }
   formData.value = await getDataSink(Number(props.id))
 }
 
 /** 编辑数据目的 */
-function handleEdit() { uni.navigateTo({ url: `/pages-iot/rule/data/sink/form/index?id=${props.id}` }) }
+function handleEdit() {
+  uni.navigateTo({ url: `/pages-iot/rule/data/sink/form/index?id=${props.id}` })
+}
 
 /** 删除数据目的 */
 async function handleDelete() {
-  if (!props.id)
+  if (!props.id) {
     return
-  try { await dialog.confirm({ title: '提示', msg: '确定要删除该数据目的吗？' }) } catch { return }
+  }
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定要删除该数据目的吗？' })
+  } catch {
+    return
+  }
   deleting.value = true
   try {
     await deleteDataSink(Number(props.id))
@@ -209,5 +238,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onShow(() => { getDetail() })
+onShow(() => {
+  getDetail()
+})
 </script>

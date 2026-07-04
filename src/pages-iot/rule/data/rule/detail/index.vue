@@ -21,10 +21,21 @@
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['iot:data-rule:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:data-rule:update'])"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['iot:data-rule:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['iot:data-rule:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -46,7 +57,12 @@ import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
@@ -55,23 +71,33 @@ const formData = ref<DataRule>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/rule/data/rule/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/rule/data/rule/index')
+}
 
 /** 加载数据规则详情 */
 async function getDetail() {
-  if (!props.id || deleting.value)
+  if (!props.id || deleting.value) {
     return
+  }
   formData.value = await getDataRule(Number(props.id))
 }
 
 /** 编辑数据规则 */
-function handleEdit() { uni.navigateTo({ url: `/pages-iot/rule/data/rule/form/index?id=${props.id}` }) }
+function handleEdit() {
+  uni.navigateTo({ url: `/pages-iot/rule/data/rule/form/index?id=${props.id}` })
+}
 
 /** 删除数据规则 */
 async function handleDelete() {
-  if (!props.id)
+  if (!props.id) {
     return
-  try { await dialog.confirm({ title: '提示', msg: '确定要删除该数据规则吗？' }) } catch { return }
+  }
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定要删除该数据规则吗？' })
+  } catch {
+    return
+  }
   deleting.value = true
   try {
     await deleteDataRule(Number(props.id))
@@ -84,5 +110,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onShow(() => { getDetail() })
+onShow(() => {
+  getDetail()
+})
 </script>

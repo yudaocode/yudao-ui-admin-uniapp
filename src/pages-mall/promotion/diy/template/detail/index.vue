@@ -43,7 +43,7 @@
         装修属性
       </view>
       <view class="whitespace-pre-wrap break-all rounded-8rpx bg-[#f7f7f7] p-16rpx text-24rpx text-[#666]">
-        {{ formatProperty(formData.property) }}
+        {{ formatJson(formData.property, '-') }}
       </view>
     </view>
 
@@ -79,6 +79,7 @@ import {
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
+import { formatJson } from '@/utils/format'
 
 const props = defineProps<{ id?: number | any }>()
 
@@ -96,21 +97,6 @@ const formData = ref<PromotionDiyTemplate>({} as PromotionDiyTemplate) // 详情
 const deleting = ref(false) // 删除状态
 const using = ref(false) // 使用模板状态
 const canUse = computed(() => !formData.value.used && hasAccessByCodes(['promotion:diy-template:use']))
-
-/** 格式化装修属性 */
-function formatProperty(value: any) {
-  if (value == null || value === '') {
-    return '-'
-  }
-  if (typeof value === 'string') {
-    return value
-  }
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return String(value)
-  }
-}
 
 /** 返回上一页 */
 function handleBack() {

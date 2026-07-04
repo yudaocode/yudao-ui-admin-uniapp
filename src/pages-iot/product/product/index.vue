@@ -39,9 +39,8 @@
               <text class="mr-8rpx text-[#999]">接入协议：</text>
               <dict-tag :type="DICT_TYPE.IOT_PROTOCOL_TYPE" :value="item.protocolType" />
             </view>
-            <view class="flex items-center justify-between text-24rpx text-[#999]">
-              <text>设备数量：{{ item.deviceCount || 0 }}</text>
-              <text>{{ formatDateTime(item.createTime) || '-' }}</text>
+            <view class="text-right text-24rpx text-[#999]">
+              {{ formatDateTime(item.createTime) || '-' }}
             </view>
           </view>
         </view>
@@ -64,7 +63,12 @@ import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const list = ref<Product[]>([]) // 列表数据

@@ -207,6 +207,7 @@ import { getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import { formatJson } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
 definePage({
@@ -355,7 +356,7 @@ async function handleTest() {
   testing.value = true
   try {
     const data = await testWorkflow({ id: testForm.id, ...input })
-    testResult.value = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+    testResult.value = formatJson(data)
   } finally {
     testing.value = false
   }

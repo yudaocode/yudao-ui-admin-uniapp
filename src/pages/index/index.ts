@@ -22,6 +22,7 @@ export interface MenuItem {
   url?: string // 跳转路径
   iconColor?: string // 图标颜色（可选）
   permission?: string // 权限标识（可选）
+  permissions?: string[] // 权限标识列表（任一匹配即展示）
   onlyPc?: boolean // 仅 PC 端可用（移动端点击跳转至提示页）
 }
 
@@ -79,6 +80,15 @@ function resolveItem(item: MenuItem): MenuItem {
   return item
 }
 
+/** 判断菜单是否有访问权限 */
+function hasMenuAccess(item: MenuItem, hasAccessByCodes: (codes: string[]) => boolean) {
+  const permissions = [
+    item.permission,
+    ...(item.permissions || []),
+  ].filter(Boolean) as string[]
+  return permissions.length === 0 || hasAccessByCodes(permissions)
+}
+
 /**
  * 获取所有菜单分组数据（带权限过滤）
  *
@@ -93,7 +103,7 @@ export function getMenuGroups(): MenuGroup[] {
     for (const sub of group.subGroups) {
       // 没有配置权限的菜单项默认展示
       const menus = sub.menus
-        .filter(menu => !menu.permission || hasAccessByCodes([menu.permission]))
+        .filter(menu => hasMenuAccess(menu, hasAccessByCodes))
         .map(resolveItem)
       if (menus.length > 0) {
         subGroups.push({ key: sub.key, name: sub.name, menus })

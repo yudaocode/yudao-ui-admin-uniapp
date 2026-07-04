@@ -12,7 +12,12 @@
           </wd-form-item>
           <wd-form-item title="分组状态" title-width="200rpx" center prop="status">
             <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
@@ -46,7 +51,12 @@ import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑设备分组' : '新增设备分组')
@@ -77,6 +87,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {

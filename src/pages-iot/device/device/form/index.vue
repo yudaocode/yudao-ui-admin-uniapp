@@ -7,25 +7,54 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <EntityPicker v-model="formData.productId" label="所属产品" prop="productId" :columns="productOptions" placeholder="请选择产品" label-width="220rpx" :disabled="!!props.id" />
+          <yd-form-picker
+            v-model="formData.productId"
+            label="所属产品"
+            prop="productId"
+            :columns="productOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择产品"
+            label-width="220rpx"
+            :disabled="!!props.id"
+          />
           <wd-form-item title="DeviceName" title-width="220rpx" prop="deviceName">
             <wd-input v-model="formData.deviceName" placeholder="请输入 DeviceName" :disabled="!!props.id" clearable />
           </wd-form-item>
           <wd-form-item title="备注名称" title-width="220rpx" prop="nickname">
             <wd-input v-model="formData.nickname" placeholder="请输入备注名称" clearable />
           </wd-form-item>
-          <EntityPicker v-model="formData.groupIds" label="设备分组" :columns="groupOptions" type="checkbox" placeholder="请选择设备分组" label-width="220rpx" />
+          <wd-form-item title="设备图片" title-width="220rpx" prop="picUrl">
+            <yd-upload-img v-model="formData.picUrl" directory="iot/device" />
+          </wd-form-item>
+          <DeviceGroupPicker
+            v-model="formData.groupIds"
+            label-width="220rpx"
+          />
           <wd-form-item title="设备序列号" title-width="220rpx" prop="serialNumber">
             <wd-input v-model="formData.serialNumber" placeholder="请输入设备序列号" clearable />
           </wd-form-item>
-          <wd-form-item title="经度" title-width="220rpx" prop="longitude">
-            <wd-input v-model="formData.longitude" placeholder="请输入经度" clearable />
+          <wd-form-item title="经度" title-width="220rpx" prop="longitude" center>
+            <wd-input-number
+              v-model="longitudeModel"
+              :min="-180"
+              :max="180"
+              :step="0.000001"
+              :precision="6"
+              input-width="280rpx"
+              allow-null
+            />
           </wd-form-item>
-          <wd-form-item title="纬度" title-width="220rpx" prop="latitude">
-            <wd-input v-model="formData.latitude" placeholder="请输入纬度" clearable />
-          </wd-form-item>
-          <wd-form-item title="设备地址" title-width="220rpx" prop="address">
-            <wd-textarea v-model="formData.address" placeholder="请输入设备地址" :maxlength="200" show-word-limit />
+          <wd-form-item title="纬度" title-width="220rpx" prop="latitude" center>
+            <wd-input-number
+              v-model="latitudeModel"
+              :min="-90"
+              :max="90"
+              :step="0.000001"
+              :precision="6"
+              input-width="280rpx"
+              allow-null
+            />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -43,36 +72,44 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Device } from '@/api/iot/device/device'
-import type { DeviceGroup } from '@/api/iot/device/group'
 import type { Product } from '@/api/iot/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
 import { createDevice, getDevice, updateDevice } from '@/api/iot/device/device'
-import { getSimpleDeviceGroupList } from '@/api/iot/device/group'
 import { getSimpleProductList } from '@/api/iot/product/product'
-import EntityPicker from '@/pages-iot/components/entity-picker.vue'
+import DeviceGroupPicker from '@/pages-iot/device/group/components/device-group-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
+import { toFiniteNumber } from '@/utils/format'
+import { isEmptyValue } from '@/utils/is'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑设备' : '新增设备')
+type DeviceFormData = Omit<Device, 'longitude' | 'latitude'> & {
+  longitude?: number | string
+  latitude?: number | string
+}
 const formLoading = ref(false) // 表单提交状态
 const productOptions = ref<Product[]>([]) // 产品选项
-const groupOptions = ref<DeviceGroup[]>([]) // 设备分组选项
-const formData = ref<Device>({
+const formData = ref<DeviceFormData>({
   id: undefined,
   productId: undefined,
   deviceName: '',
   nickname: '',
+  picUrl: '',
   deviceType: undefined,
   serialNumber: '',
-  longitude: undefined,
-  latitude: undefined,
-  address: '',
+  longitude: '',
+  latitude: '',
   config: '',
   groupIds: [],
 }) // 表单数据
@@ -83,10 +120,18 @@ const formSchema = createFormSchema({
     { pattern: /^[\w.\-:@]{4,32}$/, message: 'DeviceName 长度 4~32，支持字母、数字和 _-.:@' },
   ],
   nickname: [{ pattern: /^.{2,64}$/, message: '备注名称长度为 2~64 个字符' }],
-  longitude: [{ validator: value => Number(value) >= -180 && Number(value) <= 180, message: '经度需在 -180 ~ 180 之间' }],
-  latitude: [{ validator: value => Number(value) >= -90 && Number(value) <= 90, message: '纬度需在 -90 ~ 90 之间' }],
+  longitude: [{ validator: validateLongitude, message: '经度需在 -180 ~ 180 之间' }],
+  latitude: [{ validator: validateLatitude, message: '纬度需在 -90 ~ 90 之间' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
+const longitudeModel = computed({
+  get: () => formData.value.longitude ?? '',
+  set: value => formData.value.longitude = value ?? '',
+}) // 经度输入模型
+const latitudeModel = computed({
+  get: () => formData.value.latitude ?? '',
+  set: value => formData.value.latitude = value ?? '',
+}) // 纬度输入模型
 
 watch(
   () => formData.value.productId,
@@ -99,27 +144,71 @@ watch(
 )
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/device/device/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/device/device/index')
+}
+
+/** 校验经度 */
+function validateLongitude(value: unknown, model: Record<string, any>) {
+  if (!isEmptyValue(value)) {
+    const longitude = Number(value)
+    if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
+      return false
+    }
+    if (isEmptyValue(model.latitude)) {
+      return '请同时填写纬度'
+    }
+  }
+  return true
+}
+
+/** 校验纬度 */
+function validateLatitude(value: unknown, model: Record<string, any>) {
+  if (!isEmptyValue(value)) {
+    const latitude = Number(value)
+    if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+      return false
+    }
+    if (isEmptyValue(model.longitude)) {
+      return '请同时填写经度'
+    }
+  }
+  return true
+}
+
+/** 表单详情数据 */
+function normalizeFormData(data: Device): DeviceFormData {
+  return {
+    ...data,
+    picUrl: data.picUrl || '',
+    longitude: data.longitude ?? '',
+    latitude: data.latitude ?? '',
+    groupIds: data.groupIds || [],
+  }
+}
 
 /** 加载设备详情 */
 async function getDetail() {
-  if (!props.id)
+  if (!props.id) {
     return
-  formData.value = await getDevice(Number(props.id))
+  }
+  formData.value = normalizeFormData(await getDevice(Number(props.id)))
 }
 
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
-  if (!valid)
+  if (!valid) {
     return
+  }
+
   formLoading.value = true
   try {
-    const data = { ...formData.value }
-    if (data.longitude !== undefined && data.longitude !== '')
-      data.longitude = Number(data.longitude)
-    if (data.latitude !== undefined && data.latitude !== '')
-      data.latitude = Number(data.latitude)
+    const data: Device = {
+      ...formData.value,
+      longitude: toFiniteNumber(formData.value.longitude),
+      latitude: toFiniteNumber(formData.value.latitude),
+    }
     if (props.id) {
       await updateDevice(data)
       toast.success('修改成功')
@@ -137,7 +226,6 @@ async function handleSubmit() {
 /** 初始化 */
 onMounted(async () => {
   productOptions.value = await getSimpleProductList()
-  groupOptions.value = await getSimpleDeviceGroupList()
-  getDetail()
+  await getDetail()
 })
 </script>

@@ -9,7 +9,13 @@
         <wd-cell-group border>
           <wd-form-item title="ProductKey" title-width="220rpx" prop="productKey">
             <view class="w-full flex items-center gap-12rpx">
-              <wd-input v-model="formData.productKey" class="min-w-0 flex-1" placeholder="请输入 ProductKey" :disabled="!!props.id" clearable />
+              <wd-input
+                v-model="formData.productKey"
+                class="min-w-0 flex-1"
+                placeholder="请输入 ProductKey"
+                :disabled="!!props.id"
+                clearable
+              />
               <wd-button v-if="!props.id" size="small" type="primary" variant="plain" @click="generateProductKey">
                 生成
               </wd-button>
@@ -18,31 +24,51 @@
           <wd-form-item title="产品名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入产品名称" clearable />
           </wd-form-item>
-          <EntityPicker v-model="formData.categoryId" label="产品分类" prop="categoryId" :columns="categoryOptions" placeholder="请选择产品分类" label-width="220rpx" />
-          <wd-form-item title="设备类型" title-width="220rpx" center prop="deviceType">
-            <wd-radio-group v-model="formData.deviceType" type="button" :disabled="!!props.id">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <wd-form-item v-if="showNetType" title="联网方式" title-width="220rpx" center prop="netType">
-            <wd-radio-group v-model="formData.netType" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.IOT_NET_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <wd-form-item title="协议类型" title-width="220rpx" center prop="protocolType">
-            <wd-radio-group v-model="formData.protocolType" type="button">
-              <wd-radio v-for="dict in getStrDictOptions(DICT_TYPE.IOT_PROTOCOL_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.categoryId"
+            label="产品分类"
+            prop="categoryId"
+            :columns="categoryOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择产品分类"
+            label-width="220rpx"
+          />
+          <yd-form-picker
+            v-model="formData.deviceType"
+            label="设备类型"
+            prop="deviceType"
+            :dict-type="DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE"
+            placeholder="请选择设备类型"
+            label-width="220rpx"
+            :disabled="!!props.id"
+          />
+          <yd-form-picker
+            v-if="showNetType"
+            v-model="formData.netType"
+            label="联网方式"
+            prop="netType"
+            :dict-type="DICT_TYPE.IOT_NET_TYPE"
+            placeholder="请选择联网方式"
+            label-width="220rpx"
+          />
+          <yd-form-picker
+            v-model="formData.protocolType"
+            label="协议类型"
+            prop="protocolType"
+            :dict-type="DICT_TYPE.IOT_PROTOCOL_TYPE"
+            dict-kind="str"
+            placeholder="请选择协议类型"
+            label-width="220rpx"
+          />
           <wd-form-item title="序列化类型" title-width="220rpx" center prop="serializeType">
             <wd-radio-group v-model="formData.serializeType" type="button">
-              <wd-radio v-for="dict in getStrDictOptions(DICT_TYPE.IOT_SERIALIZE_TYPE)" :key="dict.value" :value="dict.value">
+              <wd-radio
+                v-for="dict in getStrDictOptions(DICT_TYPE.IOT_SERIALIZE_TYPE)"
+                :key="dict.value"
+                :name="dict.value"
+                :value="dict.value"
+              >
                 {{ dict.label }}
               </wd-radio>
             </wd-radio-group>
@@ -51,10 +77,10 @@
             <wd-switch v-model="formData.registerEnabled" />
           </wd-form-item>
           <wd-form-item title="产品图标" title-width="220rpx" prop="icon">
-            <wd-input v-model="formData.icon" placeholder="请输入图标 URL" clearable />
+            <yd-upload-img v-model="formData.icon" directory="iot/product" />
           </wd-form-item>
           <wd-form-item title="产品图片" title-width="220rpx" prop="picUrl">
-            <wd-input v-model="formData.picUrl" placeholder="请输入图片 URL" clearable />
+            <yd-upload-img v-model="formData.picUrl" directory="iot/product" />
           </wd-form-item>
           <wd-form-item title="产品描述" title-width="220rpx" prop="description">
             <wd-textarea v-model="formData.description" placeholder="请输入产品描述" :maxlength="500" show-word-limit />
@@ -79,17 +105,27 @@ import type { Product } from '@/api/iot/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleProductCategoryList } from '@/api/iot/product/category'
-import { createProduct, DeviceTypeEnum, getProduct, ProtocolTypeEnum, SerializeTypeEnum, updateProduct } from '@/api/iot/product/product'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
-import EntityPicker from '@/pages-iot/components/entity-picker.vue'
+import {
+  createProduct,
+  DeviceTypeEnum,
+  getProduct,
+  ProtocolTypeEnum,
+  SerializeTypeEnum,
+  updateProduct,
+} from '@/api/iot/product/product'
+import { getStrDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
-import { ProductStatusEnum } from '@/pages-iot/utils/constants'
+import { DICT_TYPE, ProductStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | any }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑产品' : '新增产品')
@@ -120,10 +156,14 @@ const formSchema = createFormSchema({
   serializeType: [{ required: true, message: '序列化类型不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const showNetType = computed(() => [DeviceTypeEnum.DEVICE, DeviceTypeEnum.GATEWAY].includes(formData.value.deviceType as number)) // 仅直连/网关需要联网方式
+const showNetType = computed(() => {
+  return [DeviceTypeEnum.DEVICE, DeviceTypeEnum.GATEWAY].includes(formData.value.deviceType as number)
+}) // 仅直连/网关需要联网方式
 
 /** 返回上一页 */
-function handleBack() { navigateBackPlus('/pages-iot/product/product/index') }
+function handleBack() {
+  navigateBackPlus('/pages-iot/product/product/index')
+}
 
 /** 生成 ProductKey */
 function generateProductKey() {
@@ -142,13 +182,16 @@ async function getDetail() {
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
-  if (!valid)
+  if (!valid) {
     return
+  }
+
   formLoading.value = true
   try {
     const data = { ...formData.value }
-    if (!showNetType.value)
+    if (!showNetType.value) {
       data.netType = undefined // 网关子设备不需要联网方式
+    }
     if (props.id) {
       await updateProduct(data)
       toast.success('修改成功')
@@ -166,6 +209,6 @@ async function handleSubmit() {
 /** 初始化 */
 onMounted(async () => {
   categoryOptions.value = await getSimpleProductCategoryList()
-  getDetail()
+  await getDetail()
 })
 </script>
