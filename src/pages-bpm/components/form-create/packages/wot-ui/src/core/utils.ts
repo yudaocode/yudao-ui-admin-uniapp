@@ -6,6 +6,7 @@ import {
   isCalendarTypeName,
   isCascaderTypeName,
   isColorPickerTypeName,
+  isDatePickerArrayValueType,
   isDatePickerTypeName,
   isDividerTypeName,
   isHiddenTypeName,
@@ -55,7 +56,7 @@ export function isInputNumberType(rule: NormalizedFormCreateRule) {
 }
 
 export function isDatePickerType(rule: NormalizedFormCreateRule) {
-  return isDatePickerTypeName(rule.type)
+  return isDatePickerTypeName(rule.type) && !isDatePickerArrayValueType(rule.type, rule.props)
 }
 
 export function isTimePickerType(rule: NormalizedFormCreateRule) {
@@ -67,7 +68,7 @@ export function isCascaderType(rule: NormalizedFormCreateRule) {
 }
 
 export function isCalendarType(rule: NormalizedFormCreateRule) {
-  return isCalendarTypeName(rule.type)
+  return isCalendarTypeName(rule.type) || isDatePickerArrayValueType(rule.type, rule.props)
 }
 
 export function isButtonType(rule: NormalizedFormCreateRule) {

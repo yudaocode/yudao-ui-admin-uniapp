@@ -164,3 +164,7 @@ export function isCalendarArrayValueType(type: string, props?: Record<string, an
     || calendarType === 'multiple'
     || calendarType.includes('range')
 }
+
+export function isDatePickerArrayValueType(type?: string, props?: Record<string, any>) {
+  return isDatePickerTypeName(type) && isCalendarArrayValueType(type || '', props)
+}

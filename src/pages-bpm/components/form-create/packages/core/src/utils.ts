@@ -9,6 +9,7 @@ import {
   isCalendarArrayValueType,
   isCalendarTypeName,
   isCascaderTypeName,
+  isDatePickerArrayValueType,
   isInputNumberTypeName,
   isMultipleValueType,
   isSliderRangeTypeName,
@@ -118,6 +119,9 @@ export function getDefaultValue(rule: NormalizedFormCreateRule): FormCreateValue
     if (isCalendarArrayValueType(rule.type, rule.props)) {
       return []
     }
+  }
+  if (isDatePickerArrayValueType(rule.type, rule.props)) {
+    return []
   }
   return getDefaultValueByType(rule.type)
 }
