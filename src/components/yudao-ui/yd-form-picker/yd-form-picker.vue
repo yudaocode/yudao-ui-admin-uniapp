@@ -49,6 +49,7 @@
     type="checkbox"
     :filterable="filterable"
     :root-portal="rootPortal"
+    :scroll-into-view="!rootPortal"
     @confirm="handleSelectConfirm"
   />
 </template>
