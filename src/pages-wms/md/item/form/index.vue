@@ -45,7 +45,7 @@
         >
           <view class="flex items-center justify-between border-b border-b-[#f5f5f5] px-24rpx py-20rpx">
             <text class="text-28rpx text-[#333] font-semibold">规格 {{ index + 1 }}</text>
-            <wd-button size="small" type="error" @click="handleDeleteSku(index)">
+            <wd-button size="small" type="danger" @click="handleDeleteSku(index)">
               删除
             </wd-button>
           </view>

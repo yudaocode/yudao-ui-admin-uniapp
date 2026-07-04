@@ -65,10 +65,10 @@
           hide-cancel
         />
         <view v-if="showToolbar" class="yd-tree-select__toolbar-actions">
-          <wd-button size="small" plain @click="handleToggleAll">
+          <wd-button size="small" variant="plain" @click="handleToggleAll">
             {{ allChecked ? '全不选' : '全选' }}
           </wd-button>
-          <wd-button size="small" plain @click="handleToggleExpand">
+          <wd-button size="small" variant="plain" @click="handleToggleExpand">
             {{ allExpanded ? '全部折叠' : '全部展开' }}
           </wd-button>
         </view>

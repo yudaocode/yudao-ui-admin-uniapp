@@ -57,7 +57,7 @@
             </view>
             <!-- 操作按钮 -->
             <view class="mt-16rpx flex justify-end gap-16rpx">
-              <wd-button size="small" type="primary" plain @click.stop="openFile(item.url)">
+              <wd-button size="small" type="primary" variant="plain" @click.stop="openFile(item.url)">
                 打开
               </wd-button>
               <wd-button size="small" type="info" @click.stop="handleCopyUrl(item)">

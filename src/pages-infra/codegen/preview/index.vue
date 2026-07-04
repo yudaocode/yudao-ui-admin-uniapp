@@ -17,7 +17,7 @@
         <text class="mx-12rpx min-w-0 flex-1 truncate text-28rpx text-[#333]">{{ currentFileName || '请选择文件' }}</text>
         <wd-icon name="arrow-down" size="28rpx" color="#999" />
       </view>
-      <wd-button size="small" plain :disabled="!current" @click="handleCopy">
+      <wd-button size="small" variant="plain" :disabled="!current" @click="handleCopy">
         复制
       </wd-button>
     </view>

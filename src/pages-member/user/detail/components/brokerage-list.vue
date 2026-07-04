@@ -20,7 +20,7 @@
             />
             <view
               v-else
-              class="h-88rpx w-88rpx shrink-0 flex items-center justify-center rounded-full bg-[#1890ff] text-34rpx text-white"
+              class="h-88rpx w-88rpx flex shrink-0 items-center justify-center rounded-full bg-[#1890ff] text-34rpx text-white"
             >
               {{ (item.nickname || '推').charAt(0) }}
             </view>
@@ -41,7 +41,7 @@
         </view>
         <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无推广用户" />
         <view v-if="hasMore" class="pb-24rpx">
-          <wd-button block plain :loading="loading" @click="loadMore">
+          <wd-button block variant="plain" :loading="loading" @click="loadMore">
             加载更多
           </wd-button>
         </view>

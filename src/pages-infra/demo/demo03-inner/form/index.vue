@@ -49,7 +49,7 @@
       <!-- 子表：学生课程（一对多） -->
       <view class="mt-20rpx flex items-center justify-between px-24rpx py-16rpx">
         <text class="text-28rpx text-[#333] font-semibold">学生课程</text>
-        <wd-button size="small" type="primary" plain @click="addCourse">
+        <wd-button size="small" type="primary" variant="plain" @click="addCourse">
           添加课程
         </wd-button>
       </view>
@@ -64,7 +64,7 @@
         >
           <view class="mb-16rpx flex items-center justify-between">
             <text class="text-28rpx text-[#666]">课程 {{ index + 1 }}</text>
-            <wd-button size="small" type="danger" plain @click="removeCourse(index)">
+            <wd-button size="small" type="danger" variant="plain" @click="removeCourse(index)">
               删除
             </wd-button>
           </view>

@@ -57,8 +57,7 @@
             <wd-button
               v-for="channel in group.channels"
               :key="channel.code"
-              type="primary"
-              plain
+              type="primary" variant="plain"
               :loading="submitLoading && currentChannelCode === channel.code"
               @click="submit(channel.code)"
             >

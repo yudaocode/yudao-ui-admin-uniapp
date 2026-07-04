@@ -83,8 +83,7 @@
               v-if="item.payStatus && !item.payRefundId"
               class="flex-1"
               size="small"
-              type="warning"
-              plain
+              type="warning" variant="plain"
               :loading="refundingId === item.id"
               @click="handleRefund(item)"
             >

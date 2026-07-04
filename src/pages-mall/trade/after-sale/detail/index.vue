@@ -142,13 +142,13 @@
     <!-- 底部操作按钮：按售后状态 + 权限显式展示，每个动作各自的按钮 + 处理函数 -->
     <view v-if="formData && (canDisagree || canAgree || canReceive || canRefund)" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="canDisagree" class="flex-1" type="error" @click="openReject('disagree')">
+        <wd-button v-if="canDisagree" class="flex-1" type="danger" @click="openReject('disagree')">
           拒绝售后
         </wd-button>
         <wd-button v-if="canAgree" class="flex-1" type="primary" :loading="submitting" @click="handleAgree">
           同意售后
         </wd-button>
-        <wd-button v-if="canReceive" class="flex-1" type="error" @click="openReject('refuse')">
+        <wd-button v-if="canReceive" class="flex-1" type="danger" @click="openReject('refuse')">
           拒绝收货
         </wd-button>
         <wd-button v-if="canReceive" class="flex-1" type="primary" :loading="submitting" @click="handleReceive">

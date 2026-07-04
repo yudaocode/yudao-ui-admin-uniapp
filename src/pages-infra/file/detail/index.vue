@@ -36,7 +36,7 @@
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button class="flex-1" type="primary" plain @click="openFile(formData?.url)">
+        <wd-button class="flex-1" type="primary" variant="plain" @click="openFile(formData?.url)">
           打开
         </wd-button>
         <wd-button class="flex-1" type="info" @click="handleCopyUrl">

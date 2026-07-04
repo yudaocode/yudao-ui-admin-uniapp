@@ -33,8 +33,7 @@
             <wd-button
               v-if="hasAccessByCodes(['promotion:coupon:delete'])"
               size="small"
-              type="error"
-              plain
+              type="danger" variant="plain"
               @click="handleDelete(item)"
             >
               回收
@@ -43,7 +42,7 @@
         </view>
         <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无优惠券" />
         <view v-if="hasMore" class="pb-24rpx">
-          <wd-button block plain :loading="loading" @click="loadMore">
+          <wd-button block variant="plain" :loading="loading" @click="loadMore">
             加载更多
           </wd-button>
         </view>

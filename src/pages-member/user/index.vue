@@ -16,8 +16,8 @@
         <text v-if="selectMode" class="text-26rpx text-[#666]">
           已选 {{ selectedIds.length }} 人
         </text>
-        <view v-else></view>
-        <wd-button size="small" type="primary" plain @click="handleToggleSelectMode">
+        <view v-else />
+        <wd-button size="small" type="primary" variant="plain" @click="handleToggleSelectMode">
           {{ selectMode ? '退出选择' : '批量发券' }}
         </wd-button>
       </view>
@@ -126,7 +126,7 @@
     <!-- 批量发券按钮 -->
     <view v-if="selectMode" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button class="flex-1" type="info" plain @click="handleCancelSelect">
+        <wd-button class="flex-1" type="info" variant="plain" @click="handleCancelSelect">
           取消
         </wd-button>
         <wd-button class="flex-1" type="primary" @click="handleOpenCouponSend">

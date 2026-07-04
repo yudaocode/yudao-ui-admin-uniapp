@@ -22,7 +22,7 @@
         </view>
         <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无签到记录" />
         <view v-if="hasMore" class="pb-24rpx">
-          <wd-button plain block :loading="loading" @click="loadMore">
+          <wd-button variant="plain" block :loading="loading" @click="loadMore">
             加载更多
           </wd-button>
         </view>

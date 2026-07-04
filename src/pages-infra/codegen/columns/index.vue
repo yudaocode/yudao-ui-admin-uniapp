@@ -101,7 +101,7 @@
           </wd-cell-group>
         </scroll-view>
         <view class="flex gap-20rpx p-32rpx">
-          <wd-button class="flex-1" plain @click="popup.visible = false">
+          <wd-button class="flex-1" variant="plain" @click="popup.visible = false">
             取消
           </wd-button>
           <wd-button class="flex-1" type="primary" @click="saveColumn">

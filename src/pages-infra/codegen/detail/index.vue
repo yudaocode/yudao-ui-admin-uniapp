@@ -95,13 +95,13 @@
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="hasAccessByCodes(['infra:codegen:preview'])"
-          class="flex-1" plain @click="handlePreview"
+          class="flex-1" variant="plain" @click="handlePreview"
         >
           预览
         </wd-button>
         <wd-button
           v-if="hasAccessByCodes(['infra:codegen:update'])"
-          class="flex-1" type="success" plain @click="handleSync"
+          class="flex-1" type="success" variant="plain" @click="handleSync"
         >
           同步
         </wd-button>

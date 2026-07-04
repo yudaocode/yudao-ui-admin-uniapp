@@ -16,7 +16,7 @@
             <wd-button v-if="sortEnabled" size="small" variant="plain" :disabled="disabled || itemIndex === rows.length - 1" @click.stop="moveItem(itemIndex, itemIndex + 1)">
               下移
             </wd-button>
-            <wd-button v-if="canRemove" size="small" type="error" variant="plain" :disabled="disabled" @click.stop="removeItem(itemIndex)">
+            <wd-button v-if="canRemove" size="small" type="danger" variant="plain" :disabled="disabled" @click.stop="removeItem(itemIndex)">
               删除
             </wd-button>
           </view>
@@ -53,7 +53,7 @@
         </view>
       </view>
 
-      <wd-button v-if="canAdd" plain block type="primary" :disabled="disabled" @click="addItem">
+      <wd-button v-if="canAdd" variant="plain" block type="primary" :disabled="disabled" @click="addItem">
         添加{{ rule.title || '子表单' }}
       </wd-button>
 

@@ -24,7 +24,7 @@
       </view>
       <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无余额流水" />
       <view v-if="hasMore" class="pb-24rpx">
-        <wd-button block plain :loading="loading" @click="loadMore">
+        <wd-button block variant="plain" :loading="loading" @click="loadMore">
           加载更多
         </wd-button>
       </view>

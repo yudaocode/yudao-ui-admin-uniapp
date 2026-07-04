@@ -24,7 +24,7 @@
         <text class="text-28rpx text-[#333] font-semibold">学生课程（{{ courses.length }}）</text>
         <wd-button
           v-if="hasAccessByCodes(['infra:demo03-student:create'])"
-          size="small" type="primary" plain @click="openCourse()"
+          size="small" type="primary" variant="plain" @click="openCourse()"
         >
           添加课程
         </wd-button>
@@ -42,10 +42,10 @@
             <text class="text-30rpx text-[#333]">{{ course.name }}</text>
             <text class="ml-16rpx text-26rpx text-[#1677ff]">{{ course.score ?? '-' }} 分</text>
           </view>
-          <wd-button size="small" plain @click="openCourse(course)">
+          <wd-button size="small" variant="plain" @click="openCourse(course)">
             编辑
           </wd-button>
-          <wd-button size="small" type="danger" plain @click="removeCourse(course)">
+          <wd-button size="small" type="danger" variant="plain" @click="removeCourse(course)">
             删除
           </wd-button>
         </view>
@@ -56,7 +56,7 @@
         <text class="text-28rpx text-[#333] font-semibold">学生班级（{{ grades.length }}）</text>
         <wd-button
           v-if="hasAccessByCodes(['infra:demo03-student:create'])"
-          size="small" type="primary" plain @click="openGrade()"
+          size="small" type="primary" variant="plain" @click="openGrade()"
         >
           添加班级
         </wd-button>
@@ -74,10 +74,10 @@
             <text class="text-30rpx text-[#333]">{{ item.name }}</text>
             <text class="ml-16rpx text-26rpx text-[#999]">班主任：{{ item.teacher || '-' }}</text>
           </view>
-          <wd-button size="small" plain @click="openGrade(item)">
+          <wd-button size="small" variant="plain" @click="openGrade(item)">
             编辑
           </wd-button>
-          <wd-button size="small" type="danger" plain @click="removeGrade(item)">
+          <wd-button size="small" type="danger" variant="plain" @click="removeGrade(item)">
             删除
           </wd-button>
         </view>

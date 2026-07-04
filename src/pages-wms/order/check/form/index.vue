@@ -66,7 +66,7 @@
                 {{ detail.skuName || '-' }}
               </view>
             </view>
-            <wd-button size="small" type="error" @click="handleDeleteDetail(index)">
+            <wd-button size="small" type="danger" @click="handleDeleteDetail(index)">
               删除
             </wd-button>
           </view>

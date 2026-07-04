@@ -150,7 +150,7 @@
       <template v-else-if="sendForm.type === 'image'">
         <view v-if="sendForm.url" class="flex items-center gap-16rpx">
           <wd-img :src="sendForm.url" width="160rpx" height="160rpx" radius="8rpx" mode="aspectFill" />
-          <wd-button size="small" type="error" variant="plain" @click="clearMedia">
+          <wd-button size="small" type="danger" variant="plain" @click="clearMedia">
             移除
           </wd-button>
         </view>
@@ -163,7 +163,7 @@
       <template v-else-if="sendForm.type === 'voice'">
         <view v-if="sendForm.url" class="flex items-center gap-16rpx">
           <MediaPreview type="voice" :url="sendForm.url" />
-          <wd-button size="small" type="error" variant="plain" @click="clearMedia">
+          <wd-button size="small" type="danger" variant="plain" @click="clearMedia">
             移除
           </wd-button>
         </view>
@@ -195,7 +195,7 @@
           请从「素材库」选择图文（最多发送 1 条）
         </view>
         <view v-if="sendForm.articles.length" class="mt-12rpx text-right">
-          <wd-button size="small" type="error" variant="plain" @click="sendForm.articles = []">
+          <wd-button size="small" type="danger" variant="plain" @click="sendForm.articles = []">
             移除图文
           </wd-button>
         </view>
@@ -205,7 +205,7 @@
       <template v-else-if="sendForm.type === 'music'">
         <view v-if="sendForm.thumbMediaUrl" class="mb-12rpx flex items-center gap-16rpx">
           <wd-img :src="sendForm.thumbMediaUrl" width="120rpx" height="120rpx" radius="8rpx" mode="aspectFill" />
-          <wd-button size="small" type="error" variant="plain" @click="clearMusicThumb">
+          <wd-button size="small" type="danger" variant="plain" @click="clearMusicThumb">
             移除缩略图
           </wd-button>
         </view>

@@ -4,7 +4,7 @@
     <view class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
       <text class="text-30rpx text-[#333] font-semibold">关联商机</text>
       <view class="flex items-center gap-12rpx">
-        <wd-button v-if="canCreate" size="small" type="primary" plain @click="handleCreate">
+        <wd-button v-if="canCreate" size="small" type="primary" variant="plain" @click="handleCreate">
           新增商机
         </wd-button>
         <CrmPicker
