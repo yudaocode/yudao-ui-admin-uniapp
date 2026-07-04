@@ -11,7 +11,7 @@
           取消
         </wd-button>
         <view class="text-32rpx text-[#333] font-semibold">
-          {{ title }}
+          选择采购入库（仅展示可付款）
         </view>
         <wd-button size="small" type="primary" :disabled="selectedRows.length === 0" @click="handleConfirm">
           确定{{ selectedRows.length ? `(${selectedRows.length})` : '' }}
@@ -19,9 +19,9 @@
       </view>
 
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="queryParams.no" :placeholder="`请输入${sourceLabel}单号`" clearable />
-        <ErpPicker v-model="queryParams.productId" class="mt-12rpx" source="product" form-item placeholder="请选择产品" />
-        <yd-search-date-range v-model="queryParams.time" class="mt-12rpx" :label="timeLabel" />
+        <wd-input v-model="queryParams.no" placeholder="请输入采购入库单号" clearable />
+        <yd-form-picker v-model="queryParams.productId" class="mt-12rpx" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+        <yd-search-date-range v-model="queryParams.time" class="mt-12rpx" label="入库时间" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
@@ -48,26 +48,26 @@
               <text v-if="isSelected(item)" class="shrink-0 text-24rpx text-[#1677ff]">已选择</text>
             </view>
             <view class="mb-8rpx text-26rpx text-[#666]">
-              <text class="mr-8rpx text-[#999]">客户：</text>{{ item.customerName || '-' }}
+              <text class="mr-8rpx text-[#999]">供应商：</text>{{ item.supplierName || '-' }}
             </view>
             <view v-if="item.productNames" class="mb-8rpx text-26rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">产品：</text>
               <text class="line-clamp-1">{{ item.productNames }}</text>
             </view>
             <view class="mb-8rpx text-26rpx text-[#666]">
-              <text class="mr-8rpx text-[#999]">{{ timeLabel }}：</text>{{ formatDateTime(item[timeField]) || '-' }}
+              <text class="mr-8rpx text-[#999]">入库时间：</text>{{ formatDateTime(item.inTime) || '-' }}
             </view>
             <view class="flex text-26rpx text-[#666]">
               <view class="flex-1">
-                <text class="mr-8rpx text-[#999]">{{ totalLabel }}：</text>{{ formatMoney(item.totalPrice) }}
+                <text class="mr-8rpx text-[#999]">应付金额：</text>{{ formatMoney(item.totalPrice) }}
               </view>
               <view class="flex-1">
-                <text class="mr-8rpx text-[#999]">{{ receivedLabel }}：</text>{{ formatMoney(item[receivedField]) }}
+                <text class="mr-8rpx text-[#999]">已付金额：</text>{{ formatMoney(item.paymentPrice) }}
               </view>
             </view>
           </view>
           <view v-if="!loading && list.length === 0" class="py-80rpx text-center">
-            <wd-empty icon="content" :tip="`暂无可选择${sourceLabel}`" />
+            <wd-empty icon="content" tip="暂无可选择采购入库" />
           </view>
           <view v-if="loading" class="py-24rpx text-center text-26rpx text-[#999]">
             加载中...
@@ -82,21 +82,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
-import { getSaleOutPage } from '@/api/erp/sale/out'
-import { getSaleReturnPage } from '@/api/erp/sale/return'
+import { reactive, ref } from 'vue'
+import { getProductSimpleList } from '@/api/erp/product/product'
+import type { PurchaseIn } from '@/api/erp/purchase/in'
+import { getPurchaseInPage } from '@/api/erp/purchase/in'
 import { formatDateRange, formatDateTime } from '@/utils/date'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { formatMoney } from '@/pages-erp/utils/erp'
-
-type SourceType = 'sale-out' | 'sale-return'
-
-const props = defineProps<{
-  source: SourceType
-}>()
+import { formatMoney } from '@/utils/format'
 
 const emit = defineEmits<{
-  success: [rows: Record<string, any>[]]
+  success: [rows: PurchaseIn[]]
 }>()
 
 const visible = ref(false)
@@ -105,29 +99,23 @@ const finished = ref(false)
 const pageNo = ref(1)
 const pageSize = 10
 const total = ref(0)
-const customerId = ref<number>()
-const list = ref<Record<string, any>[]>([])
-const selectedRows = ref<Record<string, any>[]>([])
+const supplierId = ref<number>()
+const list = ref<PurchaseIn[]>([])
+const selectedRows = ref<PurchaseIn[]>([])
+const productOptions = ref<Record<string, any>[]>([]) // 产品选项
 const queryParams = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
   time: [undefined, undefined] as [number | undefined, number | undefined],
 })
 
-const isSaleOut = computed(() => props.source === 'sale-out')
-const title = computed(() => isSaleOut.value ? '选择销售出库（仅展示可收款）' : '选择销售退货（仅展示可退款）')
-const sourceLabel = computed(() => isSaleOut.value ? '销售出库' : '销售退货')
-const timeField = computed(() => isSaleOut.value ? 'outTime' : 'returnTime')
-const timeLabel = computed(() => isSaleOut.value ? '出库时间' : '退货时间')
-const receivedField = computed(() => isSaleOut.value ? 'receiptPrice' : 'refundPrice')
-const receivedLabel = computed(() => isSaleOut.value ? '已收金额' : '已退金额')
-const totalLabel = computed(() => isSaleOut.value ? '应收金额' : '应退金额')
-
-function isSelected(item: Record<string, any>) {
+/** 判断是否已选择 */
+function isSelected(item: PurchaseIn) {
   return selectedRows.value.some(row => String(row.id) === String(item.id))
 }
 
-function toggleSelect(item: Record<string, any>) {
+/** 切换选择状态 */
+function toggleSelect(item: PurchaseIn) {
   if (isSelected(item)) {
     selectedRows.value = selectedRows.value.filter(row => String(row.id) !== String(item.id))
   } else {
@@ -156,11 +144,11 @@ async function queryList(reset = false) {
       pageSize,
       no: queryParams.no || undefined,
       productId: queryParams.productId,
-      customerId: customerId.value,
-      [timeField.value]: formatDateRange(queryParams.time),
-      ...(isSaleOut.value ? { receiptEnable: true } : { refundEnable: true }),
+      supplierId: supplierId.value,
+      inTime: formatDateRange(queryParams.time),
+      paymentEnable: true,
     }
-    const data = isSaleOut.value ? await getSaleOutPage(params) : await getSaleReturnPage(params)
+    const data = await getPurchaseInPage(params)
     list.value = reset ? data.list : list.value.concat(data.list)
     total.value = data.total
     finished.value = list.value.length >= total.value
@@ -170,12 +158,22 @@ async function queryList(reset = false) {
   }
 }
 
-async function open(nextCustomerId: number) {
-  customerId.value = nextCustomerId
+/** 加载基础选项 */
+async function loadOptions() {
+  if (productOptions.value.length === 0) {
+    productOptions.value = await getProductSimpleList()
+  }
+}
+
+/** 打开选择弹窗 */
+async function open(nextSupplierId: number) {
+  supplierId.value = nextSupplierId
   visible.value = true
+  await loadOptions()
   await queryList(true)
 }
 
+/** 搜索按钮操作 */
 function handleSearch() {
   queryList(true)
 }
@@ -188,10 +186,12 @@ function handleReset() {
   queryList(true)
 }
 
+/** 加载更多 */
 function handleLoadMore() {
   queryList()
 }
 
+/** 确认选择 */
 function handleConfirm() {
   emit('success', selectedRows.value)
   visible.value = false

@@ -17,7 +17,7 @@
           <wd-form-item title="条码" title-width="220rpx" prop="barCode">
             <wd-input v-model="formData.barCode" placeholder="请输入条码" clearable />
           </wd-form-item>
-          <YdTreeSelect
+          <yd-tree-select
             v-model="formData.categoryId"
             :data="categoryTree"
             label="分类"
@@ -25,7 +25,16 @@
             label-width="220rpx"
             placeholder="请选择分类"
           />
-          <ErpPicker v-model="formData.unitId" label="单位" label-width="220rpx" prop="unitId" source="unit" placeholder="请选择单位" />
+          <yd-form-picker
+            v-model="formData.unitId"
+            label="单位"
+            label-width="220rpx"
+            prop="unitId"
+            :columns="unitOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择单位"
+          />
           <wd-form-item title="状态" title-width="220rpx" prop="status" center>
             <wd-switch
               v-model="formData.status"
@@ -37,22 +46,58 @@
             <wd-input v-model="formData.standard" placeholder="请输入规格" clearable />
           </wd-form-item>
           <wd-form-item title="保质期天数" title-width="220rpx" prop="expiryDay" center>
-            <wd-input-number v-model="formData.expiryDay" :min="0" />
+            <wd-input-number
+              :model-value="formData.expiryDay ?? ''"
+              allow-null
+              :min="0"
+              :precision="0"
+              @update:model-value="value => formData.expiryDay = toOptionalNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="重量(kg)" title-width="220rpx" prop="weight" center>
-            <wd-input-number v-model="formData.weight" :min="0" :precision="2" />
+            <wd-input-number
+              :model-value="formData.weight ?? ''"
+              allow-null
+              :min="0"
+              :precision="2"
+              @update:model-value="value => formData.weight = toOptionalNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="采购价格" title-width="220rpx" prop="purchasePrice" center>
-            <wd-input-number v-model="formData.purchasePrice" :min="0" :precision="2" />
+            <wd-input-number
+              :model-value="formData.purchasePrice ?? ''"
+              allow-null
+              :min="0"
+              :precision="2"
+              @update:model-value="value => formData.purchasePrice = toOptionalNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="销售价格" title-width="220rpx" prop="salePrice" center>
-            <wd-input-number v-model="formData.salePrice" :min="0" :precision="2" />
+            <wd-input-number
+              :model-value="formData.salePrice ?? ''"
+              allow-null
+              :min="0"
+              :precision="2"
+              @update:model-value="value => formData.salePrice = toOptionalNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="最低价格" title-width="220rpx" prop="minPrice" center>
-            <wd-input-number v-model="formData.minPrice" :min="0" :precision="2" />
+            <wd-input-number
+              :model-value="formData.minPrice ?? ''"
+              allow-null
+              :min="0"
+              :precision="2"
+              @update:model-value="value => formData.minPrice = toOptionalNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
-            <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
+            <wd-textarea
+              v-model="formData.remark"
+              placeholder="请输入备注"
+              :maxlength="500"
+              show-word-limit
+              clearable
+            />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -63,7 +108,12 @@
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+      <wd-button
+        type="primary"
+        block
+        :loading="formLoading"
+        @click="handleSubmit"
+      >
         保存
       </wd-button>
     </view>
@@ -78,14 +128,14 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getProductCategorySimpleList } from '@/api/erp/product/category'
 import { createProduct, getProduct, updateProduct } from '@/api/erp/product/product'
-import YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
+import { getProductUnitSimpleList } from '@/api/erp/product/unit'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
+import { toOptionalNumber } from '@/utils/format'
 import { handleTree } from '@/utils/tree'
 import { createFormSchema } from '@/utils/wot'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -114,6 +164,7 @@ const formData = ref<Product>({
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const categoryTree = ref<ProductCategory[]>([]) // 产品分类树
+const unitOptions = ref<Record<string, any>[]>([]) // 单位选项
 const formSchema = createFormSchema({
   name: [{ required: true, message: '产品名称不能为空' }],
   barCode: [{ required: true, message: '产品条码不能为空' }],
@@ -129,8 +180,12 @@ function handleBack() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const categoryList = await getProductCategorySimpleList()
+  const [categoryList, units] = await Promise.all([
+    getProductCategorySimpleList(),
+    getProductUnitSimpleList(),
+  ])
   categoryTree.value = handleTree(categoryList)
+  unitOptions.value = units || []
 }
 
 /** 加载产品详情 */
@@ -140,10 +195,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getProduct(props.id),
-    }
+    formData.value = await getProduct(props.id)
   } finally {
     toast.close()
   }
@@ -155,6 +207,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {

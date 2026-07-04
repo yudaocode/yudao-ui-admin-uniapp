@@ -82,9 +82,9 @@ import {
   getDefaultDeptId,
   getFirstDeptId,
   normalizeRows,
-  toNumber,
 } from '@/pages-statistics/utils/statistics'
 import StatisticsCard from '@/pages-statistics/components/card/statistics-card.vue'
+import { toNumber } from '@/utils/format'
 
 definePage({
   style: {

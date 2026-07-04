@@ -92,10 +92,12 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { deleteFinancePayment, getFinancePayment, updateFinancePaymentStatus } from '@/api/erp/finance/payment'
 import { useAccess } from '@/hooks/useAccess'
-import { enrichErpDocumentDetail, formatMoney, openErpFile } from '@/pages-erp/utils/erp'
+import { openAttachment } from '@/utils/download'
+import { buildErpDocumentDetail } from '@/pages-erp/utils/erp'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, ErpAuditStatusEnum, ErpBizType } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import { formatMoney } from '@/utils/format'
 
 const props = defineProps<{ id?: number | any }>()
 
@@ -140,7 +142,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await enrichErpDocumentDetail(await getFinancePayment(props.id), 'finance-payment')
+    formData.value = await buildErpDocumentDetail(await getFinancePayment(props.id), 'finance-payment')
   } finally {
     toast.close()
   }

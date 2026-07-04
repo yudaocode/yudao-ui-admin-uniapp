@@ -12,7 +12,7 @@
       <wd-cell-group border>
         <wd-cell title="分类名称" :value="formData?.name || '-'" />
         <wd-cell title="分类编码" :value="formData?.code || '-'" />
-        <wd-cell title="父级编号" :value="formData?.parentId ?? '-'" />
+        <wd-cell title="父级分类" :value="getParentName() || '-'" />
         <wd-cell title="排序" :value="formData?.sort ?? '-'" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
@@ -25,12 +25,18 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="canUpdate || canDelete" class="yd-detail-footer">
+    <view v-if="hasAccessByCodes(['erp:product-category:update']) || hasAccessByCodes(['erp:product-category:delete'])" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:product-category:update'])"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:product-category:delete'])"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -43,14 +49,14 @@ import type { ProductCategory } from '@/api/erp/product/category'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteProductCategory, getProductCategory } from '@/api/erp/product/category'
+import { onMounted, ref } from 'vue'
+import { deleteProductCategory, getProductCategory, getProductCategorySimpleList } from '@/api/erp/product/category'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -63,13 +69,21 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const formData = ref<ProductCategory>() // 详情数据
+const categoryList = ref<ProductCategory[]>([]) // 产品分类列表
 const deleting = ref(false) // 删除状态
-const canUpdate = computed(() => hasAccessByCodes(['erp:product-category:update']))
-const canDelete = computed(() => hasAccessByCodes(['erp:product-category:delete']))
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-erp/product/category/index')
+}
+
+/** 获取父级分类名称 */
+function getParentName() {
+  if (!formData.value?.parentId || formData.value.parentId === 0) {
+    return '顶级产品分类'
+  }
+  const parent = categoryList.value.find(item => item.id === formData.value?.parentId)
+  return parent?.name || '未知'
 }
 
 /** 加载产品分类详情 */
@@ -87,7 +101,9 @@ async function getDetail() {
 
 /** 编辑产品分类 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-erp/product/category/form/index?id=${props.id}` })
+  uni.navigateTo({
+    url: `/pages-erp/product/category/form/index?id=${props.id}`,
+  })
 }
 
 /** 删除产品分类 */
@@ -115,8 +131,9 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  getDetail()
+onMounted(async () => {
+  categoryList.value = await getProductCategorySimpleList()
+  await getDetail()
   uni.$on('erp:product-category:reload', getDetail)
 })
 

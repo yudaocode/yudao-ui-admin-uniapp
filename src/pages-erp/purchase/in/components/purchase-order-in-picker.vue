@@ -20,7 +20,7 @@
 
       <view class="bg-white px-24rpx pb-20rpx">
         <wd-input v-model="queryParams.no" placeholder="请输入订单单号" clearable />
-        <ErpPicker v-model="queryParams.productId" class="mt-12rpx" source="product" form-item placeholder="请选择产品" />
+        <yd-form-picker v-model="queryParams.productId" class="mt-12rpx" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
         <yd-search-date-range v-model="queryParams.orderTime" class="mt-12rpx" label="订单时间" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -87,9 +87,9 @@ import type { PurchaseOrder } from '@/api/erp/purchase/order'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref } from 'vue'
 import { getPurchaseOrder, getPurchaseOrderPage } from '@/api/erp/purchase/order'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { formatCount } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 import { formatDateRange, formatDateTime } from '@/utils/date'
+import { getProductSimpleList } from '@/api/erp/product/product'
 
 const emit = defineEmits<{
   success: [order: PurchaseOrder]
@@ -104,6 +104,7 @@ const pageSize = 10
 const total = ref(0)
 const list = ref<PurchaseOrder[]>([])
 const currentOrder = ref<PurchaseOrder>()
+const productOptions = ref<Record<string, any>[]>([]) // 产品选项
 const queryParams = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -143,15 +144,26 @@ async function queryList(reset = false) {
   }
 }
 
+/** 加载基础选项 */
+async function loadOptions() {
+  if (productOptions.value.length === 0) {
+    productOptions.value = await getProductSimpleList()
+  }
+}
+
+/** 打开选择弹窗 */
 async function open() {
   visible.value = true
+  await loadOptions()
   await queryList(true)
 }
 
+/** 选择采购订单 */
 function handleSelect(item: PurchaseOrder) {
   currentOrder.value = item
 }
 
+/** 搜索按钮操作 */
 function handleSearch() {
   queryList(true)
 }
@@ -164,10 +176,12 @@ function handleReset() {
   queryList(true)
 }
 
+/** 加载更多 */
 function handleLoadMore() {
   queryList()
 }
 
+/** 确认选择 */
 async function handleConfirm() {
   if (!currentOrder.value?.id) {
     toast.warning('请选择采购订单')

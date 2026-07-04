@@ -22,13 +22,14 @@
             @click="dateVisible.orderTime = true"
           />
           <wd-datetime-picker
-            v-model="formData.orderTime"
             v-model:visible="dateVisible.orderTime"
+            :model-value="formatDate(formData.orderTime)"
             title="请选择订单时间"
             type="date"
+            @update:model-value="value => formData.orderTime = formatOptionalDate(value)"
           />
-          <ErpPicker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" source="customer" placeholder="请选择客户" />
-          <ErpPicker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" source="user" placeholder="请选择销售人员" />
+          <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
+          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -38,22 +39,23 @@
         </wd-cell-group>
 
         <!-- 产品明细 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          订单产品清单
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">订单产品清单</text>
+          <wd-button size="small" type="primary" variant="plain" @click="itemEditorRef?.handleAdd()">
+            添加
+          </wd-button>
         </view>
-        <wd-cell-group border>
-          <wd-form-item title="产品明细" title-width="220rpx">
-            <OrderItemForm
-              ref="itemEditorRef"
-              v-model="formData.items"
-              :product-options="productOptions"
-            />
-          </wd-form-item>
-        </wd-cell-group>
+        <view class="px-24rpx">
+          <OrderItemForm
+            ref="itemEditorRef"
+            v-model="formData.items"
+            :product-options="productOptions"
+          />
+        </view>
 
         <!-- 结算信息 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          结算信息
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">结算信息</text>
         </view>
         <wd-cell-group border>
           <wd-form-item title="优惠率(%)" title-width="220rpx" prop="discountPercent" center>
@@ -61,7 +63,7 @@
           </wd-form-item>
           <wd-cell title="收款优惠" :value="formatMoney(formData.discountPrice)" />
           <wd-cell title="优惠后金额" :value="formatMoney(formData.totalPrice)" />
-          <ErpPicker v-model="formData.accountId" label="结算账户" label-width="220rpx" source="account" placeholder="请选择结算账户" />
+          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" />
           <wd-form-item title="收取订金" title-width="220rpx" prop="depositPrice" center>
             <wd-input-number v-model="formData.depositPrice" :min="0" :precision="2" />
           </wd-form-item>
@@ -90,15 +92,16 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getProductSimpleList } from '@/api/erp/product/product'
 import { createSaleOrder, getSaleOrder, updateSaleOrder } from '@/api/erp/sale/order'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatOptionalDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { applyDefaultAccount } from '@/pages-erp/finance/account/components/use-default-account'
+import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import OrderItemForm from '../components/order-item-form.vue'
-import { formatMoney, roundPrice, toNumber } from '@/pages-erp/utils/erp'
+import { roundPrice } from '@/pages-erp/utils/format'
+import { formatMoney, toNumber } from '@/utils/format'
+import { getCustomerSimpleList } from '@/api/erp/sale/customer'
+import { getSimpleUserList } from '@/api/system/user'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -115,7 +118,7 @@ const formData = ref<SaleOrder>({
   customerId: undefined,
   accountId: undefined,
   saleUserId: undefined,
-  orderTime: Date.now(),
+  orderTime: formatDate(Date.now()),
   remark: undefined,
   fileUrl: '',
   discountPercent: 0,
@@ -127,6 +130,8 @@ const formData = ref<SaleOrder>({
 const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof OrderItemForm>>() // 明细组件引用
 const productOptions = ref<Product[]>([]) // 产品选项
+const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
+const userOptions = ref<Record<string, any>[]>([]) // 用户选项
 const dateVisible = reactive({
   orderTime: false,
 }) // 日期选择器状态
@@ -152,13 +157,15 @@ function refreshOrderAmount() {
 }
 
 /** 加载基础选项 */
-/** 加载基础选项 */
 async function loadOptions() {
-  const [products] = await Promise.all([
+  const [products, customers, users] = await Promise.all([
     getProductSimpleList(),
-    applyDefaultAccount(formData.value),
+    getCustomerSimpleList(),
+    getSimpleUserList(),
   ])
   productOptions.value = products || []
+  customerOptions.value = customers || []
+  userOptions.value = users || []
 }
 
 /** 加载销售订单详情 */
@@ -168,10 +175,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getSaleOrder(props.id),
-    }
+    formData.value = await getSaleOrder(props.id)
   } finally {
     toast.close()
   }
@@ -184,6 +188,7 @@ async function handleSubmit() {
   if (!valid || !itemEditorRef.value?.validate()) {
     return
   }
+
   refreshOrderAmount()
   formLoading.value = true
   try {
@@ -201,6 +206,7 @@ async function handleSubmit() {
   }
 }
 
+/** 明细变更后刷新金额 */
 watch(() => [formData.value.items, formData.value.discountPercent], refreshOrderAmount, { deep: true })
 
 /** 初始化 */

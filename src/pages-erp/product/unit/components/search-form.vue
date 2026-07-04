@@ -23,7 +23,12 @@
           clearable
         />
       </view>
-      <yd-search-picker v-model="formData.status" label="单位状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
+      <yd-search-picker
+        v-model="formData.status"
+        label="单位状态"
+        :dict-type="DICT_TYPE.COMMON_STATUS"
+        all-option
+      />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置

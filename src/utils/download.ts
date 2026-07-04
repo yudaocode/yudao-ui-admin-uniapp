@@ -248,15 +248,16 @@ export function openAttachment(url?: string) {
   if (!url) {
     return
   }
-  if (isImageFile(url)) {
+  const fullUrl = staticUrl(url)
+  if (isImageFile(fullUrl)) {
     uni.previewImage({
-      urls: [url],
-      current: url,
+      urls: [fullUrl],
+      current: fullUrl,
     })
     return
   }
   // #ifdef H5
-  window.open(url, '_blank')
+  window.open(fullUrl, '_blank')
   // #endif
   // #ifndef H5
   uni.showLoading({
@@ -264,7 +265,7 @@ export function openAttachment(url?: string) {
     mask: true,
   })
   uni.downloadFile({
-    url,
+    url: fullUrl,
     success: (res) => {
       if (res.statusCode && res.statusCode !== 200) {
         uni.hideLoading()
@@ -274,7 +275,7 @@ export function openAttachment(url?: string) {
         })
         return
       }
-      const fileType = getFileExtFromUrl(url)
+      const fileType = getFileExtFromUrl(fullUrl)
       uni.openDocument({
         filePath: res.tempFilePath,
         ...(fileType ? { fileType } : {}),
@@ -306,6 +307,9 @@ export function openAttachment(url?: string) {
  * @returns 完整的静态资源 URL 地址
  */
 export function staticUrl(path: string): string {
+  if (/^https?:\/\//.test(path) || path.startsWith('blob:') || path.startsWith('data:')) {
+    return path
+  }
   const baseUrl = import.meta.env.VITE_STATIC_BASEURL || ''
   // 确保 path 以 / 开头
   const normalizedPath = path.startsWith('/') ? path : `/${path}`

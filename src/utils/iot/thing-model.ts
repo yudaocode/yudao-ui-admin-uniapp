@@ -1,4 +1,5 @@
 import { IoTDataSpecsDataTypeEnum, IoTThingModelAccessModeEnum } from '@/utils/constants'
+import { isFiniteNumberValue } from '@/utils/format'
 import { isEmptyValue } from '@/utils/is'
 
 const SIMPLE_STRUCT_TYPES = [
@@ -261,5 +262,5 @@ function validateSpecName(name: any, label: string) {
 
 /** 判断数字值 */
 function isNumberLike(value: any) {
-  return !isEmptyValue(value) && Number.isFinite(Number(value))
+  return isFiniteNumberValue(value)
 }

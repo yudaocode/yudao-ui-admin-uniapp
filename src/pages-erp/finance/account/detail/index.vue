@@ -1,7 +1,11 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <wd-navbar title="结算账户详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+    <wd-navbar
+      title="结算账户详情"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
 
     <!-- 详情内容 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
@@ -26,13 +30,27 @@
     <!-- 底部操作按钮 -->
     <view v-if="hasAccessByCodes(['erp:account:update']) || hasAccessByCodes(['erp:account:delete'])" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['erp:account:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button v-if="hasAccessByCodes(['erp:account:update'])" class="flex-1" type="warning" :disabled="defaultLoading || deleting" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['erp:account:update']) && !formData?.defaultStatus" class="flex-1" type="primary" :loading="defaultLoading" @click="handleSetDefault">
-          设为默认
+        <wd-button
+          v-if="hasAccessByCodes(['erp:account:update'])"
+          class="flex-1"
+          type="primary"
+          :loading="defaultLoading"
+          :disabled="deleting"
+          @click="handleUpdateDefaultStatus"
+        >
+          {{ formData?.defaultStatus ? '取消默认' : '设为默认' }}
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['erp:account:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:account:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          :disabled="defaultLoading"
+          @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -43,16 +61,16 @@
 <script lang="ts" setup>
 import type { Account } from '@/api/erp/finance/account'
 import { onUnload } from '@dcloudio/uni-app'
+import { onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
 import { deleteAccount, getAccount, updateAccountDefaultStatus } from '@/api/erp/finance/account'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -78,26 +96,26 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    formData.value = await getAccount(props.id)
-  } finally {
-    toast.close()
-  }
+  formData.value = await getAccount(props.id)
 }
 
 /** 编辑结算账户 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-erp/finance/account/form/index?id=${props.id}` })
+  uni.navigateTo({
+    url: `/pages-erp/finance/account/form/index?id=${props.id}`,
+  })
 }
 
 /** 删除结算账户 */
 async function handleDelete() {
-  if (!props.id) {
+  if (!props.id || deleting.value || defaultLoading.value) {
     return
   }
   try {
-    await dialog.confirm({ title: '提示', msg: '确定要删除该结算账户吗？' })
+    await dialog.confirm({
+      title: '提示',
+      msg: '确定要删除该结算账户吗？',
+    })
   } catch {
     return
   }
@@ -112,20 +130,25 @@ async function handleDelete() {
   }
 }
 
-/** 设为默认 */
-async function handleSetDefault() {
-  if (!props.id || !formData.value) {
+/** 修改默认状态 */
+async function handleUpdateDefaultStatus() {
+  if (!props.id || !formData.value || defaultLoading.value || deleting.value) {
     return
   }
+  const nextDefaultStatus = !formData.value.defaultStatus
+  const actionName = nextDefaultStatus ? '设置' : '取消'
   try {
-    await dialog.confirm({ title: '提示', msg: `确定要设置“${formData.value.name || '该结算账户'}”为默认账户吗？` })
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要${actionName}“${formData.value.name || '该结算账户'}”默认吗？`,
+    })
   } catch {
     return
   }
   defaultLoading.value = true
   try {
-    await updateAccountDefaultStatus(props.id, true)
-    toast.success('设置成功')
+    await updateAccountDefaultStatus(props.id, nextDefaultStatus)
+    toast.success(`${actionName}成功`)
     uni.$emit('erp:account:reload')
     await getDetail()
   } finally {
@@ -135,8 +158,8 @@ async function handleSetDefault() {
 
 /** 初始化 */
 onMounted(() => {
-  getDetail()
   uni.$on('erp:account:reload', getDetail)
+  getDetail()
 })
 
 /** 卸载 */

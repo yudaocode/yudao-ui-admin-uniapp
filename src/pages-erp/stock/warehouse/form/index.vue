@@ -57,8 +57,7 @@ import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -99,10 +98,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getWarehouse(props.id),
-    }
+    formData.value = await getWarehouse(props.id)
   } finally {
     toast.close()
   }
@@ -114,6 +110,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {

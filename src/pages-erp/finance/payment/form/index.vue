@@ -9,9 +9,9 @@
         <wd-cell-group border>
           <wd-cell title="付款单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="付款时间" title-width="220rpx" prop="paymentTime" is-link :value="formatDate(formData.paymentTime) || ''" placeholder="请选择付款时间" @click="dateVisible.paymentTime = true" />
-          <wd-datetime-picker v-model="formData.paymentTime" v-model:visible="dateVisible.paymentTime" title="请选择付款时间" type="date" />
-          <ErpPicker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" source="supplier" placeholder="请选择供应商" />
-          <ErpPicker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" source="user" placeholder="请选择财务人员" />
+          <wd-datetime-picker v-model:visible="dateVisible.paymentTime" :model-value="formatDate(formData.paymentTime)" title="请选择付款时间" type="date" @update:model-value="value => formData.paymentTime = formatOptionalDate(value)" />
+          <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
+          <yd-form-picker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择财务人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -20,28 +20,28 @@
           </wd-form-item>
         </wd-cell-group>
 
+        <!-- 付款明细 -->
         <view class="flex items-center justify-between px-24rpx py-16rpx">
           <text class="text-28rpx text-[#333] font-semibold">采购入库、退货单</text>
           <view class="flex gap-12rpx">
-            <wd-button size="small" type="primary" plain @click="itemEditorRef?.openPurchaseInPicker()">
+            <wd-button size="small" type="primary" variant="plain" @click="itemEditorRef?.openPurchaseInPicker()">
               采购入库
             </wd-button>
-            <wd-button size="small" type="primary" plain @click="itemEditorRef?.openPurchaseReturnPicker()">
+            <wd-button size="small" type="primary" variant="plain" @click="itemEditorRef?.openPurchaseReturnPicker()">
               采购退货
             </wd-button>
           </view>
         </view>
-        <wd-cell-group border>
-          <wd-form-item title="付款明细" title-width="220rpx">
-            <PaymentItemForm ref="itemEditorRef" v-model="formData.items" :supplier-id="formData.supplierId" />
-          </wd-form-item>
-        </wd-cell-group>
+        <view class="px-24rpx">
+          <PaymentItemForm ref="itemEditorRef" v-model="formData.items" :supplier-id="formData.supplierId" />
+        </view>
 
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          付款信息
+        <!-- 付款信息 -->
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">付款信息</text>
         </view>
         <wd-cell-group border>
-          <ErpPicker v-model="formData.accountId" label="付款账户" label-width="220rpx" source="account" placeholder="请选择付款账户" />
+          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="付款账户" label-width="220rpx" prop="accountId" placeholder="请选择付款账户" />
           <wd-cell title="合计付款" :value="formatMoney(formData.totalPrice)" />
           <wd-form-item title="优惠金额" title-width="220rpx" prop="discountPrice" center>
             <wd-input-number v-model="formData.discountPrice" :min="0" :precision="2" />
@@ -50,6 +50,7 @@
         </wd-cell-group>
       </wd-form>
 
+      <!-- 底部安全区域 -->
       <view class="h-160rpx" />
     </scroll-view>
 
@@ -69,14 +70,16 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createFinancePayment, getFinancePayment, updateFinancePayment } from '@/api/erp/finance/payment'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatOptionalDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { applyDefaultAccount } from '@/pages-erp/finance/account/components/use-default-account'
+import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import PaymentItemForm from '../components/payment-item-form.vue'
-import { formatMoney, roundPrice, toNumber } from '@/pages-erp/utils/erp'
+import { roundPrice } from '@/pages-erp/utils/format'
+import { formatMoney, toNumber } from '@/utils/format'
+import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
+import { getSimpleUserList } from '@/api/system/user'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -94,7 +97,7 @@ const formData = ref<FinancePayment>({
   supplierId: undefined,
   accountId: undefined,
   financeUserId: undefined,
-  paymentTime: Date.now(),
+  paymentTime: formatDate(Date.now()),
   remark: undefined,
   fileUrl: '',
   totalPrice: 0,
@@ -104,11 +107,14 @@ const formData = ref<FinancePayment>({
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof PaymentItemForm>>() // 明细组件引用
+const supplierOptions = ref<Record<string, any>[]>([]) // 供应商选项
+const userOptions = ref<Record<string, any>[]>([]) // 用户选项
 const dateVisible = reactive({
   paymentTime: false,
 }) // 日期选择器状态
 const formSchema = createFormSchema({
   supplierId: [{ required: true, message: '供应商不能为空' }],
+  accountId: [{ required: true, message: '付款账户不能为空' }],
   paymentTime: [{ required: true, message: '付款时间不能为空' }],
 })
 
@@ -127,7 +133,12 @@ function refreshAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  await applyDefaultAccount(formData.value)
+  const [suppliers, users] = await Promise.all([
+    getSupplierSimpleList(),
+    getSimpleUserList(),
+  ])
+  supplierOptions.value = suppliers || []
+  userOptions.value = users || []
 }
 
 /** 加载详情 */
@@ -137,10 +148,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getFinancePayment(props.id),
-    }
+    formData.value = await getFinancePayment(props.id)
   } finally {
     toast.close()
   }
@@ -153,6 +161,7 @@ async function handleSubmit() {
   if (!valid || !itemEditorRef.value?.validate()) {
     return
   }
+
   refreshAmount()
   formLoading.value = true
   try {
@@ -170,8 +179,10 @@ async function handleSubmit() {
   }
 }
 
+/** 明细变更后刷新金额 */
 watch(() => [formData.value.items, formData.value.discountPrice], refreshAmount, { deep: true })
 
+/** 初始化 */
 onMounted(async () => {
   await loadOptions()
   await getDetail()

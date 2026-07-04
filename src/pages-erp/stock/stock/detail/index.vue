@@ -15,7 +15,6 @@
           </view>
         </view>
       </view>
-
       <wd-cell-group border>
         <wd-cell title="产品名称" :value="formData?.productName || '-'" />
         <wd-cell title="产品分类" :value="formData?.categoryName || '-'" />
@@ -34,11 +33,11 @@ import type { Stock } from '@/api/erp/stock/stock'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getStock } from '@/api/erp/stock/stock'
-import { enrichErpDocumentDetail, formatCount } from '@/pages-erp/utils/erp'
+import { buildErpDocumentDetail } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 import { navigateBackPlus } from '@/utils'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -61,7 +60,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await enrichErpDocumentDetail(await getStock(props.id), 'stock') as Stock
+    formData.value = await buildErpDocumentDetail(await getStock(props.id), 'stock') as Stock
   } finally {
     toast.close()
   }

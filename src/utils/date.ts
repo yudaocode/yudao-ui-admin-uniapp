@@ -31,6 +31,11 @@ export function formatDate(time?: FormatDate, format: Format = 'YYYY-MM-DD') {
   }
 }
 
+/** 格式化可选日期 */
+export function formatOptionalDate(time?: FormatDate, format: Format = 'YYYY-MM-DD') {
+  return formatDate(time, format) || undefined
+}
+
 /** 格式化日期时间 */
 export function formatDateTime(time?: FormatDate) {
   return formatDate(time, 'YYYY-MM-DD HH:mm:ss')

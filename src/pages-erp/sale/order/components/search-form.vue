@@ -22,7 +22,7 @@
       <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
       <yd-search-date-range v-model="formData.orderTime" label="订单时间" />
       <yd-search-picker v-model="formData.customerId" label="客户" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择创建人" />
+      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
       <yd-search-picker v-model="formData.outStatus" label="出库数量" :columns="getProgressStatusColumns('出库')" all-option />
       <yd-search-picker v-model="formData.returnStatus" label="退货数量" :columns="getProgressStatusColumns('退货')" all-option />
@@ -47,17 +47,18 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { erpOptionLoaders } from '@/pages-erp/config/options'
-import { normalizeOptions } from '@/pages-erp/utils/erp'
+import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import { getCustomerSimpleList } from '@/api/erp/sale/customer'
+import { getProductSimpleList } from '@/api/erp/product/product'
+import { getSimpleUserList } from '@/api/system/user'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
-
 const visible = ref(false) // 搜索弹窗显示状态
 const productOptions = ref<Record<string, any>[]>([]) // 产品选项
 const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
@@ -65,7 +66,7 @@ const userOptions = ref<Record<string, any>[]>([]) // 创建人选项
 const formData = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
-  orderTime: ['', ''] as [any, any],
+  orderTime: [undefined, undefined] as [any, any],
   customerId: undefined as number | undefined,
   creator: undefined as number | undefined,
   status: -1,
@@ -83,14 +84,6 @@ function getProgressStatusColumns(label: string) {
   ]
 }
 
-/** 获取选项名称 */
-function getOptionLabel(options: Record<string, any>[], id?: number) {
-  if (!id) {
-    return ''
-  }
-  return options.find(item => String(item.id) === String(id))?.name || String(id)
-}
-
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
@@ -98,13 +91,13 @@ const placeholder = computed(() => {
     conditions.push(`单号:${formData.no}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${getOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
   }
   if (formData.orderTime[0] && formData.orderTime[1]) {
     conditions.push(`订单时间:${formatDate(formData.orderTime[0])}~${formatDate(formData.orderTime[1])}`)
   }
   if (formData.customerId) {
-    conditions.push(`客户:${getOptionLabel(customerOptions.value, formData.customerId)}`)
+    conditions.push(`客户:${getErpOptionLabel(customerOptions.value, formData.customerId)}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
@@ -140,7 +133,7 @@ function handleSearch() {
     productId: formData.productId,
     orderTime: formatDateRange(formData.orderTime),
     customerId: formData.customerId,
-    creator: formData.creator,
+    creator: formData.creator != null ? String(formData.creator) : undefined,
     status: formData.status === -1 ? undefined : formData.status,
     outStatus: formData.outStatus === -1 ? undefined : formData.outStatus,
     returnStatus: formData.returnStatus === -1 ? undefined : formData.returnStatus,
@@ -152,7 +145,7 @@ function handleSearch() {
 function handleReset() {
   formData.no = undefined
   formData.productId = undefined
-  formData.orderTime = ['', '']
+  formData.orderTime = [undefined, undefined]
   formData.customerId = undefined
   formData.creator = undefined
   formData.status = -1
@@ -166,12 +159,13 @@ function handleReset() {
 /** 加载搜索下拉选项 */
 onMounted(async () => {
   const [products, customers, users] = await Promise.all([
-    erpOptionLoaders.product(),
-    erpOptionLoaders.customer(),
-    erpOptionLoaders.user(),
+    getProductSimpleList(),
+    getCustomerSimpleList(),
+    getSimpleUserList(),
   ])
-  productOptions.value = normalizeOptions(products)
-  customerOptions.value = normalizeOptions(customers)
-  userOptions.value = normalizeOptions(users)
+
+  productOptions.value = products
+  customerOptions.value = customers
+  userOptions.value = users
 })
 </script>

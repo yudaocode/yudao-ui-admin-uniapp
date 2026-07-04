@@ -120,7 +120,7 @@ export function removeQuotePayload(content?: string) {
   if (!content || !content.includes('"quote"')) {
     return content || ''
   }
-  const parsed = parseMessage<Record<string, unknown>>(content)
+  const parsed = parseMessage<Record<string, any>>(content)
   if (!parsed || !('quote' in parsed)) {
     return content
   }

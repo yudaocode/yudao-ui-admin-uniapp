@@ -74,9 +74,9 @@ import {
   formatEntries,
   getChartHeight,
   MAX_VISIBLE_ROWS,
-  toNumber,
 } from '@/pages-statistics/utils/statistics'
 import YdChart from '@/pages-statistics/components/yd-chart/yd-chart.vue'
+import { toNumber } from '@/utils/format'
 import Card from './card.vue'
 
 const props = withDefaults(defineProps<{

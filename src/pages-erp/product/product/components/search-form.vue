@@ -64,7 +64,6 @@ const formData = reactive({
   name: undefined as string | undefined,
   categoryId: undefined as number | undefined,
 }) // 搜索表单数据
-
 const categoryName = computed(() => findCategoryName(categoryTree.value, formData.categoryId))
 
 /** 搜索条件 placeholder 拼接 */

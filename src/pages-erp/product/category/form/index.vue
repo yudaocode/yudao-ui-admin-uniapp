@@ -11,7 +11,7 @@
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <YdTreeSelect
+          <yd-tree-select
             v-model="formData.parentId"
             :data="categoryTree"
             label="父级分类"
@@ -44,7 +44,12 @@
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+      <wd-button
+        type="primary"
+        block
+        :loading="formLoading"
+        @click="handleSubmit"
+      >
         保存
       </wd-button>
     </view>
@@ -57,13 +62,12 @@ import type { ProductCategory } from '@/api/erp/product/category'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createProductCategory, getProductCategory, getProductCategoryList, updateProductCategory } from '@/api/erp/product/category'
-import YdTreeSelect from '@/components/yudao-ui/yd-tree-select/yd-tree-select.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { handleTree } from '@/utils/tree'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | string, parentId?: number | string }>()
+const props = defineProps<{ id?: number, parentId?: number }>()
 
 definePage({
   style: {
@@ -75,6 +79,8 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑产品分类' : '新增产品分类')
 const formLoading = ref(false) // 表单提交状态
+
+/** 创建默认表单数据 */
 function createDefaultFormData(): ProductCategory {
   return {
     id: undefined,
@@ -85,6 +91,7 @@ function createDefaultFormData(): ProductCategory {
     status: CommonStatusEnum.ENABLE,
   }
 }
+
 const formData = ref<ProductCategory>(createDefaultFormData()) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const categoryTree = ref<ProductCategory[]>([]) // 产品分类树
@@ -123,9 +130,8 @@ function applyQueryDefaults() {
   if (props.id) {
     return
   }
-  const parentId = parseRouteNumber(props.parentId)
-  if (parentId !== undefined) {
-    formData.value.parentId = parentId
+  if (props.parentId !== undefined) {
+    formData.value.parentId = props.parentId
   }
 }
 
@@ -136,10 +142,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getProductCategory(props.id),
-    }
+    formData.value = await getProductCategory(props.id)
   } finally {
     toast.close()
   }
@@ -158,6 +161,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {
@@ -179,12 +183,4 @@ onMounted(async () => {
   await loadCategoryTree()
   await loadPageData()
 })
-
-function parseRouteNumber(value?: number | string) {
-  if (value === undefined || value === null || value === '') {
-    return undefined
-  }
-  const numberValue = Number(value)
-  return Number.isNaN(numberValue) ? undefined : numberValue
-}
 </script>

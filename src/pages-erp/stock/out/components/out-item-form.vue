@@ -1,36 +1,53 @@
 <template>
   <view class="w-full">
-    <view v-for="(item, index) in items" :key="index" class="mb-24rpx rounded-12rpx bg-[#f8f8f8] p-20rpx">
+    <view v-for="(item, index) in items" :key="index" class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm">
       <view class="mb-16rpx flex items-center justify-between">
         <text class="text-28rpx text-[#333] font-semibold">出库明细 {{ index + 1 }}</text>
-        <wd-button v-if="!disabled && items.length > 1" size="small" type="error" variant="plain" @click="handleRemove(index)">
+        <wd-button v-if="!disabled && items.length > 1" size="small" type="danger" variant="plain" @click="handleRemove(index)">
           删除
         </wd-button>
       </view>
 
-      <ErpPicker
+      <yd-form-picker
         v-model="item.warehouseId"
         label="仓库"
         label-width="180rpx"
-        source="warehouse"
+        :columns="warehouseOptions" label-key="name" value-key="id"
         placeholder="请选择仓库"
         :disabled="disabled"
-        @confirm="option => handleWarehouseConfirm(index, option?.id)"
+        @confirm="value => handleWarehouseConfirm(index, value)"
       />
 
-      <ErpPicker
+      <yd-form-picker
         v-model="item.productId"
         label="产品"
         label-width="180rpx"
-        source="product"
+        :columns="productOptions" label-key="name" value-key="id"
         placeholder="请选择产品"
         :disabled="disabled"
-        @confirm="option => handleProductConfirm(index, option?.id)"
+        @confirm="value => handleProductConfirm(index, value)"
       />
 
-      <wd-cell title="库存" :value="formatCount(item.stockCount)" />
-      <wd-cell title="条码" :value="item.productBarCode || '-'" />
-      <wd-cell title="单位" :value="item.productUnitName || '-'" />
+      <view class="grid grid-cols-2 mb-20rpx gap-16rpx">
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">库存</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ formatCount(item.stockCount) }}
+          </text>
+        </view>
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">单位</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ item.productUnitName || '-' }}
+          </text>
+        </view>
+        <view class="col-span-2 rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">条码</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ item.productBarCode || '-' }}
+          </text>
+        </view>
+      </view>
 
       <wd-form-item title="数量" title-width="180rpx" center>
         <wd-input-number v-model="item.count" :min="0.001" :precision="3" :disabled="disabled" />
@@ -38,15 +55,16 @@
       <wd-form-item title="产品单价" title-width="180rpx" center>
         <wd-input-number v-model="item.productPrice" :min="0.01" :precision="2" :disabled="disabled" />
       </wd-form-item>
-      <wd-cell title="合计金额" :value="formatMoney(item.totalPrice)" />
+      <view class="mb-20rpx rounded-8rpx bg-[#f8f8f8] p-16rpx">
+        <text class="block text-24rpx text-[#999]">合计金额</text>
+        <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+          {{ formatMoney(item.totalPrice) }}
+        </text>
+      </view>
       <wd-form-item title="备注" title-width="180rpx">
         <wd-input v-model="item.remark" placeholder="请输入备注" clearable :disabled="disabled" />
       </wd-form-item>
     </view>
-
-    <wd-button v-if="!disabled" block variant="plain" @click="handleAdd">
-      添加出库产品
-    </wd-button>
   </view>
 </template>
 
@@ -55,8 +73,9 @@ import type { Product } from '@/api/erp/product/product'
 import type { Warehouse } from '@/api/erp/stock/warehouse'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref, watch } from 'vue'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { formatCount, formatMoney, refreshSingleItemAmount, setItemStockCount } from '@/pages-erp/utils/erp'
+import { loadErpItemStockCount, refreshErpItemAmount } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
+import { formatMoney } from '@/utils/format'
 
 const props = defineProps<{
   disabled?: boolean
@@ -120,7 +139,7 @@ async function handleWarehouseConfirm(index: number, warehouseId?: number | stri
     return
   }
   item.warehouseId = warehouseId
-  await setItemStockCount(item)
+  await loadErpItemStockCount(item)
 }
 
 /** 选择产品 */
@@ -137,7 +156,7 @@ async function handleProductConfirm(index: number, productId?: number | string) 
     item.productBarCode = product.barCode
     item.productPrice = product.minPrice
   }
-  await setItemStockCount(item)
+  await loadErpItemStockCount(item)
 }
 
 /** 校验明细 */
@@ -154,15 +173,18 @@ function validate() {
   return true
 }
 
+/** 同步外部明细 */
 watch(() => props.modelValue, (value) => {
   items.value = Array.isArray(value) ? value : []
   applyDefaultWarehouse()
 }, { immediate: true })
 
+/** 仓库选项变化后回填默认仓库 */
 watch(() => props.warehouseOptions, applyDefaultWarehouse, { deep: true })
 
+/** 明细变更后回写表单 */
 watch(items, (value) => {
-  value.forEach(item => refreshSingleItemAmount(item))
+  value.forEach(item => refreshErpItemAmount(item))
   emit('update:modelValue', value)
 }, { deep: true })
 
@@ -173,5 +195,5 @@ onMounted(() => {
   }
 })
 
-defineExpose({ validate })
+defineExpose({ handleAdd, validate })
 </script>

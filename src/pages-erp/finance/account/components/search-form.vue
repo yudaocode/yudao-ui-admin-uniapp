@@ -5,7 +5,13 @@
   </view>
 
   <!-- 搜索弹窗 -->
-  <wd-popup v-model="visible" position="top" :custom-style="getTopPopupStyle()" :modal-style="getTopPopupModalStyle()" @close="visible = false">
+  <wd-popup
+    v-model="visible"
+    position="top"
+    :custom-style="getTopPopupStyle()"
+    :modal-style="getTopPopupModalStyle()"
+    @close="visible = false"
+  >
     <view class="yd-search-form-container">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -25,7 +31,6 @@
         </view>
         <wd-input v-model="formData.remark" placeholder="请输入备注" clearable />
       </view>
-      <yd-search-picker v-model="formData.status" label="账户状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -40,22 +45,19 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 
-const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   name: undefined as string | undefined,
   no: undefined as string | undefined,
   remark: undefined as string | undefined,
-  status: -1, // -1 表示全部
 }) // 搜索表单数据
+const visible = ref(false) // 搜索弹窗显示状态
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -69,9 +71,6 @@ const placeholder = computed(() => {
   if (formData.remark) {
     conditions.push(`备注:${formData.remark}`)
   }
-  if (formData.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
-  }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索结算账户'
 })
 
@@ -82,7 +81,6 @@ function handleSearch() {
     name: formData.name || undefined,
     no: formData.no || undefined,
     remark: formData.remark || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
   })
 }
 
@@ -91,7 +89,6 @@ function handleReset() {
   formData.name = undefined
   formData.no = undefined
   formData.remark = undefined
-  formData.status = -1
   visible.value = false
   emit('reset')
 }

@@ -1,26 +1,43 @@
 <template>
   <view class="w-full">
-    <view v-for="(item, index) in items" :key="index" class="mb-24rpx rounded-12rpx bg-[#f8f8f8] p-20rpx">
+    <view v-for="(item, index) in items" :key="index" class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm">
       <view class="mb-16rpx flex items-center justify-between">
         <text class="text-28rpx text-[#333] font-semibold">采购明细 {{ index + 1 }}</text>
-        <wd-button v-if="!disabled && items.length > 1" size="small" type="error" variant="plain" @click="handleRemove(index)">
+        <wd-button v-if="!disabled && items.length > 1" size="small" type="danger" variant="plain" @click="handleRemove(index)">
           删除
         </wd-button>
       </view>
 
-      <ErpPicker
+      <yd-form-picker
         v-model="item.productId"
         label="产品"
         label-width="180rpx"
-        source="product"
+        :columns="productOptions" label-key="name" value-key="id"
         placeholder="请选择产品"
         :disabled="disabled"
-        @confirm="option => handleProductConfirm(index, option?.id)"
+        @confirm="value => handleProductConfirm(index, value)"
       />
 
-      <wd-cell title="库存" :value="formatCount(item.stockCount)" />
-      <wd-cell title="条码" :value="item.productBarCode || '-'" />
-      <wd-cell title="单位" :value="item.productUnitName || '-'" />
+      <view class="grid grid-cols-2 mb-20rpx gap-16rpx">
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">库存</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ formatCount(item.stockCount) }}
+          </text>
+        </view>
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">单位</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ item.productUnitName || '-' }}
+          </text>
+        </view>
+        <view class="col-span-2 rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">条码</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ item.productBarCode || '-' }}
+          </text>
+        </view>
+      </view>
 
       <wd-form-item title="数量" title-width="180rpx" center>
         <wd-input-number v-model="item.count" :min="0.001" :precision="3" :disabled="disabled" />
@@ -28,20 +45,33 @@
       <wd-form-item title="采购单价" title-width="180rpx" center>
         <wd-input-number v-model="item.productPrice" :min="0.01" :precision="2" :disabled="disabled" />
       </wd-form-item>
-      <wd-cell title="金额" :value="formatMoney(item.totalProductPrice)" />
       <wd-form-item title="税率(%)" title-width="180rpx" center>
         <wd-input-number v-model="item.taxPercent" :min="0" :precision="2" :disabled="disabled" />
       </wd-form-item>
-      <wd-cell title="税额" :value="formatMoney(item.taxPrice)" />
-      <wd-cell title="含税金额" :value="formatMoney(item.totalPrice)" />
+      <view class="grid grid-cols-2 mb-20rpx gap-16rpx">
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">金额</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ formatMoney(item.totalProductPrice) }}
+          </text>
+        </view>
+        <view class="rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">税额</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ formatMoney(item.taxPrice) }}
+          </text>
+        </view>
+        <view class="col-span-2 rounded-8rpx bg-[#f8f8f8] p-16rpx">
+          <text class="block text-24rpx text-[#999]">含税金额</text>
+          <text class="mt-8rpx block break-all text-28rpx text-[#333] font-semibold">
+            {{ formatMoney(item.totalPrice) }}
+          </text>
+        </view>
+      </view>
       <wd-form-item title="备注" title-width="180rpx">
         <wd-input v-model="item.remark" placeholder="请输入备注" clearable :disabled="disabled" />
       </wd-form-item>
     </view>
-
-    <wd-button v-if="!disabled" block variant="plain" @click="handleAdd">
-      添加采购产品
-    </wd-button>
   </view>
 </template>
 
@@ -50,8 +80,8 @@ import type { Product } from '@/api/erp/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref, watch } from 'vue'
 import { getStockCount } from '@/api/erp/stock/stock'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
-import { formatCount, formatMoney, roundPrice, toNumber } from '@/pages-erp/utils/erp'
+import { formatCount, roundPrice } from '@/pages-erp/utils/format'
+import { formatMoney, toNumber } from '@/utils/format'
 
 const props = defineProps<{
   disabled?: boolean
@@ -157,5 +187,5 @@ onMounted(() => {
   }
 })
 
-defineExpose({ validate })
+defineExpose({ handleAdd, validate })
 </script>

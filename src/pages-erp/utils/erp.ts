@@ -1,210 +1,165 @@
-import type { ErpOptionKey } from '../config/options'
-import { erpOptionLoaders } from '../config/options'
-import { staticUrl } from '@/utils/download'
+import { getSimpleUserList } from '@/api/system/user'
+import { getAccountSimpleList } from '@/api/erp/finance/account'
+import { getProductSimpleList } from '@/api/erp/product/product'
+import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
+import { getCustomerSimpleList } from '@/api/erp/sale/customer'
 import { getStockByProductAndWarehouse, getStockCount } from '@/api/erp/stock/stock'
+import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
+import { isFiniteNumberValue, toNumber } from '@/utils/format'
+import { isEmptyValue } from '@/utils/is'
+import {
+  calculatePercentPrice,
+  calculateTaxPrice,
+  multiplyPrice,
+  roundCount,
+  roundPrice,
+  sumCount,
+  sumPrice,
+} from './format'
 
-export type ErpOptionsMap = Partial<Record<ErpOptionKey, Array<Record<string, any>>>>
+type ErpDetailOptionKey = 'account' | 'customer' | 'product' | 'supplier' | 'user' | 'warehouse'
+type ErpOptionsMap = Partial<Record<ErpDetailOptionKey, Array<Record<string, any>>>>
 
-/** 补全附件访问地址 */
-export function resolveErpFileUrl(url?: string) {
-  if (!url) {
+/** 加载详情补全选项 */
+async function loadErpDetailOptions(loader: () => Promise<Record<string, any>[]>) {
+  try {
+    return await loader() || []
+  } catch {
+    // 单个 simple-list 失败不影响详情主体展示
+    return []
+  }
+}
+
+/** 构建详情补全选项 */
+async function buildErpDetailOptionsMap(): Promise<ErpOptionsMap> {
+  const [customers, suppliers, accounts, users, warehouses, products] = await Promise.all([
+    loadErpDetailOptions(getCustomerSimpleList),
+    loadErpDetailOptions(getSupplierSimpleList),
+    loadErpDetailOptions(getAccountSimpleList),
+    loadErpDetailOptions(getSimpleUserList),
+    loadErpDetailOptions(getWarehouseSimpleList),
+    loadErpDetailOptions(getProductSimpleList),
+  ])
+  return {
+    customer: customers,
+    supplier: suppliers,
+    account: accounts,
+    user: users,
+    warehouse: warehouses,
+    product: products,
+  }
+}
+
+/** 获取 ERP 选项展示名称 */
+export function getErpOptionLabel(options: Record<string, any>[], id?: unknown) {
+  if (isEmptyValue(id)) {
     return ''
   }
-  if (/^https?:\/\//.test(url) || url.startsWith('blob:') || url.startsWith('data:')) {
-    return url
-  }
-  return staticUrl(url)
+  const option = options.find(item => String(item.id) === String(id))
+  return option?.name || option?.nickname || option?.username || option?.label || option?.no || option?.id || String(id)
 }
 
-/** 打开附件（图片预览 / 文档下载） */
-export function openErpFile(url?: string) {
-  const fullUrl = resolveErpFileUrl(url)
-  if (!fullUrl) {
-    return
+/** 获取 ERP 商品选项 */
+function getErpProductOption(optionsMap: ErpOptionsMap, productId?: unknown) {
+  if (isEmptyValue(productId)) {
+    return undefined
   }
-  // #ifdef H5
-  window.open(fullUrl)
-  return
-  // #endif
-  if (/\.(?:png|jpe?g|gif|webp|bmp)(?:\?|$)/i.test(fullUrl)) {
-    uni.previewImage({ urls: [fullUrl] })
-    return
-  }
-  uni.showLoading({ title: '加载中...' })
-  uni.downloadFile({
-    url: fullUrl,
-    success: (res) => {
-      uni.openDocument({ filePath: res.tempFilePath, showMenu: true })
-    },
-    fail: () => {
-      uni.showToast({ icon: 'none', title: '打开附件失败' })
-    },
-    complete: () => {
-      uni.hideLoading()
-    },
-  })
+  return optionsMap.product?.find(item => String(item.id) === String(productId))
 }
 
-/** 补全 ERP 单据详情的关联名称和明细金额 */
-export async function enrichErpDocumentDetail(data: Record<string, any>, moduleKey: string) {
+/** 构建 ERP 单据详情 */
+export async function buildErpDocumentDetail(data: Record<string, any>, moduleKey: string) {
   const detail = data || {}
-  const optionKeys: ErpOptionKey[] = ['customer', 'supplier', 'account', 'user', 'warehouse', 'product']
-  const entries = await Promise.all(optionKeys.map(async (key) => {
-    try {
-      const options = await erpOptionLoaders[key]()
-      return [key, normalizeOptions(options || [])] as const
-    } catch {
-      return [key, []] as const
-    }
-  }))
-  const optionsMap = Object.fromEntries(entries) as ErpOptionsMap
-  const getOptionLabel = (key: ErpOptionKey, id?: any) => {
-    if (id === undefined || id === null || id === '') {
-      return undefined
-    }
-    return optionsMap[key]?.find(item => String(item.id) === String(id))?.name
-  }
-  const getProductOption = (productId?: any) => {
-    if (productId === undefined || productId === null || productId === '') {
-      return undefined
-    }
-    return optionsMap.product?.find(item => String(item.id) === String(productId))
-  }
-  const productOption = getProductOption(detail.productId)
+
+  // 详情接口可能只返回编号，移动端按当前选项补齐展示名
+  const optionsMap = await buildErpDetailOptionsMap()
+  const productOption = getErpProductOption(optionsMap, detail.productId)
   const result = {
     ...detail,
-    customerName: detail.customerName || getOptionLabel('customer', detail.customerId),
-    supplierName: detail.supplierName || getOptionLabel('supplier', detail.supplierId),
-    accountName: detail.accountName || getOptionLabel('account', detail.accountId),
-    creatorName: detail.creatorName || getOptionLabel('user', detail.creator),
-    saleUserName: detail.saleUserName || getOptionLabel('user', detail.saleUserId),
-    financeUserName: detail.financeUserName || getOptionLabel('user', detail.financeUserId),
-    productName: detail.productName || getOptionLabel('product', detail.productId),
+    customerName: detail.customerName || getErpOptionLabel(optionsMap.customer || [], detail.customerId),
+    supplierName: detail.supplierName || getErpOptionLabel(optionsMap.supplier || [], detail.supplierId),
+    accountName: detail.accountName || getErpOptionLabel(optionsMap.account || [], detail.accountId),
+    creatorName: detail.creatorName || getErpOptionLabel(optionsMap.user || [], detail.creator),
+    saleUserName: detail.saleUserName || getErpOptionLabel(optionsMap.user || [], detail.saleUserId),
+    financeUserName: detail.financeUserName || getErpOptionLabel(optionsMap.user || [], detail.financeUserId),
+    productName: detail.productName || getErpOptionLabel(optionsMap.product || [], detail.productId),
     categoryName: detail.categoryName || productOption?.categoryName,
     unitName: detail.unitName || productOption?.unitName,
-    warehouseName: detail.warehouseName || getOptionLabel('warehouse', detail.warehouseId),
+    warehouseName: detail.warehouseName || getErpOptionLabel(optionsMap.warehouse || [], detail.warehouseId),
     items: Array.isArray(detail.items)
       ? detail.items.map(item => ({
           ...item,
-          warehouseName: item.warehouseName || getOptionLabel('warehouse', item.warehouseId),
-          fromWarehouseName: item.fromWarehouseName || getOptionLabel('warehouse', item.fromWarehouseId),
-          toWarehouseName: item.toWarehouseName || getOptionLabel('warehouse', item.toWarehouseId),
+          warehouseName: item.warehouseName || getErpOptionLabel(optionsMap.warehouse || [], item.warehouseId),
+          fromWarehouseName: item.fromWarehouseName || getErpOptionLabel(optionsMap.warehouse || [], item.fromWarehouseId),
+          toWarehouseName: item.toWarehouseName || getErpOptionLabel(optionsMap.warehouse || [], item.toWarehouseId),
         }))
       : [],
   }
-  refreshErpItemsAmount(result, moduleKey)
+
+  // 老数据或部分详情接口可能缺汇总字段，只补缺失值，不覆盖后端已有值
+  refreshErpDocumentAmount(result, moduleKey)
   return result
 }
 
-/** 获取选项展示名称 */
-export function getOptionName(option: Record<string, any>) {
-  return option.name || option.nickname || option.username || option.label || option.no || option.id
-}
-
-/** 规范化选择器选项 */
-export function normalizeOptions(list: Record<string, any>[] = []) {
-  return list.map(item => ({ ...item, id: item.id ?? item.value, name: getOptionName(item) }))
-}
-
-/** 四舍五入金额 */
-export function roundPrice(value: number) {
-  return Number(value.toFixed(2))
-}
-
-/** 四舍五入数量 */
-export function roundCount(value: number) {
-  return Number(value.toFixed(3))
-}
-
-/** 转换为数字 */
-export function toNumber(value: any) {
-  const result = Number(value || 0)
-  return Number.isNaN(result) ? 0 : result
-}
-
-/** 格式化金额（保留两位小数） */
-export function formatMoney(value?: any) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  const price = Number(value)
-  return Number.isNaN(price) ? String(value) : price.toFixed(2)
-}
-
-/** 格式化数量（保留三位小数，去尾零） */
-export function formatCount(value?: any) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  const count = Number(value)
-  return Number.isNaN(count) ? String(value) : String(Number(count.toFixed(3)))
-}
-
-/** 格式化数字（原样转字符串，空值返回 -） */
-export function formatNumber(value?: any) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return String(value)
-}
-
-/** 格式化百分比（保留两位小数） */
-export function formatPercent(value?: any) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  const percent = Number(value)
-  return Number.isNaN(percent) ? String(value) : percent.toFixed(2)
-}
-
-/** 计算单据明细金额 */
-export function refreshErpItemsAmount(data: Record<string, any>, moduleKey?: string) {
+/** 刷新 ERP 单据金额 */
+function refreshErpDocumentAmount(data: Record<string, any>, moduleKey?: string) {
   if (!Array.isArray(data.items)) {
     return
   }
-  let totalCount = 0
-  let totalPrice = 0
-  data.items.forEach((item) => {
-    if (moduleKey === 'stock-check' && item.stockCount != null && item.actualCount != null) {
-      item.count = roundCount(toNumber(item.actualCount) - toNumber(item.stockCount))
-    }
+  const items = data.items as Record<string, any>[]
+  if (items.length === 0) {
+    return
+  }
 
-    const count = toNumber(item.count)
-    const price = toNumber(item.productPrice || item.price)
-    const hasCount = item.count !== undefined && item.count !== null && item.count !== ''
-    const hasPrice = (item.productPrice !== undefined && item.productPrice !== null && item.productPrice !== '') || (item.price !== undefined && item.price !== null && item.price !== '')
-    const hasTaxAmount = 'totalProductPrice' in item || 'taxPercent' in item || 'taxPrice' in item
-    if (hasCount && hasPrice) {
-      if (hasTaxAmount) {
-        item.totalProductPrice = roundPrice(count * price)
-        item.taxPrice = roundPrice(item.totalProductPrice * toNumber(item.taxPercent) / 100)
-        item.totalPrice = roundPrice(item.totalProductPrice + item.taxPrice)
-      } else {
-        item.totalPrice = roundPrice(count * price)
-      }
-    }
-    totalCount += count
-    totalPrice += toNumber(item.totalPrice)
-  })
+  // 先补齐每条明细金额，后续主表汇总直接读取明细合计
+  items.forEach(item => refreshErpDocumentItemAmount(item, moduleKey))
 
-  if (data.items.length > 0) {
-    if (moduleKey === 'finance-payment') {
-      const paymentPrice = data.items.reduce((sum, item) => sum + toNumber(item.paymentPrice), 0)
-      data.totalPrice = roundPrice(paymentPrice)
-      data.paymentPrice = roundPrice(paymentPrice - toNumber(data.discountPrice))
-      return
-    }
-    if (moduleKey === 'finance-receipt') {
-      const receiptPrice = data.items.reduce((sum, item) => sum + toNumber(item.receiptPrice), 0)
-      data.totalPrice = roundPrice(receiptPrice)
-      data.receiptPrice = roundPrice(receiptPrice - toNumber(data.discountPrice))
-      return
-    }
-    data.totalCount = roundCount(totalCount)
-    const discountPrice = 'discountPercent' in data ? roundPrice(totalPrice * toNumber(data.discountPercent) / 100) : toNumber(data.discountPrice)
-    if ('discountPrice' in data || 'discountPercent' in data) {
-      data.discountPrice = discountPrice
-    }
+  // 财务单据和业务单据的汇总字段不同，按单据类型分别处理
+  if (moduleKey === 'finance-payment' || moduleKey === 'finance-receipt') {
+    refreshErpFinanceDocumentAmount(data, moduleKey)
+    return
+  }
+  refreshErpBusinessDocumentAmount(data)
+}
+
+/** 刷新 ERP 单据明细金额 */
+function refreshErpDocumentItemAmount(item: Record<string, any>, moduleKey?: string) {
+  // 盘点单用「实盘库存 - 账面库存」补盈亏数量
+  if (moduleKey === 'stock-check' && isFiniteNumberValue(item.stockCount) && isFiniteNumberValue(item.actualCount)) {
+    item.count = roundCount(toNumber(item.actualCount) - toNumber(item.stockCount))
+  }
+  refreshErpItemAmount(item)
+}
+
+/** 刷新 ERP 财务单据金额 */
+function refreshErpFinanceDocumentAmount(data: Record<string, any>, moduleKey: string) {
+  // 付款单和收款单字段不同，但汇总规则一致
+  const items = data.items as Record<string, any>[]
+  const priceField = moduleKey === 'finance-payment' ? 'paymentPrice' : 'receiptPrice'
+  const price = sumPrice(items, item => item[priceField])
+  if (!isFiniteNumberValue(data.totalPrice)) {
+    data.totalPrice = roundPrice(price)
+  }
+  if (!isFiniteNumberValue(data[priceField])) {
+    data[priceField] = roundPrice(price - toNumber(data.discountPrice))
+  }
+}
+
+/** 刷新 ERP 业务单据金额 */
+function refreshErpBusinessDocumentAmount(data: Record<string, any>) {
+  // 采购、销售、库存单据按数量、优惠、其它费用汇总主表
+  const items = data.items as Record<string, any>[]
+  if (!isFiniteNumberValue(data.totalCount)) {
+    data.totalCount = roundCount(sumCount(items, item => item.count))
+  }
+  const totalPrice = sumPrice(items, item => item.totalPrice)
+  const discountPrice = isFiniteNumberValue(data.discountPrice)
+    ? toNumber(data.discountPrice)
+    : calculatePercentPrice(totalPrice, data.discountPercent) ?? 0
+  if (('discountPrice' in data || 'discountPercent' in data) && !isFiniteNumberValue(data.discountPrice)) {
+    data.discountPrice = discountPrice
+  }
+  if (!isFiniteNumberValue(data.totalPrice)) {
     data.totalPrice = roundPrice(totalPrice - discountPrice + toNumber(data.otherPrice))
   }
 }
@@ -214,10 +169,11 @@ export function refreshErpItemsAmount(data: Record<string, any>, moduleKey?: str
  * @param item 明细对象
  * @param warehouseField 仓库 ID 字段名，默认 'warehouseId'（调拨编辑器传 'fromWarehouseId'）
  */
-export async function setItemStockCount(item: Record<string, any>, warehouseField = 'warehouseId') {
+export async function loadErpItemStockCount(item: Record<string, any>, warehouseField = 'warehouseId') {
   if (!item.productId) {
     return
   }
+  // 有仓库时查指定仓库库存，否则查商品全仓库存
   if (item[warehouseField]) {
     const stock = await getStockByProductAndWarehouse(Number(item.productId), Number(item[warehouseField]))
     item.stockCount = stock?.count || 0
@@ -226,17 +182,27 @@ export async function setItemStockCount(item: Record<string, any>, warehouseFiel
   item.stockCount = await getStockCount(Number(item.productId))
 }
 
-/**
- * 刷新单条明细金额（count × price → totalPrice）
- * 不处理税额，税额逻辑见 refreshErpItemsAmount
- */
-export function refreshSingleItemAmount(item: Record<string, any>) {
-  const hasCount = item.count !== undefined && item.count !== null && item.count !== ''
-  const hasProductPrice = item.productPrice !== undefined && item.productPrice !== null && item.productPrice !== ''
-  const hasPrice = item.price !== undefined && item.price !== null && item.price !== ''
-  if (hasCount && (hasProductPrice || hasPrice)) {
-    const count = toNumber(item.count)
-    const price = toNumber(item.productPrice || item.price)
-    item.totalPrice = roundPrice(count * price)
+/** 刷新单条明细金额（自动兼容含税明细） */
+export function refreshErpItemAmount(item: Record<string, any>) {
+  const hasCount = isFiniteNumberValue(item.count)
+  const hasProductPrice = isFiniteNumberValue(item.productPrice)
+  const hasPrice = isFiniteNumberValue(item.price)
+  if (!hasCount || (!hasProductPrice && !hasPrice)) {
+    return
   }
+
+  const price = hasProductPrice ? item.productPrice : item.price
+  const totalProductPrice = multiplyPrice(item.count, price)
+  if (totalProductPrice === undefined) {
+    return
+  }
+  // 采购/销售明细有税额字段，库存明细只有 totalPrice
+  const hasTaxAmount = 'totalProductPrice' in item || 'taxPercent' in item || 'taxPrice' in item
+  if (hasTaxAmount) {
+    item.totalProductPrice = totalProductPrice
+    item.taxPrice = calculateTaxPrice(item.totalProductPrice, item.taxPercent)
+    item.totalPrice = roundPrice(item.totalProductPrice + item.taxPrice)
+    return
+  }
+  item.totalPrice = totalProductPrice
 }

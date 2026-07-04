@@ -48,7 +48,7 @@ import { ref } from 'vue'
 import { getStockPage } from '@/api/erp/stock/stock'
 import { navigateBackPlus } from '@/utils'
 import SearchForm from './components/search-form.vue'
-import { formatCount } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 
 definePage({
   style: {

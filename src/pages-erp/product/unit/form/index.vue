@@ -53,7 +53,7 @@ import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -100,6 +100,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {

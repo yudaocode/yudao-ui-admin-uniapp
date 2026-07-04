@@ -30,13 +30,13 @@ import type { StockRecord } from '@/api/erp/stock/record'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getStockRecord } from '@/api/erp/stock/record'
-import { enrichErpDocumentDetail, formatCount } from '@/pages-erp/utils/erp'
+import { buildErpDocumentDetail } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -59,7 +59,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await enrichErpDocumentDetail(await getStockRecord(props.id), 'stock-record') as StockRecord
+    formData.value = await buildErpDocumentDetail(await getStockRecord(props.id), 'stock-record') as StockRecord
   } finally {
     toast.close()
   }

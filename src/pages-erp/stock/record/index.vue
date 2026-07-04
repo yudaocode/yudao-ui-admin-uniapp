@@ -68,7 +68,7 @@ import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
-import { formatCount } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 
 definePage({
   style: {

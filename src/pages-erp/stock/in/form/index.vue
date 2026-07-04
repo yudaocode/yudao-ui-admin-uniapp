@@ -9,8 +9,8 @@
         <wd-cell-group border>
           <wd-cell title="入库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="入库时间" title-width="220rpx" prop="inTime" is-link :value="formatDate(formData.inTime) || ''" placeholder="请选择入库时间" @click="dateVisible.inTime = true" />
-          <wd-datetime-picker v-model="formData.inTime" v-model:visible="dateVisible.inTime" title="请选择入库时间" type="date" />
-          <ErpPicker v-model="formData.supplierId" label="供应商" label-width="220rpx" source="supplier" placeholder="请选择供应商" />
+          <wd-datetime-picker v-model:visible="dateVisible.inTime" :model-value="formatDate(formData.inTime)" title="请选择入库时间" type="date" @update:model-value="value => formData.inTime = formatOptionalDate(value)" />
+          <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -20,18 +20,19 @@
         </wd-cell-group>
 
         <!-- 入库明细 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          入库产品清单
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">入库产品清单</text>
+          <wd-button size="small" type="primary" variant="plain" @click="itemEditorRef?.handleAdd()">
+            添加
+          </wd-button>
         </view>
-        <wd-cell-group border>
-          <wd-form-item title="入库明细" title-width="220rpx">
-            <InItemForm ref="itemEditorRef" v-model="formData.items" :product-options="productOptions" :warehouse-options="warehouseOptions" />
-          </wd-form-item>
-        </wd-cell-group>
+        <view class="px-24rpx">
+          <InItemForm ref="itemEditorRef" v-model="formData.items" :product-options="productOptions" :warehouse-options="warehouseOptions" />
+        </view>
 
         <!-- 合计信息 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          合计信息
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">合计信息</text>
         </view>
         <wd-cell-group border>
           <wd-cell title="合计数量" :value="formatCount(formData.totalCount)" />
@@ -63,14 +64,14 @@ import { getProductSimpleList } from '@/api/erp/product/product'
 import { createStockIn, getStockIn, updateStockIn } from '@/api/erp/stock/in'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatOptionalDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import ErpPicker from '@/pages-erp/components/erp-picker.vue'
 import InItemForm from '../components/in-item-form.vue'
-import { formatCount, formatMoney, roundPrice, toNumber } from '@/pages-erp/utils/erp'
+import { formatCount, roundPrice } from '@/pages-erp/utils/format'
+import { formatMoney, toNumber } from '@/utils/format'
+import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -85,7 +86,7 @@ const formData = ref<StockIn>({
   id: undefined,
   no: undefined,
   supplierId: undefined,
-  inTime: Date.now(),
+  inTime: formatDate(Date.now()),
   remark: undefined,
   fileUrl: '',
   totalCount: 0,
@@ -96,11 +97,11 @@ const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof InItemForm>>() // 明细组件引用
 const productOptions = ref<Product[]>([]) // 产品选项
 const warehouseOptions = ref<Warehouse[]>([]) // 仓库选项
+const supplierOptions = ref<Record<string, any>[]>([]) // 供应商选项
 const dateVisible = reactive({
   inTime: false,
 }) // 日期选择器状态
 const formSchema = createFormSchema({
-  supplierId: [{ required: true, message: '供应商不能为空' }],
   inTime: [{ required: true, message: '入库时间不能为空' }],
 })
 
@@ -120,12 +121,14 @@ function refreshAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [products, warehouses] = await Promise.all([
+  const [products, warehouses, suppliers] = await Promise.all([
     getProductSimpleList(),
     getWarehouseSimpleList(),
+    getSupplierSimpleList(),
   ])
   productOptions.value = products || []
   warehouseOptions.value = warehouses || []
+  supplierOptions.value = suppliers || []
 }
 
 /** 加载其它入库详情 */
@@ -135,10 +138,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getStockIn(props.id),
-    }
+    formData.value = await getStockIn(props.id)
   } finally {
     toast.close()
   }
@@ -151,6 +151,7 @@ async function handleSubmit() {
   if (!valid || !itemEditorRef.value?.validate()) {
     return
   }
+
   refreshAmount()
   formLoading.value = true
   try {
@@ -168,6 +169,7 @@ async function handleSubmit() {
   }
 }
 
+/** 明细变更后刷新金额 */
 watch(() => formData.value.items, refreshAmount, { deep: true })
 
 /** 初始化 */

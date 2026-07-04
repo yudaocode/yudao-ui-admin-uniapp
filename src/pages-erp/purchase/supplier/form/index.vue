@@ -43,7 +43,7 @@
             <wd-input v-model="formData.taxNo" placeholder="请输入纳税人识别号" clearable />
           </wd-form-item>
           <wd-form-item title="税率(%)" title-width="220rpx" prop="taxPercent" center>
-            <wd-input-number v-model="formData.taxPercent" :min="0" :precision="2" />
+            <wd-input-number :model-value="formData.taxPercent ?? ''" allow-null :min="0" :precision="2" @update:model-value="value => formData.taxPercent = toOptionalNumber(value)" />
           </wd-form-item>
           <wd-form-item title="开户行" title-width="220rpx" prop="bankName">
             <wd-input v-model="formData.bankName" placeholder="请输入开户行" clearable />
@@ -81,10 +81,10 @@ import { computed, onMounted, ref } from 'vue'
 import { createSupplier, getSupplier, updateSupplier } from '@/api/erp/purchase/supplier'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
+import { toOptionalNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -133,10 +133,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getSupplier(props.id),
-    }
+    formData.value = await getSupplier(props.id)
   } finally {
     toast.close()
   }
@@ -148,6 +145,7 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     if (props.id) {

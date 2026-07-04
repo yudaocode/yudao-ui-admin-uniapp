@@ -19,12 +19,18 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="canUpdate || canDelete" class="yd-detail-footer">
+    <view v-if="hasAccessByCodes(['erp:product-unit:update']) || hasAccessByCodes(['erp:product-unit:delete'])" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:product-unit:update'])"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:product-unit:delete'])"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -37,14 +43,14 @@ import type { ProductUnit } from '@/api/erp/product/unit'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { deleteProductUnit, getProductUnit } from '@/api/erp/product/unit'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -58,8 +64,6 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<ProductUnit>() // 详情数据
 const deleting = ref(false) // 删除状态
-const canUpdate = computed(() => hasAccessByCodes(['erp:product-unit:update']))
-const canDelete = computed(() => hasAccessByCodes(['erp:product-unit:delete']))
 
 /** 返回上一页 */
 function handleBack() {
@@ -81,7 +85,9 @@ async function getDetail() {
 
 /** 编辑产品单位 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-erp/product/unit/form/index?id=${props.id}` })
+  uni.navigateTo({
+    url: `/pages-erp/product/unit/form/index?id=${props.id}`,
+  })
 }
 
 /** 删除产品单位 */

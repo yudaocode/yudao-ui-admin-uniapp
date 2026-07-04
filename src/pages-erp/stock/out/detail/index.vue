@@ -74,15 +74,24 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="canUpdate || canUpdateStatus || canDelete" class="yd-detail-footer">
+    <view v-if="canUpdate || canUpdateStatus || hasAccessByCodes(['erp:stock-out:delete'])" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button
+          v-if="canUpdate"
+          class="flex-1" type="warning" :disabled="statusLoading || deleting" @click="handleEdit"
+        >
           编辑
         </wd-button>
-        <wd-button v-if="canUpdateStatus" class="flex-1" type="primary" :loading="statusLoading" @click="handleUpdateStatus(nextStatus)">
+        <wd-button
+          v-if="canUpdateStatus"
+          class="flex-1" type="primary" :loading="statusLoading" :disabled="deleting" @click="handleUpdateStatus(nextStatus)"
+        >
           {{ nextStatus === ErpAuditStatusEnum.AUDITED ? '审批' : '反审批' }}
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="hasAccessByCodes(['erp:stock-out:delete'])"
+          class="flex-1" type="danger" :loading="deleting" :disabled="statusLoading" @click="handleDelete"
+        >
           删除
         </wd-button>
       </view>
@@ -98,13 +107,15 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { deleteStockOut, getStockOut, updateStockOutStatus } from '@/api/erp/stock/out'
 import { useAccess } from '@/hooks/useAccess'
-import { enrichErpDocumentDetail, formatCount, formatMoney, openErpFile } from '@/pages-erp/utils/erp'
+import { openAttachment } from '@/utils/download'
+import { buildErpDocumentDetail } from '@/pages-erp/utils/erp'
+import { formatCount } from '@/pages-erp/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, ErpAuditStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import { formatMoney } from '@/utils/format'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -120,7 +131,6 @@ const deleting = ref(false) // 删除状态
 const statusLoading = ref(false) // 审批状态
 const items = computed(() => Array.isArray(formData.value?.items) ? formData.value.items : [])
 const canUpdate = computed(() => formData.value?.status !== ErpAuditStatusEnum.AUDITED && hasAccessByCodes(['erp:stock-out:update']))
-const canDelete = computed(() => hasAccessByCodes(['erp:stock-out:delete']))
 const canUpdateStatus = computed(() => hasAccessByCodes(['erp:stock-out:update-status']) && (formData.value?.status === ErpAuditStatusEnum.UNAUDITED || formData.value?.status === ErpAuditStatusEnum.AUDITED))
 const nextStatus = computed(() => formData.value?.status === ErpAuditStatusEnum.UNAUDITED ? ErpAuditStatusEnum.AUDITED : ErpAuditStatusEnum.UNAUDITED)
 
@@ -136,7 +146,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await enrichErpDocumentDetail(await getStockOut(props.id), 'stock-out') as StockOut
+    formData.value = await buildErpDocumentDetail(await getStockOut(props.id), 'stock-out') as StockOut
   } finally {
     toast.close()
   }
@@ -150,13 +160,13 @@ function handleEdit() {
 /** 打开附件 */
 function handleOpenFile() {
   if (formData.value?.fileUrl) {
-    openErpFile(formData.value.fileUrl)
+    openAttachment(formData.value.fileUrl)
   }
 }
 
 /** 删除其它出库 */
 async function handleDelete() {
-  if (!props.id) {
+  if (!props.id || deleting.value || statusLoading.value) {
     return
   }
   try {
@@ -177,7 +187,7 @@ async function handleDelete() {
 
 /** 审批或反审批 */
 async function handleUpdateStatus(status: number) {
-  if (!props.id) {
+  if (!props.id || statusLoading.value || deleting.value) {
     return
   }
   const actionName = status === ErpAuditStatusEnum.AUDITED ? '审批' : '反审批'

@@ -38,17 +38,17 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { erpOptionLoaders } from '@/pages-erp/config/options'
-import { normalizeOptions } from '@/pages-erp/utils/erp'
+import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import { getProductSimpleList } from '@/api/erp/product/product'
+import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
-
 const visible = ref(false) // 搜索弹窗显示状态
 const productOptions = ref<Record<string, any>[]>([]) // 产品选项
 const warehouseOptions = ref<Record<string, any>[]>([]) // 仓库选项
@@ -57,25 +57,17 @@ const formData = reactive({
   warehouseId: undefined as number | undefined,
   bizType: -1,
   bizNo: undefined as string | undefined,
-  createTime: ['', ''] as [any, any],
+  createTime: [undefined, undefined] as [any, any],
 }) // 搜索表单数据
-
-/** 获取选项名称 */
-function getOptionLabel(options: Record<string, any>[], id?: number) {
-  if (!id) {
-    return ''
-  }
-  return options.find(item => String(item.id) === String(id))?.name || String(id)
-}
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.productId) {
-    conditions.push(`产品:${getOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
   }
   if (formData.warehouseId) {
-    conditions.push(`仓库:${getOptionLabel(warehouseOptions.value, formData.warehouseId)}`)
+    conditions.push(`仓库:${getErpOptionLabel(warehouseOptions.value, formData.warehouseId)}`)
   }
   if (formData.bizType !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.ERP_STOCK_RECORD_BIZ_TYPE, formData.bizType)}`)
@@ -107,7 +99,7 @@ function handleReset() {
   formData.warehouseId = undefined
   formData.bizType = -1
   formData.bizNo = undefined
-  formData.createTime = ['', '']
+  formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')
 }
@@ -115,10 +107,11 @@ function handleReset() {
 /** 加载搜索下拉选项 */
 onMounted(async () => {
   const [products, warehouses] = await Promise.all([
-    erpOptionLoaders.product(),
-    erpOptionLoaders.warehouse(),
+    getProductSimpleList(),
+    getWarehouseSimpleList(),
   ])
-  productOptions.value = normalizeOptions(products)
-  warehouseOptions.value = normalizeOptions(warehouses)
+
+  productOptions.value = products
+  warehouseOptions.value = warehouses
 })
 </script>

@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="调拨单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="调拨时间" title-width="220rpx" prop="moveTime" is-link :value="formatDate(formData.moveTime) || ''" placeholder="请选择调拨时间" @click="dateVisible.moveTime = true" />
-          <wd-datetime-picker v-model="formData.moveTime" v-model:visible="dateVisible.moveTime" title="请选择调拨时间" type="date" />
+          <wd-datetime-picker v-model:visible="dateVisible.moveTime" :model-value="formatDate(formData.moveTime)" title="请选择调拨时间" type="date" @update:model-value="value => formData.moveTime = formatOptionalDate(value)" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -19,18 +19,19 @@
         </wd-cell-group>
 
         <!-- 调拨明细 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          调拨产品清单
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">调拨产品清单</text>
+          <wd-button size="small" type="primary" variant="plain" @click="itemEditorRef?.handleAdd()">
+            添加
+          </wd-button>
         </view>
-        <wd-cell-group border>
-          <wd-form-item title="调拨明细" title-width="220rpx">
-            <MoveItemForm ref="itemEditorRef" v-model="formData.items" :product-options="productOptions" :warehouse-options="warehouseOptions" />
-          </wd-form-item>
-        </wd-cell-group>
+        <view class="px-24rpx">
+          <MoveItemForm ref="itemEditorRef" v-model="formData.items" :product-options="productOptions" :warehouse-options="warehouseOptions" />
+        </view>
 
         <!-- 合计信息 -->
-        <view class="px-24rpx py-16rpx text-28rpx text-[#666]">
-          合计信息
+        <view class="flex items-center justify-between px-24rpx py-16rpx">
+          <text class="text-28rpx text-[#333] font-semibold">合计信息</text>
         </view>
         <wd-cell-group border>
           <wd-cell title="合计数量" :value="formatCount(formData.totalCount)" />
@@ -62,13 +63,13 @@ import { getProductSimpleList } from '@/api/erp/product/product'
 import { createStockMove, getStockMove, updateStockMove } from '@/api/erp/stock/move'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate } from '@/utils/date'
+import { formatDate, formatOptionalDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import MoveItemForm from '../components/move-item-form.vue'
-import { formatCount, formatMoney, roundPrice, toNumber } from '@/pages-erp/utils/erp'
+import { formatCount, roundPrice } from '@/pages-erp/utils/format'
+import { formatMoney, toNumber } from '@/utils/format'
 
-const props = defineProps<{ id?: number | any }>()
-
+const props = defineProps<{ id?: number }>()
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -82,7 +83,7 @@ const formLoading = ref(false) // 表单提交状态
 const formData = ref<StockMove>({
   id: undefined,
   no: undefined,
-  moveTime: Date.now(),
+  moveTime: formatDate(Date.now()),
   remark: undefined,
   fileUrl: '',
   totalCount: 0,
@@ -131,10 +132,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = {
-      ...formData.value,
-      ...await getStockMove(props.id),
-    }
+    formData.value = await getStockMove(props.id)
   } finally {
     toast.close()
   }
@@ -147,6 +145,7 @@ async function handleSubmit() {
   if (!valid || !itemEditorRef.value?.validate()) {
     return
   }
+
   refreshAmount()
   formLoading.value = true
   try {
@@ -164,6 +163,7 @@ async function handleSubmit() {
   }
 }
 
+/** 明细变更后刷新金额 */
 watch(() => formData.value.items, refreshAmount, { deep: true })
 
 /** 初始化 */

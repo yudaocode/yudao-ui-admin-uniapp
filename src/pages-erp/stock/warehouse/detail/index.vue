@@ -28,13 +28,13 @@
     <!-- 底部操作按钮 -->
     <view v-if="hasAccessByCodes(['erp:warehouse:update']) || hasAccessByCodes(['erp:warehouse:delete'])" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button v-if="hasAccessByCodes(['erp:warehouse:update'])" class="flex-1" type="warning" @click="handleEdit">
+        <wd-button v-if="hasAccessByCodes(['erp:warehouse:update'])" class="flex-1" type="warning" :disabled="defaultLoading || deleting" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['erp:warehouse:update']) && !formData?.defaultStatus" class="flex-1" type="primary" :loading="defaultLoading" @click="handleSetDefault">
-          设为默认
+        <wd-button v-if="hasAccessByCodes(['erp:warehouse:update'])" class="flex-1" type="primary" :loading="defaultLoading" :disabled="deleting" @click="handleUpdateDefaultStatus">
+          {{ formData?.defaultStatus ? '取消默认' : '设为默认' }}
         </wd-button>
-        <wd-button v-if="hasAccessByCodes(['erp:warehouse:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="hasAccessByCodes(['erp:warehouse:delete'])" class="flex-1" type="danger" :loading="deleting" :disabled="defaultLoading" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -52,9 +52,9 @@ import { deleteWarehouse, getWarehouse, updateWarehouseDefaultStatus } from '@/a
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatMoney } from '@/pages-erp/utils/erp'
+import { formatMoney } from '@/utils/format'
 
-const props = defineProps<{ id?: number | any }>()
+const props = defineProps<{ id?: number }>()
 
 definePage({
   style: {
@@ -95,7 +95,7 @@ function handleEdit() {
 
 /** 删除仓库 */
 async function handleDelete() {
-  if (!props.id) {
+  if (!props.id || deleting.value || defaultLoading.value) {
     return
   }
   try {
@@ -114,20 +114,22 @@ async function handleDelete() {
   }
 }
 
-/** 设为默认 */
-async function handleSetDefault() {
-  if (!props.id || !formData.value) {
+/** 修改默认状态 */
+async function handleUpdateDefaultStatus() {
+  if (!props.id || !formData.value || defaultLoading.value || deleting.value) {
     return
   }
+  const nextDefaultStatus = !formData.value.defaultStatus
+  const actionName = nextDefaultStatus ? '设置' : '取消'
   try {
-    await dialog.confirm({ title: '提示', msg: `确定要设置“${formData.value.name || '该仓库'}”为默认仓库吗？` })
+    await dialog.confirm({ title: '提示', msg: `确定要${actionName}“${formData.value.name || '该仓库'}”默认吗？` })
   } catch {
     return
   }
   defaultLoading.value = true
   try {
-    await updateWarehouseDefaultStatus(props.id, true)
-    toast.success('设置成功')
+    await updateWarehouseDefaultStatus(props.id, nextDefaultStatus)
+    toast.success(`${actionName}成功`)
     uni.$emit('erp:warehouse:reload')
     await getDetail()
   } finally {
