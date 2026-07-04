@@ -23,35 +23,36 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions v-if="hasAccessByCodes(['mes:tm-tool:update']) || hasAccessByCodes(['mes:tm-tool:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:tm-tool:update'])" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:tm-tool:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="formData" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" variant="plain" @click="handleBarcode">
+          条码
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:tm-tool:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:tm-tool:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { TmToolVO } from '@/api/mes/tm/tool'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import type { TmTool } from '@/api/mes/tm/tool'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteTool, getTool } from '@/api/mes/tm/tool'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { BarcodeBizTypeEnum, DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | string }>()
-const MesMaintenTypeEnum = {
-  REGULAR: 1,
-  USAGE: 2,
-} as const
 
 definePage({
   style: {
@@ -64,13 +65,15 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const formData = ref<TmToolVO>()
-const deleting = ref(false)
+const formData = ref<TmTool>() // 详情数据
+const deleting = ref(false) // 删除状态
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/tm/tool/index')
 }
 
+/** 加载详情 */
 async function getDetail() {
   if (!currentId.value || deleting.value) {
     return
@@ -79,7 +82,7 @@ async function getDetail() {
     toast.loading('加载中...')
     const detailData = await getTool(currentId.value)
     if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
+      toast.warning('详情不存在，已返回列表')
       delay(handleBack)
       return
     }
@@ -89,21 +92,27 @@ async function getDetail() {
   }
 }
 
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  uni.navigateTo({
+    url: buildBarcodeListUrl({
+      bizType: BarcodeBizTypeEnum.TOOL,
+      bizId: formData.value.id,
+      bizCode: formData.value.code,
+    }),
+  })
 }
 
+/** 编辑 */
 function handleEdit() {
   uni.navigateTo({ url: `/pages-mes/tm/tool/form/index?id=${currentId.value}` })
 }
 
-function formatNextMainten(data?: TmToolVO) {
+/** 格式化下次保养 */
+function formatNextMainten(data?: TmTool) {
   if (data?.maintenType === MesMaintenTypeEnum.REGULAR) {
     return formatDate(data.nextMaintenDate) || '-'
   }
@@ -113,6 +122,7 @@ function formatNextMainten(data?: TmToolVO) {
   return '-'
 }
 
+/** 删除 */
 async function handleDelete() {
   if (!currentId.value) {
     return
@@ -137,20 +147,14 @@ async function handleDelete() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  initPage()
   uni.$on('mes:tm:tool:reload', getDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:tm:tool:reload', getDetail)
-})
-
-watch(currentId, () => {
-  initPage()
 })
 </script>

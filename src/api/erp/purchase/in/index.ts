@@ -33,7 +33,7 @@ export interface PurchaseIn {
   accountId?: number // 结算账户编号
   accountName?: string // 结算账户名称
   orderId?: number // 关联订单编号
-  inTime?: string | Date // 入库时间
+  inTime?: Date | string | number // 入库时间
   orderNo?: string // 关联订单
   discountPercent?: number // 优惠率
   discountPrice?: number // 付款优惠

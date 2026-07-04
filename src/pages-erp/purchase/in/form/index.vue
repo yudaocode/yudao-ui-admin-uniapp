@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="入库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="入库时间" title-width="220rpx" prop="inTime" is-link :value="formatDate(formData.inTime) || ''" placeholder="请选择入库时间" @click="dateVisible.inTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.inTime" :model-value="formatDate(formData.inTime)" title="请选择入库时间" type="date" @update:model-value="value => formData.inTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.inTime" v-model:visible="dateVisible.inTime" title="请选择入库时间" type="date" />
           <wd-cell title="关联订单" :value="formData.orderNo || '请选择可入库采购订单'" is-link @click="openOrderSelector" />
           <wd-form-item title="供应商" title-width="220rpx" prop="supplierId">
             <wd-input :model-value="supplierDisplayValue" placeholder="选择采购订单后回填" disabled />
@@ -74,7 +74,7 @@ import { createPurchaseIn, getPurchaseIn, updatePurchaseIn } from '@/api/erp/pur
 import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import InItemForm from '../components/in-item-form.vue'
@@ -98,7 +98,7 @@ const formData = ref<PurchaseIn>({
   no: undefined,
   supplierId: undefined,
   accountId: undefined,
-  inTime: formatDate(Date.now()),
+  inTime: Date.now(),
   orderNo: undefined,
   remark: undefined,
   fileUrl: '',

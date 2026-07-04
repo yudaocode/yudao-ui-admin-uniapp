@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="出库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="出库时间" title-width="220rpx" prop="outTime" is-link :value="formatDate(formData.outTime) || ''" placeholder="请选择出库时间" @click="dateVisible.outTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.outTime" :model-value="formatDate(formData.outTime)" title="请选择出库时间" type="date" @update:model-value="value => formData.outTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.outTime" v-model:visible="dateVisible.outTime" title="请选择出库时间" type="date" />
           <wd-form-item
             title="关联订单"
             title-width="220rpx"
@@ -20,7 +20,7 @@
             @click="openOrderSelector"
           />
           <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" disabled />
-          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择销售人员" />
+          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -81,7 +81,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createSaleOut, getSaleOut, updateSaleOut } from '@/api/erp/sale/out'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import OutItemForm from '../components/out-item-form.vue'
@@ -109,7 +109,7 @@ const formData = ref<SaleOut>({
   accountId: undefined,
   saleUserId: undefined,
   orderId: undefined,
-  outTime: formatDate(Date.now()),
+  outTime: Date.now(),
   orderNo: undefined,
   remark: undefined,
   fileUrl: '',

@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="订单单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="订单时间" title-width="220rpx" prop="orderTime" is-link :value="formatDate(formData.orderTime) || ''" placeholder="请选择订单时间" @click="dateVisible.orderTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.orderTime" :model-value="formatDate(formData.orderTime)" title="请选择订单时间" type="date" @update:model-value="value => formData.orderTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.orderTime" v-model:visible="dateVisible.orderTime" title="请选择订单时间" type="date" />
           <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
@@ -69,7 +69,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getProductSimpleList } from '@/api/erp/product/product'
 import { createPurchaseOrder, getPurchaseOrder, updatePurchaseOrder } from '@/api/erp/purchase/order'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import OrderItemForm from '../components/order-item-form.vue'
@@ -93,7 +93,7 @@ const formData = ref<PurchaseOrder>({
   no: undefined,
   supplierId: undefined,
   accountId: undefined,
-  orderTime: formatDate(Date.now()),
+  orderTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   discountPercent: 0,

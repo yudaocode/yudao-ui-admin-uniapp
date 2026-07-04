@@ -9,9 +9,9 @@
         <wd-cell-group border>
           <wd-cell title="付款单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="付款时间" title-width="220rpx" prop="paymentTime" is-link :value="formatDate(formData.paymentTime) || ''" placeholder="请选择付款时间" @click="dateVisible.paymentTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.paymentTime" :model-value="formatDate(formData.paymentTime)" title="请选择付款时间" type="date" @update:model-value="value => formData.paymentTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.paymentTime" v-model:visible="dateVisible.paymentTime" title="请选择付款时间" type="date" />
           <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
-          <yd-form-picker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择财务人员" />
+          <yd-form-picker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择财务人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -70,7 +70,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createFinancePayment, getFinancePayment, updateFinancePayment } from '@/api/erp/finance/payment'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import PaymentItemForm from '../components/payment-item-form.vue'
@@ -97,7 +97,7 @@ const formData = ref<FinancePayment>({
   supplierId: undefined,
   accountId: undefined,
   financeUserId: undefined,
-  paymentTime: formatDate(Date.now()),
+  paymentTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   totalPrice: 0,

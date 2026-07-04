@@ -23,7 +23,7 @@ export interface StockOut {
   no?: string // 出库单号
   customerId?: number // 客户编号
   customerName?: string // 客户名称
-  outTime?: string | Date // 出库时间
+  outTime?: Date | string | number // 出库时间
   totalCount?: number // 合计数量
   totalPrice?: number // 合计金额，单位：元
   status?: number // 状态

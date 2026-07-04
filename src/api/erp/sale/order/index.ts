@@ -34,7 +34,7 @@ export interface SaleOrder {
   accountName?: string // 结算账户名称
   saleUserId?: number // 销售人员编号
   saleUserName?: string // 销售人员名称
-  orderTime?: string | Date // 订单时间
+  orderTime?: Date | string | number // 订单时间
   discountPercent?: number // 优惠率
   discountPrice?: number // 收款优惠
   totalProductPrice?: number // 合计产品金额

@@ -29,7 +29,7 @@ export interface PurchaseOrder {
   supplierName?: string // 供应商名称
   accountId?: number // 结算账户编号
   accountName?: string // 结算账户名称
-  orderTime?: string | Date // 订单时间
+  orderTime?: Date | string | number // 订单时间
   discountPercent?: number // 优惠率
   discountPrice?: number // 付款优惠
   totalProductPrice?: number // 合计产品金额

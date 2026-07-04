@@ -23,7 +23,7 @@ export interface StockIn {
   no?: string // 入库单号
   supplierId?: number // 供应商编号
   supplierName?: string // 供应商名称
-  inTime?: string | Date // 入库时间
+  inTime?: Date | string | number // 入库时间
   totalCount?: number // 合计数量
   totalPrice?: number // 合计金额，单位：元
   status?: number // 状态

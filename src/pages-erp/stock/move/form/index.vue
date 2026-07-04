@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="调拨单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="调拨时间" title-width="220rpx" prop="moveTime" is-link :value="formatDate(formData.moveTime) || ''" placeholder="请选择调拨时间" @click="dateVisible.moveTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.moveTime" :model-value="formatDate(formData.moveTime)" title="请选择调拨时间" type="date" @update:model-value="value => formData.moveTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.moveTime" v-model:visible="dateVisible.moveTime" title="请选择调拨时间" type="date" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -63,7 +63,7 @@ import { getProductSimpleList } from '@/api/erp/product/product'
 import { createStockMove, getStockMove, updateStockMove } from '@/api/erp/stock/move'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import MoveItemForm from '../components/move-item-form.vue'
 import { formatCount, roundPrice } from '@/pages-erp/utils/format'
@@ -83,7 +83,7 @@ const formLoading = ref(false) // 表单提交状态
 const formData = ref<StockMove>({
   id: undefined,
   no: undefined,
-  moveTime: formatDate(Date.now()),
+  moveTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   totalCount: 0,

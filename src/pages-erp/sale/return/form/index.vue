@@ -9,10 +9,10 @@
         <wd-cell-group border>
           <wd-cell title="退货单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="退货时间" title-width="220rpx" prop="returnTime" is-link :value="formatDate(formData.returnTime) || ''" placeholder="请选择退货时间" @click="dateVisible.returnTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.returnTime" :model-value="formatDate(formData.returnTime)" title="请选择退货时间" type="date" @update:model-value="value => formData.returnTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.returnTime" v-model:visible="dateVisible.returnTime" title="请选择退货时间" type="date" />
           <wd-form-item title="关联订单" title-width="220rpx" prop="orderId" is-link :value="formData.orderNo || ''" placeholder="请选择可退货订单" @click="openOrderSelector" />
           <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" disabled />
-          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择销售人员" />
+          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -73,7 +73,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createSaleReturn, getSaleReturn, updateSaleReturn } from '@/api/erp/sale/return'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import ReturnItemForm from '../components/return-item-form.vue'
@@ -101,7 +101,7 @@ const formData = ref<SaleReturn>({
   accountId: undefined,
   saleUserId: undefined,
   orderId: undefined,
-  returnTime: formatDate(Date.now()),
+  returnTime: Date.now(),
   orderNo: undefined,
   remark: undefined,
   fileUrl: '',

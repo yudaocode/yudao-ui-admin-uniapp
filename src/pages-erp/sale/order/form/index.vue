@@ -22,14 +22,13 @@
             @click="dateVisible.orderTime = true"
           />
           <wd-datetime-picker
+            v-model="formData.orderTime"
             v-model:visible="dateVisible.orderTime"
-            :model-value="formatDate(formData.orderTime)"
             title="请选择订单时间"
             type="date"
-            @update:model-value="value => formData.orderTime = formatOptionalDate(value)"
           />
           <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
-          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="name" value-key="id" placeholder="请选择销售人员" />
+          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -92,7 +91,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getProductSimpleList } from '@/api/erp/product/product'
 import { createSaleOrder, getSaleOrder, updateSaleOrder } from '@/api/erp/sale/order'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
 import OrderItemForm from '../components/order-item-form.vue'
@@ -118,7 +117,7 @@ const formData = ref<SaleOrder>({
   customerId: undefined,
   accountId: undefined,
   saleUserId: undefined,
-  orderTime: formatDate(Date.now()),
+  orderTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   discountPercent: 0,

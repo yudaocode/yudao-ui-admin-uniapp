@@ -27,7 +27,7 @@
         <view
           v-for="item in list"
           :key="item.id"
-          class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+          class="erp-list-card relative mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
           @click="handleDetail(item)"
         >
           <view class="p-24rpx">

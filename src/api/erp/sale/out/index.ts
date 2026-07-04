@@ -35,7 +35,7 @@ export interface SaleOut {
   saleUserId?: number // 销售人员编号
   saleUserName?: string // 销售人员名称
   orderId?: number // 关联订单编号
-  outTime?: string | Date // 出库时间
+  outTime?: Date | string | number // 出库时间
   orderNo?: string // 关联订单
   discountPercent?: number // 优惠率
   discountPrice?: number // 收款优惠

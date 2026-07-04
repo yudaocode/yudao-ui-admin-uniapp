@@ -124,8 +124,13 @@ function refreshErpDocumentAmount(data: Record<string, any>, moduleKey?: string)
 
 /** 刷新 ERP 单据明细金额 */
 function refreshErpDocumentItemAmount(item: Record<string, any>, moduleKey?: string) {
-  // 盘点单用「实盘库存 - 账面库存」补盈亏数量
-  if (moduleKey === 'stock-check' && isFiniteNumberValue(item.stockCount) && isFiniteNumberValue(item.actualCount)) {
+  // 盘点单详情优先信任后端落库盈亏数量，仅缺失时兜底计算
+  if (
+    moduleKey === 'stock-check'
+    && !isFiniteNumberValue(item.count)
+    && isFiniteNumberValue(item.stockCount)
+    && isFiniteNumberValue(item.actualCount)
+  ) {
     item.count = roundCount(toNumber(item.actualCount) - toNumber(item.stockCount))
   }
   refreshErpItemAmount(item)

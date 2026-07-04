@@ -22,7 +22,7 @@ export interface StockCheckItem {
 export interface StockCheck {
   id?: number // 盘点编号
   no?: string // 盘点单号
-  checkTime?: string | Date // 盘点时间
+  checkTime?: Date | string | number // 盘点时间
   totalCount?: number // 合计数量
   totalPrice?: number // 合计金额，单位：元
   status?: number // 状态

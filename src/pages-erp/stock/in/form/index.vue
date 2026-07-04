@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="入库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="入库时间" title-width="220rpx" prop="inTime" is-link :value="formatDate(formData.inTime) || ''" placeholder="请选择入库时间" @click="dateVisible.inTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.inTime" :model-value="formatDate(formData.inTime)" title="请选择入库时间" type="date" @update:model-value="value => formData.inTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.inTime" v-model:visible="dateVisible.inTime" title="请选择入库时间" type="date" />
           <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
@@ -64,7 +64,7 @@ import { getProductSimpleList } from '@/api/erp/product/product'
 import { createStockIn, getStockIn, updateStockIn } from '@/api/erp/stock/in'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import InItemForm from '../components/in-item-form.vue'
 import { formatCount, roundPrice } from '@/pages-erp/utils/format'
@@ -86,7 +86,7 @@ const formData = ref<StockIn>({
   id: undefined,
   no: undefined,
   supplierId: undefined,
-  inTime: formatDate(Date.now()),
+  inTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   totalCount: 0,

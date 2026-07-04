@@ -23,7 +23,7 @@ export interface FinancePayment {
   accountName?: string // 结算账户名称
   financeUserId?: number // 财务人员编号
   financeUserName?: string // 财务人员名称
-  paymentTime?: string | Date // 付款时间
+  paymentTime?: Date | string | number // 付款时间
   totalPrice?: number // 合计金额，单位：元
   discountPrice?: number // 优惠金额，单位：元
   paymentPrice?: number // 实际付款，单位：元

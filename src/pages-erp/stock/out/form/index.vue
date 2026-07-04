@@ -9,7 +9,7 @@
         <wd-cell-group border>
           <wd-cell title="出库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="出库时间" title-width="220rpx" prop="outTime" is-link :value="formatDate(formData.outTime) || ''" placeholder="请选择出库时间" @click="dateVisible.outTime = true" />
-          <wd-datetime-picker v-model:visible="dateVisible.outTime" :model-value="formatDate(formData.outTime)" title="请选择出库时间" type="date" @update:model-value="value => formData.outTime = formatOptionalDate(value)" />
+          <wd-datetime-picker v-model="formData.outTime" v-model:visible="dateVisible.outTime" title="请选择出库时间" type="date" />
           <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
@@ -64,7 +64,7 @@ import { getProductSimpleList } from '@/api/erp/product/product'
 import { createStockOut, getStockOut, updateStockOut } from '@/api/erp/stock/out'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatOptionalDate } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import OutItemForm from '../components/out-item-form.vue'
 import { formatCount, roundPrice } from '@/pages-erp/utils/format'
@@ -86,7 +86,7 @@ const formData = ref<StockOut>({
   id: undefined,
   no: undefined,
   customerId: undefined,
-  outTime: formatDate(Date.now()),
+  outTime: Date.now(),
   remark: undefined,
   fileUrl: '',
   totalCount: 0,
