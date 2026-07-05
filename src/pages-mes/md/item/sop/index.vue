@@ -42,7 +42,15 @@
                 <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', sop)">
                   编辑
                 </wd-button>
-                <wd-button v-if="canDelete" size="small" type="danger" variant="plain" :loading="deletingId === sop.id" :disabled="deletingId !== undefined" @click="handleDelete(sop)">
+                <wd-button
+                  v-if="canDelete"
+                  size="small"
+                  type="danger"
+                  variant="plain"
+                  :loading="deletingId === sop.id"
+                  :disabled="deletingId !== undefined"
+                  @click="handleDelete(sop)"
+                >
                   删除
                 </wd-button>
               </view>
@@ -59,11 +67,13 @@
     </scroll-view>
 
     <!-- 添加按钮 -->
-    <MesFooterActions v-if="isEdit && canCreate">
-      <wd-button type="primary" block @click="openForm('create')">
-        添加 SOP
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="isEdit && canCreate" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block @click="openForm('create')">
+          添加 SOP
+        </wd-button>
+      </view>
+    </view>
 
     <!-- 新增/编辑弹层 -->
     <wd-popup v-model="formVisible" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0; max-height: 85vh;">
@@ -79,17 +89,16 @@
             <wd-form-item title="展示顺序" title-width="180rpx" prop="sort" center>
               <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
             </wd-form-item>
-            <wd-form-item title="所属工序" title-width="180rpx">
-              <view class="min-w-0 flex flex-1 items-center justify-end gap-12rpx">
-                <view class="min-w-0 flex-1 truncate text-right text-28rpx" :class="processDisplayValue ? 'text-[#333]' : 'text-[#999]'" @click="processPickerVisible = true">
-                  {{ processDisplayValue || '请选择工序' }}
-                </view>
-                <wd-button v-if="formData.processId !== undefined" size="small" variant="plain" @click.stop="clearProcess">
-                  清空
-                </wd-button>
-              </view>
-            </wd-form-item>
-            <wd-picker v-model:visible="processPickerVisible" :model-value="processPickerValue" :columns="processOptions" label-key="label" value-key="id" @confirm="handleProcessConfirm" />
+            <yd-form-picker
+              v-model="formData.processId"
+              label="所属工序"
+              label-width="180rpx"
+              :columns="processOptions"
+              label-key="label"
+              value-key="id"
+              placeholder="请选择工序"
+              clearable
+            />
             <wd-form-item title="内容说明" title-width="180rpx" prop="description">
               <wd-textarea v-model="formData.description" placeholder="请输入详细描述" :maxlength="500" show-word-limit clearable />
             </wd-form-item>
@@ -115,30 +124,36 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdProductSopCreateReqVO, MdProductSopVO } from '@/api/mes/md/item/productSop'
-import type { ProProcessVO } from '@/api/mes/pro/process'
+import type { MdProductSop } from '@/api/mes/md/item/productSop'
+import type { ProProcess } from '@/api/mes/pro/process'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createProductSop, deleteProductSop, getProductSopListByItemId, updateProductSop } from '@/api/mes/md/item/productSop'
 import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ itemId?: number | string, mode?: string }>()
 
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
+const dialog = useDialog()
 const toast = useToast()
 const { hasAccessByCodes } = useAccess()
 const isEdit = computed(() => props.mode === 'edit')
 const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create']))
 const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update']))
 const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete']))
-const list = ref<MdProductSopVO[]>([]) // SOP 列表
+const list = ref<MdProductSop[]>([]) // SOP 列表
 const loading = ref(false) // 列表加载状态
 const deletingId = ref<number>() // 正在删除的 SOP 编号
 
@@ -149,7 +164,7 @@ const formVisible = ref(false) // 表单弹层状态
 const formType = ref<'create' | 'update'>('create') // 表单类型
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const formData = ref<MdProductSopCreateReqVO & { id?: number }>({
+const formData = ref<MdProductSop>({
   itemId: 0,
   sort: 0,
   title: '',
@@ -162,23 +177,13 @@ const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }],
   sort: [{ required: true, message: '展示顺序不能为空' }],
 })
-const processPickerVisible = ref(false) // 工序选择器状态
-const processPickerValue = computed(() => formData.value.processId === undefined ? [] : [formData.value.processId])
-const processDisplayValue = computed(() => {
-  if (formData.value.processId === undefined) {
-    return ''
-  }
-  const process = processMap.value.get(formData.value.processId)
-  return process ? `${process.name} (${process.code})` : String(formData.value.processId)
-})
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
 }
 
 /** 获取工序展示文案 */
-function getProcessLabel(sop: MdProductSopVO): string {
+function getProcessLabel(sop: MdProductSop): string {
   const process = sop.processId == null ? undefined : processMap.value.get(sop.processId)
   const name = sop.processName || process?.name || ''
   const code = sop.processCode || process?.code || ''
@@ -191,7 +196,7 @@ function getProcessLabel(sop: MdProductSopVO): string {
 /** 加载工序选项 */
 async function loadProcessOptions() {
   const processList = await getProcessSimpleList()
-  const validProcesses = (processList || []).filter((process): process is ProProcessVO & { id: number } => process.id !== undefined)
+  const validProcesses = (processList || []).filter((process): process is ProProcess & { id: number } => process.id !== undefined)
   processOptions.value = validProcesses.map(process => ({
     id: process.id,
     label: process.code ? `${process.name} (${process.code})` : process.name,
@@ -213,7 +218,7 @@ async function loadList() {
 }
 
 /** 打开新增/编辑弹层 */
-function openForm(type: 'create' | 'update', sop?: MdProductSopVO) {
+function openForm(type: 'create' | 'update', sop?: MdProductSop) {
   formType.value = type
   formData.value = type === 'update' && sop
     ? {
@@ -238,24 +243,10 @@ function openForm(type: 'create' | 'update', sop?: MdProductSopVO) {
   formVisible.value = true
 }
 
-/** 工序选择确认 */
-function handleProcessConfirm({ value }: { value: Array<number | string> }) {
-  const processId = Number(value[0])
-  formData.value.processId = Number.isFinite(processId) ? processId : undefined
-}
-
-/** 清空工序 */
-function clearProcess() {
-  formData.value.processId = undefined
-}
-
 /** 提交表单 */
 async function submitForm() {
-  if (!formRef.value) {
-    return
-  }
-  const result = await formRef.value.validate()
-  if (!result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (formType.value === 'update' && formData.value.id === undefined) {
@@ -266,13 +257,9 @@ async function submitForm() {
   const isCreate = formType.value === 'create'
   const actionName = isCreate ? '新增' : '修改'
   try {
-    await new Promise<void>((resolve, reject) => {
-      uni.showModal({
-        title: '提示',
-        content: isCreate ? '确认新增该 SOP 吗？' : '确认保存该 SOP 的修改吗？',
-        success: res => res.confirm ? resolve() : reject(new Error('cancelled')),
-        fail: () => reject(new Error('cancelled')),
-      })
+    await dialog.confirm({
+      title: '提示',
+      msg: isCreate ? '确认新增该 SOP 吗？' : '确认保存该 SOP 的修改吗？',
     })
   } catch {
     return
@@ -280,23 +267,10 @@ async function submitForm() {
 
   formLoading.value = true
   try {
-    const base = {
-      itemId: formData.value.itemId,
-      sort: formData.value.sort,
-      title: formData.value.title,
-      processId: formData.value.processId,
-      description: formData.value.description || undefined,
-      url: formData.value.url || undefined,
-      remark: formData.value.remark || undefined,
-    }
     if (isCreate) {
-      await createProductSop(base)
+      await createProductSop(formData.value)
     } else {
-      const id = formData.value.id
-      if (id === undefined) {
-        return
-      }
-      await updateProductSop({ ...base, id })
+      await updateProductSop(formData.value)
     }
     formVisible.value = false
     toast.success(`${actionName}成功`)
@@ -307,18 +281,14 @@ async function submitForm() {
 }
 
 /** 删除 SOP */
-async function handleDelete(sop: MdProductSopVO) {
+async function handleDelete(sop: MdProductSop) {
   if (deletingId.value !== undefined) {
     return
   }
   try {
-    await new Promise<void>((resolve, reject) => {
-      uni.showModal({
-        title: '提示',
-        content: `确定要删除 SOP「${sop.title}」吗？`,
-        success: res => res.confirm ? resolve() : reject(new Error('cancelled')),
-        fail: () => reject(new Error('cancelled')),
-      })
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要删除 SOP「${sop.title}」吗？`,
     })
   } catch {
     return
@@ -336,7 +306,7 @@ async function handleDelete(sop: MdProductSopVO) {
 /** 初始化 */
 onMounted(async () => {
   if (!props.itemId) {
-    uni.showToast({ icon: 'none', title: '缺少物料编号' })
+    toast.warning('缺少物料编号')
     delay(handleBack)
     return
   }

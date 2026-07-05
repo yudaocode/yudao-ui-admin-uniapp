@@ -10,7 +10,7 @@
           <wd-form-item title="物料编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入物料编码或点击自动生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -22,8 +22,16 @@
           <wd-form-item title="规格型号" title-width="220rpx" prop="specification">
             <wd-input v-model="formData.specification" placeholder="请输入规格型号" clearable />
           </wd-form-item>
-          <wd-form-item title="计量单位" title-width="220rpx" prop="unitMeasureId" is-link :value="unitDisplayValue" placeholder="请选择计量单位" @click="unitPickerVisible = true" />
-          <wd-picker v-model:visible="unitPickerVisible" :model-value="unitPickerValue" :columns="unitMeasureOptions" label-key="name" value-key="id" @confirm="({ value }) => formData.unitMeasureId = value[0]" />
+          <yd-form-picker
+            v-model="formData.unitMeasureId"
+            label="计量单位"
+            label-width="220rpx"
+            prop="unitMeasureId"
+            :columns="unitMeasureOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择计量单位"
+          />
           <yd-tree-select
             v-model="formData.itemTypeId"
             :data="itemTypeTree"
@@ -62,10 +70,10 @@
             </view>
           </wd-cell>
           <wd-form-item v-if="formData.safeStockFlag" title="最低库存量" title-width="220rpx" prop="minStock" center>
-            <wd-input-number v-model="formData.minStock" :min="0" :precision="2" />
+            <wd-input-number v-model="formData.minStock" allow-null :min="0" :precision="2" />
           </wd-form-item>
           <wd-form-item v-if="formData.safeStockFlag" title="最高库存量" title-width="220rpx" prop="maxStock" center>
-            <wd-input-number v-model="formData.maxStock" :min="0" :precision="2" />
+            <wd-input-number v-model="formData.maxStock" allow-null :min="0" :precision="2" />
           </wd-form-item>
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -74,7 +82,7 @@
       </wd-form>
 
       <!-- BOM 组成入口（编辑模式） -->
-      <view v-if="currentId" class="px-24rpx pb-24rpx">
+      <view v-if="props.id" class="px-24rpx pb-24rpx">
         <wd-cell-group border>
           <wd-cell title="BOM 组成" is-link @click="handleBom" />
           <wd-cell v-if="formData.batchFlag" title="批次属性" is-link @click="handleBatchConfig" />
@@ -88,30 +96,31 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdItemCreateReqVO, MdItemVO } from '@/api/mes/md/item'
-import type { MdItemTypeVO } from '@/api/mes/md/item/type'
-import type { MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
+import type { MdItem } from '@/api/mes/md/item'
+import type { MdItemType } from '@/api/mes/md/item/type'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createItem, getItem, updateItem } from '@/api/mes/md/item'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { getItemTypeList } from '@/api/mes/md/item/type'
 import { getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { handleTree } from '@/utils/tree'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
 
@@ -122,19 +131,30 @@ definePage({
   },
 })
 
-/** 表单本地状态（包含仅用于展示的字段） */
-interface MdItemFormData extends Omit<MdItemCreateReqVO, 'unitMeasureId' | 'itemTypeId'> {
-  unitMeasureId?: number // 初始 undefined，选择后才赋值
-  itemTypeId?: number // 初始 undefined，选择后才赋值
-  itemOrProduct: string // 分类派生展示
-  status: number // 只读展示
-}
-
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前物料编号
-const getTitle = computed(() => currentId.value ? '编辑物料产品' : '新增物料产品')
+const getTitle = computed(() => props.id ? '编辑物料产品' : '新增物料产品')
+type ItemFormData = Omit<MdItem, 'unitMeasureId' | 'itemTypeId'> & {
+  unitMeasureId?: number
+  itemTypeId?: number
+}
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<MdItemFormData>(getDefaultFormData()) // 表单数据
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<ItemFormData>({
+  id: undefined,
+  code: '',
+  name: '',
+  specification: '',
+  unitMeasureId: undefined,
+  itemTypeId: undefined,
+  itemOrProduct: '',
+  status: CommonStatusEnum.DISABLE,
+  highValue: false,
+  batchFlag: true,
+  safeStockFlag: false,
+  minStock: 0,
+  maxStock: 0,
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '物料编码不能为空' }],
   name: [{ required: true, message: '物料名称不能为空' }],
@@ -142,65 +162,41 @@ const formSchema = createFormSchema({
   itemTypeId: [{ required: true, message: '物料分类不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const unitMeasureOptions = ref<MdUnitMeasureVO[]>([]) // 计量单位选项
-const unitPickerVisible = ref(false) // 单位选择器状态
-const itemTypeTree = ref<MdItemTypeVO[]>([]) // 分类树数据
-const itemTypeFlat = ref<MdItemTypeVO[]>([]) // 分类扁平列表
-
-/** 计量单位展示值 */
-const unitDisplayValue = computed(() => getWotPickerFormValue(unitMeasureOptions.value, formData.value.unitMeasureId, { valueKey: 'id', labelKey: 'name' }))
-const unitPickerValue = computed(() => formData.value.unitMeasureId === undefined ? [] : [formData.value.unitMeasureId])
+const unitMeasureOptions = ref<MdUnitMeasure[]>([]) // 计量单位选项
+const itemTypeTree = ref<MdItemType[]>([]) // 分类树数据
+const itemTypeFlat = ref<MdItemType[]>([]) // 分类扁平列表
 
 /** 进入 BOM 组成 */
 function handleBom() {
-  if (!currentId.value)
+  if (!props.id)
     return
-  uni.navigateTo({ url: `/pages-mes/md/item/bom/index?itemId=${currentId.value}&mode=edit` })
+  uni.navigateTo({ url: `/pages-mes/md/item/bom/index?itemId=${props.id}&mode=edit` })
 }
 
 /** 进入批次属性配置 */
 function handleBatchConfig() {
-  if (!currentId.value)
+  if (!props.id)
     return
-  uni.navigateTo({ url: `/pages-mes/md/item/batch-config/index?itemId=${currentId.value}&mode=edit` })
+  uni.navigateTo({ url: `/pages-mes/md/item/batch-config/index?itemId=${props.id}&mode=edit` })
 }
 
 /** 进入产品 SIP */
 function handleSip() {
-  if (!currentId.value)
+  if (!props.id)
     return
-  uni.navigateTo({ url: `/pages-mes/md/item/sip/index?itemId=${currentId.value}&mode=edit` })
+  uni.navigateTo({ url: `/pages-mes/md/item/sip/index?itemId=${props.id}&mode=edit` })
 }
 
 /** 进入产品 SOP */
 function handleSop() {
-  if (!currentId.value)
+  if (!props.id)
     return
-  uni.navigateTo({ url: `/pages-mes/md/item/sop/index?itemId=${currentId.value}&mode=edit` })
+  uni.navigateTo({ url: `/pages-mes/md/item/sop/index?itemId=${props.id}&mode=edit` })
 }
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/md/item/index')
-}
-
-/** 默认表单数据 */
-function getDefaultFormData(): MdItemFormData {
-  return {
-    code: '',
-    name: '',
-    specification: '',
-    unitMeasureId: undefined,
-    itemTypeId: undefined,
-    itemOrProduct: '',
-    status: CommonStatusEnum.DISABLE,
-    highValue: false,
-    batchFlag: true,
-    safeStockFlag: false,
-    minStock: 0,
-    maxStock: 0,
-    remark: '',
-  }
 }
 
 /** 加载选项数据 */
@@ -211,44 +207,19 @@ async function loadOptions() {
   ])
   unitMeasureOptions.value = units || []
   itemTypeFlat.value = types || []
-  itemTypeTree.value = handleTree(types || []) as MdItemTypeVO[]
+  itemTypeTree.value = handleTree(types || [])
 }
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data: MdItemVO = await getItem(currentId.value)
-  formData.value = {
-    code: data.code,
-    name: data.name,
-    specification: data.specification || '',
-    unitMeasureId: data.unitMeasureId,
-    itemTypeId: data.itemTypeId,
-    itemOrProduct: data.itemOrProduct || '',
-    status: data.status,
-    highValue: data.highValue,
-    batchFlag: data.batchFlag,
-    safeStockFlag: data.safeStockFlag,
-    minStock: data.minStock,
-    maxStock: data.maxStock,
-    remark: data.remark || '',
-  }
-}
-
-/** 加载页面数据 */
-async function loadPageData() {
-  await loadOptions()
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
+  formData.value = await getItem(Number(props.id))
 }
 
 /** 分类选择确认：从 selectedNode 同步 itemOrProduct */
-function handleItemTypeConfirm(payload: { selectedNode?: MdItemTypeVO }) {
+function handleItemTypeConfirm(payload: { selectedNode?: MdItemType }) {
   const node = payload?.selectedNode
   if (node?.itemOrProduct) {
     formData.value.itemOrProduct = node.itemOrProduct
@@ -267,55 +238,46 @@ function handleItemTypeChange(value: number | string | undefined) {
 
 /** 自动生成物料编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode('MD_ITEM_CODE')
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
-    return
-  }
-  // 类型守卫：校验通过后 unitMeasureId 和 itemTypeId 一定非空
-  if (formData.value.unitMeasureId === undefined || formData.value.itemTypeId === undefined) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const req: MdItemCreateReqVO = {
-      code: formData.value.code,
-      name: formData.value.name,
-      specification: formData.value.specification || undefined,
-      unitMeasureId: formData.value.unitMeasureId,
-      itemTypeId: formData.value.itemTypeId,
-      highValue: formData.value.highValue,
-      batchFlag: formData.value.batchFlag,
-      safeStockFlag: formData.value.safeStockFlag,
+    const data: MdItem = {
+      ...formData.value,
+      unitMeasureId: formData.value.unitMeasureId!,
+      itemTypeId: formData.value.itemTypeId!,
       minStock: formData.value.safeStockFlag ? formData.value.minStock : undefined,
       maxStock: formData.value.safeStockFlag ? formData.value.maxStock : undefined,
-      remark: formData.value.remark || undefined,
     }
-    if (currentId.value) {
-      const updateReq = { ...req, id: currentId.value }
-      await updateItem(updateReq)
+    if (props.id) {
+      await updateItem(data)
       toast.success('修改成功')
       uni.$emit('mes:md:item:reload')
       delay(handleBack)
     } else {
-      const id = await createItem(req)
+      const id = await createItem(data)
       toast.success('新增成功')
       uni.$emit('mes:md:item:reload')
-      setTimeout(() => {
+      delay(() => {
         uni.redirectTo({ url: `/pages-mes/md/item/form/index?id=${id}` })
-      }, 500)
+      })
     }
   } finally {
     formLoading.value = false
@@ -324,10 +286,7 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  await loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  await loadOptions()
+  await getDetail()
 })
 </script>

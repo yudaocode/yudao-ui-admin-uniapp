@@ -1,10 +1,21 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <wd-navbar title="物料产品详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+    <wd-navbar
+      title="物料产品详情"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabIndex" slidable="always" line-theme="text" @change="handleTabChange">
+        <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="物料编码" :value="formData?.code || '-'" />
         <wd-cell title="物料名称" :value="formData?.name || '-'" />
@@ -12,7 +23,11 @@
         <wd-cell title="计量单位" :value="formData?.unitMeasureName || '-'" />
         <wd-cell title="物料分类" :value="formData?.itemTypeName || '-'" />
         <wd-cell title="物料/产品标识">
-          <dict-tag v-if="formData?.itemOrProduct" :type="DICT_TYPE.MES_MD_ITEM_OR_PRODUCT" :value="formData.itemOrProduct" />
+          <dict-tag
+            v-if="formData?.itemOrProduct"
+            :type="DICT_TYPE.MES_MD_ITEM_OR_PRODUCT"
+            :value="formData.itemOrProduct"
+          />
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="状态">
@@ -34,50 +49,59 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <!-- BOM 组成入口 -->
-      <view class="px-24rpx pb-24rpx">
-        <wd-cell-group border>
-          <wd-cell title="BOM 组成" is-link @click="handleBom" />
-          <wd-cell v-if="formData?.batchFlag" title="批次属性" is-link @click="handleBatchConfig" />
-          <wd-cell title="产品 SIP" is-link @click="handleSip" />
-          <wd-cell title="产品 SOP" is-link @click="handleSop" />
-        </wd-cell-group>
-      </view>
-
       <!-- 底部安全区域 -->
       <view class="h-160rpx" />
     </scroll-view>
 
+    <ItemBomSection v-if="tabType === 'bom' && formData?.id" :item-id="formData.id" />
+    <ItemBatchConfigSection
+      v-if="tabType === 'batch' && formData?.id"
+      :item-id="formData.id"
+      :item-or-product="formData.itemOrProduct"
+    />
+    <ItemProcessPictureSection v-if="tabType === 'sip' && formData?.id" :item-id="formData.id" type="sip" />
+    <ItemProcessPictureSection v-if="tabType === 'sop' && formData?.id" :item-id="formData.id" type="sop" />
+    <ItemSubstituteSection v-if="tabType === 'substitute'" />
+
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasAccessByCodes(['mes:md-item:update']) || hasAccessByCodes(['mes:md-item:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="hasAccessByCodes(['mes:md-item:update'])"
-        class="flex-1" type="warning" @click="handleEdit"
-      >
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="hasAccessByCodes(['mes:md-item:delete'])"
-        class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="formData && tabType === 'basic'" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" variant="plain" @click="handleBarcode">
+          条码
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:md-item:update'])"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:md-item:delete'])"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import type { MdItem } from '@/api/mes/md/item'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteItem, getItem } from '@/api/mes/md/item'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { BarcodeBizTypeEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import ItemBatchConfigSection from '../components/item-batch-config-section.vue'
+import ItemBomSection from '../components/item-bom-section.vue'
+import ItemProcessPictureSection from '../components/item-process-picture-section.vue'
+import ItemSubstituteSection from '../components/item-substitute-section.vue'
 
 const props = defineProps<{ id?: number | string }>()
 
@@ -91,13 +115,34 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前物料编号
-const formData = ref<MdItemVO>() // 详情数据
+const formData = ref<MdItem>() // 详情数据
 const deleting = ref(false) // 删除状态
+const tabIndex = ref(0) // 当前 tab 索引
+const tabs = computed(() => { // 详情 tab 配置
+  const result = [
+    { key: 'basic', title: '基本信息' },
+    { key: 'bom', title: 'BOM' },
+  ]
+  if (formData.value?.batchFlag) {
+    result.push({ key: 'batch', title: '批次属性' })
+  }
+  result.push({ key: 'substitute', title: '替代品' })
+  result.push(
+    { key: 'sip', title: 'SIP' },
+    { key: 'sop', title: 'SOP' },
+  )
+  return result
+})
+const tabType = computed(() => tabs.value[tabIndex.value]?.key || 'basic') // 当前 tab 类型
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/md/item/index')
+}
+
+/** Tab 切换 */
+function handleTabChange({ index }: { index: number }) {
+  tabIndex.value = index
 }
 
 /** 格式化库存数量 */
@@ -109,72 +154,37 @@ function formatStock(value?: number) {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const detailData = await getItem(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-  } finally {
-    toast.close()
-  }
+  formData.value = await getItem(Number(props.id))
 }
 
-/** 初始化页面 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
-/** BOM 组成 */
-function handleBom() {
-  if (!currentId.value)
-    return
-  uni.navigateTo({ url: `/pages-mes/md/item/bom/index?itemId=${currentId.value}&mode=detail` })
-}
-
-/** 批次属性配置 */
-function handleBatchConfig() {
-  if (!currentId.value)
-    return
-  uni.navigateTo({ url: `/pages-mes/md/item/batch-config/index?itemId=${currentId.value}&mode=detail` })
-}
-
-/** 产品 SIP */
-function handleSip() {
-  if (!currentId.value)
-    return
-  uni.navigateTo({ url: `/pages-mes/md/item/sip/index?itemId=${currentId.value}&mode=detail` })
-}
-
-/** 产品 SOP */
-function handleSop() {
-  if (!currentId.value)
-    return
-  uni.navigateTo({ url: `/pages-mes/md/item/sop/index?itemId=${currentId.value}&mode=detail` })
+  uni.navigateTo({
+    url: buildBarcodeListUrl({
+      bizType: BarcodeBizTypeEnum.ITEM,
+      bizId: formData.value.id,
+      bizCode: formData.value.code,
+    }),
+  })
 }
 
 /** 编辑 */
 function handleEdit() {
-  if (!currentId.value)
+  if (!props.id) {
     return
-  uni.navigateTo({ url: `/pages-mes/md/item/form/index?id=${currentId.value}` })
+  }
+  uni.navigateTo({ url: `/pages-mes/md/item/form/index?id=${props.id}` })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -184,14 +194,10 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteItem(currentId.value)
-    toast.close()
+    await deleteItem(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:md:item:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
@@ -199,21 +205,12 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
   uni.$on('mes:md:item:reload', getDetail)
-})
-
-/** 页面显示 */
-onShow(() => {
-  initPage()
+  getDetail()
 })
 
 /** 卸载 */
 onUnload(() => {
   uni.$off('mes:md:item:reload', getDetail)
-})
-
-watch(currentId, () => {
-  initPage()
 })
 </script>

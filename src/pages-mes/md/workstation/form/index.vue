@@ -7,7 +7,7 @@
           <wd-form-item title="工作站编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -16,79 +16,103 @@
           <wd-form-item title="工作站名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入工作站名称" clearable />
           </wd-form-item>
-          <wd-form-item title="所在车间" title-width="220rpx" prop="workshopId" is-link :value="workshopDisplayValue" placeholder="请选择车间" @click="workshopPickerVisible = true" />
-          <wd-picker v-model:visible="workshopPickerVisible" :model-value="workshopPickerValue" :columns="workshopOptions" label-key="name" value-key="id" @confirm="handleWorkshopConfirm" />
+          <yd-form-picker
+            v-model="formData.workshopId"
+            label="所在车间"
+            label-width="220rpx"
+            prop="workshopId"
+            :columns="workshopOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择车间"
+          />
           <wd-form-item title="工作站地点" title-width="220rpx" prop="address">
             <wd-input v-model="formData.address" placeholder="请输入工作站地点" clearable />
           </wd-form-item>
-          <wd-form-item title="所属工序" title-width="220rpx" prop="processId" is-link :value="processDisplayValue" placeholder="请选择工序" @click="processPickerVisible = true" />
-          <wd-picker v-model:visible="processPickerVisible" :model-value="processPickerValue" :columns="processOptions" label-key="label" value-key="id" @confirm="handleProcessConfirm" />
-          <wd-form-item title="线边仓库" title-width="220rpx">
-            <view class="min-w-0 flex flex-1 items-center justify-end gap-12rpx">
-              <view class="min-w-0 flex-1 truncate text-right text-28rpx" :class="warehouseDisplayValue ? 'text-[#333]' : 'text-[#999]'" @click="warehousePickerVisible = true">
-                {{ warehouseDisplayValue || '请选择仓库' }}
-              </view>
-              <wd-button v-if="formData.warehouseId !== undefined" size="small" variant="plain" @click.stop="clearWarehouse">
-                清空
-              </wd-button>
-            </view>
-          </wd-form-item>
-          <wd-picker v-model:visible="warehousePickerVisible" :model-value="warehousePickerValue" :columns="warehouseOptions" label-key="name" value-key="id" @confirm="handleWarehouseConfirm" />
-          <wd-form-item title="库区" title-width="220rpx">
-            <view class="min-w-0 flex flex-1 items-center justify-end gap-12rpx">
-              <view class="min-w-0 flex-1 truncate text-right text-28rpx" :class="locationDisplayValue ? 'text-[#333]' : 'text-[#999]'" @click="openLocationPicker">
-                {{ locationDisplayValue || '请选择库区' }}
-              </view>
-              <wd-button v-if="formData.locationId !== undefined" size="small" variant="plain" @click.stop="clearLocation">
-                清空
-              </wd-button>
-            </view>
-          </wd-form-item>
-          <wd-picker v-model:visible="locationPickerVisible" :model-value="locationPickerValue" :columns="locationOptions" label-key="name" value-key="id" @confirm="handleLocationConfirm" />
-          <wd-form-item title="库位" title-width="220rpx">
-            <view class="min-w-0 flex flex-1 items-center justify-end gap-12rpx">
-              <view class="min-w-0 flex-1 truncate text-right text-28rpx" :class="areaDisplayValue ? 'text-[#333]' : 'text-[#999]'" @click="openAreaPicker">
-                {{ areaDisplayValue || '请选择库位' }}
-              </view>
-              <wd-button v-if="formData.areaId !== undefined" size="small" variant="plain" @click.stop="formData.areaId = undefined">
-                清空
-              </wd-button>
-            </view>
-          </wd-form-item>
-          <wd-picker v-model:visible="areaPickerVisible" :model-value="areaPickerValue" :columns="areaOptions" label-key="name" value-key="id" @confirm="handleAreaConfirm" />
-          <wd-form-item title="状态" title-width="220rpx" prop="status">
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.processId"
+            label="所属工序"
+            label-width="220rpx"
+            prop="processId"
+            :columns="processOptions"
+            label-key="label"
+            value-key="id"
+            placeholder="请选择工序"
+          />
+          <yd-form-picker
+            v-model="formData.warehouseId"
+            label="线边仓库"
+            label-width="220rpx"
+            :columns="warehouseOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择仓库"
+            clearable
+            @confirm="handleWarehouseConfirm"
+            @clear="clearWarehouse"
+          />
+          <yd-form-picker
+            v-model="formData.locationId"
+            label="库区"
+            label-width="220rpx"
+            :columns="locationOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择库区"
+            clearable
+            :before-open="beforeOpenLocationPicker"
+            @confirm="handleLocationConfirm"
+            @clear="clearLocation"
+          />
+          <yd-form-picker
+            v-model="formData.areaId"
+            label="库位"
+            label-width="220rpx"
+            :columns="areaOptions"
+            label-key="name"
+            value-key="id"
+            placeholder="请选择库位"
+            clearable
+            :before-open="beforeOpenAreaPicker"
+            @confirm="handleAreaConfirm"
+            @clear="formData.areaId = undefined"
+          />
+          <yd-form-picker
+            v-model="formData.status"
+            label="状态"
+            label-width="220rpx"
+            prop="status"
+            :dict-type="DICT_TYPE.COMMON_STATUS"
+            placeholder="请选择状态"
+          />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <WorkstationResourceList v-if="currentId" :workstation-id="currentId" mode="edit" />
+      <WorkstationResourceList v-if="formData.id" :workstation-id="formData.id" mode="edit" />
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdWorkstationCreateReqVO } from '@/api/mes/md/workstation'
-import type { MdWorkshopVO } from '@/api/mes/md/workstation/workshop'
-import type { ProProcessVO } from '@/api/mes/pro/process'
-import type { WmWarehouseVO } from '@/api/mes/wm/warehouse'
-import type { WmWarehouseLocationVO } from '@/api/mes/wm/warehouse/location'
-import type { WmWarehouseAreaVO } from '@/api/mes/wm/warehouse/area'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
+import type { ProProcess } from '@/api/mes/pro/process'
+import type { WmWarehouse } from '@/api/mes/wm/warehouse'
+import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
+import type { WmWarehouseArea } from '@/api/mes/wm/warehouse/area'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createWorkstation, getWorkstation, updateWorkstation } from '@/api/mes/md/workstation'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
@@ -96,28 +120,28 @@ import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
 import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import WorkstationResourceList from '../components/workstation-resource-list.vue'
 
 const props = defineProps<{ id?: number | string }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑工作站' : '新增工作站')
-const formLoading = ref(false)
-interface MdWorkstationFormData extends Omit<MdWorkstationCreateReqVO, 'workshopId' | 'processId'> {
-  id?: number
+const getTitle = computed(() => props.id ? '编辑工作站' : '新增工作站')
+type WorkstationFormData = Omit<MdWorkstation, 'workshopId' | 'processId'> & {
   workshopId?: number
   processId?: number
-  address: string
-  remark: string
 }
-const formData = ref<MdWorkstationFormData>(getDefaultFormData())
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<WorkstationFormData>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '工作站编码不能为空' }],
   name: [{ required: true, message: '工作站名称不能为空' }],
@@ -125,45 +149,22 @@ const formSchema = createFormSchema({
   processId: [{ required: true, message: '所属工序不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
-const formRef = ref<FormInstance>()
-const workshopOptions = ref<MdWorkshopVO[]>([])
-const workshopPickerVisible = ref(false)
-const processOptions = ref<Array<{ id: number, label: string }>>([])
-const processPickerVisible = ref(false)
-const warehouseOptions = ref<WmWarehouseVO[]>([])
-const warehousePickerVisible = ref(false)
-const locationOptions = ref<WmWarehouseLocationVO[]>([])
-const locationPickerVisible = ref(false)
-const areaOptions = ref<WmWarehouseAreaVO[]>([])
-const areaPickerVisible = ref(false)
-const workshopPickerValue = computed(() => formData.value.workshopId === undefined ? [] : [formData.value.workshopId])
-const processPickerValue = computed(() => formData.value.processId === undefined ? [] : [formData.value.processId])
-const warehousePickerValue = computed(() => formData.value.warehouseId === undefined ? [] : [formData.value.warehouseId])
-const locationPickerValue = computed(() => formData.value.locationId === undefined ? [] : [formData.value.locationId])
-const areaPickerValue = computed(() => formData.value.areaId === undefined ? [] : [formData.value.areaId])
+const formRef = ref<FormInstance>() // 表单组件引用
+const workshopOptions = ref<MdWorkshop[]>([]) // 车间选项
+const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
+const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
+const locationOptions = ref<WmWarehouseLocation[]>([]) // 库区选项
+const areaOptions = ref<WmWarehouseArea[]>([]) // 库位选项
 
-const workshopDisplayValue = computed(() => {
-  if (formData.value.workshopId === undefined)
-    return ''
-  const w = workshopOptions.value.find(o => o.id === formData.value.workshopId)
-  return w?.name || String(formData.value.workshopId)
-})
-const processDisplayValue = computed(() => {
-  if (formData.value.processId === undefined)
-    return ''
-  const p = processOptions.value.find(o => o.id === formData.value.processId)
-  return p?.label || String(formData.value.processId)
-})
-const warehouseDisplayValue = computed(() => warehouseOptions.value.find(o => o.id === formData.value.warehouseId)?.name || '')
-const locationDisplayValue = computed(() => locationOptions.value.find(o => o.id === formData.value.locationId)?.name || '')
-const areaDisplayValue = computed(() => areaOptions.value.find(o => o.id === formData.value.areaId)?.name || '')
-
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/md/workstation/index')
 }
 
-function getDefaultFormData(): MdWorkstationFormData {
+/** 获取默认表单数据 */
+function getDefaultFormData(): WorkstationFormData {
   return {
+    id: undefined,
     code: '',
     name: '',
     address: '',
@@ -177,39 +178,44 @@ function getDefaultFormData(): MdWorkstationFormData {
   }
 }
 
+/** 加载选项 */
 async function loadOptions() {
-  const [workshops, processes, warehouses] = await Promise.all([getWorkshopSimpleList(), getProcessSimpleList(), getWarehouseSimpleList()])
+  const [workshops, processes, warehouses] = await Promise.all([
+    getWorkshopSimpleList(),
+    getProcessSimpleList(),
+    getWarehouseSimpleList(),
+  ])
   workshopOptions.value = workshops || []
-  processOptions.value = (processes || []).filter((process): process is ProProcessVO & { id: number } => process.id !== undefined).map(process => ({ id: process.id, label: process.code ? `${process.name} (${process.code})` : process.name }))
+  processOptions.value = (processes || [])
+    .filter((process): process is ProProcess & { id: number } => process.id !== undefined)
+    .map(process => ({ id: process.id, label: process.code ? `${process.name} (${process.code})` : process.name }))
   warehouseOptions.value = warehouses || []
 }
 
-function handleWorkshopConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.workshopId = Number(value[0])
-}
-
-function handleProcessConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.processId = Number(value[0])
-}
-
-async function handleWarehouseConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.warehouseId = Number(value[0])
+/** 确认选择仓库 */
+async function handleWarehouseConfirm(value: number | string) {
+  const warehouseId = Number(value)
+  formData.value.warehouseId = warehouseId
   formData.value.locationId = undefined
   formData.value.areaId = undefined
-  locationOptions.value = await getWarehouseLocationSimpleList(formData.value.warehouseId) || []
+  locationOptions.value = await getWarehouseLocationSimpleList(warehouseId) || []
   areaOptions.value = []
 }
 
-async function handleLocationConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.locationId = Number(value[0])
+/** 确认选择库区 */
+async function handleLocationConfirm(value: number | string) {
+  const locationId = Number(value)
+  formData.value.locationId = locationId
   formData.value.areaId = undefined
-  areaOptions.value = await getWarehouseAreaSimpleList(formData.value.locationId) || []
+  areaOptions.value = await getWarehouseAreaSimpleList(locationId) || []
 }
 
-function handleAreaConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.areaId = Number(value[0])
+/** 确认选择库位 */
+function handleAreaConfirm(value: number | string) {
+  formData.value.areaId = Number(value)
 }
 
+/** 清空仓库 */
 function clearWarehouse() {
   formData.value.warehouseId = undefined
   formData.value.locationId = undefined
@@ -218,80 +224,75 @@ function clearWarehouse() {
   areaOptions.value = []
 }
 
+/** 清空库区 */
 function clearLocation() {
   formData.value.locationId = undefined
   formData.value.areaId = undefined
   areaOptions.value = []
 }
 
-function openLocationPicker() {
+/** 打开库区选择前校验 */
+function beforeOpenLocationPicker() {
   if (!formData.value.warehouseId) {
-    uni.showToast({ icon: 'none', title: '请先选择仓库' })
-    return
+    toast.warning('请先选择仓库')
+    return false
   }
-  locationPickerVisible.value = true
+  return true
 }
 
-function openAreaPicker() {
+/** 打开库位选择前校验 */
+function beforeOpenAreaPicker() {
   if (!formData.value.locationId) {
-    uni.showToast({ icon: 'none', title: '请先选择库区' })
-    return
+    toast.warning('请先选择库区')
+    return false
   }
-  areaPickerVisible.value = true
+  return true
 }
 
+/** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getWorkstation(currentId.value)
-  if (!data) {
-    formData.value = getDefaultFormData()
-    locationOptions.value = []
-    areaOptions.value = []
-    return
-  }
-  if (data.warehouseId)
+  const data = await getWorkstation(Number(props.id))
+  if (data.warehouseId) {
     locationOptions.value = await getWarehouseLocationSimpleList(data.warehouseId) || []
-  if (data.locationId)
+  }
+  if (data.locationId) {
     areaOptions.value = await getWarehouseAreaSimpleList(data.locationId) || []
-  formData.value = { id: data.id, code: data.code, name: data.name, address: data.address || '', workshopId: data.workshopId, processId: data.processId ?? undefined, warehouseId: data.warehouseId ?? undefined, locationId: data.locationId ?? undefined, areaId: data.areaId ?? undefined, status: data.status, remark: data.remark || '' }
-}
-
-async function loadPageData() {
-  await loadOptions()
-  if (currentId.value) {
-    await getDetail()
-    return
   }
-  formData.value = getDefaultFormData()
-  locationOptions.value = []
-  areaOptions.value = []
+  formData.value = data
 }
 
+/** 生成工作站编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode('MD_WORKSTATION_CODE')
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
+/** 提交表单 */
 async function handleSubmit() {
-  if (!formRef.value)
-    return
-  const result = await formRef.value.validate()
-  if (!result.valid || formData.value.workshopId === undefined || formData.value.processId === undefined) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data: MdWorkstationCreateReqVO = { code: formData.value.code, name: formData.value.name, address: formData.value.address || undefined, workshopId: formData.value.workshopId, processId: formData.value.processId, warehouseId: formData.value.warehouseId, locationId: formData.value.locationId, areaId: formData.value.areaId, status: formData.value.status, remark: formData.value.remark || undefined }
-    if (currentId.value) {
-      await updateWorkstation({ ...data, id: currentId.value })
+    const data: MdWorkstation = {
+      ...formData.value,
+      workshopId: formData.value.workshopId!,
+      processId: formData.value.processId!,
+    }
+    if (props.id) {
+      await updateWorkstation(data)
       toast.success('修改成功')
     } else {
       await createWorkstation(data)
@@ -304,11 +305,9 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(async () => {
-  await loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  await loadOptions()
+  await getDetail()
 })
 </script>

@@ -1,7 +1,14 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <wd-navbar title="客户详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <view class="bg-white">
+      <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
+        <wd-tab title="基本信息" />
+        <wd-tab title="产品清单" />
+        <wd-tab title="出库记录" />
+      </wd-tabs>
+    </view>
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="客户编码" :value="formData?.code || '-'" />
         <wd-cell title="客户名称" :value="formData?.name || '-'" />
@@ -32,81 +39,86 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
-      <ClientProductSalesList :client-id="currentId" />
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions v-if="hasAccessByCodes(['mes:md-client:update']) || hasAccessByCodes(['mes:md-client:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:md-client:update'])" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:md-client:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <ClientProductSalesLineList v-if="tabType === 'products' && formData?.id" :client-id="formData.id" />
+    <ClientProductSalesList v-if="tabType === 'sales' && formData?.id" :client-id="formData.id" />
+    <view
+      v-if="tabType === 'basic' && (hasAccessByCodes(['mes:md-client:update']) || hasAccessByCodes(['mes:md-client:delete']))"
+      class="yd-detail-footer"
+    >
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['mes:md-client:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:md-client:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdClientVO } from '@/api/mes/md/client'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import type { MdClient } from '@/api/mes/md/client'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteClient, getClient } from '@/api/mes/md/client'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import ClientProductSalesLineList from '../components/client-product-sales-line-list.vue'
 import ClientProductSalesList from '../components/client-product-sales-list.vue'
 
 const props = defineProps<{ id?: number | string }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<MdClientVO>()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const deleting = ref(false)
+const formData = ref<MdClient>() // 详情数据
+const deleting = ref(false) // 删除状态
+const tabTypes = ['basic', 'products', 'sales'] // tab 配置
+const tabIndex = ref(0) // 当前 tab 索引
+const tabType = computed(() => tabTypes[tabIndex.value]) // 当前 tab 类型
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/md/client/index')
 }
 
+/** Tab 切换 */
+function handleTabChange({ index }: { index: number }) {
+  tabIndex.value = index
+}
+
+/** 加载客户详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const detailData = await getClient(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-  } finally {
-    toast.close()
-  }
+  formData.value = await getClient(Number(props.id))
 }
 
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
+/** 编辑客户 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/md/client/form/index?id=${currentId.value}` })
+  if (!props.id) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/md/client/form/index?id=${props.id}` })
 }
 
+/** 删除客户 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -116,32 +128,22 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteClient(currentId.value)
-    toast.close()
+    await deleteClient(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:md:client:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  initPage()
   uni.$on('mes:md:client:reload', getDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
-})
-
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:md:client:reload', getDetail)
 })

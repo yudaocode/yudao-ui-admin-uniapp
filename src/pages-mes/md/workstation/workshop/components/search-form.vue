@@ -30,18 +30,23 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkshopQueryParams } from '@/api/mes/md/workstation/workshop'
 import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { DICT_TYPE } from '@/utils/constants'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  search: [data: MdWorkshopQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
-const visible = ref(false)
-const formData = reactive({ code: '', name: '', status: -1 })
+const visible = ref(false) // 搜索弹窗显示状态
+const formData = reactive({
+  code: undefined as string | undefined,
+  name: undefined as string | undefined,
+  status: -1,
+}) // 搜索表单数据
+
+/** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.code) {
@@ -51,40 +56,27 @@ const placeholder = computed(() => {
     conditions.push(`名称:${formData.name}`)
   }
   if (formData.status !== -1) {
-    const label = getIntDictOptions(DICT_TYPE.COMMON_STATUS).find(d => d.value === formData.status)?.label
-    conditions.push(`状态:${label || formData.status}`)
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索车间'
 })
 
+/** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const params: MdWorkshopQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.status !== -1) {
-    params.status = formData.status
-  }
-  emit('search', params)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
+/** 重置按钮操作 */
 function handleReset() {
-  formData.code = ''
-  formData.name = ''
+  formData.code = undefined
+  formData.name = undefined
   formData.status = -1
   visible.value = false
   emit('reset')
 }
-
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.status = -1
-}
-
-defineExpose({ resetFields })
 </script>

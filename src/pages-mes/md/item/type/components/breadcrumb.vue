@@ -2,14 +2,18 @@
   <view class="bg-white px-24rpx py-16rpx">
     <scroll-view scroll-x class="whitespace-nowrap">
       <view class="inline-flex items-center">
-        <view class="flex items-center text-28rpx text-[#1890ff]" @click="handleClick(-1)">
+        <view
+          class="flex items-center text-28rpx"
+          :class="breadcrumbList.length > 0 ? 'text-[#fa8c16]' : 'text-[#333]'"
+          @click="handleClick(-1)"
+        >
           <text>顶级分类</text>
         </view>
         <template v-for="(item, index) in breadcrumbList" :key="item.id">
           <wd-icon name="arrow-right" size="12px" color="#999" custom-class="mx-8rpx" />
           <view
             class="flex items-center text-28rpx"
-            :class="index < breadcrumbList.length - 1 ? 'text-[#1890ff]' : 'text-[#333]'"
+            :class="index < breadcrumbList.length - 1 ? 'text-[#fa8c16]' : 'text-[#333]'"
             @click="handleClick(index)"
           >
             <text>{{ item.name }}</text>
@@ -21,52 +25,63 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 interface BreadcrumbItem {
   id: number
-  name?: string
+  name: string
 }
 
-// 面包屑列表
+const props = defineProps<{
+  modelValue: number
+}>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
 }>()
+
 const breadcrumbList = ref<BreadcrumbItem[]>([]) // 面包屑列表
 
-/** 点击面包屑项 */
+/** 监听外部值变化 */
+watch(() => props.modelValue, (val) => {
+  if (val === 0) {
+    breadcrumbList.value = []
+  }
+})
+
+/** 点击面包屑 */
 function handleClick(index: number) {
   if (index === -1) {
     breadcrumbList.value = []
     emit('update:modelValue', 0)
-    return
+  } else if (index < breadcrumbList.value.length - 1) {
+    const item = breadcrumbList.value[index]
+    breadcrumbList.value = breadcrumbList.value.slice(0, index + 1)
+    emit('update:modelValue', item.id)
   }
-  const target = breadcrumbList.value[index]
-  breadcrumbList.value = breadcrumbList.value.slice(0, index + 1)
-  emit('update:modelValue', target.id)
 }
 
-/** 进入下一层级 */
+/** 进入子层级 */
 function enter(item: BreadcrumbItem) {
   breadcrumbList.value.push(item)
   emit('update:modelValue', item.id)
 }
 
-/** 返回上一级，返回 true 表示还能继续回退 */
+/** 返回上一层级 */
 function back(): boolean {
-  if (breadcrumbList.value.length > 0) {
-    breadcrumbList.value.pop()
-    const parentId = breadcrumbList.value.length > 0 ? breadcrumbList.value[breadcrumbList.value.length - 1].id : 0
-    emit('update:modelValue', parentId)
-    return true
+  if (breadcrumbList.value.length === 0) {
+    return false
   }
-  return false
+  breadcrumbList.value.pop()
+  const lastItem = breadcrumbList.value[breadcrumbList.value.length - 1]
+  emit('update:modelValue', lastItem?.id ?? 0)
+  return true
 }
 
-/** 重置 */
+/** 重置面包屑 */
 function reset() {
   breadcrumbList.value = []
+  emit('update:modelValue', 0)
 }
 
 defineExpose({ enter, back, reset })

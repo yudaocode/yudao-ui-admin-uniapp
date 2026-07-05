@@ -38,35 +38,36 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasAccessByCodes(['mes:md-unit-measure:update']) || hasAccessByCodes(['mes:md-unit-measure:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:md-unit-measure:update'])" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="hasAccessByCodes(['mes:md-unit-measure:delete'])"
-        class="flex-1"
-        type="danger"
-        :loading="deleting"
-        @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="hasAccessByCodes(['mes:md-unit-measure:update']) || hasAccessByCodes(['mes:md-unit-measure:delete'])" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['mes:md-unit-measure:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:md-unit-measure:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteUnitMeasure, getUnitMeasure, getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 
 const props = defineProps<{ id?: number | string }>()
 
@@ -80,9 +81,8 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<MdUnitMeasureVO>() // 详情数据
-const unitOptions = ref<MdUnitMeasureVO[]>([]) // 单位选项
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const formData = ref<MdUnitMeasure>() // 详情数据
+const unitOptions = ref<MdUnitMeasure[]>([]) // 单位选项
 const deleting = ref(false) // 删除状态
 const primaryUnitName = computed(() => {
   const primaryId = formData.value?.primaryId
@@ -104,41 +104,28 @@ function formatChangeRate(value?: number) {
 
 /** 加载计量单位详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const [detail, units] = await Promise.all([
-      getUnitMeasure(currentId.value),
-      getUnitMeasureSimpleList(),
-    ])
-    formData.value = detail
-    unitOptions.value = units
-  } finally {
-    toast.close()
-  }
-}
-
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    unitOptions.value = []
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  const [detail, units] = await Promise.all([
+    getUnitMeasure(Number(props.id)),
+    getUnitMeasureSimpleList(),
+  ])
+  formData.value = detail
+  unitOptions.value = units
 }
 
 /** 编辑计量单位 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/md/unitmeasure/form/index?id=${currentId.value}` })
+  if (!props.id) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/md/unitmeasure/form/index?id=${props.id}` })
 }
 
 /** 删除计量单位 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -151,14 +138,10 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteUnitMeasure(currentId.value)
-    toast.close()
+    await deleteUnitMeasure(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:md:unitmeasure:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
@@ -166,16 +149,8 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
   uni.$on('mes:md:unitmeasure:reload', getDetail)
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+  getDetail()
 })
 
 /** 卸载 */

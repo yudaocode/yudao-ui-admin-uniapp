@@ -8,7 +8,7 @@
     />
 
     <!-- 表单区域 -->
-    <view>
+    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="单位编码" title-width="220rpx" prop="code">
@@ -21,25 +21,24 @@
             <wd-switch v-model="formData.primaryFlag" />
           </wd-form-item>
           <template v-if="!formData.primaryFlag">
-            <wd-form-item
-              title="所属主单位"
-              title-width="220rpx"
+            <yd-form-picker
+              v-model="formData.primaryId"
+              label="所属主单位"
+              label-width="220rpx"
               prop="primaryId"
-              is-link
-              :value="primaryUnitDisplayValue"
-              placeholder="请选择主单位"
-              @click="primaryUnitVisible = true"
-            />
-            <wd-picker
-              v-model:visible="primaryUnitVisible"
-              :model-value="formData.primaryId"
               :columns="primaryUnitOptions"
               label-key="name"
               value-key="id"
-              @confirm="handlePrimaryUnitConfirm"
+              placeholder="请选择主单位"
             />
             <wd-form-item title="换算比例" title-width="220rpx" prop="changeRate" center>
-              <wd-input-number v-model="formData.changeRate" :min="0.0001" :precision="4" />
+              <wd-input-number
+                :model-value="formData.changeRate ?? ''"
+                allow-null
+                :min="0.0001"
+                :precision="4"
+                @update:model-value="value => formData.changeRate = toFiniteNumber(value)"
+              />
             </wd-form-item>
           </template>
           <wd-form-item title="状态" title-width="220rpx" prop="status" center>
@@ -60,22 +59,27 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-    </view>
+
+      <!-- 底部安全区域 -->
+      <view class="h-160rpx" />
+    </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   createUnitMeasure,
   getUnitMeasure,
@@ -84,8 +88,8 @@ import {
 } from '@/api/mes/md/unitmeasure'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { toFiniteNumber } from '@/utils/format'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
 
@@ -97,18 +101,21 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑计量单位' : '新增计量单位')
+const getTitle = computed(() => props.id ? '编辑计量单位' : '新增计量单位')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<MdUnitMeasureVO>(getDefaultFormData()) // 表单数据
+const formData = ref<MdUnitMeasure>({
+  id: undefined,
+  code: '',
+  name: '',
+  primaryFlag: true,
+  primaryId: undefined,
+  changeRate: undefined,
+  status: CommonStatusEnum.ENABLE,
+  remark: '',
+}) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
-const primaryUnitOptions = ref<MdUnitMeasureVO[]>([]) // 主单位选项
-const primaryUnitVisible = ref(false) // 主单位选择器状态
-const primaryUnitDisplayValue = computed(() => getWotPickerFormValue(
-  primaryUnitOptions.value,
-  formData.value.primaryId,
-  { valueKey: 'id', labelKey: 'name' },
-))
+const unitMeasureList = ref<MdUnitMeasure[]>([]) // 计量单位列表
+const primaryUnitOptions = computed(() => unitMeasureList.value.filter(item => item.primaryFlag && item.id !== Number(props.id))) // 主单位选项
 const formSchema = createFormSchema(() => ({
   code: [{ required: true, message: '单位编码不能为空' }],
   name: [{ required: true, message: '单位名称不能为空' }],
@@ -126,62 +133,36 @@ function handleBack() {
   navigateBackPlus('/pages-mes/md/unitmeasure/index')
 }
 
-function getDefaultFormData(): MdUnitMeasureVO {
-  return {
-    id: undefined,
-    code: '',
-    name: '',
-    primaryFlag: true,
-    primaryId: undefined,
-    changeRate: undefined,
-    status: CommonStatusEnum.ENABLE,
-    remark: '',
-  }
-}
-
-/** 加载主单位选项 */
-async function loadPrimaryUnitOptions() {
-  const list = await getUnitMeasureSimpleList()
-  primaryUnitOptions.value = list.filter(item => item.primaryFlag && item.id !== currentId.value)
+/** 加载计量单位列表 */
+async function loadUnitMeasureList() {
+  unitMeasureList.value = await getUnitMeasureSimpleList()
 }
 
 /** 加载计量单位详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  formData.value = await getUnitMeasure(currentId.value)
-}
-
-async function loadPageData() {
-  await loadPrimaryUnitOptions()
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
-}
-
-/** 选择主单位 */
-function handlePrimaryUnitConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.primaryId = value[0] === undefined ? undefined : Number(value[0])
+  formData.value = await getUnitMeasure(Number(props.id))
 }
 
 /** 提交表单 */
 async function handleSubmit() {
+  if (!formRef.value) {
+    return
+  }
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return
   }
-  const data: MdUnitMeasureVO = {
+  const data: MdUnitMeasure = {
     ...formData.value,
     primaryId: formData.value.primaryFlag ? undefined : formData.value.primaryId,
     changeRate: formData.value.primaryFlag ? undefined : formData.value.changeRate,
   }
   formLoading.value = true
   try {
-    if (currentId.value) {
-      data.id = currentId.value
+    if (props.id) {
       await updateUnitMeasure(data)
       toast.success('修改成功')
     } else {
@@ -195,19 +176,11 @@ async function handleSubmit() {
   }
 }
 
-watch(() => formData.value.primaryFlag, (primaryFlag) => {
-  if (primaryFlag) {
-    formData.value.primaryId = undefined
-    formData.value.changeRate = undefined
-  }
-})
-
 /** 初始化 */
 onMounted(async () => {
-  await loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  await Promise.all([
+    loadUnitMeasureList(),
+    getDetail(),
+  ])
 })
 </script>

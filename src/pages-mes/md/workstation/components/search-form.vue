@@ -16,6 +16,22 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入工作站名称" clearable />
       </view>
+      <yd-search-picker
+        v-model="formData.workshopId"
+        label="所在车间"
+        :columns="workshopOptions"
+        label-key="name"
+        value-key="id"
+        all-option
+      />
+      <yd-search-picker
+        v-model="formData.processId"
+        label="所属工序"
+        :columns="processOptions"
+        label-key="label"
+        value-key="id"
+        all-option
+      />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -30,53 +46,90 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkstationQueryParams } from '@/api/mes/md/workstation'
-import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { DICT_TYPE } from '@/utils/constants'
+import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
+import type { ProProcess } from '@/api/mes/pro/process'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
+import { getProcessSimpleList } from '@/api/mes/pro/process'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 
-const emit = defineEmits<{ search: [data: MdWorkstationQueryParams], reset: [] }>()
-const visible = ref(false)
-const formData = reactive({ code: '', name: '', status: -1 })
+const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
+const visible = ref(false) // 搜索弹窗显示状态
+const formData = reactive({
+  code: undefined as string | undefined,
+  name: undefined as string | undefined,
+  workshopId: -1,
+  processId: -1,
+  status: -1,
+}) // 搜索表单数据
+const workshopOptions = ref<MdWorkshop[]>([]) // 车间选项
+const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
+
+/** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.code)
+  if (formData.code) {
     conditions.push(`编码:${formData.code}`)
-  if (formData.name)
+  }
+  if (formData.name) {
     conditions.push(`名称:${formData.name}`)
+  }
+  if (formData.workshopId !== -1) {
+    const label = workshopOptions.value.find(item => item.id === formData.workshopId)?.name
+    conditions.push(`车间:${label || formData.workshopId}`)
+  }
+  if (formData.processId !== -1) {
+    const label = processOptions.value.find(item => item.id === formData.processId)?.label
+    conditions.push(`工序:${label || formData.processId}`)
+  }
   if (formData.status !== -1) {
-    const label = getIntDictOptions(DICT_TYPE.COMMON_STATUS).find(d => d.value === formData.status)?.label
-    conditions.push(`状态:${label || formData.status}`)
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工作站'
 })
 
-function handleSearch() {
-  visible.value = false
-  const params: MdWorkstationQueryParams = {}
-  if (formData.code)
-    params.code = formData.code
-  if (formData.name)
-    params.name = formData.name
-  if (formData.status !== -1)
-    params.status = formData.status
-  emit('search', params)
+/** 加载筛选选项 */
+async function loadOptions() {
+  const [workshops, processes] = await Promise.all([
+    getWorkshopSimpleList(),
+    getProcessSimpleList(),
+  ])
+  workshopOptions.value = workshops || []
+  processOptions.value = (processes || [])
+    .filter((process): process is ProProcess & { id: number } => process.id !== undefined)
+    .map(process => ({
+      id: process.id,
+      label: process.code ? `${process.name} (${process.code})` : process.name,
+    }))
 }
 
+/** 搜索按钮操作 */
+function handleSearch() {
+  visible.value = false
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    workshopId: formData.workshopId === -1 ? undefined : formData.workshopId,
+    processId: formData.processId === -1 ? undefined : formData.processId,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
+}
+
+/** 重置按钮操作 */
 function handleReset() {
-  formData.code = ''
-  formData.name = ''
+  formData.code = undefined
+  formData.name = undefined
+  formData.workshopId = -1
+  formData.processId = -1
   formData.status = -1
   visible.value = false
   emit('reset')
 }
 
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.status = -1
-}
-
-defineExpose({ resetFields })
+/** 初始化 */
+onMounted(() => {
+  loadOptions()
+})
 </script>

@@ -22,9 +22,9 @@
 
       <!-- 搜索 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="客户编码" clearable />
-        <wd-input v-model="searchName" placeholder="客户名称" clearable class="mt-12rpx" />
-        <wd-input v-model="searchNickname" placeholder="客户简称" clearable class="mt-12rpx" />
+        <wd-input v-model="searchCode" placeholder="供应商编码" clearable />
+        <wd-input v-model="searchName" placeholder="供应商名称" clearable class="mt-12rpx" />
+        <wd-input v-model="searchNickname" placeholder="供应商简称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
             重置
@@ -39,7 +39,7 @@
       <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
         <view class="p-24rpx">
           <view
-            v-for="item in clientList"
+            v-for="item in vendorList"
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
             :class="isTempSelected(item.id) ? 'ring-2 ring-[#1677ff]' : ''"
@@ -61,8 +61,8 @@
               <text class="text-[#999]">电话：</text>{{ item.telephone || '-' }}
             </view>
           </view>
-          <view v-if="clientList.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选客户" />
+          <view v-if="vendorList.length === 0 && !loading" class="py-100rpx text-center">
+            <wd-empty icon="content" tip="暂无可选供应商" />
           </view>
           <view v-if="loading" class="flex justify-center py-24rpx">
             <wd-loading />
@@ -74,32 +74,32 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdClientVO } from '@/api/mes/md/client'
+import type { MdVendor } from '@/api/mes/md/vendor'
 import { ref } from 'vue'
-import { getClientPage } from '@/api/mes/md/client'
+import { getVendorPage } from '@/api/mes/md/vendor'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = withDefaults(defineProps<{
   title?: string
   multiple?: boolean
 }>(), {
-  title: '选择客户',
+  title: '选择供应商',
   multiple: false,
 })
 
 const emit = defineEmits<{
-  confirm: [clients: MdClientVO[]]
+  confirm: [vendors: MdVendor[]]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 加载状态
-const clientList = ref<MdClientVO[]>([]) // 客户列表
-const tempSelected = ref<MdClientVO[]>([]) // 临时选中客户
+const vendorList = ref<MdVendor[]>([]) // 供应商列表
+const tempSelected = ref<MdVendor[]>([]) // 临时选中供应商
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
-const searchCode = ref('') // 客户编码
-const searchName = ref('') // 客户名称
-const searchNickname = ref('') // 客户简称
+const searchCode = ref('') // 供应商编码
+const searchName = ref('') // 供应商名称
+const searchNickname = ref('') // 供应商简称
 
 /** 判断是否临时选中 */
 function isTempSelected(id: number): boolean {
@@ -107,8 +107,8 @@ function isTempSelected(id: number): boolean {
 }
 
 /** 切换选中 */
-function toggleItem(item: MdClientVO) {
-  const idx = tempSelected.value.findIndex(client => client.id === item.id)
+function toggleItem(item: MdVendor) {
+  const idx = tempSelected.value.findIndex(vendor => vendor.id === item.id)
   if (idx >= 0) {
     tempSelected.value.splice(idx, 1)
   } else if (!props.multiple) {
@@ -121,7 +121,7 @@ function toggleItem(item: MdClientVO) {
 /** 搜索 */
 async function handleSearch() {
   pageNo.value = 1
-  await loadClients()
+  await loadVendors()
 }
 
 /** 重置搜索 */
@@ -130,26 +130,26 @@ function handleResetSearch() {
   searchName.value = ''
   searchNickname.value = ''
   pageNo.value = 1
-  loadClients()
+  loadVendors()
 }
 
 /** 加载更多 */
 async function handleLoadMore() {
-  if (loading.value || clientList.value.length >= total.value) {
+  if (loading.value || vendorList.value.length >= total.value) {
     return
   }
   pageNo.value++
-  await loadClients(true)
+  await loadVendors(true)
 }
 
-/** 加载客户列表 */
-async function loadClients(append = false) {
+/** 加载供应商列表 */
+async function loadVendors(append = false) {
   if (loading.value) {
     return
   }
   loading.value = true
   try {
-    const data = await getClientPage({
+    const data = await getVendorPage({
       pageNo: pageNo.value,
       pageSize: 20,
       code: searchCode.value || undefined,
@@ -158,9 +158,9 @@ async function loadClients(append = false) {
       status: CommonStatusEnum.ENABLE,
     })
     if (append) {
-      clientList.value.push(...data.list)
+      vendorList.value.push(...data.list)
     } else {
-      clientList.value = data.list
+      vendorList.value = data.list
     }
     total.value = data.total
   } finally {
@@ -175,10 +175,10 @@ function open() {
   searchCode.value = ''
   searchName.value = ''
   searchNickname.value = ''
-  clientList.value = []
+  vendorList.value = []
   total.value = 0
   pageNo.value = 1
-  loadClients()
+  loadVendors()
 }
 
 /** 取消 */

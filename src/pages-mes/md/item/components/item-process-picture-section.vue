@@ -1,14 +1,6 @@
 <template>
-  <view class="yd-page-container">
-    <wd-navbar title="产品 SIP" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
-
+  <view class="min-h-0 flex flex-1 flex-col">
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <view class="flex justify-end bg-white px-24rpx py-16rpx">
-        <wd-button size="small" variant="plain" :loading="loading" @click="loadList">
-          刷新
-        </wd-button>
-      </view>
-
       <view v-if="loading" class="py-100rpx text-center">
         <wd-loading />
         <view class="mt-16rpx text-28rpx text-[#999]">
@@ -17,30 +9,27 @@
       </view>
 
       <template v-else>
-        <!-- SIP 卡片列表 -->
+        <!-- 资料列表 -->
         <view class="p-24rpx">
-          <view v-for="sip in list" :key="sip.id" class="mb-20rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
-            <!-- 图片 -->
-            <wd-img v-if="sip.url" :src="sip.url" width="100%" height="320rpx" mode="aspectFill" enable-preview />
-            <!-- 信息 -->
+          <view v-for="item in list" :key="item.id" class="mb-20rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+            <wd-img v-if="item.url" :src="item.url" width="100%" height="320rpx" mode="aspectFill" enable-preview />
             <view class="p-24rpx">
               <view class="mb-12rpx truncate text-30rpx text-[#333] font-semibold">
-                {{ sip.title }}
+                {{ item.title || '-' }}
               </view>
               <view class="text-26rpx text-[#666] space-y-8rpx">
-                <view>展示顺序：{{ sip.sort }}</view>
-                <view>所属工序：{{ getProcessLabel(sip) }}</view>
-                <view v-if="sip.description">
-                  内容说明：{{ sip.description }}
+                <view>展示顺序：{{ item.sort ?? '-' }}</view>
+                <view>所属工序：{{ getProcessLabel(item) }}</view>
+                <view v-if="item.description">
+                  内容说明：{{ item.description }}
                 </view>
-                <view v-if="sip.remark">
-                  备注：{{ sip.remark }}
+                <view v-if="item.remark">
+                  备注：{{ item.remark }}
                 </view>
-                <view>创建时间：{{ formatDateTime(sip.createTime) || '-' }}</view>
+                <view>创建时间：{{ formatDateTime(item.createTime) || '-' }}</view>
               </view>
-              <!-- 操作 -->
-              <view v-if="isEdit" class="mt-16rpx flex justify-end gap-16rpx">
-                <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', sip)">
+              <view v-if="canUpdate || canDelete" class="mt-16rpx flex justify-end gap-16rpx">
+                <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', item)">
                   编辑
                 </wd-button>
                 <wd-button
@@ -48,9 +37,9 @@
                   size="small"
                   type="danger"
                   variant="plain"
-                  :loading="deletingId === sip.id"
+                  :loading="deletingId === item.id"
                   :disabled="deletingId !== undefined"
-                  @click="handleDelete(sip)"
+                  @click="handleDelete(item)"
                 >
                   删除
                 </wd-button>
@@ -58,29 +47,34 @@
             </view>
           </view>
 
+          <!-- 空状态 -->
           <view v-if="list.length === 0" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无 SIP 数据" />
+            <wd-empty icon="content" :tip="`暂无 ${title} 数据`" />
           </view>
         </view>
       </template>
 
+      <!-- 底部安全区域 -->
       <view class="h-160rpx" />
     </scroll-view>
 
     <!-- 添加按钮 -->
-    <view v-if="isEdit && canCreate" class="yd-detail-footer">
-      <view class="yd-detail-footer-actions">
-        <wd-button type="primary" block @click="openForm('create')">
-          添加 SIP
-        </wd-button>
-      </view>
+    <view v-if="canCreate" class="yd-detail-footer">
+      <wd-button type="primary" block @click="openForm('create')">
+        添加 {{ title }}
+      </wd-button>
     </view>
 
     <!-- 新增/编辑弹层 -->
-    <wd-popup v-model="formVisible" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0; max-height: 85vh;">
+    <wd-popup
+      v-model="formVisible"
+      position="bottom"
+      safe-area-inset-bottom
+      custom-style="border-radius: 24rpx 24rpx 0 0; max-height: 85vh;"
+    >
       <scroll-view scroll-y class="bg-white px-24rpx pb-40rpx pt-32rpx" style="max-height: 85vh;">
         <view class="mb-32rpx text-center text-32rpx text-[#333] font-semibold">
-          {{ formType === 'create' ? '新增 SIP' : '编辑 SIP' }}
+          {{ formType === 'create' ? `新增 ${title}` : `编辑 ${title}` }}
         </view>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
@@ -104,7 +98,7 @@
               <wd-textarea v-model="formData.description" placeholder="请输入详细描述" :maxlength="500" show-word-limit clearable />
             </wd-form-item>
             <wd-form-item title="图片" title-width="180rpx" prop="url">
-              <yd-upload-img v-model="formData.url" directory="mes/md/product-sip" />
+              <yd-upload-img v-model="formData.url" :directory="uploadDirectory" />
             </wd-form-item>
             <wd-form-item title="备注" title-width="180rpx" prop="remark">
               <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -125,70 +119,97 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdProductSip } from '@/api/mes/md/item/productSip'
-import type { ProProcess } from '@/api/mes/pro/process'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { MdProductSip } from '@/api/mes/md/item/productSip'
+import type { MdProductSop } from '@/api/mes/md/item/productSop'
+import type { ProProcess } from '@/api/mes/pro/process'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { createProductSip, deleteProductSip, getProductSipListByItemId, updateProductSip } from '@/api/mes/md/item/productSip'
+import { computed, ref, watch } from 'vue'
+import {
+  createProductSip,
+  deleteProductSip,
+  getProductSipListByItemId,
+  updateProductSip,
+} from '@/api/mes/md/item/productSip'
+import {
+  createProductSop,
+  deleteProductSop,
+  getProductSopListByItemId,
+  updateProductSop,
+} from '@/api/mes/md/item/productSop'
 import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { useAccess } from '@/hooks/useAccess'
-import { delay, navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ itemId?: number | string, mode?: string }>()
+type PictureType = 'sip' | 'sop'
+type PictureItem = MdProductSip | MdProductSop
+type FormType = 'create' | 'update'
 
-definePage({
-  style: {
-    navigationBarTitleText: '',
-    navigationStyle: 'custom',
-  },
-})
+interface PictureFormData {
+  id?: number
+  itemId: number
+  sort: number
+  processId?: number | null
+  title: string
+  description?: string | null
+  url?: string | null
+  remark?: string | null
+}
 
+const props = defineProps<{
+  itemId?: number | string
+  type: PictureType
+}>()
+
+const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const { hasAccessByCodes } = useAccess()
-const isEdit = computed(() => props.mode === 'edit')
-const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create']))
-const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update']))
-const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete']))
-const list = ref<MdProductSip[]>([]) // SIP 列表
+const canCreate = computed(() => hasAccessByCodes(['mes:md-item:create']))
+const canUpdate = computed(() => hasAccessByCodes(['mes:md-item:update']))
+const canDelete = computed(() => hasAccessByCodes(['mes:md-item:delete']))
+const list = ref<PictureItem[]>([]) // 图片资料列表
 const loading = ref(false) // 列表加载状态
-const deletingId = ref<number>() // 正在删除的 SIP 编号
-
-const processOptions = ref<{ id: number, label: string }[]>([]) // 工序选项
+const deletingId = ref<number>() // 正在删除的资料编号
+const title = computed(() => props.type === 'sip' ? 'SIP' : 'SOP')
+const uploadDirectory = computed(() => props.type === 'sip' ? 'mes/md/product-sip' : 'mes/md/product-sop')
+const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
 const processMap = ref<Map<number, { code: string, name: string }>>(new Map()) // 工序展示映射
-
 const formVisible = ref(false) // 表单弹层状态
-const formType = ref<'create' | 'update'>('create') // 表单类型
+const formType = ref<FormType>('create') // 表单类型
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const formData = ref<MdProductSip>({
-  itemId: 0,
-  sort: 0,
-  title: '',
-  processId: undefined,
-  description: '',
-  url: '',
-  remark: '',
-}) // 表单数据
+const formData = ref<PictureFormData>(defaultForm()) // 表单数据
 const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }],
   sort: [{ required: true, message: '展示顺序不能为空' }],
 })
 
-/** 返回上一页 */
-function handleBack() {
-  navigateBackPlus()
+/** 获取物料编号 */
+function getItemId() {
+  const value = Number(props.itemId)
+  return Number.isFinite(value) && value > 0 ? value : undefined
+}
+
+/** 默认表单数据 */
+function defaultForm(): PictureFormData {
+  return {
+    itemId: getItemId() || 0,
+    sort: 0,
+    title: '',
+    processId: undefined,
+    description: '',
+    url: '',
+    remark: '',
+  }
 }
 
 /** 获取工序展示文案 */
-function getProcessLabel(sip: MdProductSip): string {
-  const process = sip.processId == null ? undefined : processMap.value.get(sip.processId)
-  const name = sip.processName || process?.name || ''
-  const code = sip.processCode || process?.code || ''
+function getProcessLabel(item: PictureItem): string {
+  const process = item.processId == null ? undefined : processMap.value.get(item.processId)
+  const name = item.processName || process?.name || ''
+  const code = item.processCode || process?.code || ''
   if (name && code) {
     return `${name} (${code})`
   }
@@ -206,42 +227,38 @@ async function loadProcessOptions() {
   processMap.value = new Map(validProcesses.map(process => [process.id, { code: process.code || '', name: process.name || '' }]))
 }
 
-/** 加载 SIP 列表 */
+/** 加载图片资料列表 */
 async function loadList() {
-  if (!props.itemId) {
+  const itemId = getItemId()
+  if (!itemId) {
+    list.value = []
     return
   }
   loading.value = true
   try {
-    list.value = await getProductSipListByItemId(Number(props.itemId))
+    list.value = props.type === 'sip'
+      ? await getProductSipListByItemId(itemId)
+      : await getProductSopListByItemId(itemId)
   } finally {
     loading.value = false
   }
 }
 
 /** 打开新增/编辑弹层 */
-function openForm(type: 'create' | 'update', sip?: MdProductSip) {
+function openForm(type: FormType, item?: PictureItem) {
   formType.value = type
-  formData.value = type === 'update' && sip
+  formData.value = type === 'update' && item
     ? {
-        id: sip.id,
-        itemId: sip.itemId,
-        sort: sip.sort,
-        title: sip.title,
-        processId: sip.processId ?? undefined,
-        description: sip.description || '',
-        url: sip.url || '',
-        remark: sip.remark || '',
+        id: item.id,
+        itemId: item.itemId,
+        sort: item.sort,
+        title: item.title,
+        processId: item.processId ?? undefined,
+        description: item.description || '',
+        url: item.url || '',
+        remark: item.remark || '',
       }
-    : {
-        itemId: Number(props.itemId) || 0,
-        sort: 0,
-        title: '',
-        processId: undefined,
-        description: '',
-        url: '',
-        remark: '',
-      }
+    : defaultForm()
   formVisible.value = true
 }
 
@@ -252,7 +269,7 @@ async function submitForm() {
     return
   }
   if (formType.value === 'update' && formData.value.id === undefined) {
-    toast.warning('缺少 SIP 编号')
+    toast.warning(`缺少 ${title.value} 编号`)
     return
   }
 
@@ -261,7 +278,7 @@ async function submitForm() {
   try {
     await dialog.confirm({
       title: '提示',
-      msg: isCreate ? '确认新增该 SIP 吗？' : '确认保存该 SIP 的修改吗？',
+      msg: isCreate ? `确认新增该 ${title.value} 吗？` : `确认保存该 ${title.value} 的修改吗？`,
     })
   } catch {
     return
@@ -269,10 +286,16 @@ async function submitForm() {
 
   formLoading.value = true
   try {
-    if (isCreate) {
-      await createProductSip(formData.value)
+    if (props.type === 'sip') {
+      if (isCreate) {
+        await createProductSip(formData.value as MdProductSip)
+      } else {
+        await updateProductSip(formData.value as MdProductSip)
+      }
+    } else if (isCreate) {
+      await createProductSop(formData.value as MdProductSop)
     } else {
-      await updateProductSip(formData.value)
+      await updateProductSop(formData.value as MdProductSop)
     }
     formVisible.value = false
     toast.success(`${actionName}成功`)
@@ -282,22 +305,26 @@ async function submitForm() {
   }
 }
 
-/** 删除 SIP */
-async function handleDelete(sip: MdProductSip) {
-  if (deletingId.value !== undefined) {
+/** 删除图片资料 */
+async function handleDelete(item: PictureItem) {
+  if (!item.id || deletingId.value !== undefined) {
     return
   }
   try {
     await dialog.confirm({
       title: '提示',
-      msg: `确定要删除 SIP「${sip.title}」吗？`,
+      msg: `确定要删除 ${title.value}「${item.title}」吗？`,
     })
   } catch {
     return
   }
-  deletingId.value = sip.id
+  deletingId.value = item.id
   try {
-    await deleteProductSip(sip.id)
+    if (props.type === 'sip') {
+      await deleteProductSip(item.id)
+    } else {
+      await deleteProductSop(item.id)
+    }
     toast.success('删除成功')
     await loadList()
   } finally {
@@ -305,13 +332,12 @@ async function handleDelete(sip: MdProductSip) {
   }
 }
 
-/** 初始化 */
-onMounted(async () => {
-  if (!props.itemId) {
-    toast.warning('缺少物料编号')
-    delay(handleBack)
-    return
-  }
-  await Promise.all([loadProcessOptions(), loadList()])
-})
+/** 监听物料编号变化 */
+watch(
+  () => [props.itemId, props.type],
+  async () => {
+    await Promise.all([loadProcessOptions(), loadList()])
+  },
+  { immediate: true },
+)
 </script>

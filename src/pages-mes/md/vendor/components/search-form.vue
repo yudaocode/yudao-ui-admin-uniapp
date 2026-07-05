@@ -1,23 +1,41 @@
 <template>
+  <!-- 搜索框入口 -->
   <view @click="visible = true">
     <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
-  <wd-popup v-model="visible" position="top" :custom-style="getTopPopupStyle()" :modal-style="getTopPopupModalStyle()" @close="visible = false">
+
+  <!-- 搜索弹窗 -->
+  <wd-popup
+    v-model="visible"
+    position="top"
+    :custom-style="getTopPopupStyle()"
+    :modal-style="getTopPopupModalStyle()"
+    @close="visible = false"
+  >
     <view class="yd-search-form-container">
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           供应商编码
-        </view><wd-input v-model="formData.code" placeholder="请输入供应商编码" clearable />
+        </view>
+        <wd-input v-model="formData.code" placeholder="请输入供应商编码" clearable />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           供应商名称
-        </view><wd-input v-model="formData.name" placeholder="请输入供应商名称" clearable />
+        </view>
+        <wd-input v-model="formData.name" placeholder="请输入供应商名称" clearable />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           供应商简称
-        </view><wd-input v-model="formData.nickname" placeholder="请输入供应商简称" clearable />
+        </view>
+        <wd-input v-model="formData.nickname" placeholder="请输入供应商简称" clearable />
+      </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          英文名称
+        </view>
+        <wd-input v-model="formData.englishName" placeholder="请输入英文名称" clearable />
       </view>
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
@@ -33,53 +51,65 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdVendorQueryParams } from '@/api/mes/md/vendor'
 import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { DICT_TYPE } from '@/utils/constants'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 
-const emit = defineEmits<{ search: [data: MdVendorQueryParams], reset: [] }>()
-const visible = ref(false)
-const formData = reactive({ code: '', name: '', nickname: '', status: -1 })
-const placeholder = computed(() => {
-  const c: string[] = []
-  if (formData.code)
-    c.push(`编码:${formData.code}`)
-  if (formData.name)
-    c.push(`名称:${formData.name}`)
-  if (formData.nickname)
-    c.push(`简称:${formData.nickname}`)
-  if (formData.status !== -1)
-    c.push(`状态:${getIntDictOptions(DICT_TYPE.COMMON_STATUS).find(d => d.value === formData.status)?.label || formData.status}`)
-  return c.length > 0 ? c.join(' | ') : '搜索供应商'
+const emit = defineEmits<{
+  search: [data: Record<string, any>]
+  reset: []
+}>()
+
+const visible = ref(false) // 搜索弹窗显示状态
+const formData = reactive<Record<string, any>>({
+  code: undefined,
+  name: undefined,
+  nickname: undefined,
+  englishName: undefined,
+  status: -1,
+}) // 搜索表单数据
+
+const placeholder = computed(() => { // 搜索条件展示文案
+  const conditions: string[] = []
+  if (formData.code) {
+    conditions.push(`编码:${formData.code}`)
+  }
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
+  }
+  if (formData.nickname) {
+    conditions.push(`简称:${formData.nickname}`)
+  }
+  if (formData.englishName) {
+    conditions.push(`英文:${formData.englishName}`)
+  }
+  if (formData.status !== -1) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索供应商'
 })
+
+/** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const p: MdVendorQueryParams = {}
-  if (formData.code)
-    p.code = formData.code
-  if (formData.name)
-    p.name = formData.name
-  if (formData.nickname)
-    p.nickname = formData.nickname
-  if (formData.status !== -1)
-    p.status = formData.status
-  emit('search', p)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    nickname: formData.nickname || undefined,
+    englishName: formData.englishName || undefined,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
+
+/** 重置按钮操作 */
 function handleReset() {
-  formData.code = ''
-  formData.name = ''
-  formData.nickname = ''
+  formData.code = undefined
+  formData.name = undefined
+  formData.nickname = undefined
+  formData.englishName = undefined
   formData.status = -1
   visible.value = false
   emit('reset')
 }
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.nickname = ''
-  formData.status = -1
-}
-defineExpose({ resetFields })
 </script>

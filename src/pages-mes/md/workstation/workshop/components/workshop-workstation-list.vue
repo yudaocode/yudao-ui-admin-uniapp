@@ -2,7 +2,7 @@
   <view class="min-h-0 flex flex-1 flex-col bg-white">
     <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
-        销售出库记录
+        工作站
       </view>
       <view class="text-24rpx text-[#999]">
         共 {{ total }} 条
@@ -18,7 +18,7 @@
       :refresher-enabled="false"
       :inside-more="true"
       :loading-more-default-as-loading="true"
-      empty-view-text="暂无销售出库记录"
+      empty-view-text="暂无工作站数据"
       @query="queryList"
     >
       <view class="px-24rpx py-8rpx pb-160rpx">
@@ -31,26 +31,25 @@
           <view class="mb-12rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
               <view class="truncate text-28rpx text-[#333] font-medium">
-                {{ item.code || `出库单 #${item.id}` }}
-              </view>
-              <view class="mt-4rpx truncate text-26rpx text-[#666]">
                 {{ item.name || '-' }}
               </view>
+              <view class="mt-4rpx truncate text-26rpx text-[#666]">
+                {{ item.code || '-' }}
+              </view>
             </view>
-            <dict-tag v-if="item.status != null" :type="DICT_TYPE.MES_WM_PRODUCT_SALES_STATUS" :value="item.status" />
-            <text v-else class="shrink-0 text-24rpx text-[#999]">-</text>
+            <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="mb-8rpx flex text-26rpx text-[#666]">
-            <text class="mr-8rpx shrink-0 text-[#999]">销售订单：</text>
-            <text class="min-w-0 flex-1 truncate">{{ item.salesOrderCode || '-' }}</text>
+            <text class="mr-8rpx shrink-0 text-[#999]">所属工序：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.processName || '-' }}</text>
           </view>
           <view class="mb-8rpx flex text-26rpx text-[#666]">
-            <text class="mr-8rpx shrink-0 text-[#999]">出库日期：</text>
-            <text class="min-w-0 flex-1 truncate">{{ formatDate(item.salesDate) || '-' }}</text>
+            <text class="mr-8rpx shrink-0 text-[#999]">地点：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.address || '-' }}</text>
           </view>
-          <view class="flex text-26rpx text-[#666]">
-            <text class="mr-8rpx shrink-0 text-[#999]">创建时间：</text>
-            <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.createTime) || '-' }}</text>
+          <view v-if="item.remark" class="flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.remark }}</text>
           </view>
         </view>
       </view>
@@ -59,32 +58,31 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductSales } from '@/api/mes/wm/productsales'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { nextTick, ref, watch } from 'vue'
-import { getProductSalesPage } from '@/api/mes/wm/productsales'
+import { getWorkstationPage } from '@/api/mes/md/workstation'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
-  clientId?: number
+  workshopId?: number
 }>()
 
-const list = ref<WmProductSales[]>([]) // 销售出库单
+const list = ref<MdWorkstation[]>([]) // 工作站列表
 const total = ref(0) // 总条数
-const pagingRef = ref<ZPagingRef<WmProductSales>>() // 分页组件引用
+const pagingRef = ref<ZPagingRef<MdWorkstation>>() // 分页组件引用
 
-/** 查询销售出库记录 */
+/** 查询工作站列表 */
 async function queryList(currentPageNo: number, currentPageSize: number) {
-  if (!props.clientId) {
+  if (!props.workshopId) {
     total.value = 0
     pagingRef.value?.completeByTotal([], 0)
     return
   }
   try {
-    const data = await getProductSalesPage({
+    const data = await getWorkstationPage({
       pageNo: currentPageNo,
       pageSize: currentPageSize,
-      clientId: props.clientId,
+      workshopId: props.workshopId,
     })
     total.value = data.total
     pagingRef.value?.completeByTotal(data.list, data.total)
@@ -93,14 +91,17 @@ async function queryList(currentPageNo: number, currentPageSize: number) {
   }
 }
 
-/** 查看销售出库详情 */
-function handleDetail(item: WmProductSales) {
-  uni.navigateTo({ url: `/pages-mes/wm/productsales/detail/index?id=${item.id}` })
+/** 查看工作站详情 */
+function handleDetail(item: MdWorkstation) {
+  if (!item.id) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/md/workstation/detail/index?id=${item.id}` })
 }
 
-/** 监听客户编号变化 */
+/** 监听车间编号变化 */
 watch(
-  () => props.clientId,
+  () => props.workshopId,
   async () => {
     total.value = 0
     list.value = []

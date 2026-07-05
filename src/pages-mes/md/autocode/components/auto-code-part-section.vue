@@ -118,7 +118,14 @@
                 @update:model-value="value => formData.length = toFiniteNumber(value)"
               />
             </wd-form-item>
-            <yd-form-picker v-model="formData.type" label="分段类型" label-width="220rpx" prop="type" :dict-type="DICT_TYPE.MES_MD_AUTO_CODE_PART_TYPE" placeholder="请选择分段类型" />
+            <yd-form-picker
+              v-model="formData.type"
+              label="分段类型"
+              label-width="220rpx"
+              prop="type"
+              :dict-type="DICT_TYPE.MES_MD_AUTO_CODE_PART_TYPE"
+              placeholder="请选择分段类型"
+            />
             <yd-form-picker
               v-if="formData.type === MesAutoCodePartTypeEnum.DATE"
               v-model="formData.dateFormat"
@@ -155,7 +162,14 @@
                   @update:model-value="value => formData.serialStep = toFiniteNumber(value)"
                 />
               </wd-form-item>
-              <yd-form-picker v-model="formData.cycleFlag" label="是否循环" label-width="220rpx" prop="cycleFlag" :columns="cycleFlagOptions" placeholder="请选择是否循环" />
+              <yd-form-picker
+                v-model="formData.cycleFlag"
+                label="是否循环"
+                label-width="220rpx"
+                prop="cycleFlag"
+                :columns="cycleFlagOptions"
+                placeholder="请选择是否循环"
+              />
               <yd-form-picker
                 v-if="formData.cycleFlag"
                 v-model="formData.cycleMethod"
@@ -238,7 +252,10 @@ const formSchema = createFormSchema({
     { required: () => formData.value.type === MesAutoCodePartTypeEnum.SERIAL_NUMBER, message: '流水号步长不能为空' },
   ],
   cycleMethod: [
-    { required: () => formData.value.type === MesAutoCodePartTypeEnum.SERIAL_NUMBER && formData.value.cycleFlag === true, message: '循环方式不能为空' },
+    {
+      required: () => formData.value.type === MesAutoCodePartTypeEnum.SERIAL_NUMBER && formData.value.cycleFlag === true,
+      message: '循环方式不能为空',
+    },
   ],
 })
 

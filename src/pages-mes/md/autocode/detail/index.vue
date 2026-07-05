@@ -42,7 +42,7 @@
       </wd-cell-group>
 
       <!-- 编码规则组成部分 -->
-      <AutoCodePartSection v-if="currentId" :rule-id="currentId" />
+      <AutoCodePartSection v-if="formData?.id" :rule-id="formData.id" />
     </view>
 
     <!-- 底部操作按钮 -->
@@ -72,7 +72,7 @@
 import type { AutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { deleteAutoCodeRule, getAutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -94,7 +94,6 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 const formData = ref<AutoCodeRule>() // 详情数据
 const deleting = ref(false) // 删除状态
 
@@ -105,41 +104,38 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  const detailData = await getAutoCodeRule(currentId.value)
-  if (!detailData) {
-    toast.warning('详情不存在，已返回列表')
-    delay(handleBack)
-    return
-  }
-  formData.value = detailData
+  formData.value = await getAutoCodeRule(Number(props.id))
 }
 
 /** 编辑 */
 function handleEdit() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/md/autocode/form/index?id=${currentId.value}`,
+    url: `/pages-mes/md/autocode/form/index?id=${props.id}`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
     await dialog.confirm({
       title: '提示',
-      msg: `确定要删除编码规则「${formData.value?.code || currentId.value}」吗？`,
+      msg: `确定要删除编码规则「${formData.value?.code || props.id}」吗？`,
     })
   } catch {
     return
   }
   deleting.value = true
   try {
-    await deleteAutoCodeRule(currentId.value)
+    await deleteAutoCodeRule(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:md:autocode:reload')
     delay(handleBack)

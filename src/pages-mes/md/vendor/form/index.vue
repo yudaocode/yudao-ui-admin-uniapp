@@ -7,7 +7,7 @@
           <wd-form-item title="供应商编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -22,13 +22,15 @@
           <wd-form-item title="英文名称" title-width="220rpx" prop="englishName">
             <wd-input v-model="formData.englishName" placeholder="请输入英文名称" clearable />
           </wd-form-item>
-          <wd-form-item title="供应商等级" title-width="220rpx" prop="level">
-            <wd-radio-group v-model="formData.level" type="button">
-              <wd-radio v-for="dict in getStrDictOptions(DICT_TYPE.MES_VENDOR_LEVEL)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.level"
+            label="供应商等级"
+            label-width="220rpx"
+            prop="level"
+            :dict-type="DICT_TYPE.MES_VENDOR_LEVEL"
+            dict-kind="str"
+            placeholder="请选择供应商等级"
+          />
           <wd-form-item title="供应商简介" title-width="220rpx" prop="description">
             <wd-textarea v-model="formData.description" placeholder="请输入供应商简介" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -48,7 +50,14 @@
             <wd-input v-model="formData.telephone" placeholder="请输入供应商电话" clearable />
           </wd-form-item>
           <wd-form-item title="供应商评分" title-width="220rpx" prop="score" center>
-            <wd-input-number v-model="formData.score" :min="0" :max="100" :precision="0" />
+            <wd-input-number
+              :model-value="formData.score ?? ''"
+              allow-null
+              :min="0"
+              :max="100"
+              :precision="0"
+              @update:model-value="value => formData.score = toFiniteNumber(value)"
+            />
           </wd-form-item>
           <wd-form-item title="联系人1" title-width="220rpx" prop="contact1Name">
             <wd-input v-model="formData.contact1Name" placeholder="请输入联系人1" clearable />
@@ -71,13 +80,14 @@
           <wd-form-item title="信用代码" title-width="220rpx" prop="creditCode">
             <wd-input v-model="formData.creditCode" placeholder="请输入统一社会信用代码" clearable />
           </wd-form-item>
-          <wd-form-item title="状态" title-width="220rpx" prop="status">
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.status"
+            label="状态"
+            label-width="220rpx"
+            prop="status"
+            :dict-type="DICT_TYPE.COMMON_STATUS"
+            placeholder="请选择状态"
+          />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -85,55 +95,64 @@
       </wd-form>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdVendorCreateReqVO } from '@/api/mes/md/vendor'
+import type { MdVendor } from '@/api/mes/md/vendor'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createVendor, getVendor, updateVendor } from '@/api/mes/md/vendor'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 
 const props = defineProps<{ id?: number | string }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑供应商' : '新增供应商')
-const formLoading = ref(false)
-interface MdVendorFormData extends MdVendorCreateReqVO {
-  id?: number
-  nickname: string
-  englishName: string
-  description: string
-  logo: string
-  level: string
-  score: number
-  address: string
-  website: string
-  email: string
-  telephone: string
-  contact1Name: string
-  contact1Telephone: string
-  contact1Email: string
-  contact2Name: string
-  contact2Telephone: string
-  contact2Email: string
-  creditCode: string
-  remark: string
-}
-const formData = ref<MdVendorFormData>(getDefaultFormData())
+const getTitle = computed(() => props.id ? '编辑供应商' : '新增供应商')
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<MdVendor>({
+  id: undefined,
+  code: '',
+  name: '',
+  nickname: '',
+  englishName: '',
+  description: '',
+  logo: '',
+  level: '',
+  score: undefined,
+  address: '',
+  website: '',
+  email: '',
+  telephone: '',
+  contact1Name: '',
+  contact1Telephone: '',
+  contact1Email: '',
+  contact2Name: '',
+  contact2Telephone: '',
+  contact2Email: '',
+  creditCode: '',
+  status: CommonStatusEnum.ENABLE,
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '供应商编码不能为空' }],
   name: [{ required: true, message: '供应商名称不能为空' }],
@@ -142,123 +161,48 @@ const formSchema = createFormSchema({
   contact2Email: [{ type: 'email', message: '请输入正确的联系人邮箱' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInstance>() // 表单组件引用
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/md/vendor/index')
 }
 
-function getDefaultFormData(): MdVendorFormData {
-  return {
-    code: '',
-    name: '',
-    nickname: '',
-    englishName: '',
-    description: '',
-    logo: '',
-    level: '',
-    score: 0,
-    address: '',
-    website: '',
-    email: '',
-    telephone: '',
-    contact1Name: '',
-    contact1Telephone: '',
-    contact1Email: '',
-    contact2Name: '',
-    contact2Telephone: '',
-    contact2Email: '',
-    creditCode: '',
-    status: CommonStatusEnum.ENABLE,
-    remark: '',
-  }
-}
-
+/** 加载供应商详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getVendor(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name,
-    nickname: data.nickname || '',
-    englishName: data.englishName || '',
-    description: data.description || '',
-    logo: data.logo || '',
-    level: data.level || '',
-    score: data.score ?? 0,
-    address: data.address || '',
-    website: data.website || '',
-    email: data.email || '',
-    telephone: data.telephone || '',
-    contact1Name: data.contact1Name || '',
-    contact1Telephone: data.contact1Telephone || '',
-    contact1Email: data.contact1Email || '',
-    contact2Name: data.contact2Name || '',
-    contact2Telephone: data.contact2Telephone || '',
-    contact2Email: data.contact2Email || '',
-    creditCode: data.creditCode || '',
-    status: data.status,
-    remark: data.remark || '',
+  formData.value = await getVendor(Number(props.id))
+}
+
+/** 生成供应商编码 */
+async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
+  try {
+    formData.value.code = await generateAutoCode('MD_VENDOR_CODE')
+    toast.success('生成成功')
+  } finally {
+    codeLoading.value = false
   }
 }
 
-async function loadPageData() {
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
-}
-async function handleGenerateCode() {
-  try {
-    toast.loading('生成中...')
-    formData.value.code = await generateAutoCode('MD_VENDOR_CODE')
-    toast.close()
-    toast.success('生成成功')
-  } catch {
-    toast.close()
-  }
-}
+/** 提交表单 */
 async function handleSubmit() {
-  if (!formRef.value)
-    return
-  const result = await formRef.value.validate()
-  if (!result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data: MdVendorCreateReqVO = {
-      code: formData.value.code,
-      name: formData.value.name,
-      nickname: formData.value.nickname || undefined,
-      englishName: formData.value.englishName || undefined,
-      description: formData.value.description || undefined,
-      logo: formData.value.logo || undefined,
-      level: formData.value.level || undefined,
-      score: formData.value.score,
-      address: formData.value.address || undefined,
-      website: formData.value.website || undefined,
-      email: formData.value.email || undefined,
-      telephone: formData.value.telephone || undefined,
-      contact1Name: formData.value.contact1Name || undefined,
-      contact1Telephone: formData.value.contact1Telephone || undefined,
-      contact1Email: formData.value.contact1Email || undefined,
-      contact2Name: formData.value.contact2Name || undefined,
-      contact2Telephone: formData.value.contact2Telephone || undefined,
-      contact2Email: formData.value.contact2Email || undefined,
-      creditCode: formData.value.creditCode || undefined,
-      status: formData.value.status,
-      remark: formData.value.remark || undefined,
-    }
-    if (currentId.value) {
-      await updateVendor({ ...data, id: currentId.value })
+    if (props.id) {
+      await updateVendor(formData.value)
       toast.success('修改成功')
     } else {
-      await createVendor(data)
+      await createVendor(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:md:vendor:reload')
@@ -267,11 +211,9 @@ async function handleSubmit() {
     formLoading.value = false
   }
 }
-onMounted(() => {
-  loadPageData()
-})
 
-watch(currentId, () => {
-  loadPageData()
+/** 初始化 */
+onMounted(() => {
+  getDetail()
 })
 </script>

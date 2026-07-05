@@ -81,7 +81,6 @@
 <script lang="ts" setup>
 import type { AutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getAutoCodeRulePage } from '@/api/mes/md/autocode/rule'
 import { useAccess } from '@/hooks/useAccess'
@@ -97,7 +96,6 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
 const list = ref<AutoCodeRule[]>([]) // 列表数据
 const pagingRef = ref<ZPagingRef<AutoCodeRule>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数

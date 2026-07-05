@@ -22,16 +22,9 @@
 
       <!-- 搜索 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="物料编码" clearable />
-        <wd-input v-model="searchName" placeholder="物料名称" clearable class="mt-12rpx" />
-        <view class="mt-12rpx">
-          <yd-tree-select
-            v-model="searchItemTypeId"
-            :data="itemTypeTree"
-            placeholder="物料分类"
-            :props="{ value: 'id', label: 'name', children: 'children' }"
-          />
-        </view>
+        <wd-input v-model="searchCode" placeholder="客户编码" clearable />
+        <wd-input v-model="searchName" placeholder="客户名称" clearable class="mt-12rpx" />
+        <wd-input v-model="searchNickname" placeholder="客户简称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
             重置
@@ -46,36 +39,30 @@
       <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
         <view class="p-24rpx">
           <view
-            v-for="item in itemList"
+            v-for="item in clientList"
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-            :class="isTempSelected(item.id) ? 'ring-2 ring-[#1677ff]' : isDisabled(item) ? 'opacity-40' : ''"
+            :class="isTempSelected(item.id) ? 'ring-2 ring-[#1677ff]' : ''"
             @click="toggleItem(item)"
           >
             <view class="mb-12rpx flex items-center justify-between gap-16rpx">
               <view class="min-w-0 flex-1 truncate text-30rpx text-[#333] font-semibold">
-                {{ item.code || '-' }}
+                {{ item.name || '-' }}
               </view>
-              <dict-tag v-if="item.itemOrProduct" :type="DICT_TYPE.MES_MD_ITEM_OR_PRODUCT" :value="item.itemOrProduct" />
-              <text v-if="isDisabled(item)" class="text-22rpx text-[#999]">
-                不可选
-              </text>
+              <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
             </view>
             <view class="mb-10rpx text-26rpx text-[#666]">
-              <text class="text-[#999]">名称：</text>{{ item.name || '-' }}
+              <text class="text-[#999]">编码：</text>{{ item.code || '-' }}
             </view>
             <view class="mb-10rpx text-26rpx text-[#666]">
-              <text class="text-[#999]">规格：</text>{{ item.specification || '-' }}
-            </view>
-            <view class="mb-10rpx text-26rpx text-[#666]">
-              <text class="text-[#999]">单位：</text>{{ item.unitMeasureName || '-' }}
+              <text class="text-[#999]">简称：</text>{{ item.nickname || '-' }}
             </view>
             <view class="text-26rpx text-[#666]">
-              <text class="text-[#999]">分类：</text>{{ item.itemTypeName || '-' }}
+              <text class="text-[#999]">电话：</text>{{ item.telephone || '-' }}
             </view>
           </view>
-          <view v-if="itemList.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选物料" />
+          <view v-if="clientList.length === 0 && !loading" class="py-100rpx text-center">
+            <wd-empty icon="content" tip="暂无可选客户" />
           </view>
           <view v-if="loading" class="flex justify-center py-24rpx">
             <wd-loading />
@@ -87,76 +74,41 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdItemTypeVO } from '@/api/mes/md/item/type'
+import type { MdClient } from '@/api/mes/md/client'
 import { ref } from 'vue'
-import { getItemPage } from '@/api/mes/md/item'
-import { getItemTypeList } from '@/api/mes/md/item/type'
+import { getClientPage } from '@/api/mes/md/client'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { handleTree } from '@/utils/tree'
 
 const props = withDefaults(defineProps<{
-  /** 当前物料 ID（用于排除自身） */
-  itemId?: number
-  /** 已存在的 BOM 物料 ID 列表（用于排除已选） */
-  existingIds?: number[]
-  /** 物料/产品标识筛选 */
-  itemOrProduct?: string
-  /** 弹层标题 */
   title?: string
-  /** 是否允许多选 */
   multiple?: boolean
 }>(), {
-  itemId: undefined,
-  existingIds: () => [],
-  itemOrProduct: undefined,
-  title: '选择物料',
-  multiple: true,
+  title: '选择客户',
+  multiple: false,
 })
 
 const emit = defineEmits<{
-  confirm: [items: MdItemVO[]]
+  confirm: [clients: MdClient[]]
 }>()
 
-const visible = ref(false)
-const loading = ref(false)
-const itemList = ref<MdItemVO[]>([])
-const tempSelected = ref<MdItemVO[]>([])
-const pageNo = ref(1)
-const total = ref(0)
-
-// 搜索
-const searchCode = ref('')
-const searchName = ref('')
-const searchItemTypeId = ref<number>()
-
-const itemTypeTree = ref<MdItemTypeVO[]>([])
-
-/** 加载分类树 */
-async function loadTree() {
-  const data = await getItemTypeList()
-  itemTypeTree.value = handleTree(data || []) as MdItemTypeVO[]
-}
-
-/** 判断物料是否禁用 */
-function isDisabled(item: MdItemVO): boolean {
-  if (props.itemId && item.id === props.itemId)
-    return true
-  if (props.existingIds.includes(item.id))
-    return true
-  return false
-}
+const visible = ref(false) // 弹层显示状态
+const loading = ref(false) // 加载状态
+const clientList = ref<MdClient[]>([]) // 客户列表
+const tempSelected = ref<MdClient[]>([]) // 临时选中客户
+const pageNo = ref(1) // 当前页码
+const total = ref(0) // 总条数
+const searchCode = ref('') // 客户编码
+const searchName = ref('') // 客户名称
+const searchNickname = ref('') // 客户简称
 
 /** 判断是否临时选中 */
 function isTempSelected(id: number): boolean {
-  return tempSelected.value.some(i => i.id === id)
+  return tempSelected.value.some(item => item.id === id)
 }
 
 /** 切换选中 */
-function toggleItem(item: MdItemVO) {
-  if (isDisabled(item))
-    return
-  const idx = tempSelected.value.findIndex(i => i.id === item.id)
+function toggleItem(item: MdClient) {
+  const idx = tempSelected.value.findIndex(client => client.id === item.id)
   if (idx >= 0) {
     tempSelected.value.splice(idx, 1)
   } else if (!props.multiple) {
@@ -169,48 +121,46 @@ function toggleItem(item: MdItemVO) {
 /** 搜索 */
 async function handleSearch() {
   pageNo.value = 1
-  await loadItems()
+  await loadClients()
 }
 
 /** 重置搜索 */
 function handleResetSearch() {
   searchCode.value = ''
   searchName.value = ''
-  searchItemTypeId.value = undefined
+  searchNickname.value = ''
   pageNo.value = 1
-  loadItems()
+  loadClients()
 }
 
 /** 加载更多 */
 async function handleLoadMore() {
-  if (loading.value || itemList.value.length >= total.value)
+  if (loading.value || clientList.value.length >= total.value) {
     return
+  }
   pageNo.value++
-  await loadItems(true)
+  await loadClients(true)
 }
 
-/** 加载物料列表 */
-async function loadItems(append = false) {
-  if (loading.value)
+/** 加载客户列表 */
+async function loadClients(append = false) {
+  if (loading.value) {
     return
+  }
   loading.value = true
   try {
-    const data = await getItemPage({
+    const data = await getClientPage({
       pageNo: pageNo.value,
       pageSize: 20,
       code: searchCode.value || undefined,
       name: searchName.value || undefined,
-      itemTypeId: searchItemTypeId.value || undefined,
-      itemOrProduct: props.itemOrProduct,
+      nickname: searchNickname.value || undefined,
       status: CommonStatusEnum.ENABLE,
     })
-    const rows = props.itemOrProduct
-      ? data.list.filter(item => item.itemOrProduct === props.itemOrProduct)
-      : data.list
     if (append) {
-      itemList.value.push(...rows)
+      clientList.value.push(...data.list)
     } else {
-      itemList.value = rows
+      clientList.value = data.list
     }
     total.value = data.total
   } finally {
@@ -224,12 +174,11 @@ function open() {
   tempSelected.value = []
   searchCode.value = ''
   searchName.value = ''
-  searchItemTypeId.value = undefined
-  itemList.value = []
+  searchNickname.value = ''
+  clientList.value = []
   total.value = 0
   pageNo.value = 1
-  loadTree()
-  loadItems()
+  loadClients()
 }
 
 /** 取消 */
@@ -242,7 +191,7 @@ function handleClose() {
   tempSelected.value = []
   searchCode.value = ''
   searchName.value = ''
-  searchItemTypeId.value = undefined
+  searchNickname.value = ''
 }
 
 /** 确认选择 */

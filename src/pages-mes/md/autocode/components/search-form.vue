@@ -61,7 +61,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
-  status: undefined,
+  status: -1,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -73,8 +73,8 @@ const placeholder = computed(() => {
   if (formData.name !== undefined && formData.name !== '') {
     conditions.push(`规则名称:${formData.name}`)
   }
-  if (formData.status !== undefined) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status) || formData.status}`)
+  if (formData.status !== -1) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索编码规则'
 })
@@ -82,15 +82,18 @@ const placeholder = computed(() => {
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const data: Record<string, any> = { ...formData }
-  emit('search', data)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.code = undefined
   formData.name = undefined
-  formData.status = undefined
+  formData.status = -1
   visible.value = false
   emit('reset')
 }

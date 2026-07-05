@@ -86,78 +86,86 @@
     </scroll-view>
 
     <!-- 添加按钮（仅 edit 模式） -->
-    <MesFooterActions v-if="canCreate">
-      <wd-button type="primary" block :loading="creating" @click="handleAdd">
-        {{ creating ? '创建中...' : '添加 BOM 物料' }}
-      </wd-button>
-    </MesFooterActions>
-
+    <view v-if="canCreate" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="creating" @click="handleAdd">
+          {{ creating ? '创建中...' : '添加 BOM 物料' }}
+        </wd-button>
+      </view>
+    </view>
     <!-- 物料选择器 -->
-    <ItemSelector v-if="canCreate" ref="itemSelectorRef" :item-id="itemId" :existing-ids="existingBomItemIds" @confirm="handleItemConfirm" />
+    <ItemPicker v-if="canCreate" ref="itemPickerRef" :item-id="itemId" :existing-ids="existingBomItemIds" @confirm="handleItemConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdProductBomVO } from '@/api/mes/md/item/productBom'
-import type { MdItemVO } from '@/api/mes/md/item'
+import type { MdProductBom } from '@/api/mes/md/item/productBom'
+import type { MdItem } from '@/api/mes/md/item'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createProductBom, deleteProductBom, getProductBomListByItemId, updateProductBom } from '@/api/mes/md/item/productBom'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import ItemSelector from '../components/item-selector.vue'
+import ItemPicker from '../components/item-picker.vue'
 
 const props = defineProps<{ itemId?: number | string, mode?: string }>()
 
 definePage({
-  style: { navigationBarTitleText: '', navigationStyle: 'custom' },
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
 })
 
 const { hasAccessByCodes } = useAccess()
+const dialog = useDialog()
 const toast = useToast()
-const isEdit = computed(() => props.mode === 'edit')
+const isEdit = computed(() => props.mode === 'edit') // 是否编辑模式
 const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create']))
 const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update']))
 const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete']))
-const itemId = computed(() => Number(props.itemId) || 0)
-const bomList = ref<MdProductBomVO[]>([])
-const loading = ref(false)
-const deletingId = ref<number>()
-const creating = ref(false)
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>()
-const existingBomItemIds = computed(() => bomList.value.map(b => b.bomItemId))
-
-// 编辑弹层
-const editVisible = ref(false)
-const editLoading = ref(false)
+const itemId = computed(() => Number(props.itemId) || 0) // 当前物料编号
+const bomList = ref<MdProductBom[]>([]) // BOM 列表
+const loading = ref(false) // 列表加载状态
+const deletingId = ref<number>() // 正在删除的 BOM 编号
+const creating = ref(false) // 添加状态
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择组件引用
+const existingBomItemIds = computed(() => bomList.value.map(b => b.bomItemId)) // 已有 BOM 物料编号
+const editVisible = ref(false) // 编辑弹层显示状态
+const editLoading = ref(false) // 编辑提交状态
 const editForm = ref({
   id: 0,
   itemId: 0,
   bomItemId: 0,
-  status: undefined as number | undefined,
+  status: undefined,
   quantity: 1,
   remark: '',
   bomItemCode: '',
   bomItemName: '',
   bomItemSpecification: '',
   unitMeasureName: '',
-})
+}) // 编辑表单数据
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
 }
 
+/** 格式化用量比例 */
 function formatQuantity(v?: number) {
-  if (v === undefined || v === null)
+  if (v === undefined || v === null) {
     return '-'
+  }
   return Number(v.toFixed(4)).toString()
 }
 
+/** 加载 BOM 列表 */
 async function loadList() {
-  if (!itemId.value)
+  if (!itemId.value) {
     return
+  }
   loading.value = true
   try {
     bomList.value = await getProductBomListByItemId(itemId.value)
@@ -168,26 +176,26 @@ async function loadList() {
 
 /** 添加 */
 function handleAdd() {
-  if (creating.value)
+  if (creating.value) {
     return
-  itemSelectorRef.value?.open()
+  }
+  itemPickerRef.value?.open()
 }
 
 /** 物料选择确认 */
-async function handleItemConfirm(items: MdItemVO[]) {
-  if (!items.length || creating.value)
+async function handleItemConfirm(items: MdItem[]) {
+  if (!items.length || creating.value) {
     return
+  }
 
-  const confirmed = await new Promise<boolean>((resolve) => {
-    uni.showModal({
+  try {
+    await dialog.confirm({
       title: '确认添加',
-      content: `确定将选中的 ${items.length} 个物料加入 BOM 吗？默认用量比例为 1。`,
-      success: result => resolve(result.confirm),
-      fail: () => resolve(false),
+      msg: `确定将选中的 ${items.length} 个物料加入 BOM 吗？默认用量比例为 1。`,
     })
-  })
-  if (!confirmed)
+  } catch {
     return
+  }
 
   creating.value = true
   let successCount = 0
@@ -201,8 +209,9 @@ async function handleItemConfirm(items: MdItemVO[]) {
         failedCount++
       }
     }
-    if (successCount > 0)
+    if (successCount > 0) {
       await loadList()
+    }
     if (failedCount > 0) {
       toast.warning(`添加完成：成功 ${successCount} 项，失败 ${failedCount} 项`)
     } else {
@@ -214,7 +223,7 @@ async function handleItemConfirm(items: MdItemVO[]) {
 }
 
 /** 打开编辑 */
-function openEdit(bom: MdProductBomVO) {
+function openEdit(bom: MdProductBom) {
   editForm.value = {
     id: bom.id,
     itemId: bom.itemId,
@@ -255,17 +264,15 @@ async function submitEdit() {
 }
 
 /** 删除 */
-async function handleDelete(bom: MdProductBomVO) {
+async function handleDelete(bom: MdProductBom) {
   try {
-    await new Promise<void>((resolve, reject) => {
-      uni.showModal({
-        title: '提示',
-        content: `确定要删除 BOM 物料「${bom.bomItemName || bom.bomItemCode}」吗？`,
-        success: res => res.confirm ? resolve() : reject(new Error('cancelled')),
-        fail: () => reject(new Error('cancelled')),
-      })
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要删除 BOM 物料「${bom.bomItemName || bom.bomItemCode}」吗？`,
     })
-  } catch { return }
+  } catch {
+    return
+  }
   deletingId.value = bom.id
   try {
     await deleteProductBom(bom.id)
@@ -276,9 +283,10 @@ async function handleDelete(bom: MdProductBomVO) {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
   if (!itemId.value) {
-    uni.showToast({ icon: 'none', title: '缺少物料编号' })
+    toast.warning('缺少物料编号')
     delay(handleBack)
     return
   }

@@ -44,7 +44,14 @@
               @update:model-value="value => formData.maxLength = toFiniteNumber(value)"
             />
           </wd-form-item>
-          <yd-form-picker v-model="formData.padded" label="是否补齐" label-width="200rpx" prop="padded" :columns="paddedOptions" placeholder="请选择是否补齐" />
+          <yd-form-picker
+            v-model="formData.padded"
+            label="是否补齐"
+            label-width="200rpx"
+            prop="padded"
+            :columns="paddedOptions"
+            placeholder="请选择是否补齐"
+          />
           <wd-form-item v-if="formData.padded" title="补齐字符" title-width="200rpx" prop="paddedChar">
             <wd-input
               v-model="formData.paddedChar"
@@ -53,8 +60,23 @@
               :maxlength="1"
             />
           </wd-form-item>
-          <yd-form-picker v-if="formData.padded" v-model="formData.paddedMethod" label="补齐方式" label-width="200rpx" prop="paddedMethod" :dict-type="DICT_TYPE.MES_MD_AUTO_CODE_PADDED_METHOD" placeholder="请选择补齐方式" />
-          <yd-form-picker v-model="formData.status" label="状态" label-width="200rpx" prop="status" :dict-type="DICT_TYPE.COMMON_STATUS" placeholder="请选择状态" />
+          <yd-form-picker
+            v-if="formData.padded"
+            v-model="formData.paddedMethod"
+            label="补齐方式"
+            label-width="200rpx"
+            prop="paddedMethod"
+            :dict-type="DICT_TYPE.MES_MD_AUTO_CODE_PADDED_METHOD"
+            placeholder="请选择补齐方式"
+          />
+          <yd-form-picker
+            v-model="formData.status"
+            label="状态"
+            label-width="200rpx"
+            prop="status"
+            :dict-type="DICT_TYPE.COMMON_STATUS"
+            placeholder="请选择状态"
+          />
           <wd-form-item title="备注" title-width="200rpx" prop="remark">
             <wd-textarea
               v-model="formData.remark"
@@ -104,15 +126,13 @@ definePage({
 })
 
 const toast = useToast()
-const numericRouteId = computed(() => props.id ? Number(props.id) : undefined) // 当前路由编号
-const isEdit = computed(() => numericRouteId.value !== undefined)
-const getTitle = computed(() => isEdit.value ? '编辑编码规则' : '新增编码规则')
+const getTitle = computed(() => props.id ? '编辑编码规则' : '新增编码规则')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<AutoCodeRule & { id?: number }>(createDefaultFormData()) // 表单数据
+const formData = ref<AutoCodeRule>(createDefaultFormData()) // 表单数据
 const paddedOptions = getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING) // 是否补齐选项
 
 /** 创建默认表单数据 */
-function createDefaultFormData(): AutoCodeRule & { id?: number } {
+function createDefaultFormData(): AutoCodeRule {
   return {
     id: undefined,
     code: '',
@@ -146,18 +166,12 @@ function handleBack() {
   navigateBackPlus('/pages-mes/md/autocode/index')
 }
 
-/** 重置表单 */
-function resetForm() {
-  formData.value = createDefaultFormData()
-}
-
 /** 加载详情 */
 async function getDetail() {
-  if (!numericRouteId.value) {
-    resetForm()
+  if (!props.id) {
     return
   }
-  formData.value = await getAutoCodeRule(numericRouteId.value)
+  formData.value = await getAutoCodeRule(Number(props.id))
 }
 
 /** 提交表单 */
@@ -174,8 +188,8 @@ async function handleSubmit() {
       paddedChar: formData.value.padded ? formData.value.paddedChar : undefined,
       paddedMethod: formData.value.padded ? formData.value.paddedMethod : undefined,
     }
-    if (isEdit.value) {
-      await updateAutoCodeRule({ ...data, id: numericRouteId.value })
+    if (props.id) {
+      await updateAutoCodeRule(data)
       toast.success('修改成功')
     } else {
       await createAutoCodeRule(data)
