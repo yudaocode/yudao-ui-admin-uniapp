@@ -431,7 +431,7 @@ function objectToKeyValueRows(data?: unknown): KeyValueRow[] {
   if (!data || Array.isArray(data) || typeof data !== 'object') {
     return []
   }
-  return Object.entries(data as Record<string, unknown>).map(([key, value]) => ({
+  return Object.entries(data as Record<string, any>).map(([key, value]) => ({
     key,
     value: value === undefined || value === null ? '' : String(value),
   }))

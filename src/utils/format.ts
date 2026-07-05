@@ -105,6 +105,12 @@ export function formatDisplayValue(value: unknown, fallback = '-'): string {
   return isEmptyValue(value) ? fallback : String(value)
 }
 
+/** 格式化百分比展示：空值显示「-」，否则追加 % */
+export function formatDisplayPercent(value: unknown, fallback = '-'): string {
+  const text = formatDisplayValue(value, fallback)
+  return text === fallback ? fallback : `${text}%`
+}
+
 /** 格式化 JSON 展示；字符串若不是合法 JSON 则原样返回 */
 export function formatJson(value: unknown, fallback = '', space = 2): string {
   if (value === undefined || value === null || value === '') {

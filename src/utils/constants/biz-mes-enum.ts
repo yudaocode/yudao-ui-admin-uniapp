@@ -285,6 +285,12 @@ export const MesCalPlanStatusEnum = {
   CONFIRMED: 1,
 } as const
 
+/** MES 假期类型 */
+export const MesCalHolidayTypeEnum = {
+  WORKDAY: 1,
+  HOLIDAY: 2,
+} as const
+
 /** MES 轮班方式 */
 export const MesCalShiftTypeEnum = {
   SINGLE: 1,

@@ -45,6 +45,7 @@ export function ensureDecodeURIComponent(url: string) {
   }
   return url
 }
+
 /**
  * 解析 url 得到 path 和 query
  * 比如输入url: /pages/login/login?redirect=%2Fpages%2Fdemo%2Fbase%2Froute-interceptor

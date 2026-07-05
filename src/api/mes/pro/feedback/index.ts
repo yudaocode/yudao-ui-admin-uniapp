@@ -7,7 +7,7 @@ export interface ProFeedback {
   code?: string // 报工单编号
   type?: number // 报工类型
   channel?: string // 报工途径
-  feedbackTime?: Date // 报工时间
+  feedbackTime?: string | Date // 报工时间
   workstationId?: number // 工作站编号
   workstationCode?: string // 工作站编码
   workstationName?: string // 工作站名称
@@ -28,7 +28,7 @@ export interface ProFeedback {
   itemSpecification?: string // 规格型号
   unitMeasureId?: number // 单位编号
   unitMeasureName?: string // 单位名称
-  expireDate?: Date // 过期日期
+  expireDate?: string | Date // 过期日期
   scheduledQuantity?: number // 排产数量
   feedbackQuantity?: number // 本次报工数量
   qualifiedQuantity?: number // 合格品数量

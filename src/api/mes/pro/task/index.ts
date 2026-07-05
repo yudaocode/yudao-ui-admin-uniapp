@@ -27,13 +27,13 @@ export interface ProTask {
   changedQuantity?: number // 调整数量
   clientId?: number // 客户编号
   clientName?: string // 客户名称
-  startTime?: Date // 开始生产时间
+  startTime?: string | Date // 开始生产时间
   duration?: number // 生产时长（工作日）
-  endTime?: Date // 结束生产时间
+  endTime?: string | Date // 结束生产时间
   colorCode?: string // 甘特图显示颜色
-  requestDate?: Date // 需求日期
-  finishDate?: Date // 完成日期
-  cancelDate?: Date // 取消日期
+  requestDate?: string | Date // 需求日期
+  finishDate?: string | Date // 完成日期
+  cancelDate?: string | Date // 取消日期
   status?: number // 任务状态
   checkFlag?: boolean // 是否质检
   remark?: string // 备注
@@ -51,8 +51,8 @@ export interface ProTaskGantt {
   workstation?: string
   product?: string
   quantity?: number
-  startDate?: Date
-  endDate?: Date
+  startDate?: string | Date
+  endDate?: string | Date
   duration?: number
   progress?: number
   color?: string

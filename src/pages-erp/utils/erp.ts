@@ -18,7 +18,7 @@ import {
 } from './format'
 
 type ErpDetailOptionKey = 'account' | 'customer' | 'product' | 'supplier' | 'user' | 'warehouse'
-type ErpOptionsMap = Partial<Record<ErpDetailOptionKey, Array<Record<string, any>>>>
+type ErpOptionsMap = Record<ErpDetailOptionKey, Array<Record<string, any>>>
 
 /** 加载详情补全选项 */
 async function loadErpDetailOptions(loader: () => Promise<Record<string, any>[]>) {

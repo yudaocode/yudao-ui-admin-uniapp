@@ -339,7 +339,7 @@ const { hasAccessByCodes } = useAccess()
 
 const deviceData = ref<Device>() // 设备数据
 const productData = ref<Product>() // 产品数据
-const modbusConfig = ref<Partial<DeviceModbusConfig>>({}) // 连接配置
+const modbusConfig = ref<DeviceModbusConfig>() // 连接配置
 const thingModelList = ref<ThingModelData[]>([]) // 物模型列表
 const pointList = ref<DeviceModbusPoint[]>([]) // 点位列表
 const pagingRef = ref<any>() // 分页组件引用
@@ -481,7 +481,7 @@ async function getDetail() {
     productData.value = await getProduct(Number(deviceData.value.productId))
     thingModelList.value = await getThingModelList({ productId: deviceData.value.productId })
   }
-  modbusConfig.value = await getModbusConfig(Number(props.deviceId)) || {}
+  modbusConfig.value = await getModbusConfig(Number(props.deviceId))
 }
 
 /** 查询点位列表 */
@@ -555,7 +555,7 @@ async function handleConfigSubmit() {
     await saveModbusConfig(data)
     toast.success('保存成功')
     configVisible.value = false
-    modbusConfig.value = await getModbusConfig(Number(props.deviceId)) || {}
+    modbusConfig.value = await getModbusConfig(Number(props.deviceId))
   } finally {
     configLoading.value = false
   }

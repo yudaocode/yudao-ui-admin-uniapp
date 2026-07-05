@@ -8,7 +8,7 @@
     />
 
     <!-- 详情内容 -->
-    <view>
+    <view class="pb-160rpx">
       <wd-cell-group border>
         <wd-cell title="规则编码" :value="formData?.code || '-'" />
         <wd-cell title="规则名称" :value="formData?.name || '-'" />
@@ -40,37 +40,45 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
+
+      <!-- 编码规则组成部分 -->
+      <AutoCodePartSection v-if="currentId" :rule-id="currentId" />
     </view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="hasAccessByCodes(['mes:auto-code-rule:update'])"
-        class="flex-1" type="warning" @click="handleEdit"
-      >
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="hasAccessByCodes(['mes:auto-code-rule:delete'])"
-        class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view
+      v-if="hasAccessByCodes(['mes:auto-code-rule:update']) || hasAccessByCodes(['mes:auto-code-rule:delete'])"
+      class="yd-detail-footer"
+    >
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="hasAccessByCodes(['mes:auto-code-rule:update'])"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:auto-code-rule:delete'])"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { AutoCodeRuleVO } from '@/api/mes/md/autocode/rule'
+import type { AutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteAutoCodeRule, getAutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import AutoCodePartSection from '../components/auto-code-part-section.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -87,7 +95,7 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const formData = ref<AutoCodeRuleVO>() // 详情数据
+const formData = ref<AutoCodeRule>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */
@@ -100,29 +108,13 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const detailData = await getAutoCodeRule(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-  } finally {
-    toast.close()
-  }
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+  const detailData = await getAutoCodeRule(currentId.value)
+  if (!detailData) {
+    toast.warning('详情不存在，已返回列表')
+    delay(handleBack)
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  formData.value = detailData
 }
 
 /** 编辑 */
@@ -150,9 +142,7 @@ async function handleDelete() {
     await deleteAutoCodeRule(currentId.value)
     toast.success('删除成功')
     uni.$emit('mes:md:autocode:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
@@ -160,10 +150,6 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+  getDetail()
 })
 </script>

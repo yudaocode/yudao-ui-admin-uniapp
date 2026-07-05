@@ -22,7 +22,7 @@ export interface WmMaterialStock {
   vendorId?: number
   vendorName?: string
   quantity: number
-  receiptTime?: Date
+  receiptTime?: string | Date
   frozen: boolean
   createTime?: Date
 }

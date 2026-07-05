@@ -1,13 +1,16 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 表单区域 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="工具编码" title-width="220rpx" prop="code">
-            <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
-              <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+            <wd-input v-model="formData.code" placeholder="请输入或点击生成" :disabled="!!props.id" clearable>
+              <template v-if="!props.id" #suffix>
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -22,32 +25,19 @@
           <wd-form-item title="型号规格" title-width="220rpx" prop="specification">
             <wd-input v-model="formData.specification" placeholder="请输入型号规格" clearable />
           </wd-form-item>
-          <wd-form-item title="工具类型" title-width="220rpx" prop="toolTypeId" is-link :value="typeDisplayValue" placeholder="请选择工具类型" @click="typePickerVisible = true" />
-          <wd-picker v-model:visible="typePickerVisible" :model-value="formData.toolTypeId !== undefined ? [formData.toolTypeId] : []" :columns="typeOptions" label-key="name" value-key="id" @confirm="handleToolTypeConfirm" />
+          <yd-form-picker v-model="formData.toolTypeId" label="工具类型" label-width="220rpx" prop="toolTypeId" :columns="typeOptions" label-key="name" value-key="id" placeholder="请选择工具类型" @confirm="handleToolTypeConfirm" />
           <wd-form-item title="库存数量" title-width="220rpx" prop="quantity" center>
             <wd-input-number v-model="formData.quantity" :min="1" :precision="0" :disabled="selectedToolType?.codeFlag === true" @change="handleQuantityChange" />
           </wd-form-item>
           <wd-form-item title="可用数量" title-width="220rpx" prop="availableQuantity" center>
             <wd-input-number v-model="formData.availableQuantity" :min="0" :precision="0" disabled />
           </wd-form-item>
-          <wd-form-item title="状态" title-width="220rpx" prop="status">
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_TM_TOOL_STATUS)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <wd-form-item title="保养维护类型" title-width="220rpx" prop="maintenType">
-            <wd-radio-group v-model="formData.maintenType" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_TM_MAINTEN_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.status" label="状态" label-width="220rpx" prop="status" :dict-type="DICT_TYPE.MES_TM_TOOL_STATUS" placeholder="请选择状态" disabled />
+          <yd-form-picker v-model="formData.maintenType" label="保养维护类型" label-width="220rpx" prop="maintenType" :dict-type="DICT_TYPE.MES_TM_MAINTEN_TYPE" placeholder="请选择保养维护类型" />
           <wd-form-item v-if="formData.maintenType === MesMaintenTypeEnum.REGULAR" title="下次保养日期" title-width="220rpx" prop="nextMaintenDate" is-link :value="formatDateTime(formData.nextMaintenDate) || ''" placeholder="请选择下次保养日期" @click="dateVisible.nextMaintenDate = true" />
           <wd-datetime-picker v-model="formData.nextMaintenDate" v-model:visible="dateVisible.nextMaintenDate" title="请选择下次保养日期" type="datetime" />
           <wd-form-item v-if="formData.maintenType === MesMaintenTypeEnum.USAGE" title="下次保养周期" title-width="220rpx" prop="nextMaintenPeriod" center>
-            <wd-input-number v-model="formData.nextMaintenPeriod" :min="1" :precision="0" />
+            <wd-input-number v-model="formData.nextMaintenPeriod" allow-null :min="1" :precision="0" />
           </wd-form-item>
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -56,41 +46,33 @@
       </wd-form>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+
+    <!-- 底部保存按钮 -->
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { TmToolCreateReqVO, TmToolUpdateReqVO, TmToolVO } from '@/api/mes/tm/tool'
-import type { TmToolTypeVO } from '@/api/mes/tm/tool/type'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import type { TmTool } from '@/api/mes/tm/tool'
 import { createTool, getTool, updateTool } from '@/api/mes/tm/tool'
+import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { getToolTypeSimpleList } from '@/api/mes/tm/tool/type'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesMaintenTypeEnum, MesToolStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
-const MesAutoCodeRuleCode = {
-  TM_TOOL_CODE: 'TM_TOOL_CODE',
-} as const
-const MesToolStatusEnum = {
-  STORE: 1,
-} as const
-const MesMaintenTypeEnum = {
-  REGULAR: 1,
-  USAGE: 2,
-} as const
 
 definePage({
   style: {
@@ -100,10 +82,24 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑工具' : '新增工具')
-const formLoading = ref(false)
-const formData = ref<Partial<TmToolVO>>(getDefaultFormData())
+const getTitle = computed(() => props.id ? '编辑工具' : '新增工具')
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<TmTool>({
+  id: undefined,
+  code: '',
+  name: '',
+  brand: '',
+  specification: '',
+  toolTypeId: undefined,
+  quantity: 1,
+  availableQuantity: 1,
+  status: MesToolStatusEnum.STORE,
+  maintenType: undefined,
+  nextMaintenPeriod: undefined,
+  nextMaintenDate: '',
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '工具编码不能为空' }],
   name: [{ required: true, message: '工具名称不能为空' }],
@@ -111,84 +107,49 @@ const formSchema = createFormSchema({
   quantity: [{ required: true, message: '数量不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
-const formRef = ref<FormInstance>()
-const typeOptions = ref<TmToolTypeVO[]>([])
-const typePickerVisible = ref(false)
-const selectedToolType = ref<TmToolTypeVO>() // 当前选中的工具类型
+const formRef = ref<FormInstance>() // 表单组件引用
+const typeOptions = ref<TmToolType[]>([]) // 工具类型选项
+const selectedToolType = ref<TmToolType>() // 当前选中的工具类型
 const dateVisible = reactive({
   nextMaintenDate: false,
 }) // 日期选择器状态
-const typeDisplayValue = computed(() => {
-  const t = typeOptions.value.find(o => o.id === formData.value.toolTypeId)
-  return t?.name || ''
-})
 
-function getDefaultFormData(): Partial<TmToolVO> {
-  return {
-    code: '',
-    name: '',
-    brand: '',
-    specification: '',
-    toolTypeId: undefined,
-    quantity: 1,
-    availableQuantity: 1,
-    status: MesToolStatusEnum.STORE,
-    maintenType: undefined,
-    nextMaintenPeriod: undefined,
-    nextMaintenDate: '',
-    remark: '',
-  }
-}
-
-function normalizeDateValue(value?: string | number | null) {
-  return value ?? ''
-}
-
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/tm/tool/index')
 }
 
+/** 加载工具类型选项 */
 async function loadOptions() {
   typeOptions.value = await getToolTypeSimpleList() || []
 }
 
+/** 加载工具详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getTool(currentId.value)
-  formData.value = {
-    ...getDefaultFormData(),
-    ...data,
-    nextMaintenDate: normalizeDateValue(data.nextMaintenDate),
-  }
-  selectedToolType.value = typeOptions.value.find(item => item.id === data.toolTypeId)
+  formData.value = await getTool(Number(props.id))
+  selectedToolType.value = typeOptions.value.find(item => item.id === formData.value.toolTypeId)
 }
 
-async function loadPageData() {
-  await loadOptions()
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
-  selectedToolType.value = undefined
-}
-
+/** 生成工具编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.TM_TOOL_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
-function handleToolTypeConfirm({ value }: { value: number[] }) {
-  const toolTypeId = value[0]
-  formData.value.toolTypeId = toolTypeId
+/** 确认选择工具类型 */
+function handleToolTypeConfirm(value: number) {
+  const toolTypeId = Number(value)
   selectedToolType.value = typeOptions.value.find(item => item.id === toolTypeId)
   if (selectedToolType.value?.codeFlag === true) {
     formData.value.quantity = 1
@@ -196,46 +157,32 @@ function handleToolTypeConfirm({ value }: { value: number[] }) {
   }
 }
 
+/** 库存数量变更 */
 function handleQuantityChange(value: number) {
-  if (!currentId.value) {
+  if (!props.id) {
     formData.value.availableQuantity = value
   }
 }
 
-function buildSubmitData(): TmToolCreateReqVO | TmToolUpdateReqVO {
-  const data = {
-    code: formData.value.code || '',
-    name: formData.value.name || '',
-    brand: formData.value.brand || undefined,
-    specification: formData.value.specification || undefined,
-    toolTypeId: Number(formData.value.toolTypeId),
-    quantity: Number(formData.value.quantity),
-    availableQuantity: Number(formData.value.availableQuantity),
-    maintenType: formData.value.maintenType || undefined,
-    nextMaintenPeriod: formData.value.maintenType === MesMaintenTypeEnum.USAGE ? formData.value.nextMaintenPeriod || undefined : undefined,
-    nextMaintenDate: formData.value.maintenType === MesMaintenTypeEnum.REGULAR ? formData.value.nextMaintenDate || undefined : undefined,
-    status: Number(formData.value.status),
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
-}
-
+/** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateTool(data)
+    if (formData.value.maintenType !== MesMaintenTypeEnum.REGULAR) {
+      formData.value.nextMaintenDate = undefined
+    }
+    if (formData.value.maintenType !== MesMaintenTypeEnum.USAGE) {
+      formData.value.nextMaintenPeriod = undefined
+    }
+    if (props.id) {
+      await updateTool(formData.value)
       toast.success('修改成功')
     } else {
-      await createTool(data)
+      await createTool(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:tm:tool:reload')
@@ -245,20 +192,9 @@ async function handleSubmit() {
   }
 }
 
-watch(() => formData.value.maintenType, (maintenType) => {
-  if (maintenType !== MesMaintenTypeEnum.REGULAR) {
-    formData.value.nextMaintenDate = ''
-  }
-  if (maintenType !== MesMaintenTypeEnum.USAGE) {
-    formData.value.nextMaintenPeriod = undefined
-  }
-})
-
-onMounted(() => {
-  loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+/** 初始化 */
+onMounted(async () => {
+  await loadOptions()
+  await getDetail()
 })
 </script>

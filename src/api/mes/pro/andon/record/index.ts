@@ -17,7 +17,7 @@ export interface ProAndonRecord {
   reason?: string
   level?: number
   status?: number
-  handleTime?: Date
+  handleTime?: string | Date
   handlerUserId?: number
   handlerUserNickname?: string
   remark?: string

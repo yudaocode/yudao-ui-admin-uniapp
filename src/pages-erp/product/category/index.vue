@@ -8,10 +8,10 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 面包屑导航 -->
-    <Breadcrumb v-if="!hasQuery" ref="breadcrumbRef" v-model="currentParentId" />
+    <Breadcrumb ref="breadcrumbRef" v-model="currentParentId" />
 
     <!-- 分类列表 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
@@ -43,7 +43,7 @@
                 </view>
               </view>
               <view
-                v-if="!hasQuery && item.children && item.children.length > 0"
+                v-if="item.children && item.children.length > 0"
                 class="mt-4rpx flex shrink-0 items-center"
                 @click.stop="handleEnterChildren(item)"
               >
@@ -93,17 +93,11 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const loading = ref(false) // 列表加载状态
-const flatList = ref<ProductCategory[]>([]) // 扁平分类列表
 const list = ref<ProductCategory[]>([]) // 树形分类列表
 const currentParentId = ref(0) // 当前层级的父节点编号
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>() // 面包屑引用
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
 const queryParams = ref<Record<string, any>>({}) // 已生效搜索条件
-const hasQuery = computed(() => Object.keys(queryParams.value).length > 0)
 const currentList = computed(() => {
-  if (hasQuery.value) {
-    return flatList.value
-  }
   if (currentParentId.value === 0) {
     return list.value.filter(item => (item.parentId ?? 0) === 0)
   }
@@ -112,13 +106,6 @@ const currentList = computed(() => {
 
 /** 返回上一页或上一层级 */
 function handleBack() {
-  if (hasQuery.value) {
-    searchFormRef.value?.resetFields()
-    queryParams.value = {}
-    currentParentId.value = 0
-    getList()
-    return
-  }
   if (!breadcrumbRef.value?.back()) {
     navigateBackPlus()
   }
@@ -137,7 +124,6 @@ async function getList() {
   loading.value = true
   try {
     const data = await getProductCategoryList(queryParams.value)
-    flatList.value = data || []
     list.value = handleTree(data || [])
   } finally {
     loading.value = false
@@ -146,24 +132,15 @@ async function getList() {
 
 /** 搜索按钮操作 */
 function handleQuery(data?: Record<string, any>) {
-  const source = data || {}
-  const nextParams: Record<string, any> = {}
-  if (source.name) {
-    nextParams.name = source.name
-  }
-  if (source.status != null) {
-    nextParams.status = source.status
-  }
-  queryParams.value = nextParams
+  queryParams.value = { ...data }
   currentParentId.value = 0
+  breadcrumbRef.value?.reset()
   getList()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  currentParentId.value = 0
-  getList()
+  handleQuery()
 }
 
 /** 新增产品分类 */

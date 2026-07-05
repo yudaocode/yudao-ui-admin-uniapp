@@ -293,6 +293,11 @@ const tabs = [ // 分组配置
   { key: IOT_HOME_TAB.MESSAGE, title: '消息' },
   { key: IOT_HOME_TAB.MAP, title: '地图' },
 ]
+const initialTabState: Record<IotHomeTab, boolean> = {
+  [IOT_HOME_TAB.OVERVIEW]: false,
+  [IOT_HOME_TAB.MESSAGE]: false,
+  [IOT_HOME_TAB.MAP]: false,
+} // 分组状态默认值
 const day = 3600 * 1000 * 24
 const now = Date.now()
 const filters = reactive({
@@ -327,9 +332,9 @@ const startVisible = ref(false) // 开始日期选择器显隐
 const endVisible = ref(false) // 结束日期选择器显隐
 const intervalVisible = ref(false) // 时间间隔选择器显隐
 const activeTab = ref<IotHomeTab>(IOT_HOME_TAB.OVERVIEW) // 当前分组
-const loadedTabs = reactive<Partial<Record<IotHomeTab, boolean>>>({}) // 已加载分组
-const loadingTabs = reactive<Partial<Record<IotHomeTab, boolean>>>({}) // 加载中分组
-const loadErrors = reactive<Partial<Record<IotHomeTab, boolean>>>({}) // 加载失败分组
+const loadedTabs = reactive<Record<IotHomeTab, boolean>>({ ...initialTabState }) // 已加载分组
+const loadingTabs = reactive<Record<IotHomeTab, boolean>>({ ...initialTabState }) // 加载中分组
+const loadErrors = reactive<Record<IotHomeTab, boolean>>({ ...initialTabState }) // 加载失败分组
 
 const stateColorMap: Record<number, string> = {
   [DeviceStateEnum.INACTIVE]: '#faad14',

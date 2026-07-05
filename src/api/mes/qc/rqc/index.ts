@@ -22,7 +22,7 @@ export interface QcRqc {
   qualifiedQuantity: number // 合格品数量
   unqualifiedQuantity: number // 不合格数量
   checkResult?: number // 检测结果
-  inspectDate: Date // 检测日期
+  inspectDate: string | Date // 检测日期
   inspectorUserId: number // 检测人员用户 ID
   inspectorNickname?: string // 检测人员昵称（关联查询）
   status?: number // 状态

@@ -10,9 +10,9 @@ export interface Batch {
   itemName?: string
   itemSpecification?: string
   unitName?: string
-  produceDate?: Date
-  expireDate?: Date
-  receiptDate?: Date
+  produceDate?: string | Date
+  expireDate?: string | Date
+  receiptDate?: string | Date
   vendorId?: number
   vendorCode?: string
   vendorName?: string

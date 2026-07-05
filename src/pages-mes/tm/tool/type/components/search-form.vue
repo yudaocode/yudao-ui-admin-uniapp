@@ -1,7 +1,10 @@
 <template>
+  <!-- 搜索框入口 -->
   <view @click="visible = true">
     <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
+
+  <!-- 搜索弹窗 -->
   <wd-popup v-model="visible" position="top" :custom-style="getTopPopupStyle()" :modal-style="getTopPopupModalStyle()" @close="visible = false">
     <view class="yd-search-form-container">
       <view class="yd-search-form-item">
@@ -16,7 +19,7 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入类型名称" clearable />
       </view>
-      <yd-search-picker v-model="formData.maintenType" label="保养维护类型" :dict-type="DICT_TYPE.MES_TM_MAINTEN_TYPE" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.maintenType" label="保养维护类型" :dict-type="DICT_TYPE.MES_TM_MAINTEN_TYPE" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -30,57 +33,48 @@
 </template>
 
 <script lang="ts" setup>
-import type { TmToolTypeQueryParams } from '@/api/mes/tm/tool/type'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
-const emit = defineEmits<{ search: [data: TmToolTypeQueryParams], reset: [] }>()
-const visible = ref(false)
-const formData = reactive<TmToolTypeQueryParams>({ code: '', name: '', maintenType: undefined })
-const placeholder = computed(() => {
-  const c: string[] = []
+const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
+const visible = ref(false) // 搜索弹窗显示状态
+const formData = reactive({
+  code: undefined as string | undefined,
+  name: undefined as string | undefined,
+  maintenType: -1,
+}) // 搜索表单数据
+const placeholder = computed(() => { // 搜索条件展示文案
+  const conditions: string[] = []
   if (formData.code) {
-    c.push(`编码:${formData.code}`)
+    conditions.push(`编码:${formData.code}`)
   }
   if (formData.name) {
-    c.push(`名称:${formData.name}`)
+    conditions.push(`名称:${formData.name}`)
   }
-  if (formData.maintenType != null) {
-    c.push(`保养:${getDictLabel(DICT_TYPE.MES_TM_MAINTEN_TYPE, formData.maintenType)}`)
+  if (formData.maintenType !== -1) {
+    conditions.push(`保养:${getDictLabel(DICT_TYPE.MES_TM_MAINTEN_TYPE, formData.maintenType)}`)
   }
-  return c.length > 0 ? c.join(' | ') : '搜索工具类型'
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索工具类型'
 })
 
+/** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const p: TmToolTypeQueryParams = {}
-  if (formData.code) {
-    p.code = formData.code
-  }
-  if (formData.name) {
-    p.name = formData.name
-  }
-  if (formData.maintenType != null) {
-    p.maintenType = formData.maintenType
-  }
-  emit('search', p)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    maintenType: formData.maintenType === -1 ? undefined : formData.maintenType,
+  })
 }
 
+/** 重置按钮操作 */
 function handleReset() {
-  formData.code = ''
-  formData.name = ''
-  formData.maintenType = undefined
+  formData.code = undefined
+  formData.name = undefined
+  formData.maintenType = -1
   visible.value = false
   emit('reset')
 }
-
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.maintenType = undefined
-}
-
-defineExpose({ resetFields })
 </script>

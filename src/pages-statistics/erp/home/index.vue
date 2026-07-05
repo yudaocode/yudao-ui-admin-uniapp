@@ -105,12 +105,24 @@ const tabs = [ // 分组配置
   { key: ERP_HOME_TAB.SALE, title: '销售统计' },
   { key: ERP_HOME_TAB.PURCHASE, title: '采购统计' },
 ]
+const emptySaleSummary: ErpSaleSummaryResp = {
+  todayPrice: 0,
+  yesterdayPrice: 0,
+  monthPrice: 0,
+  yearPrice: 0,
+} // 销售概况默认值
+const emptyPurchaseSummary: ErpPurchaseSummaryResp = {
+  todayPrice: 0,
+  yesterdayPrice: 0,
+  monthPrice: 0,
+  yearPrice: 0,
+} // 采购概况默认值
 const activeTab = ref<number>(ERP_HOME_TAB.SALE) // 当前分组
 const loadedTabs = reactive<Record<number, boolean>>({}) // 已加载分组
 const loadingTabs = reactive<Record<number, boolean>>({}) // 加载中分组
 const loadErrors = reactive<Record<number, boolean>>({}) // 加载失败分组
-const saleSummary = ref<Partial<ErpSaleSummaryResp>>({}) // 销售概况统计
-const purchaseSummary = ref<Partial<ErpPurchaseSummaryResp>>({}) // 采购概况统计
+const saleSummary = ref<ErpSaleSummaryResp>({ ...emptySaleSummary }) // 销售概况统计
+const purchaseSummary = ref<ErpPurchaseSummaryResp>({ ...emptyPurchaseSummary }) // 采购概况统计
 const saleTimeSummaryList = ref<ErpSaleTimeSummaryResp[]>([]) // 销售时段统计
 const purchaseTimeSummaryList = ref<ErpPurchaseTimeSummaryResp[]>([]) // 采购时段统计
 const isActiveTabLoaded = computed(() => !!loadedTabs[activeTab.value]) // 当前分组是否已加载
@@ -144,7 +156,7 @@ async function loadSaleSummary() {
     getSaleSummary(),
     getSaleTimeSummary(),
   ])
-  saleSummary.value = summary || {}
+  saleSummary.value = summary || { ...emptySaleSummary }
   saleTimeSummaryList.value = timeSummary || []
 }
 
@@ -154,7 +166,7 @@ async function loadPurchaseSummary() {
     getPurchaseSummary(),
     getPurchaseTimeSummary(),
   ])
-  purchaseSummary.value = summary || {}
+  purchaseSummary.value = summary || { ...emptyPurchaseSummary }
   purchaseTimeSummaryList.value = timeSummary || []
 }
 

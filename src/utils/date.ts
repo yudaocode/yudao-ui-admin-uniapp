@@ -41,6 +41,25 @@ export function formatDateTime(time?: FormatDate) {
   return formatDate(time, 'YYYY-MM-DD HH:mm:ss')
 }
 
+/** 格式化可选日期时间 */
+export function formatOptionalDateTime(time?: FormatDate) {
+  return formatOptionalDate(time, 'YYYY-MM-DD HH:mm:ss')
+}
+
+/** 格式化趋势日期 */
+export function formatTrendDate(time?: FormatDate) {
+  if (!time) {
+    return '-'
+  }
+  if (typeof time === 'string') {
+    const matched = time.match(/(\d{1,2})-(\d{1,2})$/)
+    if (matched) {
+      return `${matched[1]}-${matched[2]}`
+    }
+  }
+  return formatDate(time, 'MM-DD') || String(time)
+}
+
 /** HH:mm 补秒为 HH:mm:ss（对齐后端 LocalTime；time 选择器只产出 HH:mm） */
 export function padTimeSeconds(time?: string) {
   return time && time.length === 5 ? `${time}:00` : time

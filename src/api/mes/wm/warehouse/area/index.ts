@@ -8,13 +8,13 @@ export interface WmWarehouseArea {
   name: string
   warehouseId?: number
   warehouseName?: string
-  locationId: number
+  locationId?: number
   locationName?: string
-  area: number | null
-  maxLoad: number | null
-  positionX: number | null
-  positionY: number | null
-  positionZ: number | null
+  area?: number | null
+  maxLoad?: number | null
+  positionX?: number | null
+  positionY?: number | null
+  positionZ?: number | null
   status: number
   frozen: boolean
   allowItemMixing: boolean

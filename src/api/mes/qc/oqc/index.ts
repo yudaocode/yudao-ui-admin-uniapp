@@ -32,8 +32,8 @@ export interface QcOqc {
   majorQuantity?: number // 严重缺陷数量
   minorQuantity?: number // 轻微缺陷数量
   checkResult?: number // 检测结果
-  outDate: Date // 出货日期
-  inspectDate: Date // 检测日期
+  outDate: string | Date // 出货日期
+  inspectDate: string | Date // 检测日期
   inspectorUserId: number // 检测人员用户 ID
   inspectorNickname?: string // 检测人员昵称（关联查询）
   status?: number // 状态

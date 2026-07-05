@@ -6,13 +6,13 @@ export interface QcTemplateIndicator {
   id?: number // 编号
   templateId: number // 质检方案ID
   indicatorId: number // 质检指标ID
-  checkMethod: string // 检测方法
-  standardValue: number // 标准值
-  unitMeasureId: number // 计量单位ID
-  thresholdMax: number // 误差上限
-  thresholdMin: number // 误差下限
-  docUrl: string // 说明图URL
-  remark: string // 备注
+  checkMethod?: string // 检测方法
+  standardValue?: number // 标准值
+  unitMeasureId?: number // 计量单位ID
+  thresholdMax?: number // 误差上限
+  thresholdMin?: number // 误差下限
+  docUrl?: string // 说明图URL
+  remark?: string // 备注
   // JOIN mes_qc_indicator
   indicatorCode?: string // 检测项编码
   indicatorName?: string // 检测项名称

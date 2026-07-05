@@ -81,16 +81,9 @@ function handleSearch() {
 
 /** 重置按钮操作 */
 function handleReset() {
-  resetFields()
+  formData.name = undefined
+  formData.status = -1
   visible.value = false
   emit('reset')
 }
-
-/** 重置搜索字段 */
-function resetFields() {
-  formData.name = undefined
-  formData.status = -1
-}
-
-defineExpose({ resetFields })
 </script>

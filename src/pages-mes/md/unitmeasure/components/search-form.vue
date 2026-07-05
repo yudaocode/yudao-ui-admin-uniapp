@@ -39,22 +39,21 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdUnitMeasurePageParam } from '@/api/mes/md/unitmeasure'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  search: [data: MdUnitMeasurePageParam]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive<MdUnitMeasurePageParam>({
+const formData = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
-  status: -1, // -1 表示全部
+  status: undefined,
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索条件展示文案
@@ -65,7 +64,7 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索计量单位'
@@ -81,7 +80,7 @@ function handleSearch() {
 function handleReset() {
   formData.code = undefined
   formData.name = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

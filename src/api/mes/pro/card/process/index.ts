@@ -9,8 +9,8 @@ export interface ProCardProcess {
   processId?: number // 工序编号
   processCode?: string // 工序编码
   processName?: string // 工序名称
-  inputTime?: Date // 进入工序时间
-  outputTime?: Date // 出工序时间
+  inputTime?: string | Date // 进入工序时间
+  outputTime?: string | Date // 出工序时间
   inputQuantity?: number // 投入数量
   outputQuantity?: number // 产出数量
   unqualifiedQuantity?: number // 不合格品数量

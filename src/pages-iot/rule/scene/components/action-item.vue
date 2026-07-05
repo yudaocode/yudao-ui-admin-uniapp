@@ -264,7 +264,7 @@ function normalizeParam(param: ThingModelParam | ThingModelProperty) {
 
 /** 生成参数示例 */
 function buildParamsExample() {
-  const example: Record<string, unknown> = {}
+  const example: Record<string, any> = {}
   paramsHintList.value.forEach((param) => {
     example[param.identifier] = getDefaultValue(param.dataType)
   })

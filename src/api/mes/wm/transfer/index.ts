@@ -14,7 +14,7 @@ export interface WmTransfer {
   carrier?: string
   shippingNumber?: string
   confirmFlag?: boolean
-  transferDate: Date
+  transferDate: string | Date
   status?: number
   remark?: string
   createTime?: Date

@@ -11,7 +11,6 @@ export interface WmProductSales {
   clientName?: string // 客户名称
   salesOrderCode?: string // 销售订单编号
   salesDate?: string // 出库日期
-  shipmentDate?: string // 兼容旧字段
   noticeId?: number // 发货通知单编号
   noticeCode?: string // 发货通知单号
   contactName?: string // 收货人

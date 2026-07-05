@@ -1,13 +1,16 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 表单区域 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="类型编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -21,15 +24,9 @@
               <wd-switch v-model="formData.codeFlag" />
             </view>
           </wd-cell>
-          <wd-form-item v-if="formData.codeFlag" title="保养维护类型" title-width="220rpx" prop="maintenType">
-            <wd-radio-group v-model="formData.maintenType" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_TM_MAINTEN_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-if="formData.codeFlag" v-model="formData.maintenType" label="保养维护类型" label-width="220rpx" prop="maintenType" :dict-type="DICT_TYPE.MES_TM_MAINTEN_TYPE" placeholder="请选择保养维护类型" />
           <wd-form-item v-if="showMaintenPeriod" :title="maintenPeriodTitle" title-width="220rpx" prop="maintenPeriod" center>
-            <wd-input-number v-model="formData.maintenPeriod" :min="1" :precision="0" />
+            <wd-input-number v-model="formData.maintenPeriod" allow-null :min="1" :precision="0" />
           </wd-form-item>
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -38,36 +35,30 @@
       </wd-form>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+
+    <!-- 底部保存按钮 -->
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { TmToolTypeCreateReqVO, TmToolTypeUpdateReqVO, TmToolTypeVO } from '@/api/mes/tm/tool/type'
+import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createToolType, getToolType, updateToolType } from '@/api/mes/tm/tool/type'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesMaintenTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
-
-const MesAutoCodeRuleCode = {
-  TM_TOOL_TYPE_CODE: 'TM_TOOL_TYPE_CODE',
-} as const
-const MesMaintenTypeEnum = {
-  REGULAR: 1,
-  USAGE: 2,
-} as const
 
 definePage({
   style: {
@@ -77,10 +68,18 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑工具类型' : '新增工具类型')
-const formLoading = ref(false)
-const formData = ref<Partial<TmToolTypeVO>>(getDefaultFormData())
+const getTitle = computed(() => props.id ? '编辑工具类型' : '新增工具类型')
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<TmToolType>({
+  id: undefined,
+  code: '',
+  name: '',
+  codeFlag: true,
+  maintenType: undefined,
+  maintenPeriod: undefined,
+  remark: '',
+}) // 表单数据
 const showMaintenPeriod = computed(() => formData.value.codeFlag && formData.value.maintenType != null)
 const maintenPeriodTitle = computed(() => formData.value.maintenType === MesMaintenTypeEnum.USAGE ? '保养周期(次)' : '保养周期(天)')
 const formSchema = createFormSchema({
@@ -90,81 +89,54 @@ const formSchema = createFormSchema({
   maintenType: [{ required: () => !!formData.value.codeFlag, message: '保养维护类型不能为空' }],
   maintenPeriod: [{ required: () => showMaintenPeriod.value, message: '保养周期不能为空' }],
 })
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInstance>() // 表单组件引用
 
-function getDefaultFormData(): Partial<TmToolTypeVO> {
-  return {
-    code: '',
-    name: '',
-    codeFlag: true,
-    maintenType: undefined,
-    maintenPeriod: undefined,
-    remark: '',
-  }
-}
-
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/tm/tool/type/index')
 }
 
+/** 加载工具类型详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getToolType(currentId.value)
-  formData.value = {
-    ...getDefaultFormData(),
-    ...data,
-  }
+  formData.value = await getToolType(Number(props.id))
 }
 
-async function loadPageData() {
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
-}
-
+/** 生成工具类型编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.TM_TOOL_TYPE_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
-function buildSubmitData(): TmToolTypeCreateReqVO | TmToolTypeUpdateReqVO {
-  const data = {
-    code: formData.value.code || '',
-    name: formData.value.name || '',
-    codeFlag: !!formData.value.codeFlag,
-    maintenType: formData.value.codeFlag ? formData.value.maintenType || undefined : undefined,
-    maintenPeriod: showMaintenPeriod.value ? formData.value.maintenPeriod || undefined : undefined,
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
-}
-
+/** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateToolType(data)
+    if (!formData.value.codeFlag) {
+      formData.value.maintenType = undefined
+      formData.value.maintenPeriod = undefined
+    } else if (!showMaintenPeriod.value) {
+      formData.value.maintenPeriod = undefined
+    }
+    if (props.id) {
+      await updateToolType(formData.value)
       toast.success('修改成功')
     } else {
-      await createToolType(data)
+      await createToolType(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:tm:tool-type:reload')
@@ -174,18 +146,8 @@ async function handleSubmit() {
   }
 }
 
-watch(() => formData.value.codeFlag, (codeFlag) => {
-  if (!codeFlag) {
-    formData.value.maintenType = undefined
-    formData.value.maintenPeriod = undefined
-  }
-})
-
+/** 初始化 */
 onMounted(() => {
-  loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  getDetail()
 })
 </script>

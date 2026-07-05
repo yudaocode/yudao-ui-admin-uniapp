@@ -6,9 +6,9 @@ export interface WmWarehouseLocation {
   id?: number
   code: string
   name: string
-  warehouseId: number
+  warehouseId?: number
   warehouseName?: string
-  area: number | null
+  area?: number | null
   frozen: boolean
   remark: string | null
   createTime?: Date

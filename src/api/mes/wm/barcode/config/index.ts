@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 条码配置 */
 export interface WmBarcodeConfig {
   id?: number
-  format: number
-  bizType: number
+  format?: number
+  bizType?: number
   contentFormat: string
   contentExample?: string
   autoGenerateFlag: boolean

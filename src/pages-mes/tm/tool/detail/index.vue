@@ -1,6 +1,9 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar title="工具详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 详情内容 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="工具编码" :value="formData?.code || '-'" />
@@ -23,11 +26,10 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <view v-if="formData" class="yd-detail-footer">
+
+    <!-- 底部操作按钮 -->
+    <view v-if="formData && (hasAccessByCodes(['mes:tm-tool:update']) || hasAccessByCodes(['mes:tm-tool:delete']))" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button class="flex-1" variant="plain" @click="handleBarcode">
-          条码
-        </wd-button>
         <wd-button v-if="hasAccessByCodes(['mes:tm-tool:update'])" class="flex-1" type="warning" @click="handleEdit">
           编辑
         </wd-button>
@@ -44,12 +46,11 @@ import type { TmTool } from '@/api/mes/tm/tool'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { deleteTool, getTool } from '@/api/mes/tm/tool'
 import { useAccess } from '@/hooks/useAccess'
-import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
 import { delay, navigateBackPlus } from '@/utils'
-import { BarcodeBizTypeEnum, DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
+import { DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | string }>()
@@ -64,7 +65,6 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 const formData = ref<TmTool>() // 详情数据
 const deleting = ref(false) // 删除状态
 
@@ -75,40 +75,15 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const detailData = await getTool(currentId.value)
-    if (!detailData) {
-      toast.warning('详情不存在，已返回列表')
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-  } finally {
-    toast.close()
-  }
-}
-
-/** 查看条码 */
-function handleBarcode() {
-  if (!formData.value?.id) {
-    return
-  }
-  uni.navigateTo({
-    url: buildBarcodeListUrl({
-      bizType: BarcodeBizTypeEnum.TOOL,
-      bizId: formData.value.id,
-      bizCode: formData.value.code,
-    }),
-  })
+  formData.value = await getTool(Number(props.id))
 }
 
 /** 编辑 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/tm/tool/form/index?id=${currentId.value}` })
+  uni.navigateTo({ url: `/pages-mes/tm/tool/form/index?id=${props.id}` })
 }
 
 /** 格式化下次保养 */
@@ -124,7 +99,7 @@ function formatNextMainten(data?: TmTool) {
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -134,14 +109,10 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteTool(currentId.value)
-    toast.close()
+    await deleteTool(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:tm:tool:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }

@@ -5,7 +5,7 @@ import { http } from '@/http/http'
 export interface DvRepairLine {
   id?: number // 编号
   repairId: number // 维修工单编号
-  subjectId: number // 项目编号
+  subjectId?: number // 项目编号
   subjectName?: string // 项目名称
   subjectContent?: string // 项目内容
   subjectStandard?: string // 项目标准

@@ -6,12 +6,12 @@ export interface QcTemplateItem {
   id?: number // 编号
   templateId: number // 质检方案ID
   itemId: number // 产品物料ID
-  quantityCheck: number // 最低检测数
-  quantityUnqualified: number // 最大不合格数
-  criticalRate: number // 最大致命缺陷率（%）
-  majorRate: number // 最大严重缺陷率（%）
-  minorRate: number // 最大轻微缺陷率（%）
-  remark: string // 备注
+  quantityCheck?: number // 最低检测数
+  quantityUnqualified?: number // 最大不合格数
+  criticalRate?: number // 最大致命缺陷率（%）
+  majorRate?: number // 最大严重缺陷率（%）
+  minorRate?: number // 最大轻微缺陷率（%）
+  remark?: string // 备注
   // JOIN mes_md_item
   itemCode?: string // 物料编码
   itemName?: string // 物料名称

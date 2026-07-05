@@ -1,10 +1,15 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
+    <!-- 顶部导航栏 -->
     <wd-navbar title="工具类型" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+
+    <!-- 搜索组件 -->
+    <SearchForm @search="handleQuery" @reset="handleReset" />
+
+    <!-- 工具类型列表 -->
     <z-paging ref="pagingRef" v-model="list" :fixed="false" class="min-h-0 flex-1" :default-page-size="10" :refresher-enabled="true" :inside-more="true" :loading-more-default-as-loading="true" empty-view-text="暂无工具类型数据" @query="queryList">
       <view class="p-24rpx">
-        <ListCardWrapper v-for="item in list" :key="item.id" :item="item" :item-id="item.id" :selecting="selecting" :selected="isSelected(item.id)" :can-delete="canDelete" @click="handleDetail" @longpress="enterSelectMode" @toggle-select="toggleSelect" @swipe-delete="handleSwipeDelete">
+        <view v-for="item in list" :key="item.id" class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm" @click="handleDetail(item)">
           <view class="p-24rpx">
             <view class="mb-16rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
@@ -21,39 +26,24 @@
               </view>
             </view>
           </view>
-        </ListCardWrapper>
+        </view>
       </view>
     </z-paging>
-    <MesFooterActions v-if="selecting" content-class="flex items-center justify-between px-24rpx">
-      <wd-button variant="plain" size="small" @click="exitSelectMode">
-        取消
-      </wd-button>
-      <text class="text-28rpx text-[#666]">已选 {{ selectedIds.size }} 项</text>
-      <wd-button type="danger" size="small" :loading="batchDeleting" :disabled="selectedIds.size === 0" @click="handleBatchDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+
+    <!-- 新增按钮 -->
     <wd-fab v-if="hasAccessByCodes(['mes:tm-tool-type:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { TmToolTypeQueryParams, TmToolTypeVO } from '@/api/mes/tm/tool/type'
+import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { deleteToolType, getToolTypePage } from '@/api/mes/tm/tool/type'
+import { getToolTypePage } from '@/api/mes/tm/tool/type'
 import { useAccess } from '@/hooks/useAccess'
-import { useMesBatchSelect } from '@/pages-mes/hooks/useMesBatchSelect'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
-import ListCardWrapper from '@/pages-mes/components/list-card-wrapper.vue'
+import { DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
-
-const MesMaintenTypeEnum = {
-  REGULAR: 1,
-  USAGE: 2,
-} as const
 
 definePage({
   style: {
@@ -63,31 +53,16 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<TmToolTypeVO[]>([])
-const pagingRef = ref<ZPagingRef<TmToolTypeVO>>()
-const queryParams = ref<TmToolTypeQueryParams>({})
-const searchFormRef = ref<InstanceType<typeof SearchForm>>()
-const {
-  selecting,
-  selectedIds,
-  batchDeleting,
-  canDelete,
-  isSelected,
-  toggleSelect,
-  enterSelectMode,
-  exitSelectMode,
-  handleSwipeDelete,
-  handleBatchDelete,
-} = useMesBatchSelect({
-  permission: 'mes:tm-tool-type:delete',
-  deleteApi: (ids: number[]) => Promise.all(ids.map(id => deleteToolType(id))).then(() => {}),
-  reloadEvent: 'mes:tm:tool-type:reload',
-})
+const list = ref<TmToolType[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<TmToolType>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
+/** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
+/** 查询工具类型列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getToolTypePage({ ...queryParams.value, pageNo, pageSize })
@@ -97,21 +72,24 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-function handleQuery(data: TmToolTypeQueryParams) {
+/** 搜索按钮操作 */
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
+/** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  reload()
+  handleQuery()
 }
 
+/** 重新加载 */
 function reload() {
   pagingRef.value?.reload()
 }
 
-function formatMaintenPeriod(item: TmToolTypeVO) {
+/** 保养周期展示 */
+function formatMaintenPeriod(item: TmToolType) {
   if (!item.codeFlag || item.maintenPeriod == null) {
     return '-'
   }
@@ -124,18 +102,22 @@ function formatMaintenPeriod(item: TmToolTypeVO) {
   return '-'
 }
 
+/** 新增工具类型 */
 function handleAdd() {
   uni.navigateTo({ url: `/pages-mes/tm/tool/type/form/index` })
 }
 
-function handleDetail(item: TmToolTypeVO) {
+/** 查看详情 */
+function handleDetail(item: TmToolType) {
   uni.navigateTo({ url: `/pages-mes/tm/tool/type/detail/index?id=${item.id}` })
 }
 
+/** 初始化 */
 onMounted(() => {
   uni.$on('mes:tm:tool-type:reload', reload)
 })
 
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:tm:tool-type:reload', reload)
 })

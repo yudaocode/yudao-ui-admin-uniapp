@@ -22,8 +22,8 @@ export interface ProWorkRecord {
   workstationCode?: string
   workstationName?: string
   type?: number
-  clockInTime?: Date
-  clockOutTime?: Date
+  clockInTime?: string | Date
+  clockOutTime?: string | Date
 }
 
 /** 查询工作记录分页 */

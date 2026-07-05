@@ -70,10 +70,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdUnitMeasurePageParam, MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
-import type { ZPagingRef } from 'z-paging'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getUnitMeasurePage } from '@/api/mes/md/unitmeasure'
 import { useAccess } from '@/hooks/useAccess'
@@ -90,12 +88,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const list = ref<MdUnitMeasureVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<MdUnitMeasureVO>>() // 分页组件引用
-const queryParams = ref<MdUnitMeasurePageParam>({}) // 查询参数/** 返回上一页 */
+const list = ref<MdUnitMeasure[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<MdUnitMeasure>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
+
+/** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 格式化换算比例 */
@@ -111,9 +110,6 @@ async function queryList(pageNo: number, pageSize: number) {
       pageNo,
       pageSize,
     }
-    if (params.status === -1) {
-      delete params.status
-    }
     const data = await getUnitMeasurePage(params)
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -122,7 +118,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: MdUnitMeasurePageParam) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -143,7 +139,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: MdUnitMeasureVO) {
+function handleDetail(item: MdUnitMeasure) {
   uni.navigateTo({ url: `/pages-mes/md/unitmeasure/detail/index?id=${item.id}` })
 }
 

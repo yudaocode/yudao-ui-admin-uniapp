@@ -1,6 +1,9 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar title="工具类型详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 详情内容 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="类型编码" :value="formData?.code || '-'" />
@@ -19,35 +22,34 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions v-if="hasAccessByCodes(['mes:tm-tool-type:update']) || hasAccessByCodes(['mes:tm-tool-type:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:tm-tool-type:update'])" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:tm-tool-type:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+
+    <!-- 底部操作按钮 -->
+    <view v-if="hasAccessByCodes(['mes:tm-tool-type:update']) || hasAccessByCodes(['mes:tm-tool-type:delete'])" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['mes:tm-tool-type:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:tm-tool-type:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { TmToolTypeVO } from '@/api/mes/tm/tool/type'
-import { onShow, onUnload } from '@dcloudio/uni-app'
+import type { TmToolType } from '@/api/mes/tm/tool/type'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { deleteToolType, getToolType } from '@/api/mes/tm/tool/type'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | string }>()
-const MesMaintenTypeEnum = {
-  REGULAR: 1,
-  USAGE: 2,
-} as const
 
 definePage({
   style: {
@@ -59,47 +61,29 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<TmToolTypeVO>()
-const deleting = ref(false)
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
+const formData = ref<TmToolType>() // 详情数据
+const deleting = ref(false) // 删除状态
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/tm/tool/type/index')
 }
 
+/** 加载详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
-  try {
-    toast.loading('加载中...')
-    const detailData = await getToolType(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-  } finally {
-    toast.close()
-  }
+  formData.value = await getToolType(Number(props.id))
 }
 
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
+/** 编辑 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/tm/tool/type/form/index?id=${currentId.value}` })
+  uni.navigateTo({ url: `/pages-mes/tm/tool/type/form/index?id=${props.id}` })
 }
 
-function formatMaintenPeriod(data?: TmToolTypeVO) {
+/** 格式化保养周期 */
+function formatMaintenPeriod(data?: TmToolType) {
   if (!data?.codeFlag || data.maintenPeriod == null) {
     return '-'
   }
@@ -112,8 +96,9 @@ function formatMaintenPeriod(data?: TmToolTypeVO) {
   return '-'
 }
 
+/** 删除 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -123,32 +108,22 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteToolType(currentId.value)
-    toast.close()
+    await deleteToolType(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:tm:tool-type:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  initPage()
   uni.$on('mes:tm:tool-type:reload', getDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
-})
-
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:tm:tool-type:reload', getDetail)
 })

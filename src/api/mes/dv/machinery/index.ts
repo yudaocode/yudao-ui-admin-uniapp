@@ -13,8 +13,8 @@ export interface DvMachinery {
   workshopId: number
   workshopName?: string
   status: number
-  lastMaintenTime?: Date
-  lastCheckTime?: Date
+  lastMaintenTime?: string | Date
+  lastCheckTime?: string | Date
   remark?: string
   createTime?: Date
 }

@@ -157,7 +157,7 @@
                       }"
                     />
                   </view>
-                  <text class="mt-12rpx text-20rpx text-[#999]">{{ formatTrendTime(item.time) }}</text>
+                  <text class="mt-12rpx text-20rpx text-[#999]">{{ formatTrendDate(item.time) }}</text>
                 </view>
               </view>
             </scroll-view>
@@ -238,7 +238,7 @@ import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picke
 import { formatQuantity } from '@/pages-wms/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, WmsOrderStatusEnum, WmsOrderTypeEnum } from '@/utils/constants'
-import { formatDate, formatDateTime, toTimestamp } from '@/utils/date'
+import { formatDateTime, formatTrendDate } from '@/utils/date'
 
 definePage({
   style: {
@@ -268,8 +268,13 @@ const WMS_HOME_TAB = {
   INVENTORY: 2,
 } as const
 type WmsHomeTab = typeof WMS_HOME_TAB[keyof typeof WMS_HOME_TAB]
+const initialTabState: Record<WmsHomeTab, boolean> = {
+  [WMS_HOME_TAB.OVERVIEW]: false,
+  [WMS_HOME_TAB.ORDER]: false,
+  [WMS_HOME_TAB.INVENTORY]: false,
+} // 分组状态默认值
 const activeTab = ref<WmsHomeTab>(WMS_HOME_TAB.OVERVIEW) // 当前分组
-const loadedTabs = reactive<Partial<Record<WmsHomeTab, boolean>>>({}) // 已加载分组
+const loadedTabs = reactive<Record<WmsHomeTab, boolean>>({ ...initialTabState }) // 已加载分组
 
 const statusList = [
   { status: WmsOrderStatusEnum.PREPARE, label: getOrderStatusName(WmsOrderStatusEnum.PREPARE, '草稿'), color: '#409eff' },
@@ -442,11 +447,6 @@ function getTrendTotal(item: WmsHomeOrderTrendResp) {
 /** 获取趋势单项数值 */
 function getTrendValues(item: WmsHomeOrderTrendResp) {
   return orderDefinitions.map(definition => Number(item[definition.trendField] || 0))
-}
-
-/** 格式化趋势日期 */
-function formatTrendTime(time: WmsHomeOrderTrendResp['time']) {
-  return formatDate(toTimestamp(time), 'MM-DD')
 }
 
 /** 获取趋势柱高度 */

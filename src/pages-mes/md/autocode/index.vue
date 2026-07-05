@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AutoCodeRuleQueryParams, AutoCodeRuleVO } from '@/api/mes/md/autocode/rule'
+import type { AutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { onUnload } from '@dcloudio/uni-app'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -98,13 +98,13 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const list = ref<AutoCodeRuleVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<AutoCodeRuleVO>>() // 分页组件引用
-const queryParams = ref<AutoCodeRuleQueryParams>({}) // 查询参数
+const list = ref<AutoCodeRule[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<AutoCodeRule>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -123,7 +123,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: AutoCodeRuleQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -146,7 +146,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: AutoCodeRuleVO) {
+function handleDetail(item: AutoCodeRule) {
   if (!item.id) {
     return
   }

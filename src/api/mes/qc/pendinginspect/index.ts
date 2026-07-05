@@ -13,17 +13,23 @@ export interface QcPendingInspect {
   itemName: string
   specification: string
   unitName: string
+  batchCode?: string
   quantity: number
   vendorId?: number
   vendorName?: string
   workOrderId?: number
+  workOrderCode?: string
+  workOrderName?: string
   workstationId?: number
+  workstationCode?: string
   workstationName?: string
+  processId?: number
+  processName?: string
   taskId?: number
   taskCode?: string
   clientId?: number
   clientName?: string
-  recordTime: Date
+  recordTime: string | Date
 }
 
 /** 查询待检任务分页 */
