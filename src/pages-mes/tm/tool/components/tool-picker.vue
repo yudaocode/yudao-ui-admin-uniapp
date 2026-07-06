@@ -79,19 +79,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { TmToolVO } from '@/api/mes/tm/tool'
+import type { TmTool } from '@/api/mes/tm/tool'
 import { ref } from 'vue'
 import { getToolPage } from '@/api/mes/tm/tool'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  confirm: [item: TmToolVO]
+  confirm: [item: TmTool]
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const list = ref<TmToolVO[]>([]) // 工具列表
-const selected = ref<TmToolVO>() // 当前选择工具
-const pagingRef = ref<ZPagingRef<TmToolVO>>() // 分页组件引用
+const list = ref<TmTool[]>([]) // 工具列表
+const selected = ref<TmTool>() // 当前选择工具
+const pagingRef = ref<ZPagingRef<TmTool>>() // 分页组件引用
 const searchCode = ref('') // 工具编码
 const searchName = ref('') // 工具名称
 

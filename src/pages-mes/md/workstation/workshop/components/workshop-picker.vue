@@ -78,19 +78,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkshopVO } from '@/api/mes/md/workstation/workshop'
+import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
 import { ref } from 'vue'
 import { getWorkshopPage } from '@/api/mes/md/workstation/workshop'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  confirm: [item: MdWorkshopVO]
+  confirm: [item: MdWorkshop]
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const list = ref<MdWorkshopVO[]>([]) // 车间列表
-const selected = ref<MdWorkshopVO>() // 当前选择车间
-const pagingRef = ref<ZPagingRef<MdWorkshopVO>>() // 分页组件引用
+const list = ref<MdWorkshop[]>([]) // 车间列表
+const selected = ref<MdWorkshop>() // 当前选择车间
+const pagingRef = ref<ZPagingRef<MdWorkshop>>() // 分页组件引用
 const searchCode = ref('') // 车间编码
 const searchName = ref('') // 车间名称
 

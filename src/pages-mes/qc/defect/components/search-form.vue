@@ -25,8 +25,8 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入缺陷描述" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="检测项类型" :dict-type="DICT_TYPE.MES_INDICATOR_TYPE" all-option :all-value="undefined" />
-      <yd-search-picker v-model="formData.level" label="缺陷等级" :dict-type="DICT_TYPE.MES_DEFECT_LEVEL" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="检测项类型" :dict-type="DICT_TYPE.MES_INDICATOR_TYPE" all-option />
+      <yd-search-picker v-model="formData.level" label="缺陷等级" :dict-type="DICT_TYPE.MES_DEFECT_LEVEL" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -40,18 +40,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcDefectPageParam } from '@/api/mes/qc/defect'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
-const emit = defineEmits<{ search: [data: Partial<QcDefectPageParam>], reset: [] }>()
+const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive<Partial<QcDefectPageParam>>({
-  code: '',
-  name: '',
+const formData = reactive<Record<string, any>>({
+  code: undefined,
+  name: undefined,
   type: undefined,
   level: undefined,
 }) // 搜索表单数据
@@ -76,36 +75,21 @@ const placeholder = computed(() => {
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const params: Partial<QcDefectPageParam> = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.type != null) {
-    params.type = formData.type
-  }
-  if (formData.level != null) {
-    params.level = formData.level
-  }
-  emit('search', params)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    type: formData.type,
+    level: formData.level,
+  })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  resetFields()
+  formData.code = undefined
+  formData.name = undefined
+  formData.type = undefined
+  formData.level = undefined
   visible.value = false
   emit('reset')
 }
-
-/** 重置搜索字段 */
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.type = undefined
-  formData.level = undefined
-}
-
-defineExpose({ resetFields })
 </script>

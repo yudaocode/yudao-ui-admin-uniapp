@@ -1,21 +1,28 @@
 <template>
-  <wd-form-item
-    :title="label"
-    :title-width="labelWidth"
-    :prop="prop || undefined"
-    :is-link="!disabled"
-    :value="displayValue"
-    :placeholder="placeholder"
-    @click="handleOpen"
-  />
+  <view class="yd-search-form-item">
+    <view class="yd-search-form-label">
+      {{ label }}
+    </view>
+    <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="handleOpen">
+      <text class="min-w-0 flex-1 truncate" :class="displayValue ? 'text-[#333]' : 'text-[#999]'">
+        {{ displayValue || placeholder }}
+      </text>
+      <wd-icon
+        v-if="clearable && displayValue"
+        name="close-circle"
+        size="30rpx"
+        custom-style="color: #c0c4cc;"
+        @click.stop="handleClear"
+      />
+    </view>
+  </view>
 
   <WorkOrderPicker
     ref="pickerRef"
     :model-value="modelValue"
-    :disabled="disabled"
-    :clearable="clearable"
     :confirmed-only="confirmedOnly"
     :type="type"
+    :disabled="disabled"
     :title="title"
     :empty-tip="emptyTip"
     @update:model-value="handleUpdate"
@@ -32,9 +39,7 @@ import WorkOrderPicker from './workorder-picker.vue'
 const props = withDefaults(defineProps<{
   modelValue?: number
   label?: string
-  labelWidth?: string
   placeholder?: string
-  prop?: string
   disabled?: boolean
   clearable?: boolean
   confirmedOnly?: boolean
@@ -43,11 +48,9 @@ const props = withDefaults(defineProps<{
   emptyTip?: string
 }>(), {
   label: '生产工单',
-  labelWidth: '220rpx',
   placeholder: '请选择生产工单',
-  prop: '',
   disabled: false,
-  clearable: false,
+  clearable: true,
   confirmedOnly: true,
   title: '选择生产工单',
   emptyTip: '暂无已确认工单',
@@ -56,15 +59,13 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
   'change': [item: ProWorkOrder | undefined]
+  'clear': []
 }>()
 
 const pickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
 const selectedItem = ref<ProWorkOrder>() // 当前工单
 const displayValue = computed(() => {
-  if (selectedItem.value) {
-    return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
-  }
-  return props.modelValue ? String(props.modelValue) : ''
+  return format(props.modelValue)
 })
 
 /** 打开选择器 */
@@ -84,6 +85,25 @@ function handleUpdate(value?: number) {
 function handleChange(item?: ProWorkOrder) {
   selectedItem.value = item
   emit('change', item)
+}
+
+/** 格式化工单编号 */
+function format(id?: number | string) {
+  if (id == null || id === '') {
+    return ''
+  }
+  if (selectedItem.value?.id === Number(id)) {
+    return selectedItem.value.code || selectedItem.value.name || String(id)
+  }
+  return String(id)
+}
+
+/** 清空工单 */
+function handleClear() {
+  selectedItem.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+  emit('clear')
 }
 
 /** 加载工单回显 */
@@ -108,4 +128,6 @@ watch(
   value => resolveItem(value),
   { immediate: true },
 )
+
+defineExpose({ format })
 </script>

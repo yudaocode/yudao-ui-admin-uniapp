@@ -1,13 +1,21 @@
 <template>
-  <wd-form-item
-    :title="label"
-    :title-width="labelWidth"
-    :prop="prop || undefined"
-    :is-link="!disabled"
-    :value="displayValue"
-    :placeholder="placeholder"
-    @click="handleOpen"
-  />
+  <view class="yd-search-form-item">
+    <view class="yd-search-form-label">
+      {{ label }}
+    </view>
+    <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="handleOpen">
+      <text class="min-w-0 flex-1 truncate" :class="displayValue ? 'text-[#333]' : 'text-[#999]'">
+        {{ displayValue || placeholder }}
+      </text>
+      <wd-icon
+        v-if="clearable && displayValue"
+        name="close-circle"
+        size="30rpx"
+        custom-style="color: #c0c4cc;"
+        @click.stop="handleClear"
+      />
+    </view>
+  </view>
 
   <ItemPicker
     ref="pickerRef"
@@ -27,34 +35,30 @@ import ItemPicker from './item-picker.vue'
 const props = withDefaults(defineProps<{
   modelValue?: number
   label?: string
-  labelWidth?: string
   placeholder?: string
-  prop?: string
   disabled?: boolean
+  clearable?: boolean
   itemOrProduct?: string
   title?: string
 }>(), {
-  label: '产品',
-  labelWidth: '220rpx',
-  placeholder: '请选择产品',
-  prop: '',
+  label: '物料',
+  placeholder: '请选择物料',
   disabled: false,
+  clearable: true,
   itemOrProduct: undefined,
-  title: '选择产品',
+  title: '选择物料',
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
   'change': [item: MdItem | undefined]
+  'clear': []
 }>()
 
 const pickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器
 const selectedItem = ref<MdItem>() // 当前物料
 const displayValue = computed(() => {
-  if (selectedItem.value) {
-    return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
-  }
-  return props.modelValue ? String(props.modelValue) : ''
+  return format(props.modelValue)
 })
 
 /** 打开选择器 */
@@ -65,7 +69,7 @@ function handleOpen() {
   pickerRef.value?.open()
 }
 
-/** 选择物料 */
+/** 确认物料 */
 function handleConfirm(items: MdItem[]) {
   const item = items[0]
   if (!item || item.id == null) {
@@ -74,6 +78,25 @@ function handleConfirm(items: MdItem[]) {
   selectedItem.value = item
   emit('update:modelValue', item.id)
   emit('change', item)
+}
+
+/** 清空物料 */
+function handleClear() {
+  selectedItem.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+  emit('clear')
+}
+
+/** 格式化物料编号 */
+function format(id?: number | string) {
+  if (id == null || id === '') {
+    return ''
+  }
+  if (selectedItem.value?.id === Number(id)) {
+    return selectedItem.value.code || selectedItem.value.name || String(id)
+  }
+  return String(id)
 }
 
 /** 加载物料回显 */
@@ -98,4 +121,6 @@ watch(
   value => resolveItem(value),
   { immediate: true },
 )
+
+defineExpose({ format })
 </script>

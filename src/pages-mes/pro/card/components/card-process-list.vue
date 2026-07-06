@@ -142,7 +142,7 @@ import { formatDateTime, toTimestamp } from '@/utils/date'
 import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
-import WorkstationFormPicker from '@/pages-mes/pro/task/components/workstation-form-picker.vue'
+import WorkstationFormPicker from '@/pages-mes/md/workstation/components/workstation-form-picker.vue'
 
 const props = defineProps<{
   cardId: number

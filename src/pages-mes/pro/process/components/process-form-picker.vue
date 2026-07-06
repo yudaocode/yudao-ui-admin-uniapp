@@ -9,25 +9,21 @@
     @click="handleOpen"
   />
 
-  <WorkOrderPicker
+  <ProcessPicker
     ref="pickerRef"
     :model-value="modelValue"
     :disabled="disabled"
     :clearable="clearable"
-    :confirmed-only="confirmedOnly"
-    :type="type"
-    :title="title"
-    :empty-tip="emptyTip"
     @update:model-value="handleUpdate"
     @change="handleChange"
   />
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { ProProcess } from '@/api/mes/pro/process'
 import { computed, ref, watch } from 'vue'
-import { getWorkOrder } from '@/api/mes/pro/workorder'
-import WorkOrderPicker from './workorder-picker.vue'
+import { getProcess } from '@/api/mes/pro/process'
+import ProcessPicker from './process-picker.vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
@@ -37,34 +33,27 @@ const props = withDefaults(defineProps<{
   prop?: string
   disabled?: boolean
   clearable?: boolean
-  confirmedOnly?: boolean
-  type?: number
-  title?: string
-  emptyTip?: string
 }>(), {
-  label: '生产工单',
+  label: '工序',
   labelWidth: '220rpx',
-  placeholder: '请选择生产工单',
+  placeholder: '请选择工序',
   prop: '',
   disabled: false,
-  clearable: false,
-  confirmedOnly: true,
-  title: '选择生产工单',
-  emptyTip: '暂无已确认工单',
+  clearable: true,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: ProWorkOrder | undefined]
+  'change': [item: ProProcess | undefined]
 }>()
 
-const pickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
-const selectedItem = ref<ProWorkOrder>() // 当前工单
+const pickerRef = ref<InstanceType<typeof ProcessPicker>>() // 工序选择器
+const selectedItem = ref<ProProcess>() // 当前工序
 const displayValue = computed(() => {
   if (selectedItem.value) {
     return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
   }
-  return props.modelValue ? String(props.modelValue) : ''
+  return props.modelValue ? `工序 #${props.modelValue}` : ''
 })
 
 /** 打开选择器 */
@@ -75,18 +64,18 @@ function handleOpen() {
   pickerRef.value?.open(props.modelValue)
 }
 
-/** 更新工单编号 */
+/** 更新工序编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
 }
 
-/** 选择工单 */
-function handleChange(item?: ProWorkOrder) {
+/** 选择工序 */
+function handleChange(item?: ProProcess) {
   selectedItem.value = item
   emit('change', item)
 }
 
-/** 加载工单回显 */
+/** 加载工序回显 */
 async function resolveItem(id?: number) {
   if (id == null) {
     selectedItem.value = undefined
@@ -96,7 +85,7 @@ async function resolveItem(id?: number) {
     return
   }
   try {
-    selectedItem.value = await getWorkOrder(id)
+    selectedItem.value = await getProcess(id)
   } catch {
     selectedItem.value = undefined
   }

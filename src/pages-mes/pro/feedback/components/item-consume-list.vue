@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmItemConsumeLineVO } from '@/api/mes/wm/itemconsume/line'
+import type { WmItemConsumeLine } from '@/api/mes/wm/itemconsume/line'
 import { ref, watch } from 'vue'
 import { getItemConsumeLinePage } from '@/api/mes/wm/itemconsume/line'
 
@@ -35,7 +35,7 @@ const props = defineProps<{
 }>()
 
 const loading = ref(false) // 列表加载状态
-const list = ref<WmItemConsumeLineVO[]>([]) // 消耗行列表
+const list = ref<WmItemConsumeLine[]>([]) // 消耗行列表
 
 /** 加载消耗行数据 */
 async function loadList() {
@@ -56,6 +56,7 @@ async function loadList() {
   }
 }
 
+/** 监听报工编号变化 */
 watch(
   () => props.feedbackId,
   () => loadList(),

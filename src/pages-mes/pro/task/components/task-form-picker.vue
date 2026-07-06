@@ -9,9 +9,12 @@
     @click="handleOpen"
   />
 
-  <WorkstationPicker
+  <TaskPicker
     ref="pickerRef"
     :model-value="modelValue"
+    :work-order-id="workOrderId"
+    :workstation-id="workstationId"
+    :statuses="statuses"
     :disabled="disabled"
     :clearable="clearable"
     @update:model-value="handleUpdate"
@@ -20,13 +23,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProTask } from '@/api/mes/pro/task'
 import { computed, ref, watch } from 'vue'
-import { getWorkstation } from '@/api/mes/md/workstation'
-import WorkstationPicker from './workstation-picker.vue'
+import { getTask } from '@/api/mes/pro/task'
+import { MesProTaskStatusEnum } from '@/utils/constants'
+import TaskPicker from './task-picker.vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
+  workOrderId?: number
+  workstationId?: number
+  statuses?: number[]
   label?: string
   labelWidth?: string
   placeholder?: string
@@ -34,9 +41,12 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   clearable?: boolean
 }>(), {
-  label: '工作站',
+  workOrderId: undefined,
+  workstationId: undefined,
+  statuses: () => [MesProTaskStatusEnum.PREPARE],
+  label: '生产任务',
   labelWidth: '220rpx',
-  placeholder: '请选择工作站',
+  placeholder: '请选择生产任务',
   prop: '',
   disabled: false,
   clearable: true,
@@ -44,16 +54,16 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: MdWorkstation | undefined]
+  'change': [item: ProTask | undefined]
 }>()
 
-const pickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
-const selectedItem = ref<MdWorkstation>() // 当前工作站
+const pickerRef = ref<InstanceType<typeof TaskPicker>>() // 任务选择器
+const selectedItem = ref<ProTask>() // 当前任务
 const displayValue = computed(() => {
   if (selectedItem.value) {
-    return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
+    return `${selectedItem.value.code || '-'} / ${selectedItem.value.processName || '-'}`
   }
-  return props.modelValue ? `工作站 #${props.modelValue}` : ''
+  return props.modelValue ? String(props.modelValue) : ''
 })
 
 /** 打开选择器 */
@@ -64,18 +74,18 @@ function handleOpen() {
   pickerRef.value?.open(props.modelValue)
 }
 
-/** 更新工作站编号 */
+/** 更新任务编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
 }
 
-/** 选择工作站 */
-function handleChange(item?: MdWorkstation) {
+/** 选择任务 */
+function handleChange(item?: ProTask) {
   selectedItem.value = item
   emit('change', item)
 }
 
-/** 加载工作站回显 */
+/** 加载任务回显 */
 async function resolveItem(id?: number) {
   if (id == null) {
     selectedItem.value = undefined
@@ -85,7 +95,7 @@ async function resolveItem(id?: number) {
     return
   }
   try {
-    selectedItem.value = await getWorkstation(id)
+    selectedItem.value = await getTask(id)
   } catch {
     selectedItem.value = undefined
   }

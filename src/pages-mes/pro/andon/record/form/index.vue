@@ -147,7 +147,7 @@ import { createFormSchema } from '@/utils/wot'
 import WorkOrderFormPicker from '@/pages-mes/pro/workorder/components/workorder-form-picker.vue'
 import AndonConfigPicker from '../../config/components/andon-config-picker.vue'
 import ProcessPicker from '@/pages-mes/pro/process/components/process-picker.vue'
-import WorkstationPicker from '../../../task/components/workstation-picker.vue'
+import WorkstationPicker from '@/pages-mes/md/workstation/components/workstation-picker.vue'
 
 type FormMode = 'create' | 'update'
 

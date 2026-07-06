@@ -59,40 +59,6 @@
               <view>审核人：{{ item.approveUserNickname || '-' }}</view>
             </view>
           </view>
-          <view
-            v-if="hasDraftActions(item) || hasApproveAction(item)"
-            class="flex border-t border-[#f0f0f0] text-28rpx"
-            @click.stop
-          >
-            <view
-              v-if="hasAccessByCodes(['mes:pro-feedback:update']) && item.status === MesProFeedbackStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:pro-feedback:update']) && item.status === MesProFeedbackStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#52c41a]"
-              @click="handleSubmitFeedback(item)"
-            >
-              提交
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:pro-feedback:delete']) && item.status === MesProFeedbackStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-            <view
-              v-if="hasApproveAction(item)"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleApprove(item)"
-            >
-              审批
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -109,14 +75,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProFeedbackQueryParams, ProFeedbackVO } from '@/api/mes/pro/feedback'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
+import type { ProFeedback } from '@/api/mes/pro/feedback'
 import { onUnload } from '@dcloudio/uni-app'
-import { computed, onMounted, ref } from 'vue'
-import { deleteFeedback, getFeedbackPage, submitFeedback } from '@/api/mes/pro/feedback'
+import { onMounted, ref } from 'vue'
+import { getFeedbackPage } from '@/api/mes/pro/feedback'
 import { useAccess } from '@/hooks/useAccess'
-import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -129,26 +92,14 @@ definePage({
   },
 })
 
-const MesProFeedbackStatusEnum = {
-  PREPARE: 0,
-  APPROVING: 2,
-  UNCHECK: 3,
-  FINISHED: 4,
-  CANCELED: 5,
-} as const
-
 const { hasAccessByCodes } = useAccess()
-const userStore = useUserStore()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<ProFeedbackVO[]>([]) // 列表数据
-const pagingRef = ref() // 分页组件引用
-const queryParams = ref<Partial<ProFeedbackQueryParams>>({}) // 查询参数
-const currentUserId = computed(() => userStore.userInfo?.userId)
+const list = ref<ProFeedback[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<ProFeedback>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -165,27 +116,15 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 是否有草稿操作 */
-function hasDraftActions(item: ProFeedbackVO) {
-  return item.status === MesProFeedbackStatusEnum.PREPARE && (hasAccessByCodes(['mes:pro-feedback:update']) || hasAccessByCodes(['mes:pro-feedback:delete']))
-}
-
-/** 是否有审批操作 */
-function hasApproveAction(item: ProFeedbackVO) {
-  return hasAccessByCodes(['mes:pro-feedback:approve'])
-    && item.status === MesProFeedbackStatusEnum.APPROVING
-    && item.approveUserId === currentUserId.value
-}
-
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<ProFeedbackQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery({})
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -195,60 +134,12 @@ function reload() {
 
 /** 新增 */
 function handleAdd() {
-  uni.navigateTo({
-    url: '/pages-mes/pro/feedback/form/index?mode=create',
-  })
+  uni.navigateTo({ url: '/pages-mes/pro/feedback/form/index' })
 }
 
 /** 查看详情 */
-function handleDetail(item: ProFeedbackVO) {
-  uni.navigateTo({
-    url: `/pages-mes/pro/feedback/detail/index?id=${item.id}`,
-  })
-}
-
-/** 编辑 */
-function handleEdit(item: ProFeedbackVO) {
-  uni.navigateTo({
-    url: `/pages-mes/pro/feedback/form/index?id=${item.id}&mode=update`,
-  })
-}
-
-/** 提交 */
-async function handleSubmitFeedback(item: ProFeedbackVO) {
-  try {
-    await dialog.confirm({
-      title: '提交报工单',
-      msg: `确定提交「${item.code || item.id}」吗？提交后将不能修改。`,
-    })
-  } catch {
-    return
-  }
-  await submitFeedback(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 审批 */
-function handleApprove(item: ProFeedbackVO) {
-  uni.navigateTo({
-    url: `/pages-mes/pro/feedback/form/index?id=${item.id}&mode=approve`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: ProFeedbackVO) {
-  try {
-    await dialog.confirm({
-      title: '删除报工单',
-      msg: `确定删除「${item.code || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteFeedback(item.id)
-  toast.success('删除成功')
-  reload()
+function handleDetail(item: ProFeedback) {
+  uni.navigateTo({ url: `/pages-mes/pro/feedback/detail/index?id=${item.id}` })
 }
 
 /** 初始化 */

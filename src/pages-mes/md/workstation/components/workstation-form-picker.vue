@@ -9,25 +9,21 @@
     @click="handleOpen"
   />
 
-  <WorkOrderPicker
+  <WorkstationPicker
     ref="pickerRef"
     :model-value="modelValue"
     :disabled="disabled"
     :clearable="clearable"
-    :confirmed-only="confirmedOnly"
-    :type="type"
-    :title="title"
-    :empty-tip="emptyTip"
     @update:model-value="handleUpdate"
     @change="handleChange"
   />
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { computed, ref, watch } from 'vue'
-import { getWorkOrder } from '@/api/mes/pro/workorder'
-import WorkOrderPicker from './workorder-picker.vue'
+import { getWorkstation } from '@/api/mes/md/workstation'
+import WorkstationPicker from './workstation-picker.vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
@@ -37,29 +33,22 @@ const props = withDefaults(defineProps<{
   prop?: string
   disabled?: boolean
   clearable?: boolean
-  confirmedOnly?: boolean
-  type?: number
-  title?: string
-  emptyTip?: string
 }>(), {
-  label: '生产工单',
+  label: '工作站',
   labelWidth: '220rpx',
-  placeholder: '请选择生产工单',
+  placeholder: '请选择工作站',
   prop: '',
   disabled: false,
-  clearable: false,
-  confirmedOnly: true,
-  title: '选择生产工单',
-  emptyTip: '暂无已确认工单',
+  clearable: true,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: ProWorkOrder | undefined]
+  'change': [item: MdWorkstation | undefined]
 }>()
 
-const pickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
-const selectedItem = ref<ProWorkOrder>() // 当前工单
+const pickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
+const selectedItem = ref<MdWorkstation>() // 当前工作站
 const displayValue = computed(() => {
   if (selectedItem.value) {
     return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
@@ -75,18 +64,18 @@ function handleOpen() {
   pickerRef.value?.open(props.modelValue)
 }
 
-/** 更新工单编号 */
+/** 更新工作站编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
 }
 
-/** 选择工单 */
-function handleChange(item?: ProWorkOrder) {
+/** 选择工作站 */
+function handleChange(item?: MdWorkstation) {
   selectedItem.value = item
   emit('change', item)
 }
 
-/** 加载工单回显 */
+/** 加载工作站回显 */
 async function resolveItem(id?: number) {
   if (id == null) {
     selectedItem.value = undefined
@@ -96,7 +85,7 @@ async function resolveItem(id?: number) {
     return
   }
   try {
-    selectedItem.value = await getWorkOrder(id)
+    selectedItem.value = await getWorkstation(id)
   } catch {
     selectedItem.value = undefined
   }

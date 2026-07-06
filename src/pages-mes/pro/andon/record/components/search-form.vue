@@ -69,7 +69,7 @@ import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import WorkstationPicker from '@/pages-mes/pro/task/components/workstation-picker.vue'
+import WorkstationPicker from '@/pages-mes/md/workstation/components/workstation-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]

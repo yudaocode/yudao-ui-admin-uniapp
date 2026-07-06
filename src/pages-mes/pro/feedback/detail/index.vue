@@ -60,34 +60,35 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="showFooter" content-class="yd-detail-footer-actions">
-      <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="canSubmit" class="flex-1" type="primary" :loading="submitting" @click="handleSubmitFeedback">
-        提交
-      </wd-button>
-      <wd-button v-if="canApprove" class="flex-1" type="success" @click="handleApprove">
-        审批
-      </wd-button>
-      <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="showFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="canSubmit" class="flex-1" type="primary" :loading="submitting" @click="handleSubmitFeedback">
+          提交
+        </wd-button>
+        <wd-button v-if="canApprove" class="flex-1" type="success" @click="handleApprove">
+          审批
+        </wd-button>
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProFeedbackVO } from '@/api/mes/pro/feedback'
+import type { ProFeedback } from '@/api/mes/pro/feedback'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteFeedback, getFeedback, submitFeedback } from '@/api/mes/pro/feedback'
 import { useAccess } from '@/hooks/useAccess'
 import { useUserStore } from '@/store/user'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesProFeedbackStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import ItemConsumeList from '../components/item-consume-list.vue'
 import ProductProduceList from '../components/product-produce-list.vue'
@@ -95,14 +96,6 @@ import ProductProduceList from '../components/product-produce-list.vue'
 const props = defineProps<{
   id?: number | string
 }>()
-
-const MesProFeedbackStatusEnum = {
-  PREPARE: 0,
-  APPROVING: 2,
-  UNCHECK: 3,
-  FINISHED: 4,
-  CANCELED: 5,
-} as const
 
 definePage({
   style: {
@@ -115,10 +108,9 @@ const { hasAccessByCodes } = useAccess()
 const userStore = useUserStore()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<ProFeedbackVO>() // 详情数据
+const formData = ref<ProFeedback>() // 详情数据
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 const currentUserId = computed(() => userStore.userInfo?.userId)
 const canEdit = computed(() =>
   hasAccessByCodes(['mes:pro-feedback:update']) && formData.value?.status === MesProFeedbackStatusEnum.PREPARE,
@@ -153,19 +145,12 @@ function formatNumber(value?: number) {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
-    formData.value = undefined
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getFeedback(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getFeedback(Number(props.id))
   } finally {
     toast.close()
   }
@@ -173,11 +158,11 @@ async function getDetail() {
 
 /** 编辑 */
 function handleEdit() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   uni.navigateTo({
-    url: `/pages-mes/pro/feedback/form/index?id=${currentId.value}&mode=update`,
+    url: `/pages-mes/pro/feedback/form/index?id=${props.id}&mode=update`,
   })
 }
 
@@ -207,17 +192,17 @@ async function handleSubmitFeedback() {
 
 /** 审批 */
 function handleApprove() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   uni.navigateTo({
-    url: `/pages-mes/pro/feedback/form/index?id=${currentId.value}&mode=approve`,
+    url: `/pages-mes/pro/feedback/form/index?id=${props.id}&mode=approve`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!formData.value?.id) {
+  if (!props.id || !formData.value?.id) {
     return
   }
   try {
@@ -230,7 +215,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteFeedback(formData.value.id)
+    await deleteFeedback(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:pro:feedback:reload')
     delay(handleBack)
@@ -241,10 +226,6 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

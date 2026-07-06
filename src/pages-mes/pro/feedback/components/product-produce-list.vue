@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductProduceLineVO } from '@/api/mes/wm/productproduce/line'
+import type { WmProductProduceLine } from '@/api/mes/wm/productproduce/line'
 import { ref, watch } from 'vue'
 import { getProductProduceLinePage } from '@/api/mes/wm/productproduce/line'
 import { DICT_TYPE } from '@/utils/constants'
@@ -39,7 +39,7 @@ const props = defineProps<{
 }>()
 
 const loading = ref(false) // 列表加载状态
-const list = ref<WmProductProduceLineVO[]>([]) // 产出行列表
+const list = ref<WmProductProduceLine[]>([]) // 产出行列表
 
 /** 加载产出行数据 */
 async function loadList() {
@@ -60,6 +60,7 @@ async function loadList() {
   }
 }
 
+/** 监听报工编号变化 */
 watch(
   () => props.feedbackId,
   () => loadList(),

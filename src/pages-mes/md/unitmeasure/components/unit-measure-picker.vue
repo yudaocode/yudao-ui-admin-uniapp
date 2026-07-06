@@ -62,19 +62,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import { computed, ref } from 'vue'
 import { getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  confirm: [item: MdUnitMeasureVO]
+  confirm: [item: MdUnitMeasure]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<MdUnitMeasureVO[]>([]) // 计量单位列表
-const selected = ref<MdUnitMeasureVO>() // 当前选中
+const list = ref<MdUnitMeasure[]>([]) // 计量单位列表
+const selected = ref<MdUnitMeasure>() // 当前选中
 const keyword = ref('') // 搜索关键词
 
 const filteredList = computed(() => { // 搜索后的计量单位

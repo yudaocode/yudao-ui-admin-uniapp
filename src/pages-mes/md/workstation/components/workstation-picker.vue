@@ -80,6 +80,15 @@ import { computed, reactive, ref, watch } from 'vue'
 import { getWorkstation, getWorkstationPage } from '@/api/mes/md/workstation'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
+const props = withDefaults(defineProps<{
+  modelValue?: number
+  disabled?: boolean
+  clearable?: boolean
+}>(), {
+  disabled: false,
+  clearable: false,
+})
+
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
   'change': [item: MdWorkstation | undefined]
@@ -134,13 +143,34 @@ async function open(currentId?: number) {
   }
   const selectedId = currentId ?? props.modelValue
   visible.value = true
-  selected.value = undefined
+  selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+  if (selectedId == null) {
+    selectedItem.value = undefined
+  }
   pageNo.value = 1
   total.value = 0
   list.value = []
-  loadList().then(() => {
-    selected.value = list.value.find(item => item.id === currentId)
-  })
+  await loadList(false, selectedId)
+  if (selectedId != null && !selected.value) {
+    await resolveItemById(selectedId)
+    selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+  }
+}
+
+/** 根据编号加载工作站回显 */
+async function resolveItemById(id?: number) {
+  if (id == null) {
+    selectedItem.value = undefined
+    return
+  }
+  if (selectedItem.value?.id === id) {
+    return
+  }
+  try {
+    selectedItem.value = await getWorkstation(id)
+  } catch {
+    selectedItem.value = undefined
+  }
 }
 
 /** 搜索 */
