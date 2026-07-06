@@ -108,7 +108,12 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getWorkshop(Number(props.id))
+  try {
+    toast.loading('加载中...')
+    formData.value = await getWorkshop(Number(props.id))
+  } finally {
+    toast.close()
+  }
 }
 
 /** 查看条码 */

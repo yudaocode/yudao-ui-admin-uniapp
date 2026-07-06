@@ -61,14 +61,6 @@
               <text class="min-w-0 flex-1 truncate">{{ item.nickname || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDeletePrepare" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -85,15 +77,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { DvMaintenRecordQueryParams, DvMaintenRecordVO } from '@/api/mes/dv/maintenrecord'
+import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteMaintenRecord, getMaintenRecordPage } from '@/api/mes/dv/maintenrecord'
+import { onMounted, ref } from 'vue'
+import { getMaintenRecordPage } from '@/api/mes/dv/maintenrecord'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesDvMaintenRecordStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -105,17 +95,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<DvMaintenRecordVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<DvMaintenRecordVO>>() // 分页组件引用
-const queryParams = ref<DvMaintenRecordQueryParams>({}) // 查询参数
-const canUpdatePrepare = computed(() => hasAccessByCodes(['mes:dv-mainten-record:update']))
-const canDeletePrepare = computed(() => hasAccessByCodes(['mes:dv-mainten-record:delete']))
+const list = ref<DvMaintenRecord[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<DvMaintenRecord>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -134,7 +120,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: DvMaintenRecordQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -157,37 +143,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: DvMaintenRecordVO) {
+function handleDetail(item: DvMaintenRecord) {
   uni.navigateTo({
     url: `/pages-mes/dv/maintenrecord/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否显示行操作 */
-function hasRowActions(item: DvMaintenRecordVO) {
-  return item.status === MesDvMaintenRecordStatusEnum.PREPARE && (canUpdatePrepare.value || canDeletePrepare.value)
-}
-
-/** 编辑 */
-function handleEdit(item: DvMaintenRecordVO) {
-  uni.navigateTo({
-    url: `/pages-mes/dv/maintenrecord/form/index?id=${item.id}`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: DvMaintenRecordVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.machineryCode || item.machineryName || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteMaintenRecord(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

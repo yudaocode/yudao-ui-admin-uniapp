@@ -6,10 +6,10 @@ export interface CalPlan {
   id?: number
   code: string // 计划编码
   name: string // 计划名称
-  calendarType: number // 班组类型
+  calendarType?: number // 班组类型
   startDate: string // 开始日期
   endDate: string // 结束日期
-  shiftType: number // 轮班方式
+  shiftType?: number // 轮班方式
   shiftMethod?: number // 倒班方式
   shiftCount?: number // 倒班天数
   status?: number // 状态

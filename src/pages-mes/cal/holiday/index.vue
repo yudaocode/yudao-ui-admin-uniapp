@@ -93,17 +93,7 @@
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
             <wd-cell title="日期" :value="selectedDay || '-'" />
-            <wd-form-item title="类型" title-width="180rpx" prop="type">
-              <wd-radio-group v-model="formData.type" type="button">
-                <wd-radio
-                  v-for="dict in getIntDictOptions(DICT_TYPE.MES_CAL_HOLIDAY_TYPE)"
-                  :key="dict.value"
-                  :value="dict.value"
-                >
-                  {{ dict.label }}
-                </wd-radio>
-              </wd-radio-group>
-            </wd-form-item>
+            <yd-form-picker v-model="formData.type" label="类型" label-width="180rpx" prop="type" :dict-type="DICT_TYPE.MES_CAL_HOLIDAY_TYPE" placeholder="请选择类型" />
             <wd-form-item title="备注" title-width="180rpx" prop="remark">
               <wd-textarea
                 v-model="formData.remark"
@@ -127,15 +117,16 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { CalHolidayVO } from '@/api/mes/cal/holiday'
+import type { CalHoliday } from '@/api/mes/cal/holiday'
+import { onUnload } from '@dcloudio/uni-app'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getHolidayByDay, getHolidayList, saveHoliday } from '@/api/mes/cal/holiday'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesCalHolidayTypeEnum } from '@/utils/constants'
+import { formatDateEndTime, formatDateOnly, formatDateStartTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 interface CalendarDay {
@@ -145,11 +136,6 @@ interface CalendarDay {
   isToday: boolean
   isWeekend: boolean
 }
-
-const HolidayType = {
-  WORKDAY: 1,
-  HOLIDAY: 2,
-} as const
 
 definePage({
   style: {
@@ -161,23 +147,22 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const currentMonth = ref(dayjs().startOf('month')) // 当前查看月份
-const holidayMap = ref<Record<string, CalHolidayVO>>({}) // 日期维度的假期配置
+const holidayMap = ref<Record<string, CalHoliday>>({}) // 日期维度的假期配置
 const formVisible = ref(false) // 设置弹层显示状态
 const formLoading = ref(false) // 设置提交状态
 const selectedDay = ref('') // 当前设置日期
 const formRef = ref<FormInstance>() // 设置表单引用
-const formData = reactive({
-  id: undefined as number | undefined,
+const formData = reactive<CalHoliday>({
+  id: undefined,
   day: '',
-  type: HolidayType.WORKDAY as number,
-  remark: '',
+  type: MesCalHolidayTypeEnum.WORKDAY,
 }) // 设置表单数据
 const formSchema = createFormSchema({
   type: [{ required: true, message: '类型不能为空' }],
 })
 const weekLabels = ['一', '二', '三', '四', '五', '六', '日'] // 周标题
-const currentMonthText = computed(() => currentMonth.value.format('YYYY年MM月'))
-const calendarDays = computed<CalendarDay[]>(() => {
+const currentMonthText = computed(() => currentMonth.value.format('YYYY年MM月')) // 当前月份文案
+const calendarDays = computed<CalendarDay[]>(() => { // 日历展示数据
   const startOfMonth = currentMonth.value.startOf('month')
   const endOfMonth = currentMonth.value.endOf('month')
   const mondayOffset = (startOfMonth.day() + 6) % 7
@@ -197,31 +182,21 @@ const calendarDays = computed<CalendarDay[]>(() => {
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
-}
-
-/** 日期转接口日期时间 */
-function toDateTime(day: string) {
-  return `${day} 00:00:00`
-}
-
-/** 后端日期格式化为 yyyy-MM-dd */
-function normalizeDay(day?: number | string) {
-  return day ? dayjs(day).format('YYYY-MM-DD') : ''
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 判断是否为休息日 */
 function isHoliday(day: string) {
-  return holidayMap.value[day]?.type === HolidayType.HOLIDAY
+  return holidayMap.value[day]?.type === MesCalHolidayTypeEnum.HOLIDAY
 }
 
 /** 加载当前月前后可见范围假期 */
 async function getList() {
-  const startDay = currentMonth.value.subtract(1, 'month').startOf('month').format('YYYY-MM-DD 00:00:00')
-  const endDay = currentMonth.value.add(1, 'month').endOf('month').format('YYYY-MM-DD 23:59:59')
+  const startDay = formatDateStartTime(currentMonth.value.subtract(1, 'month').startOf('month'))
+  const endDay = formatDateEndTime(currentMonth.value.add(1, 'month').endOf('month'))
   const list = await getHolidayList({ startDay, endDay })
-  holidayMap.value = list.reduce<Record<string, CalHolidayVO>>((map, item) => {
-    const day = normalizeDay(item.day)
+  holidayMap.value = list.reduce<Record<string, CalHoliday>>((map, item) => {
+    const day = formatDateOnly(item.day)
     if (day) {
       map[day] = item
     }
@@ -246,19 +221,14 @@ async function handleDayClick(day: CalendarDay) {
   }
   selectedDay.value = day.date
   formData.id = undefined
-  formData.day = toDateTime(day.date)
-  formData.type = HolidayType.WORKDAY
-  formData.remark = ''
+  formData.day = formatDateStartTime(day.date)
+  formData.type = MesCalHolidayTypeEnum.WORKDAY
+  formData.remark = undefined
   formRef.value?.reset()
   formVisible.value = true
   formLoading.value = true
   try {
-    const detail = await getHolidayByDay(toDateTime(day.date))
-    if (detail) {
-      formData.id = detail.id
-      formData.type = detail.type ?? HolidayType.WORKDAY
-      formData.remark = detail.remark || ''
-    }
+    Object.assign(formData, await getHolidayByDay(formData.day))
   } finally {
     formLoading.value = false
   }
@@ -266,18 +236,14 @@ async function handleDayClick(day: CalendarDay) {
 
 /** 保存假期设置 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    await saveHoliday({
-      id: formData.id,
-      day: formData.day,
-      type: formData.type,
-      remark: formData.remark || undefined,
-    })
+    await saveHoliday(formData)
     toast.success('设置成功')
     formVisible.value = false
     await getList()
@@ -286,7 +252,14 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
+  uni.$on('mes:cal:holiday:reload', getList)
   getList()
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('mes:cal:holiday:reload', getList)
 })
 </script>

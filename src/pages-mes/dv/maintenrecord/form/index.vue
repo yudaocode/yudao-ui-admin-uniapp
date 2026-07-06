@@ -11,38 +11,32 @@
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item title="设备" title-width="200rpx" prop="machineryId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openMachinerySelector">
-              <text :class="selectedMachineryText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedMachineryText || '请选择设备' }}
-              </text>
-              <wd-icon name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
-          <wd-form-item title="保养计划" title-width="200rpx" prop="planId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openPlanSelector">
-              <text :class="selectedPlanText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedPlanText || '请选择保养计划' }}
-              </text>
-              <wd-icon name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
-          <wd-form-item title="保养人" title-width="200rpx" prop="userId">
-            <UserPicker
-              v-model="formData.userId"
-              type="radio"
-              placeholder="请选择保养人"
-              use-default-slot
-              @confirm="handleUserConfirm"
-            >
-              <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx">
-                <text :class="selectedUserName ? 'text-[#333]' : 'text-[#999]'">
-                  {{ selectedUserName || '请选择保养人' }}
-                </text>
-                <wd-icon name="arrow-right" size="28rpx" color="#999" />
-              </view>
-            </UserPicker>
-          </wd-form-item>
+          <wd-form-item
+            title="设备"
+            title-width="200rpx"
+            prop="machineryId"
+            is-link
+            :value="selectedMachineryText"
+            placeholder="请选择设备"
+            @click="openMachineryPicker"
+          />
+          <wd-form-item
+            title="保养计划"
+            title-width="200rpx"
+            prop="planId"
+            is-link
+            :value="selectedPlanText"
+            placeholder="请选择保养计划"
+            @click="openPlanPicker"
+          />
+          <UserPicker
+            v-model="formData.userId"
+            label="保养人"
+            label-width="200rpx"
+            prop="userId"
+            type="radio"
+            placeholder="请选择保养人"
+          />
           <wd-form-item
             title="保养时间"
             title-width="200rpx"
@@ -58,7 +52,7 @@
             title="请选择保养时间"
             type="datetime"
           />
-          <wd-form-item v-if="currentId" title="状态" title-width="200rpx" prop="status">
+          <wd-form-item v-if="props.id" title="状态" title-width="200rpx" prop="status">
             <dict-tag v-if="formData.status != null" :type="DICT_TYPE.MES_MAINTEN_RECORD_STATUS" :value="formData.status" />
             <text v-else>-</text>
           </wd-form-item>
@@ -73,32 +67,30 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <MaintenRecordLineList v-if="currentId" :record-id="currentId" />
+      <MaintenRecordLineList v-if="props.id" :record-id="Number(props.id)" />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <view
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" type="primary" :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="success"
+          :loading="submitLoading"
+          @click="handleSubmitRecord"
+        >
+          提交
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitRecord"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-    </MesFooterActions>
-
-    <MachinerySelector ref="machinerySelectorRef" @confirm="handleMachineryConfirm" />
-    <CheckPlanSelector
-      ref="planSelectorRef"
+    </view>
+    <MachineryPicker ref="machineryPickerRef" @confirm="handleMachineryConfirm" />
+    <CheckPlanPicker
+      ref="planPickerRef"
       title="选择保养计划"
       :type="MesDvSubjectTypeEnum.MAINTENANCE"
       @confirm="handlePlanConfirm"
@@ -107,30 +99,22 @@
 </template>
 
 <script lang="ts" setup>
-import type { User } from '@/api/system/user'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { DvCheckPlanVO } from '@/api/mes/dv/checkplan'
-import type { DvMachineryVO } from '@/api/mes/dv/machinery'
-import type { DvMaintenRecordCreateReqVO } from '@/api/mes/dv/maintenrecord'
-import { onShow } from '@dcloudio/uni-app'
+import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
+import type { DvMachinery } from '@/api/mes/dv/machinery'
+import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createMaintenRecord, getMaintenRecord, submitMaintenRecord, updateMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesDvMaintenRecordStatusEnum, MesDvSubjectTypeEnum } from '@/utils/constants'
-import { formatDateTime } from '@/utils/date'
+import { formatDateTime, formatOptionalDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import CheckPlanSelector from '../../checkplan/components/checkplan-selector.vue'
-import MachinerySelector from '../../machinery/components/machinery-selector.vue'
+import CheckPlanPicker from '../../checkplan/components/checkplan-picker.vue'
+import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 import MaintenRecordLineList from '../components/mainten-record-line-list.vue'
-
-interface DvMaintenRecordFormData extends DvMaintenRecordCreateReqVO {
-  id?: number
-  status?: number
-}
 
 const props = defineProps<{
   id?: number | string
@@ -145,48 +129,45 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前编辑编号
-const getTitle = computed(() => currentId.value ? '编辑保养记录' : '新增保养记录')
+const getTitle = computed(() => props.id ? '编辑保养记录' : '新增保养记录')
 const formLoading = ref(false) // 表单提交状态
 const submitLoading = ref(false) // 提交状态
-const formData = ref<DvMaintenRecordFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<DvMaintenRecord>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   machineryId: [{ required: true, message: '设备不能为空' }],
   planId: [{ required: true, message: '保养计划不能为空' }],
+  userId: [{ required: true, message: '保养人不能为空' }],
   maintenTime: [{ required: true, message: '保养时间不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const machinerySelectorRef = ref<InstanceType<typeof MachinerySelector>>() // 设备选择器引用
-const planSelectorRef = ref<InstanceType<typeof CheckPlanSelector>>() // 计划选择器引用
-const selectedMachinery = ref<DvMachineryVO>() // 当前选择设备
-const selectedPlan = ref<DvCheckPlanVO>() // 当前选择计划
-const selectedUserName = ref('') // 当前选择保养人
+const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器引用
+const planPickerRef = ref<InstanceType<typeof CheckPlanPicker>>() // 计划选择器引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const canSubmit = computed(() => (
-  currentId.value
+  props.id
   && formData.value.status === MesDvMaintenRecordStatusEnum.PREPARE
 ))
 const selectedMachineryText = computed(() => {
-  return selectedMachinery.value
-    ? `${selectedMachinery.value.code || '-'} ${selectedMachinery.value.name || ''}`.trim()
+  return formData.value.machineryId
+    ? `${formData.value.machineryCode || '-'} ${formData.value.machineryName || ''}`.trim()
     : ''
 })
 const selectedPlanText = computed(() => {
-  return selectedPlan.value
-    ? `${selectedPlan.value.code || '-'} ${selectedPlan.value.name || ''}`.trim()
+  return formData.value.planId
+    ? `${formData.value.planCode || '-'} ${formData.value.planName || ''}`.trim()
     : ''
 })
 
 /** 默认表单数据 */
-function getDefaultFormData() {
+function getDefaultFormData(): DvMaintenRecord {
   return {
     planId: undefined,
     machineryId: undefined,
-    maintenTime: undefined,
+    maintenTime: '',
     userId: undefined,
     status: undefined,
     remark: '',
-  } as DvMaintenRecordFormData
+  }
 }
 
 /** 返回上一页 */
@@ -196,108 +177,81 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getMaintenRecord(currentId.value)
+  const data = await getMaintenRecord(Number(props.id))
   formData.value = {
-    id: data.id,
-    planId: data.planId,
-    machineryId: data.machineryId,
-    maintenTime: data.maintenTime,
-    userId: data.userId,
-    status: data.status,
-    remark: data.remark || '',
+    ...data,
+    maintenTime: formatDateTime(data.maintenTime) || '',
   }
-  selectedMachinery.value = {
-    id: data.machineryId,
-    code: data.machineryCode || '',
-    name: data.machineryName || '',
-    brand: data.machineryBrand || '',
-    specification: data.machinerySpecification || '',
-    status: undefined,
-  } as DvMachineryVO
-  selectedPlan.value = {
-    id: data.planId,
-    code: data.planCode || '',
-    name: data.planName || '',
-    type: undefined,
-    cycleType: undefined,
-    cycleCount: 0,
-    status: undefined,
-  } as DvCheckPlanVO
-  selectedUserName.value = data.nickname || ''
 }
 
 /** 初始化页面数据 */
 async function initPage() {
-  if (!currentId.value) {
+  if (!props.id) {
     formData.value = getDefaultFormData()
-    selectedMachinery.value = undefined
-    selectedPlan.value = undefined
-    selectedUserName.value = ''
     return
   }
-  if (!formData.value.id || formData.value.id !== currentId.value) {
+  if (!formData.value.id || formData.value.id !== Number(props.id)) {
     formData.value = getDefaultFormData()
     await getDetail()
   }
 }
 
 /** 打开设备选择器 */
-function openMachinerySelector() {
-  machinerySelectorRef.value?.open()
+function openMachineryPicker() {
+  machineryPickerRef.value?.open()
 }
 
 /** 打开计划选择器 */
-function openPlanSelector() {
-  planSelectorRef.value?.open()
+function openPlanPicker() {
+  planPickerRef.value?.open()
 }
 
 /** 确认选择设备 */
-function handleMachineryConfirm(item: DvMachineryVO) {
-  selectedMachinery.value = item
-  formData.value.machineryId = item.id
+function handleMachineryConfirm(item: DvMachinery) {
+  formData.value = {
+    ...formData.value,
+    machineryId: item.id,
+    machineryCode: item.code,
+    machineryName: item.name,
+    machineryBrand: item.brand,
+    machinerySpecification: item.specification,
+  }
 }
 
 /** 确认选择计划 */
-function handlePlanConfirm(item: DvCheckPlanVO) {
-  selectedPlan.value = item
-  formData.value.planId = item.id
-}
-
-/** 确认选择保养人 */
-function handleUserConfirm(users: User[]) {
-  selectedUserName.value = users[0]?.nickname || ''
-}
-
-/** 构造提交数据 */
-function buildSubmitData() {
-  const data: DvMaintenRecordCreateReqVO = {
-    planId: formData.value.planId,
-    machineryId: formData.value.machineryId,
-    maintenTime: formData.value.maintenTime,
-    userId: formData.value.userId,
-    remark: formData.value.remark || undefined,
+function handlePlanConfirm(item: DvCheckPlan) {
+  formData.value = {
+    ...formData.value,
+    planId: item.id,
+    planCode: item.code,
+    planName: item.name,
+    planCycleCount: item.cycleCount,
+    planCycleType: item.cycleType,
   }
-  return data
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateMaintenRecord({ ...data, id: currentId.value })
+    formData.value = {
+      ...formData.value,
+      maintenTime: formatOptionalDateTime(formData.value.maintenTime),
+      status: undefined,
+    }
+    if (props.id) {
+      await updateMaintenRecord(formData.value)
       toast.success('修改成功')
     } else {
-      await createMaintenRecord(data)
+      await createMaintenRecord(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:dv:maintenrecord:reload')
@@ -309,11 +263,11 @@ async function handleSubmit() {
 
 /** 提交保养记录 */
 async function handleSubmitRecord() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -324,10 +278,16 @@ async function handleSubmitRecord() {
   } catch {
     return
   }
+
   submitLoading.value = true
   try {
-    await updateMaintenRecord({ ...buildSubmitData(), id: currentId.value })
-    await submitMaintenRecord(currentId.value)
+    formData.value = {
+      ...formData.value,
+      maintenTime: formatOptionalDateTime(formData.value.maintenTime),
+      status: undefined,
+    }
+    await updateMaintenRecord(formData.value)
+    await submitMaintenRecord(Number(props.id))
     toast.success('提交成功')
     uni.$emit('mes:dv:maintenrecord:reload')
     delay(handleBack)
@@ -338,14 +298,6 @@ async function handleSubmitRecord() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
   initPage()
 })
 </script>

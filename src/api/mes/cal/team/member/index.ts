@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 班组成员 */
 export interface CalTeamMember {
   id?: number
-  teamId: number // 班组编号
-  userId: number // 用户编号
+  teamId?: number // 班组编号
+  userId?: number // 用户编号
   nickname?: string // 用户昵称（关联查询）
   telephone?: string // 用户手机号（关联查询）
   remark?: string // 备注

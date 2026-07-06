@@ -5,7 +5,7 @@ import { http } from '@/http/http'
 export interface DvCheckRecordLine {
   id?: number // 编号
   recordId: number // 点检记录编号
-  subjectId: number // 点检项目编号
+  subjectId?: number // 点检项目编号
   subjectCode?: string // 项目编码
   subjectName?: string // 项目名称
   subjectContent?: string // 检查内容

@@ -6,7 +6,7 @@ export interface DvRepair {
   id?: number // 编号
   code: string // 维修工单编码
   name: string // 维修工单名称
-  machineryId: number // 设备编号
+  machineryId?: number // 设备编号
   machineryCode?: string // 设备编码
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌

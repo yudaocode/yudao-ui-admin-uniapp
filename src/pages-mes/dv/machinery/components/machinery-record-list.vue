@@ -123,9 +123,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { DvCheckRecordVO } from '@/api/mes/dv/checkrecord'
-import type { DvMaintenRecordVO } from '@/api/mes/dv/maintenrecord'
-import type { DvRepairVO } from '@/api/mes/dv/repair'
+import type { DvCheckRecord } from '@/api/mes/dv/checkrecord'
+import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
+import type { DvRepair } from '@/api/mes/dv/repair'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getCheckRecordPage } from '@/api/mes/dv/checkrecord'
 import { getMaintenRecordPage } from '@/api/mes/dv/maintenrecord'
@@ -142,9 +142,9 @@ const currentMachineryId = computed(() => Number(props.machineryId || 0))
 const checkLoading = ref(false) // 点检记录加载状态
 const maintenLoading = ref(false) // 保养记录加载状态
 const repairLoading = ref(false) // 维修记录加载状态
-const checkRecords = ref<DvCheckRecordVO[]>([]) // 点检记录
-const maintenRecords = ref<DvMaintenRecordVO[]>([]) // 保养记录
-const repairRecords = ref<DvRepairVO[]>([]) // 维修记录
+const checkRecords = ref<DvCheckRecord[]>([]) // 点检记录
+const maintenRecords = ref<DvMaintenRecord[]>([]) // 保养记录
+const repairRecords = ref<DvRepair[]>([]) // 维修记录
 
 /** 格式化计划频率 */
 function formatCycle(count?: number, type?: number) {
@@ -221,6 +221,7 @@ async function loadRecords() {
   ])
 }
 
+/** 监听设备编号变化 */
 watch(
   currentMachineryId,
   () => {
@@ -228,6 +229,7 @@ watch(
   },
 )
 
+/** 初始化 */
 onMounted(() => {
   loadRecords()
 })

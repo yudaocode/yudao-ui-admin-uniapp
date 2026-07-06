@@ -107,12 +107,17 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  const [detail, units] = await Promise.all([
-    getUnitMeasure(Number(props.id)),
-    getUnitMeasureSimpleList(),
-  ])
-  formData.value = detail
-  unitOptions.value = units
+  try {
+    toast.loading('加载中...')
+    const [detail, units] = await Promise.all([
+      getUnitMeasure(Number(props.id)),
+      getUnitMeasureSimpleList(),
+    ])
+    formData.value = detail
+    unitOptions.value = units
+  } finally {
+    toast.close()
+  }
 }
 
 /** 编辑计量单位 */

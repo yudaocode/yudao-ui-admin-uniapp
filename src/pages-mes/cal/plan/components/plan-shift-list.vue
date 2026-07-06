@@ -5,7 +5,7 @@
       <view class="text-30rpx text-[#333] font-semibold">
         班次
       </view>
-      <wd-button v-if="editable" size="small" type="primary" @click="openPopup()">
+      <wd-button v-if="editable" size="small" type="primary" @click="openForm()">
         添加班次
       </wd-button>
     </view>
@@ -28,12 +28,12 @@
               </view>
             </view>
             <view v-if="editable" class="flex shrink-0 gap-16rpx">
-              <text class="text-26rpx text-[#1677ff]" @click="openPopup(item)">
+              <wd-button size="small" type="warning" variant="plain" @click="openForm(item)">
                 编辑
-              </text>
-              <text v-if="item.id" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+              </wd-button>
+              <wd-button v-if="item.id" size="small" type="danger" variant="plain" @click="handleDelete(item)">
                 删除
-              </text>
+              </wd-button>
             </view>
           </view>
           <view class="text-26rpx text-[#666]">
@@ -44,13 +44,13 @@
     </view>
 
     <!-- 班次弹层 -->
-    <wd-popup v-model="popupVisible" position="bottom" :safe-area-inset-bottom="true">
+    <wd-popup v-model="formVisible" position="bottom" :safe-area-inset-bottom="true">
       <view class="max-h-[86vh] flex flex-col bg-white">
         <view class="flex items-center justify-between border-b border-[#f0f0f0] px-24rpx py-20rpx">
           <text class="text-32rpx text-[#333] font-semibold">
             {{ formData.id ? '编辑班次' : '添加班次' }}
           </text>
-          <wd-icon name="close" size="36rpx" @click="popupVisible = false" />
+          <wd-icon name="close" size="36rpx" @click="formVisible = false" />
         </view>
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
@@ -74,7 +74,7 @@
           </wd-form>
         </scroll-view>
         <view class="p-24rpx">
-          <wd-button type="primary" block :loading="saving" @click="handleSubmit">
+          <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
             保存
           </wd-button>
         </view>
@@ -85,7 +85,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { CalPlanShiftCreateReqVO, CalPlanShiftUpdateReqVO, CalPlanShiftVO } from '@/api/mes/cal/plan/shift'
+import type { CalPlanShift } from '@/api/mes/cal/plan/shift'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref, watch } from 'vue'
@@ -103,18 +103,18 @@ const props = withDefaults(defineProps<{
 const dialog = useDialog()
 const toast = useToast()
 const loading = ref(false) // 班次加载状态
-const saving = ref(false) // 保存状态
-const list = ref<CalPlanShiftVO[]>([]) // 班次列表
-const popupVisible = ref(false) // 弹层显示状态
+const list = ref<CalPlanShift[]>([]) // 班次列表
+const formVisible = ref(false) // 表单弹层显示状态
+const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单引用
-const formData = reactive<Partial<CalPlanShiftVO>>({
+const formData = reactive<CalPlanShift>({
   id: undefined,
-  planId: undefined,
+  planId: 0,
   sort: 1,
   name: '',
   startTime: '',
   endTime: '',
-  remark: '',
+  remark: undefined,
 }) // 班次表单
 const formSchema = createFormSchema({
   sort: [{ required: true, message: '顺序不能为空' }],
@@ -137,8 +137,8 @@ async function getList() {
   }
 }
 
-/** 打开班次弹层 */
-function openPopup(row?: CalPlanShiftVO) {
+/** 打开班次表单 */
+function openForm(row?: CalPlanShift) {
   if (!props.planId) {
     toast.warning('请先保存排班计划后再维护班次')
     return
@@ -149,52 +149,39 @@ function openPopup(row?: CalPlanShiftVO) {
   formData.name = row?.name || ''
   formData.startTime = row?.startTime || ''
   formData.endTime = row?.endTime || ''
-  formData.remark = row?.remark || ''
+  formData.remark = row?.remark
   formRef.value?.reset()
-  popupVisible.value = true
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): CalPlanShiftCreateReqVO | CalPlanShiftUpdateReqVO {
-  const data = {
-    planId: Number(formData.planId),
-    sort: Number(formData.sort),
-    name: formData.name || '',
-    startTime: formData.startTime || '',
-    endTime: formData.endTime || '',
-    remark: formData.remark || undefined,
-  }
-  if (formData.id) {
-    return { ...data, id: formData.id }
-  }
-  return data
+  formVisible.value = true
 }
 
 /** 保存班次 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
-  saving.value = true
+  if (!formData.planId) {
+    return
+  }
+
+  formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (formData.id) {
-      await updatePlanShift(data)
+      await updatePlanShift(formData)
       toast.success('修改成功')
     } else {
-      await createPlanShift(data)
+      await createPlanShift(formData)
       toast.success('新增成功')
     }
-    popupVisible.value = false
+    formVisible.value = false
     await getList()
   } finally {
-    saving.value = false
+    formLoading.value = false
   }
 }
 
 /** 删除班次 */
-async function handleDelete(item: CalPlanShiftVO) {
+async function handleDelete(item: CalPlanShift) {
   if (!item.id) {
     return
   }
@@ -211,11 +198,10 @@ async function handleDelete(item: CalPlanShiftVO) {
   await getList()
 }
 
+/** 监听计划编号变化 */
 watch(
   () => props.planId,
   () => getList(),
   { immediate: true },
 )
-
-defineExpose({ reload: getList })
 </script>

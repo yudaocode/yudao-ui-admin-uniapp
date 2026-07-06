@@ -32,7 +32,7 @@
           <wd-form-item title="作者" title-width="200rpx" prop="author">
             <wd-input v-model="tableForm.author" clearable placeholder="请输入作者" />
           </wd-form-item>
-          <!-- 模板类型 / 生成场景：依赖上级菜单、主子/树表关联等 PC 端配置，移动端只读展示 -->
+          <!-- 模板类型 / 生成场景：依赖上级菜单、主子/树表关联等 PC 端配置，移动端仅展示 -->
           <wd-form-item title="模板类型" title-width="200rpx">
             <dict-tag :type="DICT_TYPE.INFRA_CODEGEN_TEMPLATE_TYPE" :value="tableForm.templateType" />
           </wd-form-item>

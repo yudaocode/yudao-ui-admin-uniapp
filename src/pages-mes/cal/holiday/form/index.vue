@@ -22,17 +22,7 @@
             title="请选择日期"
             type="date"
           />
-          <wd-form-item title="类型" title-width="180rpx" prop="type">
-            <wd-radio-group v-model="formData.type" type="button">
-              <wd-radio
-                v-for="dict in getIntDictOptions(DICT_TYPE.MES_CAL_HOLIDAY_TYPE)"
-                :key="dict.value"
-                :value="dict.value"
-              >
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.type" label="类型" label-width="180rpx" prop="type" :dict-type="DICT_TYPE.MES_CAL_HOLIDAY_TYPE" placeholder="请选择类型" />
           <wd-form-item title="备注" title-width="180rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -42,31 +32,28 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import dayjs from 'dayjs'
+import type { CalHoliday } from '@/api/mes/cal/holiday'
 import { onMounted, reactive, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { getHolidayByDay, saveHoliday } from '@/api/mes/cal/holiday'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesCalHolidayTypeEnum } from '@/utils/constants'
+import { formatDate, formatDateOnly, formatDateStartTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ day?: string }>()
-const HolidayType = {
-  WORKDAY: 1,
-  HOLIDAY: 2,
-} as const
 
 definePage({
   style: {
@@ -79,11 +66,10 @@ const toast = useToast()
 const formLoading = ref(false) // 表单提交状态
 const dayVisible = ref(false) // 日期选择弹层
 const formRef = ref<FormInstance>() // 表单组件引用
-const formData = reactive({
-  id: undefined as number | undefined,
-  day: dayjs().format('YYYY-MM-DD'),
-  type: HolidayType.WORKDAY as number,
-  remark: '',
+const formData = reactive<CalHoliday>({
+  id: undefined,
+  day: formatDate(Date.now()),
+  type: MesCalHolidayTypeEnum.WORKDAY,
 }) // 表单数据
 const formSchema = createFormSchema({
   day: [{ required: true, message: '日期不能为空' }],
@@ -103,24 +89,15 @@ function handleOpenDayPicker() {
   dayVisible.value = true
 }
 
-/** 日期转接口日期时间 */
-function toDateTime(day: string) {
-  return `${dayjs(day).format('YYYY-MM-DD')} 00:00:00`
-}
-
 /** 加载详情 */
 async function getDetail() {
   if (props.day) {
-    formData.day = props.day
+    formData.day = formatDateOnly(props.day)
   }
   formLoading.value = true
   try {
-    const detail = await getHolidayByDay(toDateTime(formData.day))
-    if (detail) {
-      formData.id = detail.id
-      formData.type = detail.type ?? HolidayType.WORKDAY
-      formData.remark = detail.remark || ''
-    }
+    const day = formData.day
+    Object.assign(formData, await getHolidayByDay(formatDateStartTime(day)), { day })
   } finally {
     formLoading.value = false
   }
@@ -128,17 +105,16 @@ async function getDetail() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     await saveHoliday({
-      id: formData.id,
-      day: toDateTime(formData.day),
-      type: formData.type,
-      remark: formData.remark || undefined,
+      ...formData,
+      day: formatDateStartTime(formData.day),
     })
     toast.success('设置成功')
     uni.$emit('mes:cal:holiday:reload')
@@ -148,6 +124,7 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
 })

@@ -4,12 +4,12 @@
     <wd-navbar title="排班日历" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 视图筛选 -->
-    <view class="bg-white px-24rpx py-20rpx">
+    <view class="bg-white px-24rpx py-16rpx">
       <view class="grid grid-cols-3 overflow-hidden rounded-12rpx bg-[#f5f7fa] p-6rpx">
         <view
           v-for="tab in tabs"
           :key="tab.key"
-          class="rounded-10rpx py-14rpx text-center text-26rpx"
+          class="rounded-10rpx py-12rpx text-center text-26rpx"
           :class="activeTab === tab.key ? 'bg-white text-[#1677ff] font-semibold shadow-sm' : 'text-[#666]'"
           @click="handleTabChange(tab.key)"
         >
@@ -17,9 +17,9 @@
         </view>
       </view>
 
-      <view class="mt-20rpx">
+      <view class="mt-14rpx">
         <scroll-view v-if="activeTab === 'type'" scroll-x>
-          <view class="flex gap-16rpx">
+          <view class="flex gap-12rpx">
             <wd-tag
               v-for="dict in calendarTypeOptions"
               :key="dict.value"
@@ -57,7 +57,7 @@
     </view>
 
     <!-- 月份切换和图例 -->
-    <view class="mt-16rpx bg-white px-24rpx py-20rpx">
+    <view class="mt-12rpx bg-white px-24rpx py-16rpx">
       <view class="flex items-center justify-between">
         <wd-button size="small" variant="plain" @click="changeMonth(-1)">
           上月
@@ -69,21 +69,21 @@
           下月
         </wd-button>
       </view>
-      <view class="mt-18rpx flex flex-wrap items-center justify-center gap-x-22rpx gap-y-10rpx text-22rpx text-[#666]">
+      <view class="mt-12rpx flex flex-wrap items-center justify-center gap-x-18rpx gap-y-8rpx text-22rpx text-[#666]">
         <view class="flex items-center gap-8rpx">
-          <text class="h-18rpx w-18rpx rounded-4rpx bg-[#95d475]" />
+          <text class="h-14rpx w-14rpx rounded-4rpx bg-[#95d475]" />
           <text>白班</text>
         </view>
         <view class="flex items-center gap-8rpx">
-          <text class="h-18rpx w-18rpx rounded-4rpx bg-[#f0a020]" />
+          <text class="h-14rpx w-14rpx rounded-4rpx bg-[#f0a020]" />
           <text>中班（三班倒）</text>
         </view>
         <view class="flex items-center gap-8rpx">
-          <text class="h-18rpx w-18rpx rounded-4rpx bg-[#909399]" />
+          <text class="h-14rpx w-14rpx rounded-4rpx bg-[#909399]" />
           <text>中班/夜班</text>
         </view>
         <view class="flex items-center gap-8rpx">
-          <text class="h-18rpx w-18rpx rounded-4rpx bg-[#52c41a]" />
+          <text class="h-14rpx w-14rpx rounded-4rpx bg-[#52c41a]" />
           <text>节假日</text>
         </view>
       </view>
@@ -91,59 +91,60 @@
 
     <!-- 日历视图 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <view class="m-24rpx overflow-hidden rounded-16rpx bg-white shadow-sm">
-        <view class="grid grid-cols-7 border-b border-[#f2f3f5]">
-          <view
-            v-for="week in weekLabels"
-            :key="week"
-            class="py-18rpx text-center text-24rpx text-[#999]"
-          >
-            {{ week }}
+      <view class="px-24rpx py-18rpx">
+        <view class="mx-auto max-w-760rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+          <view class="grid grid-cols-7 border-b border-[#e5e7eb]">
+            <view
+              v-for="week in weekLabels"
+              :key="week"
+              class="border-r border-[#e5e7eb] py-12rpx text-center text-24rpx text-[#999] last:border-r-0"
+            >
+              {{ week }}
+            </view>
           </view>
-        </view>
-        <view v-if="loading" class="py-80rpx text-center text-26rpx text-[#999]">
-          加载中...
-        </view>
-        <view v-else class="grid grid-cols-7">
-          <view
-            v-for="day in calendarDays"
-            :key="day.date"
-            class="min-h-168rpx border-b border-r border-[#f2f3f5] p-10rpx"
-            :class="day.isCurrentMonth ? 'bg-white' : 'bg-[#fafafa]'"
-          >
-            <view class="flex items-start justify-between gap-6rpx">
-              <text
-                class="text-28rpx font-semibold"
-                :class="[
-                  day.isCurrentMonth ? 'text-[#333]' : 'text-[#c8c9cc]',
-                  day.isWeekend && day.isCurrentMonth ? 'text-[#f56c6c]' : '',
-                ]"
-              >
-                {{ day.dayOfMonth }}
-              </text>
-              <text
-                v-if="day.isCurrentMonth"
-                class="rounded-6rpx px-8rpx py-2rpx text-20rpx text-white"
-                :class="isHoliday(day.date) ? 'bg-[#52c41a]' : 'bg-[#1677ff]'"
-              >
-                {{ isHoliday(day.date) ? '休' : '班' }}
-              </text>
-            </view>
-            <view v-if="day.isToday" class="mt-6rpx text-22rpx text-[#1677ff]">
-              今天
-            </view>
-            <view v-if="day.isCurrentMonth && !isHoliday(day.date)" class="mt-8rpx flex flex-col gap-4rpx">
-              <view
-                v-for="shift in getTeamShifts(day.date)"
-                :key="`${shift.teamId}-${shift.shiftId}-${shift.sort}`"
-                class="truncate rounded-6rpx px-6rpx py-2rpx text-20rpx text-white"
-                :class="getShiftClass(day.date, shift.sort)"
-              >
-                {{ shift.shiftName }} · {{ shift.teamName }}
+          <view v-if="loading" class="py-80rpx text-center text-26rpx text-[#999]">
+            加载中...
+          </view>
+          <view v-else class="grid grid-cols-7">
+            <view
+              v-for="day in calendarDays"
+              :key="day.date"
+              class="min-h-112rpx border-b border-r border-[#e5e7eb] px-8rpx py-8rpx last:border-r-0"
+              :class="day.isCurrentMonth ? 'bg-white' : 'bg-[#fafafa]'"
+            >
+              <view class="flex items-start justify-between gap-4rpx">
+                <text
+                  class="text-26rpx font-semibold leading-32rpx"
+                  :class="[
+                    day.isCurrentMonth ? 'text-[#333]' : 'text-[#c8c9cc]',
+                    day.isWeekend && day.isCurrentMonth ? 'text-[#f56c6c]' : '',
+                  ]"
+                >
+                  {{ day.dayOfMonth }}
+                </text>
+                <text
+                  v-if="day.isCurrentMonth"
+                  class="rounded-6rpx px-6rpx py-1rpx text-18rpx text-white leading-24rpx"
+                  :class="isHoliday(day.date) ? 'bg-[#52c41a]' : 'bg-[#1677ff]'"
+                >
+                  {{ isHoliday(day.date) ? '休' : '班' }}
+                </text>
               </view>
-            </view>
-            <view v-if="day.isCurrentMonth && isHoliday(day.date)" class="mt-8rpx text-22rpx text-[#52c41a]">
-              节假日不显示排班
+              <view v-if="day.isToday" class="mt-2rpx text-20rpx text-[#1677ff] leading-24rpx">
+                今天
+              </view>
+              <view v-if="day.isCurrentMonth && !isHoliday(day.date)" class="mt-4rpx">
+                <view
+                  v-if="getPrimaryShift(day.date)"
+                  class="truncate rounded-6rpx px-5rpx py-1rpx text-18rpx text-white leading-24rpx"
+                  :class="getShiftClass(day.date, getPrimaryShift(day.date)?.sort || 0)"
+                >
+                  {{ getShiftSummary(day.date) }}
+                </view>
+              </view>
+              <view v-if="day.isCurrentMonth && isHoliday(day.date)" class="mt-4rpx truncate text-20rpx text-[#52c41a] leading-24rpx">
+                节假日
+              </view>
             </view>
           </view>
         </view>
@@ -165,9 +166,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { CalCalendarDayVO, CalCalendarQueryParams, CalCalendarTeamShiftItem } from '@/api/mes/cal/calendar'
-import type { CalHolidayVO } from '@/api/mes/cal/holiday'
-import type { CalTeamVO } from '@/api/mes/cal/team'
+import type { CalCalendarDay, CalCalendarTeamShiftItem } from '@/api/mes/cal/calendar'
+import type { CalHoliday } from '@/api/mes/cal/holiday'
+import type { CalTeam } from '@/api/mes/cal/team'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
@@ -177,7 +178,8 @@ import { getHolidayList } from '@/api/mes/cal/holiday'
 import { getTeamList } from '@/api/mes/cal/team'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesCalHolidayTypeEnum, MesCalShiftTypeEnum } from '@/utils/constants'
+import { formatDateEndTime, formatDateOnly, formatDateStartTime } from '@/utils/date'
 
 interface CalendarDay {
   date: string
@@ -187,22 +189,12 @@ interface CalendarDay {
   isWeekend: boolean
 }
 
-interface PickerOption {
-  label: string
-  value: number
-}
-
-const HolidayType = {
-  HOLIDAY: 2,
-} as const
-const MesCalShiftTypeEnum = {
-  THREE: 3,
-} as const
-const tabs = [ // 视图切换
+type CalendarTab = 'type' | 'team' | 'user'
+const tabs: Array<{ key: CalendarTab, title: string }> = [ // 视图切换
   { key: 'type', title: '按分类' },
   { key: 'team', title: '按班组' },
   { key: 'user', title: '按个人' },
-] as const
+]
 
 definePage({
   style: {
@@ -212,12 +204,12 @@ definePage({
 })
 
 const toast = useToast()
-const activeTab = ref<'type' | 'team' | 'user'>('type') // 当前视图
+const activeTab = ref<CalendarTab>('type') // 当前视图
 const currentMonth = ref(dayjs().startOf('month')) // 当前查看月份
-const calendarDayMap = ref<Record<string, CalCalendarDayVO>>({}) // 日期维度排班
-const holidayMap = ref<Record<string, CalHolidayVO>>({}) // 日期维度假期
+const calendarDayMap = ref<Record<string, CalCalendarDay>>({}) // 日期维度排班
+const holidayMap = ref<Record<string, CalHoliday>>({}) // 日期维度假期
 const loading = ref(false) // 排班加载状态
-const teamList = ref<CalTeamVO[]>([]) // 班组列表
+const teamList = ref<CalTeam[]>([]) // 班组列表
 const selectedCalendarType = ref<number>() // 当前班组类型
 const selectedTeamId = ref<number>() // 当前班组
 const selectedUserId = ref<number>() // 当前人员
@@ -226,13 +218,8 @@ const teamPickerValue = ref<number[]>([]) // 班组选择器值
 
 const weekLabels = ['一', '二', '三', '四', '五', '六', '日'] // 周标题
 const currentMonthText = computed(() => currentMonth.value.format('YYYY年MM月'))
-const calendarTypeOptions = computed<PickerOption[]>(() =>
-  getIntDictOptions(DICT_TYPE.MES_CAL_CALENDAR_TYPE).map(item => ({
-    label: item.label,
-    value: Number(item.value),
-  })),
-)
-const teamOptions = computed<PickerOption[]>(() =>
+const calendarTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_CAL_CALENDAR_TYPE))
+const teamOptions = computed(() =>
   teamList.value
     .filter(item => item.id != null)
     .map(item => ({
@@ -261,22 +248,33 @@ const calendarDays = computed<CalendarDay[]>(() => {
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
-}
-
-/** 后端日期格式化为 yyyy-MM-dd */
-function normalizeDay(day?: number | string) {
-  return day ? dayjs(day).format('YYYY-MM-DD') : ''
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 判断是否节假日 */
 function isHoliday(day: string) {
-  return holidayMap.value[day]?.type === HolidayType.HOLIDAY
+  return holidayMap.value[day]?.type === MesCalHolidayTypeEnum.HOLIDAY
 }
 
 /** 获取当天排班 */
 function getTeamShifts(day: string) {
   return calendarDayMap.value[day]?.teamShifts || []
+}
+
+/** 获取当天主班次 */
+function getPrimaryShift(day: string) {
+  return getTeamShifts(day)[0]
+}
+
+/** 获取当天班次摘要 */
+function getShiftSummary(day: string) {
+  const shifts = getTeamShifts(day)
+  const first = shifts[0]
+  if (!first) {
+    return ''
+  }
+  const label = `${first.shiftName || '-'} · ${first.teamName || '-'}`
+  return shifts.length > 1 ? `${label} +${shifts.length - 1}` : label
 }
 
 /** 班次配色 */
@@ -294,8 +292,8 @@ function getShiftClass(day: string, sort: number) {
 /** 当前月范围 */
 function getMonthRange() {
   return {
-    startDay: currentMonth.value.startOf('month').format('YYYY-MM-DD 00:00:00'),
-    endDay: currentMonth.value.endOf('month').format('YYYY-MM-DD 23:59:59'),
+    startDay: formatDateStartTime(currentMonth.value.startOf('month')),
+    endDay: formatDateEndTime(currentMonth.value.endOf('month')),
   }
 }
 
@@ -303,8 +301,8 @@ function getMonthRange() {
 async function loadHolidays() {
   const { startDay, endDay } = getMonthRange()
   const list = await getHolidayList({ startDay, endDay })
-  holidayMap.value = list.reduce<Record<string, CalHolidayVO>>((map, item) => {
-    const day = normalizeDay(item.day)
+  holidayMap.value = list.reduce<Record<string, CalHoliday>>((map, item) => {
+    const day = formatDateOnly(item.day)
     if (day) {
       map[day] = item
     }
@@ -322,8 +320,8 @@ async function fetchCalendar() {
   loading.value = true
   try {
     const list = await getCalendarList(params)
-    calendarDayMap.value = list.reduce<Record<string, CalCalendarDayVO>>((map, item) => {
-      const day = normalizeDay(item.day)
+    calendarDayMap.value = list.reduce<Record<string, CalCalendarDay>>((map, item) => {
+      const day = formatDateOnly(item.day)
       if (day) {
         map[day] = {
           ...item,
@@ -339,7 +337,7 @@ async function fetchCalendar() {
 }
 
 /** 构造排班查询参数 */
-function buildCalendarParams(): CalCalendarQueryParams | undefined {
+function buildCalendarParams(): Record<string, any> | undefined {
   const { startDay, endDay } = getMonthRange()
   if (activeTab.value === 'type') {
     if (!selectedCalendarType.value) {

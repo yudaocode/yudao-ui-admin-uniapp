@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <wd-navbar title="班组设置" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
     <!-- 分页列表 -->
     <z-paging
       ref="pagingRef"
@@ -42,14 +42,6 @@
               <view>创建时间：{{ formatDateTime(item.createTime) || '-' }}</view>
             </view>
           </view>
-          <view class="flex border-t border-[#f3f4f6] text-26rpx">
-            <view v-if="canUpdate" class="flex-1 py-18rpx text-center text-[#e6a23c]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDelete" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -66,12 +58,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { CalTeamQueryParams, CalTeamVO } from '@/api/mes/cal/team'
+import type { CalTeam } from '@/api/mes/cal/team'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteTeam, getTeamPage } from '@/api/mes/cal/team'
+import { onMounted, ref } from 'vue'
+import { getTeamPage } from '@/api/mes/cal/team'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -86,18 +76,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<CalTeamVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<CalTeamVO>>() // 分页组件引用
-const queryParams = ref<Partial<CalTeamQueryParams>>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
-const canUpdate = computed(() => hasAccessByCodes(['mes:cal-team:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:cal-team:delete']))
+const list = ref<CalTeam[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<CalTeam>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询班组列表 */
@@ -111,16 +96,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<CalTeamQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -134,43 +117,19 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: CalTeamVO) {
+function handleDetail(item: CalTeam) {
   if (!item.id) {
     return
   }
   uni.navigateTo({ url: `/pages-mes/cal/team/detail/index?id=${item.id}` })
 }
 
-/** 编辑班组 */
-function handleEdit(item: CalTeamVO) {
-  if (!item.id) {
-    return
-  }
-  uni.navigateTo({ url: `/pages-mes/cal/team/form/index?id=${item.id}` })
-}
-
-/** 删除班组 */
-async function handleDelete(item: CalTeamVO) {
-  if (!item.id) {
-    return
-  }
-  try {
-    await dialog.confirm({
-      title: '删除确认',
-      msg: `确定要删除「${item.name || item.code}」班组吗？删除后会级联清理班组成员和排班记录。`,
-    })
-  } catch {
-    return
-  }
-  await deleteTeam(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
+/** 初始化 */
 onMounted(() => {
   uni.$on('mes:cal:team:reload', reload)
 })
 
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:cal:team:reload', reload)
 })

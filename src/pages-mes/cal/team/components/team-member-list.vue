@@ -5,7 +5,7 @@
       <view class="text-30rpx text-[#333] font-semibold">
         班组成员
       </view>
-      <wd-button v-if="editable" size="small" type="primary" @click="openMemberPopup">
+      <wd-button v-if="editable" size="small" type="primary" @click="openForm">
         添加成员
       </wd-button>
     </view>
@@ -31,9 +31,9 @@
                 用户编号：{{ item.userId }}
               </view>
             </view>
-            <text v-if="editable && item.id" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+            <wd-button v-if="editable && item.id" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </text>
+            </wd-button>
           </view>
           <view class="text-26rpx text-[#666] space-y-8rpx">
             <view>手机号：{{ item.telephone || '-' }}</view>
@@ -44,18 +44,18 @@
     </view>
 
     <!-- 添加成员弹层 -->
-    <wd-popup v-model="memberPopupVisible" position="bottom" :safe-area-inset-bottom="true">
+    <wd-popup v-model="formVisible" position="bottom" :safe-area-inset-bottom="true">
       <view class="max-h-[80vh] flex flex-col bg-white">
         <view class="flex items-center justify-between border-b border-[#f0f0f0] px-24rpx py-20rpx">
           <text class="text-32rpx text-[#333] font-semibold">
             添加成员
           </text>
-          <wd-icon name="close" size="36rpx" @click="memberPopupVisible = false" />
+          <wd-icon name="close" size="36rpx" @click="formVisible = false" />
         </view>
-        <wd-form ref="memberFormRef" :model="memberForm" :schema="memberFormSchema">
+        <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
             <UserPicker
-              v-model="memberForm.userId"
+              v-model="formData.userId"
               label="用户"
               prop="userId"
               type="radio"
@@ -63,7 +63,7 @@
             />
             <wd-form-item title="备注" title-width="180rpx" prop="remark">
               <wd-textarea
-                v-model="memberForm.remark"
+                v-model="formData.remark"
                 placeholder="请输入备注"
                 :maxlength="200"
                 show-word-limit
@@ -73,7 +73,7 @@
           </wd-cell-group>
         </wd-form>
         <view class="p-24rpx">
-          <wd-button type="primary" block :loading="memberSaving" @click="handleCreateMember">
+          <wd-button type="primary" block :loading="formLoading" @click="handleCreateMember">
             保存
           </wd-button>
         </view>
@@ -84,7 +84,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { CalTeamMemberCreateReqVO, CalTeamMemberVO } from '@/api/mes/cal/team/member'
+import type { CalTeamMember } from '@/api/mes/cal/team/member'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref, watch } from 'vue'
@@ -103,16 +103,16 @@ const props = withDefaults(defineProps<{
 const dialog = useDialog()
 const toast = useToast()
 const loading = ref(false) // 成员加载状态
-const list = ref<CalTeamMemberVO[]>([]) // 成员列表
-const memberPopupVisible = ref(false) // 添加弹层显示状态
-const memberSaving = ref(false) // 添加提交状态
-const memberFormRef = ref<FormInstance>() // 添加表单引用
-const memberForm = reactive<Partial<CalTeamMemberCreateReqVO>>({
+const list = ref<CalTeamMember[]>([]) // 成员列表
+const formVisible = ref(false) // 表单弹层显示状态
+const formLoading = ref(false) // 表单提交状态
+const formRef = ref<FormInstance>() // 添加表单引用
+const formData = reactive<CalTeamMember>({
   teamId: undefined,
   userId: undefined,
-  remark: '',
+  remark: undefined,
 }) // 添加成员表单
-const memberFormSchema = createFormSchema({
+const formSchema = createFormSchema({
   userId: [{ required: true, message: '用户不能为空' }],
 })
 
@@ -130,45 +130,42 @@ async function getList() {
   }
 }
 
-/** 打开添加成员弹层 */
-function openMemberPopup() {
+/** 打开添加成员表单 */
+function openForm() {
   if (!props.teamId) {
     toast.warning('请先保存班组后再添加成员')
     return
   }
-  memberForm.teamId = props.teamId
-  memberForm.userId = undefined
-  memberForm.remark = ''
-  memberFormRef.value?.reset()
-  memberPopupVisible.value = true
+  formData.teamId = props.teamId
+  formData.userId = undefined
+  formData.remark = undefined
+  formRef.value?.reset()
+  formVisible.value = true
 }
 
 /** 新增成员 */
 async function handleCreateMember() {
-  const result = await memberFormRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
-  if (!memberForm.teamId || !memberForm.userId) {
+  if (!formData.teamId || !formData.userId) {
     return
   }
-  memberSaving.value = true
+
+  formLoading.value = true
   try {
-    await createTeamMember({
-      teamId: memberForm.teamId,
-      userId: memberForm.userId,
-      remark: memberForm.remark || undefined,
-    })
+    await createTeamMember(formData)
     toast.success('添加成功')
-    memberPopupVisible.value = false
+    formVisible.value = false
     await getList()
   } finally {
-    memberSaving.value = false
+    formLoading.value = false
   }
 }
 
 /** 删除成员 */
-async function handleDelete(item: CalTeamMemberVO) {
+async function handleDelete(item: CalTeamMember) {
   if (!item.id) {
     return
   }
@@ -185,11 +182,10 @@ async function handleDelete(item: CalTeamMemberVO) {
   await getList()
 }
 
+/** 监听班组编号变化 */
 watch(
   () => props.teamId,
   () => getList(),
   { immediate: true },
 )
-
-defineExpose({ reload: getList })
 </script>

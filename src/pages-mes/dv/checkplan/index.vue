@@ -64,20 +64,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.createTime) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdate && item.status === MesDvCheckPlanStatusEnum.PREPARE" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDelete && item.status === MesDvCheckPlanStatusEnum.PREPARE" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canUpdate && item.status === MesDvCheckPlanStatusEnum.PREPARE" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleEnable(item)">
-              启用
-            </view>
-            <view v-if="canUpdate && item.status === MesDvCheckPlanStatusEnum.ENABLED" class="flex-1 py-18rpx text-center text-[#faad14]" @click="handleDisable(item)">
-              停用
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -94,15 +80,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { DvCheckPlanQueryParams, DvCheckPlanVO } from '@/api/mes/dv/checkplan'
+import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteCheckPlan, disableCheckPlan, enableCheckPlan, getCheckPlanPage } from '@/api/mes/dv/checkplan'
+import { onMounted, ref } from 'vue'
+import { getCheckPlanPage } from '@/api/mes/dv/checkplan'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesDvCheckPlanStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -114,17 +98,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<DvCheckPlanVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<DvCheckPlanVO>>() // 分页组件引用
-const queryParams = ref<DvCheckPlanQueryParams>({}) // 查询参数
-const canUpdate = computed(() => hasAccessByCodes(['mes:dv-check-plan:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:dv-check-plan:delete']))
+const list = ref<DvCheckPlan[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<DvCheckPlan>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -143,7 +123,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: DvCheckPlanQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -166,73 +146,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: DvCheckPlanVO) {
+function handleDetail(item: DvCheckPlan) {
   uni.navigateTo({
     url: `/pages-mes/dv/checkplan/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否显示行操作 */
-function hasRowActions(item: DvCheckPlanVO) {
-  return (
-    canUpdate.value && item.status === MesDvCheckPlanStatusEnum.PREPARE
-  ) || (
-    canDelete.value && item.status === MesDvCheckPlanStatusEnum.PREPARE
-  ) || (
-    canUpdate.value && item.status === MesDvCheckPlanStatusEnum.ENABLED
-  )
-}
-
-/** 编辑 */
-function handleEdit(item: DvCheckPlanVO) {
-  uni.navigateTo({
-    url: `/pages-mes/dv/checkplan/form/index?id=${item.id}`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: DvCheckPlanVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.name || item.code}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteCheckPlan(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 启用 */
-async function handleEnable(item: DvCheckPlanVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认启用该点检保养方案？启用后将不可修改或删除。',
-    })
-  } catch {
-    return
-  }
-  await enableCheckPlan(item.id)
-  toast.success('启用成功')
-  reload()
-}
-
-/** 停用 */
-async function handleDisable(item: DvCheckPlanVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认停用该点检保养方案？',
-    })
-  } catch {
-    return
-  }
-  await disableCheckPlan(item.id)
-  toast.success('停用成功')
-  reload()
 }
 
 /** 初始化 */

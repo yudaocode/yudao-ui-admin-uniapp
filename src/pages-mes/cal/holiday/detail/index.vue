@@ -18,29 +18,30 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions>
-      <wd-button
-        v-if="hasAccessByCodes(['mes:cal-holiday:create'])"
-        type="primary"
-        block
-        @click="handleEdit"
-      >
-        设置
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="hasAccessByCodes(['mes:cal-holiday:create'])"
+          type="primary"
+          block
+          @click="handleEdit"
+        >
+          设置
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { CalHolidayVO } from '@/api/mes/cal/holiday'
+import type { CalHoliday } from '@/api/mes/cal/holiday'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import dayjs from 'dayjs'
 import { computed, onMounted, ref } from 'vue'
 import { getHolidayByDay } from '@/api/mes/cal/holiday'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { delay, navigateBackPlus } from '@/utils'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDateOnly, formatDateStartTime } from '@/utils/date'
 
 const props = defineProps<{ day?: string }>()
 
@@ -53,8 +54,8 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const formData = ref<CalHolidayVO>() // 详情数据
-const dayText = computed(() => props.day ? dayjs(props.day).format('YYYY-MM-DD') : '')
+const formData = ref<CalHoliday>() // 详情数据
+const dayText = computed(() => formatDateOnly(props.day)) // 日期文案
 
 /** 返回上一页 */
 function handleBack() {
@@ -68,13 +69,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getHolidayByDay(`${dayText.value} 00:00:00`)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getHolidayByDay(formatDateStartTime(dayText.value))
   } finally {
     toast.close()
   }
@@ -88,6 +83,7 @@ function handleEdit() {
   uni.navigateTo({ url: `/pages-mes/cal/holiday/form/index?day=${dayText.value}` })
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
 })

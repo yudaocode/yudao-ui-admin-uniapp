@@ -4,18 +4,18 @@ import { http } from '@/http/http'
 /** MES 设备点检记录 */
 export interface DvCheckRecord {
   id?: number // 编号
-  planId: number // 点检计划编号
+  planId?: number // 点检计划编号
   planCode?: string // 计划编码
   planName?: string // 计划名称
   planCycleCount?: number // 频率数量
   planCycleType?: number // 频率类型
-  machineryId: number // 设备编号
+  machineryId?: number // 设备编号
   machineryCode?: string // 设备编码
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
   checkTime?: string | Date // 点检时间
-  userId: number // 点检人编号
+  userId?: number // 点检人编号
   nickname?: string // 点检人名称
   status?: number // 状态
   remark?: string // 备注

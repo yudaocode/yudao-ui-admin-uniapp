@@ -66,20 +66,6 @@
               <text v-else>-</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDeletePrepare(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canConfirmRepair(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleConfirm(item)">
-              完成维修
-            </view>
-            <view v-if="canFinishRepair(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              验收
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -96,15 +82,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { DvRepairQueryParams, DvRepairVO } from '@/api/mes/dv/repair'
+import type { DvRepair } from '@/api/mes/dv/repair'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { deleteRepair, getRepairPage } from '@/api/mes/dv/repair'
+import { getRepairPage } from '@/api/mes/dv/repair'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesDvRepairStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -116,15 +100,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<DvRepairVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<DvRepairVO>>() // 分页组件引用
-const queryParams = ref<DvRepairQueryParams>({}) // 查询参数
+const list = ref<DvRepair[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<DvRepair>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -143,7 +125,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: DvRepairQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -166,70 +148,9 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: DvRepairVO) {
+function handleDetail(item: DvRepair) {
   uni.navigateTo({
     url: `/pages-mes/dv/repair/detail/index?id=${item.id}`,
-  })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: DvRepairVO) {
-  return hasAccessByCodes(['mes:dv-repair:update']) && item.status === MesDvRepairStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: DvRepairVO) {
-  return hasAccessByCodes(['mes:dv-repair:delete']) && item.status === MesDvRepairStatusEnum.PREPARE
-}
-
-/** 是否可完成维修 */
-function canConfirmRepair(item: DvRepairVO) {
-  return hasAccessByCodes(['mes:dv-repair:update']) && item.status === MesDvRepairStatusEnum.CONFIRMED
-}
-
-/** 是否可验收 */
-function canFinishRepair(item: DvRepairVO) {
-  return hasAccessByCodes(['mes:dv-repair:update']) && item.status === MesDvRepairStatusEnum.APPROVING
-}
-
-/** 是否显示行操作 */
-function hasRowActions(item: DvRepairVO) {
-  return canUpdatePrepare(item) || canDeletePrepare(item) || canConfirmRepair(item) || canFinishRepair(item)
-}
-
-/** 编辑 */
-function handleEdit(item: DvRepairVO) {
-  uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${item.id}`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: DvRepairVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteRepair(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 完成维修 */
-function handleConfirm(item: DvRepairVO) {
-  uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${item.id}&mode=confirm`,
-  })
-}
-
-/** 验收 */
-function handleFinish(item: DvRepairVO) {
-  uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${item.id}&mode=finish`,
   })
 }
 

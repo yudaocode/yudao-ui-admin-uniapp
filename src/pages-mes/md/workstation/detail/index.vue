@@ -127,21 +127,26 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  const data = await getWorkstation(Number(props.id))
-  const [workshops, processes, warehouses, locations, areas] = await Promise.all([
-    getWorkshopSimpleList(),
-    getProcessSimpleList(),
-    getWarehouseSimpleList(),
-    data.warehouseId ? getWarehouseLocationSimpleList(data.warehouseId) : Promise.resolve([]),
-    data.locationId ? getWarehouseAreaSimpleList(data.locationId) : Promise.resolve([]),
-  ])
-  formData.value = {
-    ...data,
-    workshopName: data.workshopName || workshops.find(item => item.id === data.workshopId)?.name,
-    processName: data.processName || processes.find(item => item.id === data.processId)?.name,
-    warehouseName: warehouses.find(item => item.id === data.warehouseId)?.name,
-    locationName: locations.find(item => item.id === data.locationId)?.name,
-    areaName: areas.find(item => item.id === data.areaId)?.name,
+  try {
+    toast.loading('加载中...')
+    const data = await getWorkstation(Number(props.id))
+    const [workshops, processes, warehouses, locations, areas] = await Promise.all([
+      getWorkshopSimpleList(),
+      getProcessSimpleList(),
+      getWarehouseSimpleList(),
+      data.warehouseId ? getWarehouseLocationSimpleList(data.warehouseId) : Promise.resolve([]),
+      data.locationId ? getWarehouseAreaSimpleList(data.locationId) : Promise.resolve([]),
+    ])
+    formData.value = {
+      ...data,
+      workshopName: data.workshopName || workshops.find(item => item.id === data.workshopId)?.name,
+      processName: data.processName || processes.find(item => item.id === data.processId)?.name,
+      warehouseName: warehouses.find(item => item.id === data.warehouseId)?.name,
+      locationName: locations.find(item => item.id === data.locationId)?.name,
+      areaName: areas.find(item => item.id === data.areaId)?.name,
+    }
+  } finally {
+    toast.close()
   }
 }
 

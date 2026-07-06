@@ -72,7 +72,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { DvSubjectQueryParams, DvSubjectVO } from '@/api/mes/dv/subject'
+import type { DvSubject } from '@/api/mes/dv/subject'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getSubjectPage } from '@/api/mes/dv/subject'
@@ -90,13 +90,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<DvSubjectVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<DvSubjectVO>>() // 分页组件引用
-const queryParams = ref<DvSubjectQueryParams>({}) // 查询参数
+const list = ref<DvSubject[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<DvSubject>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -115,7 +115,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: DvSubjectQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -138,7 +138,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: DvSubjectVO) {
+function handleDetail(item: DvSubject) {
   uni.navigateTo({
     url: `/pages-mes/dv/subject/detail/index?id=${item.id}`,
   })

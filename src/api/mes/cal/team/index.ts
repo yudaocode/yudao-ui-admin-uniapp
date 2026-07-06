@@ -6,7 +6,7 @@ export interface CalTeam {
   id?: number
   code: string // 班组编码
   name: string // 班组名称
-  calendarType: number // 班组类型
+  calendarType?: number // 班组类型
   remark?: string // 备注
   createTime?: Date // 创建时间
 }

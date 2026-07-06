@@ -10,7 +10,7 @@
           <wd-form-item title="班组编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -19,24 +19,14 @@
           <wd-form-item title="班组名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入班组名称" clearable />
           </wd-form-item>
-          <wd-form-item title="班组类型" title-width="220rpx" prop="calendarType">
-            <wd-radio-group v-model="formData.calendarType" type="button">
-              <wd-radio
-                v-for="dict in getIntDictOptions(DICT_TYPE.MES_CAL_CALENDAR_TYPE)"
-                :key="dict.value"
-                :value="dict.value"
-              >
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.calendarType" label="班组类型" label-width="220rpx" prop="calendarType" :dict-type="DICT_TYPE.MES_CAL_CALENDAR_TYPE" placeholder="请选择班组类型" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="250" show-word-limit clearable />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
 
-      <TeamMemberList v-if="currentId" :team-id="currentId" editable />
+      <TeamMemberList v-if="props.id" :team-id="Number(props.id)" editable />
       <view v-else class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
         新增班组保存后，可在编辑页维护班组成员。
       </view>
@@ -44,32 +34,29 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { CalTeamCreateReqVO, CalTeamUpdateReqVO, CalTeamVO } from '@/api/mes/cal/team'
+import type { CalTeam } from '@/api/mes/cal/team'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createTeam, getTeam, updateTeam } from '@/api/mes/cal/team'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import TeamMemberList from '../components/team-member-list.vue'
 
 const props = defineProps<{ id?: number | string }>()
-const MesAutoCodeRuleCode = {
-  CAL_TEAM_CODE: 'CAL_TEAM_CODE',
-} as const
 
 definePage({
   style: {
@@ -79,10 +66,16 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑班组' : '新增班组')
+const getTitle = computed(() => props.id ? '编辑班组' : '新增班组')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Partial<CalTeamVO>>(getDefaultFormData()) // 表单数据
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<CalTeam>({
+  id: undefined,
+  code: '',
+  name: '',
+  calendarType: undefined,
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '班组编码不能为空' }],
   name: [{ required: true, message: '班组名称不能为空' }],
@@ -95,65 +88,41 @@ function handleBack() {
   navigateBackPlus('/pages-mes/cal/team/index')
 }
 
-/** 默认表单数据 */
-function getDefaultFormData(): Partial<CalTeamVO> {
-  return {
-    code: '',
-    name: '',
-    calendarType: undefined,
-    remark: '',
-  }
-}
-
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
+  if (!props.id) {
     return
   }
-  formData.value = { ...getDefaultFormData(), ...await getTeam(currentId.value) }
+  formData.value = await getTeam(Number(props.id))
 }
 
 /** 生成班组编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.CAL_TEAM_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): CalTeamCreateReqVO | CalTeamUpdateReqVO {
-  const data = {
-    code: formData.value.code || '',
-    name: formData.value.name || '',
-    calendarType: Number(formData.value.calendarType),
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateTeam(data)
+    if (props.id) {
+      await updateTeam(formData.value)
       toast.success('修改成功')
     } else {
-      await createTeam(data)
+      await createTeam(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:cal:team:reload')
@@ -163,11 +132,8 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

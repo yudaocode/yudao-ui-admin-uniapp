@@ -6,10 +6,10 @@ export interface DvCheckPlan {
   id?: number
   code: string
   name: string
-  type: number
+  type?: number
   startDate?: string | Date
   endDate?: string | Date
-  cycleType: number
+  cycleType?: number
   cycleCount: number
   status: number
   remark?: string

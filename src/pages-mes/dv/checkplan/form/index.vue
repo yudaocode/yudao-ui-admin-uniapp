@@ -8,7 +8,7 @@
     />
 
     <!-- 表单区域 -->
-    <view>
+    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="方案编码" title-width="200rpx" prop="code">
@@ -18,7 +18,7 @@
               placeholder="请输入或点击生成"
             >
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -31,13 +31,7 @@
               placeholder="请输入方案名称"
             />
           </wd-form-item>
-          <wd-form-item title="方案类型" title-width="200rpx" prop="type">
-            <wd-radio-group v-model="formData.type" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_DV_SUBJECT_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.type" label="方案类型" label-width="200rpx" prop="type" :dict-type="DICT_TYPE.MES_DV_SUBJECT_TYPE" placeholder="请选择方案类型" />
           <wd-datetime-picker
             v-model="formData.startDate"
             type="date"
@@ -52,15 +46,9 @@
             label-width="200rpx"
             prop="endDate"
           />
-          <wd-form-item title="周期类型" title-width="200rpx" prop="cycleType">
-            <wd-radio-group v-model="formData.cycleType" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_DV_CYCLE_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.cycleType" label="周期类型" label-width="200rpx" prop="cycleType" :dict-type="DICT_TYPE.MES_DV_CYCLE_TYPE" placeholder="请选择周期类型" />
           <wd-form-item title="周期数量" title-width="200rpx" prop="cycleCount" center>
-            <wd-input-number v-model="formData.cycleCount" :min="1" />
+            <wd-input-number v-model="formData.cycleCount" :min="1" :precision="0" />
           </wd-form-item>
           <wd-form-item title="状态" title-width="200rpx" prop="status">
             <dict-tag :type="DICT_TYPE.MES_DV_CHECK_PLAN_STATUS" :value="formData.status" />
@@ -76,34 +64,35 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <view v-if="currentId" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#e6f4ff] px-24rpx py-18rpx text-26rpx text-[#0958d9]">
+      <view v-if="props.id" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#e6f4ff] px-24rpx py-18rpx text-26rpx text-[#0958d9]">
         草稿方案可维护关联设备和保养项目；保存关联会立即写入，请谨慎操作。
       </view>
-      <MachineryList v-if="currentId" :plan-id="currentId" />
-      <SubjectList v-if="currentId" :plan-id="currentId" />
-    </view>
+      <MachineryList v-if="props.id" :plan-id="Number(props.id)" />
+      <SubjectList v-if="props.id" :plan-id="Number(props.id)" :type="formData.type" />
+      <view class="h-160rpx" />
+    </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { DvCheckPlanCreateReqVO } from '@/api/mes/dv/checkplan'
-import { onShow } from '@dcloudio/uni-app'
+import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createCheckPlan, getCheckPlan, updateCheckPlan } from '@/api/mes/dv/checkplan'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesDvCheckPlanStatusEnum } from '@/utils/constants'
+import { formatOptionalDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import MachineryList from '../components/machinery-list.vue'
 import SubjectList from '../components/subject-list.vue'
@@ -120,13 +109,10 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前编辑编号
-const getTitle = computed(() => currentId.value ? '编辑点检方案' : '新增点检方案')
+const getTitle = computed(() => props.id ? '编辑点检方案' : '新增点检方案')
 const formLoading = ref(false) // 表单提交状态
-interface DvCheckPlanFormData extends DvCheckPlanCreateReqVO {
-  id?: number
-}
-const formData = ref<DvCheckPlanFormData>(getDefaultFormData()) // 表单数据
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<DvCheckPlan>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '方案编码不能为空' }],
   name: [{ required: true, message: '方案名称不能为空' }],
@@ -137,18 +123,18 @@ const formSchema = createFormSchema({
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 默认表单数据 */
-function getDefaultFormData() {
+function getDefaultFormData(): DvCheckPlan {
   return {
     code: '',
     name: '',
     type: undefined,
-    startDate: undefined,
-    endDate: undefined,
+    startDate: '',
+    endDate: '',
     cycleType: undefined,
     cycleCount: 1,
     status: MesDvCheckPlanStatusEnum.PREPARE,
     remark: '',
-  } as DvCheckPlanFormData
+  }
 }
 
 /** 返回上一页 */
@@ -158,31 +144,19 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getCheckPlan(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name,
-    type: data.type,
-    startDate: data.startDate || undefined,
-    endDate: data.endDate || undefined,
-    cycleType: data.cycleType,
-    cycleCount: data.cycleCount,
-    status: data.status,
-    remark: data.remark || '',
-  }
+  formData.value = await getCheckPlan(Number(props.id))
 }
 
 /** 初始化页面数据 */
 async function initPage() {
-  if (!currentId.value) {
+  if (!props.id) {
     formData.value = getDefaultFormData()
     return
   }
-  if (!formData.value.id || formData.value.id !== currentId.value) {
+  if (!formData.value.id || formData.value.id !== Number(props.id)) {
     formData.value = getDefaultFormData()
     await getDetail()
   }
@@ -190,47 +164,41 @@ async function initPage() {
 
 /** 生成方案编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.DV_CHECK_PLAN_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data: DvCheckPlanCreateReqVO = {
-      code: formData.value.code,
-      name: formData.value.name,
-      type: formData.value.type,
-      startDate: formData.value.startDate,
-      endDate: formData.value.endDate,
-      cycleType: formData.value.cycleType,
-      cycleCount: formData.value.cycleCount,
-      status: formData.value.status,
-      remark: formData.value.remark || undefined,
+    formData.value = {
+      ...formData.value,
+      startDate: formatOptionalDateTime(formData.value.startDate),
+      endDate: formatOptionalDateTime(formData.value.endDate),
     }
-    if (currentId.value) {
-      await updateCheckPlan({ ...data, id: currentId.value })
+    if (props.id) {
+      await updateCheckPlan(formData.value)
       toast.success('修改成功')
     } else {
-      await createCheckPlan(data)
+      await createCheckPlan(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:dv:checkplan:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     formLoading.value = false
   }
@@ -238,14 +206,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
   initPage()
 })
 </script>

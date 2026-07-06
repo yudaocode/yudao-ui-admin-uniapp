@@ -4,10 +4,7 @@
       <view class="text-30rpx text-[#333] font-semibold">
         设备清单
       </view>
-      <view v-if="readonly" class="text-24rpx text-[#999]">
-        只读
-      </view>
-      <wd-button v-else size="small" type="primary" variant="plain" @click="openCreateForm">
+      <wd-button v-if="!readonly" size="small" type="primary" variant="plain" @click="openCreateForm">
         添加设备
       </wd-button>
     </view>
@@ -43,6 +40,11 @@
           <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
           <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
         </view>
+        <view v-if="!readonly" class="mt-16rpx flex justify-end">
+          <wd-button size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
+            {{ deletingId === item.id ? '删除中...' : '删除' }}
+          </wd-button>
+        </view>
       </view>
     </view>
   </view>
@@ -69,14 +71,15 @@
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <wd-form-item title="设备" title-width="200rpx" prop="machineryId">
-              <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openMachinerySelector">
-                <text :class="selectedMachineryText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ selectedMachineryText || '请选择设备' }}
-                </text>
-                <wd-icon name="arrow-right" size="28rpx" color="#999" />
-              </view>
-            </wd-form-item>
+            <wd-form-item
+              title="设备"
+              title-width="200rpx"
+              prop="machineryId"
+              is-link
+              :value="selectedMachineryText"
+              placeholder="请选择设备"
+              @click="openMachineryPicker"
+            />
             <wd-form-item title="备注" title-width="200rpx" prop="remark">
               <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
             </wd-form-item>
@@ -85,37 +88,40 @@
       </scroll-view>
     </view>
   </wd-popup>
-  <MachinerySelector ref="machinerySelectorRef" :existing-ids="existingMachineryIds" @confirm="handleMachineryConfirm" />
+  <MachineryPicker ref="machineryPickerRef" :existing-ids="existingMachineryIds" @confirm="handleMachineryConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { DvCheckPlanMachineryVO } from '@/api/mes/dv/checkplan/machinery'
-import type { DvMachineryVO } from '@/api/mes/dv/machinery'
+import type { DvCheckPlanMachinery } from '@/api/mes/dv/checkplan/machinery'
+import type { DvMachinery } from '@/api/mes/dv/machinery'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
-import { create, getListByPlan } from '@/api/mes/dv/checkplan/machinery'
+import { create, deleteCheckPlanMachinery, getListByPlan } from '@/api/mes/dv/checkplan/machinery'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
-import MachinerySelector from '../../machinery/components/machinery-selector.vue'
+import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 
 const props = defineProps<{
   planId?: number
   readonly?: boolean
 }>()
 
+const dialog = useDialog()
 const toast = useToast()
 const loading = ref(false) // 列表加载状态
-const list = ref<DvCheckPlanMachineryVO[]>([]) // 设备清单
+const list = ref<DvCheckPlanMachinery[]>([]) // 设备清单
 const formVisible = ref(false) // 添加弹窗显示状态
 const formLoading = ref(false) // 添加提交状态
+const deletingId = ref<number>() // 删除中编号
 const formRef = ref<FormInstance>() // 表单引用
 const formData = ref({
-  machineryId: undefined as number | undefined,
+  machineryId: undefined,
   remark: '',
 }) // 添加表单数据
-const selectedMachinery = ref<DvMachineryVO>() // 当前选择设备
-const machinerySelectorRef = ref<InstanceType<typeof MachinerySelector>>() // 设备选择器引用
+const selectedMachinery = ref<DvMachinery>() // 当前选择设备
+const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器引用
 const formSchema = createFormSchema({
   machineryId: [{ required: true, message: '设备不能为空' }],
 })
@@ -152,20 +158,20 @@ function openCreateForm() {
 }
 
 /** 打开设备选择器 */
-function openMachinerySelector() {
-  machinerySelectorRef.value?.open()
+function openMachineryPicker() {
+  machineryPickerRef.value?.open()
 }
 
 /** 确认选择设备 */
-function handleMachineryConfirm(item: DvMachineryVO) {
+function handleMachineryConfirm(item: DvMachinery) {
   selectedMachinery.value = item
   formData.value.machineryId = item.id
 }
 
 /** 提交添加设备 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!props.planId || !formData.value.machineryId) {
@@ -186,6 +192,31 @@ async function handleSubmit() {
   }
 }
 
+/** 删除设备 */
+async function handleDelete(item: DvCheckPlanMachinery) {
+  if (deletingId.value) {
+    return
+  }
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要删除设备「${item.machineryName || item.machineryCode || item.id}」吗？`,
+      confirmButtonText: '删除',
+    })
+  } catch {
+    return
+  }
+  deletingId.value = item.id
+  try {
+    await deleteCheckPlanMachinery(item.id)
+    toast.success('删除成功')
+    await getList()
+  } finally {
+    deletingId.value = undefined
+  }
+}
+
+/** 监听方案编号变化 */
 watch(
   () => props.planId,
   () => {

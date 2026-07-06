@@ -6,7 +6,7 @@ export interface DvSubject {
   id?: number
   code: string
   name?: string
-  type: number
+  type?: number
   content: string
   standard?: string
   status: number

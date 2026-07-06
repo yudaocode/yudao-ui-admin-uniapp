@@ -78,7 +78,12 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getTool(Number(props.id))
+  try {
+    toast.loading('加载中...')
+    formData.value = await getTool(Number(props.id))
+  } finally {
+    toast.close()
+  }
 }
 
 /** 编辑 */

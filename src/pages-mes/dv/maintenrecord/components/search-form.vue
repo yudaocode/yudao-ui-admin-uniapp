@@ -17,45 +17,47 @@
         <view class="yd-search-form-label">
           保养计划
         </view>
-        <MesSearchSelectorField
-          :model-value="selectedPlanText"
-          placeholder="请选择保养计划"
-          clearable
-          @click="openPlanSelector"
-          @clear="clearPlan"
-        />
+        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openPlanPicker">
+          <text v-if="selectedPlanText" class="min-w-0 flex-1 truncate text-[#333]">
+            {{ selectedPlanText }}
+          </text>
+          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
+            请选择保养计划
+          </text>
+          <wd-icon
+            v-if="selectedPlanText"
+            name="close-circle"
+            size="30rpx"
+            custom-style="color: #c0c4cc;"
+            @click.stop="clearPlan"
+          />
+        </view>
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           设备
         </view>
-        <MesSearchSelectorField
-          :model-value="selectedMachineryText"
-          placeholder="请选择设备"
-          clearable
-          @click="openMachinerySelector"
-          @clear="clearMachinery"
-        />
+        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openMachineryPicker">
+          <text v-if="selectedMachineryText" class="min-w-0 flex-1 truncate text-[#333]">
+            {{ selectedMachineryText }}
+          </text>
+          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
+            请选择设备
+          </text>
+          <wd-icon
+            v-if="selectedMachineryText"
+            name="close-circle"
+            size="30rpx"
+            custom-style="color: #c0c4cc;"
+            @click.stop="clearMachinery"
+          />
+        </view>
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           保养人
         </view>
-        <UserPicker
-          ref="userPickerRef"
-          v-model="formData.userId"
-          type="radio"
-          placeholder="请选择保养人"
-          use-default-slot
-          @confirm="handleUserConfirm"
-        >
-          <MesSearchSelectorField
-            :model-value="selectedUserName"
-            placeholder="请选择保养人"
-            clearable
-            @clear="clearUser"
-          />
-        </UserPicker>
+        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择保养人" />
       </view>
       <yd-search-date-range v-model="maintenTimeRange" label="保养时间" />
       <view class="yd-search-form-actions">
@@ -69,46 +71,42 @@
     </view>
   </wd-popup>
 
-  <CheckPlanSelector
-    ref="planSelectorRef"
+  <CheckPlanPicker
+    ref="planPickerRef"
     title="选择保养计划"
     :type="MesDvSubjectTypeEnum.MAINTENANCE"
     @confirm="handlePlanConfirm"
   />
-  <MachinerySelector ref="machinerySelectorRef" @confirm="handleMachineryConfirm" />
+  <MachineryPicker ref="machineryPickerRef" @confirm="handleMachineryConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { User } from '@/api/system/user'
-import type { DvCheckPlanVO } from '@/api/mes/dv/checkplan'
-import type { DvMachineryVO } from '@/api/mes/dv/machinery'
-import type { DvMaintenRecordQueryParams } from '@/api/mes/dv/maintenrecord'
+import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
+import type { DvMachinery } from '@/api/mes/dv/machinery'
 import { computed, reactive, ref } from 'vue'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { MesDvSubjectTypeEnum } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import MesSearchSelectorField from '@/pages-mes/components/mes-search-selector-field.vue'
-import CheckPlanSelector from '../../checkplan/components/checkplan-selector.vue'
-import MachinerySelector from '../../machinery/components/machinery-selector.vue'
+import CheckPlanPicker from '../../checkplan/components/checkplan-picker.vue'
+import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: DvMaintenRecordQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 用户选择器
-const planSelectorRef = ref<InstanceType<typeof CheckPlanSelector>>() // 保养计划选择器
-const machinerySelectorRef = ref<InstanceType<typeof MachinerySelector>>() // 设备选择器
-const selectedPlan = ref<DvCheckPlanVO>() // 已选计划
-const selectedMachinery = ref<DvMachineryVO>() // 已选设备
-const selectedUserName = ref('') // 已选保养人名称
-const maintenTimeRange = ref<[number | undefined, number | undefined]>() // 保养时间范围
-const formData = reactive({
-  planId: undefined as number | undefined,
-  machineryId: undefined as number | undefined,
-  userId: undefined as number | undefined,
+const planPickerRef = ref<InstanceType<typeof CheckPlanPicker>>() // 保养计划选择器
+const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器
+const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 保养人选择器
+const selectedPlan = ref<DvCheckPlan>() // 已选计划
+const selectedMachinery = ref<DvMachinery>() // 已选设备
+const maintenTimeRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 保养时间范围
+const formData = reactive<Record<string, any>>({
+  planId: undefined,
+  machineryId: undefined,
+  userId: undefined,
 }) // 搜索表单数据
 const selectedPlanText = computed(() => {
   return selectedPlan.value
@@ -130,40 +128,36 @@ const placeholder = computed(() => {
   if (selectedMachinery.value) {
     conditions.push(`设备:${selectedMachinery.value.code || selectedMachinery.value.name}`)
   }
-  if (selectedUserName.value) {
-    conditions.push(`保养人:${selectedUserName.value}`)
+  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  if (userName) {
+    conditions.push(`保养人:${userName}`)
   }
-  if (maintenTimeRange.value?.length === 2) {
+  if (formatDateRange(maintenTimeRange.value)) {
     conditions.push('保养时间')
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索保养记录'
 })
 
 /** 打开计划选择器 */
-function openPlanSelector() {
-  planSelectorRef.value?.open()
+function openPlanPicker() {
+  planPickerRef.value?.open()
 }
 
 /** 打开设备选择器 */
-function openMachinerySelector() {
-  machinerySelectorRef.value?.open()
+function openMachineryPicker() {
+  machineryPickerRef.value?.open()
 }
 
 /** 选择计划 */
-function handlePlanConfirm(item: DvCheckPlanVO) {
+function handlePlanConfirm(item: DvCheckPlan) {
   selectedPlan.value = item
   formData.planId = item.id
 }
 
 /** 选择设备 */
-function handleMachineryConfirm(item: DvMachineryVO) {
+function handleMachineryConfirm(item: DvMachinery) {
   selectedMachinery.value = item
   formData.machineryId = item.id
-}
-
-/** 选择保养人 */
-function handleUserConfirm(users: User[]) {
-  selectedUserName.value = users[0]?.nickname || ''
 }
 
 /** 清空计划 */
@@ -178,54 +172,26 @@ function clearMachinery() {
   formData.machineryId = undefined
 }
 
-/** 清空保养人 */
-function clearUser() {
-  selectedUserName.value = ''
-  formData.userId = undefined
-}
-
-/** 构造搜索参数 */
-function buildParams() {
-  const params: DvMaintenRecordQueryParams = {}
-  if (formData.planId != null) {
-    params.planId = formData.planId
-  }
-  if (formData.machineryId != null) {
-    params.machineryId = formData.machineryId
-  }
-  if (formData.userId != null) {
-    params.userId = formData.userId
-  }
-  const range = formatDateRange(maintenTimeRange.value)
-  if (range) {
-    params.maintenTime = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    planId: formData.planId || undefined,
+    machineryId: formData.machineryId || undefined,
+    userId: formData.userId || undefined,
+    maintenTime: formatDateRange(maintenTimeRange.value),
+  })
 }
 
-/** 重置字段 */
-function resetFields() {
+/** 重置按钮操作 */
+function handleReset() {
   formData.planId = undefined
   formData.machineryId = undefined
   formData.userId = undefined
   selectedPlan.value = undefined
   selectedMachinery.value = undefined
-  selectedUserName.value = ''
-  maintenTimeRange.value = undefined
-}
-
-/** 重置按钮操作 */
-function handleReset() {
-  resetFields()
+  maintenTimeRange.value = [undefined, undefined]
   visible.value = false
   emit('reset')
 }
-
-defineExpose({ resetFields })
 </script>

@@ -24,81 +24,55 @@
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <MaintenRecordLineList :record-id="currentId" readonly />
-      <view v-if="hasFooter" class="mx-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx">
-        <view class="mb-20rpx text-28rpx text-[#333] font-semibold">
-          记录操作
-        </view>
-        <view class="flex gap-16rpx text-28rpx">
-          <view
-            v-if="canUpdatePrepare"
-            class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-            @click="handleEdit"
-          >
-            编辑
-          </view>
-          <view
-            v-if="canDeletePrepare"
-            class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-            :class="deleting ? 'opacity-60' : ''"
-            @click="handleDelete"
-          >
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view
-            v-if="canSubmitPrepare"
-            class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-            :class="submitting ? 'opacity-60' : ''"
-            @click="handleSubmitRecord"
-          >
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-        </view>
-      </view>
+      <MaintenRecordLineList v-if="props.id" :record-id="Number(props.id)" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooter">
-      <view
-        v-if="canUpdatePrepare"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        @click="handleEdit"
-      >
-        编辑
+    <view v-if="hasFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="canUpdatePrepare"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="canDeletePrepare"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
+          删除
+        </wd-button>
+        <wd-button
+          v-if="canSubmitPrepare"
+          class="flex-1"
+          type="success"
+          :loading="submitting"
+          @click="handleSubmitRecord"
+        >
+          提交
+        </wd-button>
       </view>
-      <view
-        v-if="canDeletePrepare"
-        class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-        :class="deleting ? 'opacity-60' : ''"
-        @click="handleDelete"
-      >
-        {{ deleting ? '删除中...' : '删除' }}
-      </view>
-      <view
-        v-if="canSubmitPrepare"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="submitting ? 'opacity-60' : ''"
-        @click="handleSubmitRecord"
-      >
-        {{ submitting ? '提交中...' : '提交' }}
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { DvMaintenRecordVO } from '@/api/mes/dv/maintenrecord'
-import { onShow } from '@dcloudio/uni-app'
+import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteMaintenRecord, getMaintenRecord, submitMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesDvMaintenRecordStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import MaintenRecordLineList from '../components/mainten-record-line-list.vue'
 
 const props = defineProps<{
@@ -115,8 +89,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
-const formData = ref<DvMaintenRecordVO>() // 详情数据
+const formData = ref<DvMaintenRecord>() // 详情数据
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
 const canUpdatePrepare = computed(() => (
@@ -140,44 +113,38 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getMaintenRecord(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getMaintenRecord(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 刷新详情 */
+function reloadDetail() {
+  if (deleting.value) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  getDetail()
 }
 
 /** 编辑 */
 function handleEdit() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/dv/maintenrecord/form/index?id=${currentId.value}`,
+    url: `/pages-mes/dv/maintenrecord/form/index?id=${props.id}`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   try {
@@ -190,7 +157,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMaintenRecord(currentId.value)
+    await deleteMaintenRecord(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:dv:maintenrecord:reload')
     delay(handleBack)
@@ -201,7 +168,7 @@ async function handleDelete() {
 
 /** 提交保养记录 */
 async function handleSubmitRecord() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -214,7 +181,7 @@ async function handleSubmitRecord() {
   }
   submitting.value = true
   try {
-    await submitMaintenRecord(currentId.value)
+    await submitMaintenRecord(Number(props.id))
     toast.success('提交成功')
     await getDetail()
     uni.$emit('mes:dv:maintenrecord:reload')
@@ -225,14 +192,12 @@ async function handleSubmitRecord() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
+  uni.$on('mes:dv:maintenrecord:reload', reloadDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+/** 卸载 */
+onUnload(() => {
+  uni.$off('mes:dv:maintenrecord:reload', reloadDetail)
 })
 </script>

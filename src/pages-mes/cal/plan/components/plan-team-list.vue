@@ -5,7 +5,7 @@
       <view class="text-30rpx text-[#333] font-semibold">
         班组
       </view>
-      <wd-button v-if="editable" size="small" type="primary" @click="openTeamPopup">
+      <wd-button v-if="editable" size="small" type="primary" @click="openForm">
         添加班组
       </wd-button>
     </view>
@@ -27,9 +27,9 @@
                 {{ item.teamCode || '-' }}
               </view>
             </view>
-            <text v-if="editable && item.id" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+            <wd-button v-if="editable && item.id" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </text>
+            </wd-button>
           </view>
           <view class="text-26rpx text-[#666]">
             备注：{{ item.remark || '-' }}
@@ -58,13 +58,13 @@
     </view>
 
     <!-- 添加班组弹层 -->
-    <wd-popup v-model="teamPopupVisible" position="bottom" :safe-area-inset-bottom="true">
+    <wd-popup v-model="formVisible" position="bottom" :safe-area-inset-bottom="true">
       <view class="max-h-[86vh] flex flex-col bg-white">
         <view class="flex items-center justify-between border-b border-[#f0f0f0] px-24rpx py-20rpx">
           <text class="text-32rpx text-[#333] font-semibold">
             添加班组
           </text>
-          <wd-icon name="close" size="36rpx" @click="teamPopupVisible = false" />
+          <wd-icon name="close" size="36rpx" @click="formVisible = false" />
         </view>
         <view class="p-24rpx">
           <wd-search v-model="teamKeyword" placeholder="搜索班组编码/名称" hide-cancel @search="loadTeamOptions" @clear="loadTeamOptions" />
@@ -94,7 +94,7 @@
           </view>
         </scroll-view>
         <view class="p-24rpx">
-          <wd-button type="primary" block :loading="saving" @click="handleCreateTeams">
+          <wd-button type="primary" block :loading="formLoading" @click="handleCreateTeams">
             添加选中班组
           </wd-button>
         </view>
@@ -104,9 +104,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { CalTeamMemberVO } from '@/api/mes/cal/team/member'
-import type { CalTeamVO } from '@/api/mes/cal/team'
-import type { CalPlanTeamVO } from '@/api/mes/cal/plan/team'
+import type { CalTeamMember } from '@/api/mes/cal/team/member'
+import type { CalTeam } from '@/api/mes/cal/team'
+import type { CalPlanTeam } from '@/api/mes/cal/plan/team'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref, watch } from 'vue'
@@ -125,16 +125,16 @@ const props = withDefaults(defineProps<{
 const dialog = useDialog()
 const toast = useToast()
 const loading = ref(false) // 计划班组加载状态
-const saving = ref(false) // 添加保存状态
-const list = ref<CalPlanTeamVO[]>([]) // 计划班组列表
+const list = ref<CalPlanTeam[]>([]) // 计划班组列表
 const selectedTeamId = ref<number>() // 当前预览班组
 const selectedTeamName = ref('') // 当前预览班组名称
 const memberLoading = ref(false) // 成员加载状态
-const memberList = ref<CalTeamMemberVO[]>([]) // 成员列表
-const teamPopupVisible = ref(false) // 添加班组弹层
+const memberList = ref<CalTeamMember[]>([]) // 成员列表
+const formVisible = ref(false) // 表单弹层显示状态
+const formLoading = ref(false) // 表单提交状态
 const teamLoading = ref(false) // 班组选项加载状态
 const teamKeyword = ref('') // 班组搜索关键字
-const teamOptions = ref<CalTeamVO[]>([]) // 可选班组
+const teamOptions = ref<CalTeam[]>([]) // 可选班组
 const selectedTeamIds = ref<number[]>([]) // 已选班组编号
 
 /** 查询计划班组 */
@@ -151,15 +151,15 @@ async function getList() {
   }
 }
 
-/** 打开添加班组弹层 */
-async function openTeamPopup() {
+/** 打开添加班组表单 */
+async function openForm() {
   if (!props.planId) {
     toast.warning('请先保存排班计划后再添加班组')
     return
   }
   selectedTeamIds.value = []
   teamKeyword.value = ''
-  teamPopupVisible.value = true
+  formVisible.value = true
   await loadTeamOptions()
 }
 
@@ -181,7 +181,7 @@ async function loadTeamOptions() {
 }
 
 /** 选择或取消班组 */
-function toggleTeam(team: CalTeamVO) {
+function toggleTeam(team: CalTeam) {
   if (!team.id) {
     return
   }
@@ -199,21 +199,21 @@ async function handleCreateTeams() {
     toast.warning('请至少选择一个班组')
     return
   }
-  saving.value = true
+  formLoading.value = true
   try {
     for (const teamId of selectedTeamIds.value) {
       await createPlanTeam({ planId: props.planId, teamId })
     }
     toast.success(`成功添加 ${selectedTeamIds.value.length} 个班组`)
-    teamPopupVisible.value = false
+    formVisible.value = false
     await getList()
   } finally {
-    saving.value = false
+    formLoading.value = false
   }
 }
 
 /** 删除计划班组 */
-async function handleDelete(item: CalPlanTeamVO) {
+async function handleDelete(item: CalPlanTeam) {
   if (!item.id) {
     return
   }
@@ -236,7 +236,7 @@ async function handleDelete(item: CalPlanTeamVO) {
 }
 
 /** 预览班组成员 */
-async function handlePreviewMembers(item: CalPlanTeamVO) {
+async function handlePreviewMembers(item: CalPlanTeam) {
   selectedTeamId.value = item.teamId
   selectedTeamName.value = item.teamName || `班组 #${item.teamId}`
   memberLoading.value = true
@@ -247,11 +247,10 @@ async function handlePreviewMembers(item: CalPlanTeamVO) {
   }
 }
 
+/** 监听计划编号变化 */
 watch(
   () => props.planId,
   () => getList(),
   { immediate: true },
 )
-
-defineExpose({ reload: getList })
 </script>

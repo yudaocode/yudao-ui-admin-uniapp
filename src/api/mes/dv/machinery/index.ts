@@ -8,9 +8,9 @@ export interface DvMachinery {
   name: string
   brand?: string
   specification?: string
-  machineryTypeId: number
+  machineryTypeId?: number
   machineryTypeName?: string
-  workshopId: number
+  workshopId?: number
   workshopName?: string
   status: number
   lastMaintenTime?: string | Date

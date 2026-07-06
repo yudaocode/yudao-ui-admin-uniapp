@@ -104,7 +104,12 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getItemType(Number(props.id))
+  try {
+    toast.loading('加载中...')
+    formData.value = await getItemType(Number(props.id))
+  } finally {
+    toast.close()
+  }
 }
 
 /** 新增子分类 */

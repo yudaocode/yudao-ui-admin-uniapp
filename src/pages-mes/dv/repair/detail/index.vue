@@ -31,109 +31,71 @@
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <RepairLineList :repair-id="currentId" readonly />
-      <view v-if="hasFooter" class="mx-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx">
-        <view class="mb-20rpx text-28rpx text-[#333] font-semibold">
-          工单操作
-        </view>
-        <view class="flex gap-16rpx text-28rpx">
-          <view
-            v-if="canUpdatePrepare"
-            class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-            @click="handleEdit"
-          >
-            编辑
-          </view>
-          <view
-            v-if="canDeletePrepare"
-            class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-            :class="deleting ? 'opacity-60' : ''"
-            @click="handleDelete"
-          >
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view
-            v-if="canSubmitPrepare"
-            class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-            :class="submitting ? 'opacity-60' : ''"
-            @click="handleSubmitRepair"
-          >
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-          <view
-            v-if="canConfirmRepair"
-            class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-            @click="handleConfirm"
-          >
-            完成维修
-          </view>
-          <view
-            v-if="canFinishRepair"
-            class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-            @click="handleFinish"
-          >
-            验收
-          </view>
-        </view>
-      </view>
+      <RepairLineList v-if="props.id" :repair-id="Number(props.id)" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooter">
-      <view
-        v-if="canUpdatePrepare"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        @click="handleEdit"
-      >
-        编辑
+    <view v-if="hasFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="canUpdatePrepare"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="canDeletePrepare"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
+          删除
+        </wd-button>
+        <wd-button
+          v-if="canSubmitPrepare"
+          class="flex-1"
+          type="success"
+          :loading="submitting"
+          @click="handleSubmitRepair"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="canConfirmRepair"
+          class="flex-1"
+          type="success"
+          @click="handleConfirm"
+        >
+          完成维修
+        </wd-button>
+        <wd-button
+          v-if="canFinishRepair"
+          class="flex-1"
+          type="success"
+          @click="handleFinish"
+        >
+          验收
+        </wd-button>
       </view>
-      <view
-        v-if="canDeletePrepare"
-        class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-        :class="deleting ? 'opacity-60' : ''"
-        @click="handleDelete"
-      >
-        {{ deleting ? '删除中...' : '删除' }}
-      </view>
-      <view
-        v-if="canSubmitPrepare"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitting ? 'opacity-60' : ''"
-        @click="handleSubmitRepair"
-      >
-        {{ submitting ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="canConfirmRepair"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        @click="handleConfirm"
-      >
-        完成维修
-      </view>
-      <view
-        v-if="canFinishRepair"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        @click="handleFinish"
-      >
-        验收
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { DvRepairVO } from '@/api/mes/dv/repair'
-import { onShow } from '@dcloudio/uni-app'
+import type { DvRepair } from '@/api/mes/dv/repair'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteRepair, getRepair, submitRepair } from '@/api/mes/dv/repair'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesDvRepairStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import RepairLineList from '../components/repair-line-list.vue'
 
 const props = defineProps<{
@@ -150,8 +112,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<DvRepairVO>() // 详情数据
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const formData = ref<DvRepair>() // 详情数据
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
 const canUpdatePrepare = computed(() => (
@@ -189,44 +150,38 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getRepair(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getRepair(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 刷新详情 */
+function reloadDetail() {
+  if (deleting.value) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  getDetail()
 }
 
 /** 编辑 */
 function handleEdit() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${currentId.value}`,
+    url: `/pages-mes/dv/repair/form/index?id=${props.id}`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   try {
@@ -239,7 +194,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRepair(currentId.value)
+    await deleteRepair(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:dv:repair:reload')
     delay(handleBack)
@@ -250,7 +205,7 @@ async function handleDelete() {
 
 /** 提交维修工单 */
 async function handleSubmitRepair() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -263,7 +218,7 @@ async function handleSubmitRepair() {
   }
   submitting.value = true
   try {
-    await submitRepair(currentId.value)
+    await submitRepair(Number(props.id))
     toast.success('提交成功')
     await getDetail()
     uni.$emit('mes:dv:repair:reload')
@@ -274,28 +229,32 @@ async function handleSubmitRepair() {
 
 /** 完成维修 */
 function handleConfirm() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${currentId.value}&mode=confirm`,
+    url: `/pages-mes/dv/repair/form/index?id=${props.id}&mode=confirm`,
   })
 }
 
 /** 验收 */
 function handleFinish() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/dv/repair/form/index?id=${currentId.value}&mode=finish`,
+    url: `/pages-mes/dv/repair/form/index?id=${props.id}&mode=finish`,
   })
 }
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
+  uni.$on('mes:dv:repair:reload', reloadDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+/** 卸载 */
+onUnload(() => {
+  uni.$off('mes:dv:repair:reload', reloadDetail)
 })
 </script>

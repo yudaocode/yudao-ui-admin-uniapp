@@ -4,18 +4,18 @@ import { http } from '@/http/http'
 /** MES 设备保养记录 */
 export interface DvMaintenRecord {
   id?: number // 编号
-  planId: number // 计划编号
+  planId?: number // 计划编号
   planCode?: string // 计划编码
   planName?: string // 计划名称
   planCycleCount?: number // 频率数量
   planCycleType?: number // 频率类型
-  machineryId: number // 设备编号
+  machineryId?: number // 设备编号
   machineryCode?: string // 设备编码
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
   maintenTime?: string | Date // 保养时间
-  userId: number // 用户编号
+  userId?: number // 用户编号
   nickname?: string // 保养人名称
   status?: number // 状态
   remark?: string // 备注
