@@ -1,10 +1,19 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar title="排班计划详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="班次" name="shifts" />
+        <wd-tab title="班组" name="teams" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="计划编码" :value="formData?.code || '-'" />
         <wd-cell title="计划名称" :value="formData?.name || '-'" />
@@ -30,13 +39,26 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
-      <PlanShiftList v-if="props.id" :plan-id="Number(props.id)" :editable="false" />
-      <PlanTeamList v-if="props.id" :plan-id="Number(props.id)" :editable="false" />
       <view class="h-180rpx" />
     </scroll-view>
 
+    <!-- 班次 -->
+    <scroll-view v-if="tabType === 'shifts' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <PlanShiftList :plan-id="Number(props.id)" :editable="false" :show-title="false" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 班组 -->
+    <scroll-view v-if="tabType === 'teams' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <PlanTeamList :plan-id="Number(props.id)" :editable="false" :show-title="false" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
     <!-- 底部操作按钮 -->
-    <view class="yd-detail-footer">
+    <view
+      v-if="tabType === 'basic' && isPrepare && (hasAccessByCodes(['mes:cal-plan:update']) || hasAccessByCodes(['mes:cal-plan:delete']))"
+      class="yd-detail-footer"
+    >
       <view class="yd-detail-footer-actions">
         <wd-button v-if="isPrepare && hasAccessByCodes(['mes:cal-plan:update'])" class="flex-1" type="warning" @click="handleEdit">
           编辑
@@ -76,6 +98,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<CalPlan>() // 详情数据
 const deleting = ref(false) // 删除状态
+const tabType = ref('basic') // 当前 tab 类型
 const isPrepare = computed(() => formData.value?.status === MesCalPlanStatusEnum.PREPARE)
 
 /** 返回上一页 */

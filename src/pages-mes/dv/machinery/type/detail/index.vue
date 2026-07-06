@@ -95,14 +95,6 @@ async function getDetail() {
   }
 }
 
-/** 刷新详情 */
-function reloadDetail() {
-  if (deleting.value) {
-    return
-  }
-  getDetail()
-}
-
 /** 新增子类型 */
 function handleAddChild() {
   if (!props.id) {
@@ -143,12 +135,12 @@ async function handleDelete() {
 /** 初始化 */
 onMounted(async () => {
   machineryTypeList.value = await getMachineryTypeSimpleList()
-  uni.$on('mes:dv:machinery-type:reload', reloadDetail)
+  uni.$on('mes:dv:machinery-type:reload', getDetail)
   await getDetail()
 })
 
 /** 卸载 */
 onUnload(() => {
-  uni.$off('mes:dv:machinery-type:reload', reloadDetail)
+  uni.$off('mes:dv:machinery-type:reload', getDetail)
 })
 </script>

@@ -23,37 +23,38 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="canUpdate"
-        class="flex-1"
-        type="warning"
-        @click="handleEdit"
-      >
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="canDelete"
-        class="flex-1"
-        type="danger"
-        :loading="deleting"
-        @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="hasAccessByCodes(['mes:qc-defect:update'])"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:qc-defect:delete'])"
+          class="flex-1"
+          type="danger"
+          :loading="deleting"
+          @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { QcDefectVO } from '@/api/mes/qc/defect'
-import { onShow } from '@dcloudio/uni-app'
+import type { QcDefect } from '@/api/mes/qc/defect'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { deleteDefect, getDefect } from '@/api/mes/qc/defect'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -70,11 +71,8 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<QcDefectVO>() // 详情数据
+const formData = ref<QcDefect>() // 详情数据
 const deleting = ref(false) // 删除状态
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
-const canUpdate = computed(() => hasAccessByCodes(['mes:qc-defect:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:qc-defect:delete']))
 
 /** 返回上一页 */
 function handleBack() {
@@ -83,42 +81,28 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getDefect(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getDefect(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 编辑 */
+function handleEdit() {
+  if (!props.id) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
-/** 编辑缺陷类型 */
-function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/qc/defect/form/index?id=${currentId.value}` })
+  uni.navigateTo({ url: `/pages-mes/qc/defect/form/index?id=${props.id}` })
 }
 
 /** 删除缺陷类型 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -131,7 +115,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDefect(currentId.value)
+    await deleteDefect(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:qc:defect:reload')
     delay(handleBack)
@@ -142,14 +126,12 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  initPage()
+  uni.$on('mes:qc:defect:reload', getDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+/** 卸载 */
+onUnload(() => {
+  uni.$off('mes:qc:defect:reload', getDetail)
 })
 </script>

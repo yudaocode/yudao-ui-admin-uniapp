@@ -1,10 +1,19 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar title="生产工单详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="工单 BOM" name="bom" />
+        <wd-tab title="物料需求" name="items" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="工单编码" :value="formData?.code || '-'" />
         <wd-cell title="工单名称" :value="formData?.name || '-'" />
@@ -39,18 +48,29 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
+      <view class="h-180rpx" />
+    </scroll-view>
+
+    <!-- 工单 BOM -->
+    <scroll-view v-if="tabType === 'bom'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <WorkOrderBomList
         :work-order-id="workOrderId"
         :work-order="formData"
         readonly
+        :show-title="false"
         @generate-work-order="handleGenerateWorkOrder"
       />
-      <WorkOrderItemList :work-order-id="workOrderId" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 物料需求 -->
+    <scroll-view v-if="tabType === 'items'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <WorkOrderItemList :work-order-id="workOrderId" :show-title="false" />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <view class="yd-detail-footer">
+    <view v-if="tabType === 'basic' && formData" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button v-if="formData" class="flex-1" variant="plain" @click="handleBarcode">
           条码
@@ -106,6 +126,7 @@ const toast = useToast()
 const formData = ref<ProWorkOrder>() // 详情数据
 const deleting = ref(false) // 删除状态
 const workOrderId = computed(() => formData.value?.id)
+const tabType = ref('basic') // 当前 tab 类型
 const canEdit = computed(() =>
   hasAccessByCodes(['mes:pro-work-order:update']) && formData.value?.status === MesProWorkOrderStatusEnum.PREPARE,
 )

@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         检测指标项
       </view>
@@ -44,10 +44,10 @@
           <text class="text-[#999]">检测方法：</text>{{ item.checkMethod || '-' }}
         </view>
         <view class="mb-8rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">标准值：</text>{{ formatNumber(item.standardValue) }} {{ item.unitMeasureName || '' }}
+          <text class="text-[#999]">标准值：</text>{{ formatDisplayValue(item.standardValue) }} {{ item.unitMeasureName || '' }}
         </view>
         <view class="mb-16rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">误差范围：</text>{{ formatNumber(item.thresholdMin) }} ~ {{ formatNumber(item.thresholdMax) }}
+          <text class="text-[#999]">误差范围：</text>{{ formatDisplayValue(item.thresholdMin) }} ~ {{ formatDisplayValue(item.thresholdMax) }}
         </view>
         <view v-if="hasAccessByCodes(['mes:qc-template:update'])" class="flex gap-16rpx">
           <wd-button class="flex-1" size="small" variant="plain" @click="handleEdit(item)">
@@ -75,7 +75,7 @@
           <view class="text-32rpx text-[#333] font-semibold">
             {{ editingId ? '编辑检测指标项' : '新增检测指标项' }}
           </view>
-          <wd-button size="small" type="primary" :loading="saving" @click="handleSubmit">
+          <wd-button size="small" type="primary" :loading="formLoading" @click="handleSubmit">
             保存
           </wd-button>
         </view>
@@ -83,24 +83,16 @@
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
             <wd-cell-group border>
-              <wd-form-item title="质检指标" title-width="220rpx" prop="indicatorId">
-                <view class="w-full" @click="indicatorSelectorRef?.open(formData.indicatorId)">
-                  <wd-input :model-value="indicatorDisplay" placeholder="请选择质检指标" readonly />
-                </view>
-              </wd-form-item>
+              <wd-form-item title="质检指标" title-width="220rpx" prop="indicatorId" is-link :value="indicatorDisplay" placeholder="请选择质检指标" @click="indicatorPickerRef?.open(formData.indicatorId)" />
               <wd-form-item title="标准值" title-width="220rpx" prop="standardValue">
-                <wd-input-number v-model="formData.standardValue" :min="-999999999" :max="999999999" :precision="4" />
+                <wd-input-number v-model="formData.standardValue" allow-null :min="-999999999" :max="999999999" :precision="4" />
               </wd-form-item>
-              <wd-form-item title="计量单位" title-width="220rpx" prop="unitMeasureId">
-                <view class="w-full" @click="unitSelectorRef?.open(formData.unitMeasureId)">
-                  <wd-input :model-value="unitDisplay" placeholder="请选择计量单位" readonly />
-                </view>
-              </wd-form-item>
+              <wd-form-item title="计量单位" title-width="220rpx" prop="unitMeasureId" is-link :value="unitDisplay" placeholder="请选择计量单位" @click="unitPickerRef?.open(formData.unitMeasureId)" />
               <wd-form-item title="误差上限" title-width="220rpx" prop="thresholdMax">
-                <wd-input-number v-model="formData.thresholdMax" :min="-999999999" :max="999999999" :precision="4" />
+                <wd-input-number v-model="formData.thresholdMax" allow-null :min="-999999999" :max="999999999" :precision="4" />
               </wd-form-item>
               <wd-form-item title="误差下限" title-width="220rpx" prop="thresholdMin">
-                <wd-input-number v-model="formData.thresholdMin" :min="-999999999" :max="999999999" :precision="4" />
+                <wd-input-number v-model="formData.thresholdMin" allow-null :min="-999999999" :max="999999999" :precision="4" />
               </wd-form-item>
               <wd-form-item title="检测方法" title-width="220rpx" prop="checkMethod">
                 <wd-textarea v-model="formData.checkMethod" placeholder="请输入检测方法" :maxlength="500" show-word-limit clearable />
@@ -118,20 +110,17 @@
       </view>
     </wd-popup>
 
-    <QcIndicatorSelector ref="indicatorSelectorRef" @confirm="handleIndicatorConfirm" />
-    <UnitMeasureSelector ref="unitSelectorRef" @confirm="handleUnitConfirm" />
+    <wd-fab v-if="!showTitle && hasAccessByCodes(['mes:qc-template:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+    <QcIndicatorPicker ref="indicatorPickerRef" @confirm="handleIndicatorConfirm" />
+    <UnitMeasurePicker ref="unitPickerRef" @confirm="handleUnitConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdUnitMeasureVO } from '@/api/mes/md/unitmeasure'
-import type { QcIndicatorVO } from '@/api/mes/qc/indicator'
-import type {
-  QcTemplateIndicatorCreateReqVO,
-  QcTemplateIndicatorUpdateReqVO,
-  QcTemplateIndicatorVO,
-} from '@/api/mes/qc/template/indicator'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
+import type { QcIndicator } from '@/api/mes/qc/indicator'
+import type { QcTemplateIndicator } from '@/api/mes/qc/template/indicator'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -143,36 +132,34 @@ import {
   updateTemplateIndicator,
 } from '@/api/mes/qc/template/indicator'
 import { useAccess } from '@/hooks/useAccess'
+import { formatDisplayValue } from '@/utils/format'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import QcIndicatorSelector from './qc-indicator-selector.vue'
-import UnitMeasureSelector from './unit-measure-selector.vue'
+import UnitMeasurePicker from '@/pages-mes/md/unitmeasure/components/unit-measure-picker.vue'
+import QcIndicatorPicker from '@/pages-mes/qc/indicator/components/qc-indicator-picker.vue'
 
-const props = defineProps<{ templateId: number }>()
+const props = withDefaults(defineProps<{
+  templateId: number
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<QcTemplateIndicatorVO[]>([]) // 检测指标项
+const list = ref<QcTemplateIndicator[]>([]) // 检测指标项
 const loading = ref(false) // 列表加载状态
 const formVisible = ref(false) // 表单弹层状态
-const saving = ref(false) // 保存状态
+const formLoading = ref(false) // 表单提交状态
 const editingId = ref<number>() // 当前编辑编号
 const formRef = ref<FormInstance>() // 表单组件引用
-const indicatorSelectorRef = ref<InstanceType<typeof QcIndicatorSelector>>() // 指标选择器
-const unitSelectorRef = ref<InstanceType<typeof UnitMeasureSelector>>() // 单位选择器
-const selectedIndicator = ref<QcIndicatorVO>() // 当前选择指标
-const selectedUnit = ref<MdUnitMeasureVO>() // 当前选择单位
-const formData = ref<Partial<QcTemplateIndicatorVO>>({
+const indicatorPickerRef = ref<InstanceType<typeof QcIndicatorPicker>>() // 指标选择器
+const unitPickerRef = ref<InstanceType<typeof UnitMeasurePicker>>() // 单位选择器
+const selectedIndicator = ref<QcIndicator>() // 当前选择指标
+const selectedUnit = ref<MdUnitMeasure>() // 当前选择单位
+const formData = ref<QcTemplateIndicator>({
   templateId: props.templateId,
-  indicatorId: undefined,
-  checkMethod: '',
-  standardValue: undefined,
-  unitMeasureId: undefined,
-  thresholdMax: undefined,
-  thresholdMin: undefined,
-  docUrl: '',
-  remark: '',
 }) // 表单数据
 
 const formSchema = createFormSchema({
@@ -216,14 +203,6 @@ function resetForm() {
   selectedUnit.value = undefined
   formData.value = {
     templateId: props.templateId,
-    indicatorId: undefined,
-    checkMethod: '',
-    standardValue: undefined,
-    unitMeasureId: undefined,
-    thresholdMax: undefined,
-    thresholdMin: undefined,
-    docUrl: '',
-    remark: '',
   }
 }
 
@@ -234,7 +213,7 @@ function handleAdd() {
 }
 
 /** 编辑检测指标项 */
-async function handleEdit(item: QcTemplateIndicatorVO) {
+async function handleEdit(item: QcTemplateIndicator) {
   resetForm()
   formVisible.value = true
   const data = await getTemplateIndicator(item.id)
@@ -243,7 +222,7 @@ async function handleEdit(item: QcTemplateIndicatorVO) {
 }
 
 /** 选择质检指标 */
-function handleIndicatorConfirm(item: QcIndicatorVO) {
+function handleIndicatorConfirm(item: QcIndicator) {
   selectedIndicator.value = item
   formData.value.indicatorId = item.id
   formData.value.indicatorCode = item.code
@@ -253,7 +232,7 @@ function handleIndicatorConfirm(item: QcIndicatorVO) {
 }
 
 /** 选择计量单位 */
-function handleUnitConfirm(item: MdUnitMeasureVO) {
+function handleUnitConfirm(item: MdUnitMeasure) {
   if (!item.id) {
     return
   }
@@ -263,31 +242,20 @@ function handleUnitConfirm(item: MdUnitMeasureVO) {
 }
 
 /** 构造提交数据 */
-function buildSubmitData(): QcTemplateIndicatorCreateReqVO | QcTemplateIndicatorUpdateReqVO {
-  const data = {
+function buildSubmitData(): QcTemplateIndicator {
+  return {
+    ...formData.value,
     templateId: props.templateId,
-    indicatorId: Number(formData.value.indicatorId),
-    checkMethod: formData.value.checkMethod || undefined,
-    standardValue: formData.value.standardValue,
-    unitMeasureId: formData.value.unitMeasureId,
-    thresholdMax: formData.value.thresholdMax,
-    thresholdMin: formData.value.thresholdMin,
-    docUrl: formData.value.docUrl || undefined,
-    remark: formData.value.remark || undefined,
   }
-  if (editingId.value) {
-    return { ...data, id: editingId.value }
-  }
-  return data
 }
 
 /** 提交检测指标项 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
-  saving.value = true
+  formLoading.value = true
   try {
     const data = buildSubmitData()
     if (editingId.value) {
@@ -300,12 +268,12 @@ async function handleSubmit() {
     formVisible.value = false
     await loadList()
   } finally {
-    saving.value = false
+    formLoading.value = false
   }
 }
 
 /** 删除检测指标项 */
-async function handleDelete(item: QcTemplateIndicatorVO) {
+async function handleDelete(item: QcTemplateIndicator) {
   try {
     await dialog.confirm({
       title: '提示',
@@ -319,17 +287,8 @@ async function handleDelete(item: QcTemplateIndicatorVO) {
   await loadList()
 }
 
-/** 格式化数值 */
-function formatNumber(value?: number | string) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return String(value)
-}
-
+/** 初始化 */
 onMounted(() => {
   loadList()
 })
-
-defineExpose({ loadList })
 </script>

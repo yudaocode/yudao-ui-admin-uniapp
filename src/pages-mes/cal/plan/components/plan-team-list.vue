@@ -1,7 +1,7 @@
 <template>
   <view class="mt-24rpx bg-white">
     <!-- 班组标题 -->
-    <view class="flex items-center justify-between px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         班组
       </view>
@@ -117,9 +117,11 @@ import { getTeamMemberListByTeam } from '@/api/mes/cal/team/member'
 const props = withDefaults(defineProps<{
   planId?: number
   editable?: boolean
+  showTitle?: boolean
 }>(), {
   planId: undefined,
   editable: false,
+  showTitle: true,
 })
 
 const dialog = useDialog()

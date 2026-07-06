@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx">
-    <view class="mb-16rpx px-24rpx text-28rpx text-[#333] font-semibold">
+    <view v-if="showTitle" class="mb-16rpx px-24rpx text-28rpx text-[#333] font-semibold">
       BOM 物资消耗
     </view>
     <view v-if="loading" class="flex justify-center py-24rpx">
@@ -30,9 +30,12 @@ import type { WmItemConsumeLine } from '@/api/mes/wm/itemconsume/line'
 import { ref, watch } from 'vue'
 import { getItemConsumeLinePage } from '@/api/mes/wm/itemconsume/line'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   feedbackId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const loading = ref(false) // 列表加载状态
 const list = ref<WmItemConsumeLine[]>([]) // 消耗行列表

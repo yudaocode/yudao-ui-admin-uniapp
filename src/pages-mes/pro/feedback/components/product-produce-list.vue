@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx">
-    <view class="mb-16rpx px-24rpx text-28rpx text-[#333] font-semibold">
+    <view v-if="showTitle" class="mb-16rpx px-24rpx text-28rpx text-[#333] font-semibold">
       产品产出
     </view>
     <view v-if="loading" class="flex justify-center py-24rpx">
@@ -34,9 +34,12 @@ import { ref, watch } from 'vue'
 import { getProductProduceLinePage } from '@/api/mes/wm/productproduce/line'
 import { DICT_TYPE } from '@/utils/constants'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   feedbackId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const loading = ref(false) // 列表加载状态
 const list = ref<WmProductProduceLine[]>([]) // 产出行列表

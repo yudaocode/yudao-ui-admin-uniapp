@@ -19,46 +19,10 @@
         </view>
         <wd-input v-model="formData.code" placeholder="请输入检验单编号" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="检验类型" :dict-type="DICT_TYPE.MES_IPQC_TYPE" all-option :all-value="undefined" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          生产工单
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <wd-input
-            :model-value="selectedWorkOrderName"
-            placeholder="请选择生产工单"
-            clearable
-            readonly
-            class="min-w-0 flex-1"
-            @click="openWorkOrderSelector"
-            @clear="clearWorkOrder"
-          />
-          <wd-button size="small" @click="openWorkOrderSelector">
-            选择
-          </wd-button>
-        </view>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          产品物料
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <wd-input
-            :model-value="selectedItemName"
-            placeholder="请选择产品物料"
-            clearable
-            readonly
-            class="min-w-0 flex-1"
-            @click="openItemSelector"
-            @clear="clearItem"
-          />
-          <wd-button size="small" @click="openItemSelector">
-            选择
-          </wd-button>
-        </view>
-      </view>
-      <yd-search-picker v-model="formData.checkResult" label="检测结果" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="检验类型" :dict-type="DICT_TYPE.MES_IPQC_TYPE" all-option />
+      <WorkOrderSearchPicker ref="workOrderSearchPickerRef" v-model="formData.workOrderId" label="生产工单" placeholder="请选择生产工单" />
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="产品物料" placeholder="请选择产品物料" title="选择产品物料" />
+      <yd-search-picker v-model="formData.checkResult" label="检测结果" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -69,38 +33,30 @@
       </view>
     </view>
   </wd-popup>
-
-  <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-  <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import type { QcIpqcPageParam } from '@/api/mes/qc/ipqc'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import WorkOrderSelector from '@/pages-mes/pro/card/components/workorder-selector.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+import WorkOrderSearchPicker from '@/pages-mes/pro/workorder/components/workorder-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<QcIpqcPageParam>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const selectedWorkOrderName = ref('') // 已选工单展示名
-const selectedItemName = ref('') // 已选物料展示名
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
+const workOrderSearchPickerRef = ref<InstanceType<typeof WorkOrderSearchPicker>>() // 工单搜索选择器
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 const formData = reactive({
   code: '',
-  type: undefined as number | undefined,
-  workOrderId: undefined as number | undefined,
-  itemId: undefined as number | undefined,
-  checkResult: undefined as number | undefined,
+  type: undefined,
+  workOrderId: undefined,
+  itemId: undefined,
+  checkResult: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -109,100 +65,41 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`编号:${formData.code}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_IPQC_TYPE, formData.type) || formData.type}`)
   }
   if (formData.workOrderId != null) {
-    conditions.push(`工单:${selectedWorkOrderName.value || formData.workOrderId}`)
+    conditions.push(`工单:${workOrderSearchPickerRef.value?.format(formData.workOrderId) || formData.workOrderId}`)
   }
   if (formData.itemId != null) {
-    conditions.push(`物料:${selectedItemName.value || formData.itemId}`)
+    conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.checkResult != null) {
+  if (formData.checkResult != null && formData.checkResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索过程检验单（IPQC）'
 })
 
-/** 打开工单选择器 */
-function openWorkOrderSelector() {
-  workOrderSelectorRef.value?.open(formData.workOrderId)
-}
-
-/** 清空工单 */
-function clearWorkOrder() {
-  formData.workOrderId = undefined
-  selectedWorkOrderName.value = ''
-}
-
-/** 确认工单 */
-function handleWorkOrderConfirm(workOrder: ProWorkOrderVO) {
-  formData.workOrderId = workOrder.id
-  selectedWorkOrderName.value = `${workOrder.code || '-'} ${workOrder.name || ''}`.trim()
-}
-
-/** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 清空物料 */
-function clearItem() {
-  formData.itemId = undefined
-  selectedItemName.value = ''
-}
-
-/** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  formData.itemId = item?.id
-  selectedItemName.value = item ? `${item.code || '-'} ${item.name || ''}`.trim() : ''
-}
-
-/** 构造搜索参数 */
-function buildParams(): Partial<QcIpqcPageParam> {
-  const params: Partial<QcIpqcPageParam> = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.type != null) {
-    params.type = formData.type
-  }
-  if (formData.workOrderId != null) {
-    params.workOrderId = formData.workOrderId
-  }
-  if (formData.itemId != null) {
-    params.itemId = formData.itemId
-  }
-  if (formData.checkResult != null) {
-    params.checkResult = formData.checkResult
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    type: formData.type === -1 ? undefined : formData.type,
+    workOrderId: formData.workOrderId,
+    itemId: formData.itemId,
+    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
+  })
 }
 
-/** 重置字段 */
-function resetFields() {
+/** 重置按钮操作 */
+function handleReset() {
   formData.code = ''
   formData.type = undefined
   formData.workOrderId = undefined
   formData.itemId = undefined
   formData.checkResult = undefined
-  selectedWorkOrderName.value = ''
-  selectedItemName.value = ''
-}
-
-/** 重置按钮操作 */
-function handleReset() {
-  resetFields()
   visible.value = false
   emit('reset')
 }
-
-defineExpose({ resetFields })
 </script>

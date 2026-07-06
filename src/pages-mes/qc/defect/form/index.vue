@@ -10,7 +10,7 @@
           <wd-form-item title="缺陷编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -19,20 +19,8 @@
           <wd-form-item title="缺陷描述" title-width="220rpx" prop="name">
             <wd-textarea v-model="formData.name" placeholder="请输入缺陷描述" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
-          <wd-form-item title="检测项类型" title-width="220rpx" prop="type">
-            <wd-radio-group v-model="formData.type" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_INDICATOR_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <wd-form-item title="缺陷等级" title-width="220rpx" prop="level">
-            <wd-radio-group v-model="formData.level" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_DEFECT_LEVEL)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.type" label="检测项类型" label-width="220rpx" prop="type" :dict-type="DICT_TYPE.MES_INDICATOR_TYPE" placeholder="请选择检测项类型" />
+          <yd-form-picker v-model="formData.level" label="缺陷等级" label-width="220rpx" prop="level" :dict-type="DICT_TYPE.MES_DEFECT_LEVEL" placeholder="请选择缺陷等级" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -42,31 +30,28 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { QcDefectCreateReqVO, QcDefectUpdateReqVO, QcDefectVO } from '@/api/mes/qc/defect'
+import type { QcDefect } from '@/api/mes/qc/defect'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createDefect, getDefect, updateDefect } from '@/api/mes/qc/defect'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
-const MesAutoCodeRuleCode = {
-  QC_DEFECT_CODE: 'QC_DEFECT_CODE',
-} as const
 
 definePage({
   style: {
@@ -76,10 +61,13 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑缺陷类型' : '新增缺陷类型')
+const getTitle = computed(() => props.id ? '编辑缺陷类型' : '新增缺陷类型')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Partial<QcDefectVO>>(getDefaultFormData()) // 表单数据
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<QcDefect>({
+  code: '',
+  name: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '缺陷编码不能为空' }],
   name: [{ required: true, message: '缺陷描述不能为空' }],
@@ -88,17 +76,6 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 
-/** 默认表单数据 */
-function getDefaultFormData(): Partial<QcDefectVO> {
-  return {
-    code: '',
-    name: '',
-    type: undefined,
-    level: undefined,
-    remark: '',
-  }
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/qc/defect/index')
@@ -106,65 +83,40 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  formData.value = {
-    ...getDefaultFormData(),
-    ...await getDefect(currentId.value),
-  }
-}
-
-/** 加载页面数据 */
-async function loadPageData() {
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
+  formData.value = await getDefect(Number(props.id))
 }
 
 /** 生成缺陷编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.QC_DEFECT_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): QcDefectCreateReqVO | QcDefectUpdateReqVO {
-  const data = {
-    code: formData.value.code || '',
-    name: formData.value.name || '',
-    type: Number(formData.value.type),
-    level: Number(formData.value.level),
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateDefect(data)
+    if (props.id) {
+      await updateDefect(formData.value)
       toast.success('修改成功')
     } else {
-      await createDefect(data)
+      await createDefect(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:qc:defect:reload')
@@ -176,11 +128,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  loadPageData()
-})
-
-/** 路由变化 */
-watch(currentId, () => {
-  loadPageData()
+  getDetail()
 })
 </script>

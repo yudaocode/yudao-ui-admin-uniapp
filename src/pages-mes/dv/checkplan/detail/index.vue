@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="MES 点检方案详情"
@@ -7,8 +7,17 @@
       @click-left="handleBack"
     />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="设备清单" name="machinery" />
+        <wd-tab title="项目清单" name="subjects" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="方案编码" :value="formData?.code || '-'" />
         <wd-cell title="方案名称" :value="formData?.name || '-'" />
@@ -30,13 +39,23 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <MachineryList v-if="props.id" :plan-id="Number(props.id)" readonly />
-      <SubjectList v-if="props.id" :plan-id="Number(props.id)" :type="formData?.type" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
+    <!-- 设备清单 -->
+    <scroll-view v-if="tabType === 'machinery' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <MachineryList :plan-id="Number(props.id)" readonly :show-title="false" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 项目清单 -->
+    <scroll-view v-if="tabType === 'subjects' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <SubjectList :plan-id="Number(props.id)" :type="formData?.type" readonly :show-title="false" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
     <!-- 底部操作按钮 -->
-    <view v-if="hasFooter" class="yd-detail-footer">
+    <view v-if="tabType === 'basic' && hasFooter" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="canUpdatePrepare"
@@ -97,6 +116,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<DvCheckPlan>() // 详情数据
 const deleting = ref(false) // 删除状态
+const tabType = ref('basic') // 当前 tab 类型
 const canUpdatePrepare = computed(() => (
   hasAccessByCodes(['mes:dv-check-plan:update'])
   && formData.value?.status === MesDvCheckPlanStatusEnum.PREPARE
@@ -124,7 +144,7 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -133,14 +153,6 @@ async function getDetail() {
   } finally {
     toast.close()
   }
-}
-
-/** 刷新详情 */
-function reloadDetail() {
-  if (deleting.value) {
-    return
-  }
-  getDetail()
 }
 
 /** 编辑 */
@@ -217,12 +229,12 @@ async function handleDisable() {
 
 /** 初始化 */
 onMounted(() => {
-  uni.$on('mes:dv:checkplan:reload', reloadDetail)
+  uni.$on('mes:dv:checkplan:reload', getDetail)
   getDetail()
 })
 
 /** 卸载 */
 onUnload(() => {
-  uni.$off('mes:dv:checkplan:reload', reloadDetail)
+  uni.$off('mes:dv:checkplan:reload', getDetail)
 })
 </script>

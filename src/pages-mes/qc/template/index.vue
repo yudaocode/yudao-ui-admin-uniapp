@@ -4,7 +4,7 @@
     <wd-navbar title="质检方案" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 质检方案列表 -->
     <z-paging
@@ -74,9 +74,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcTemplatePageParam, QcTemplateVO } from '@/api/mes/qc/template'
+import type { QcTemplate } from '@/api/mes/qc/template'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getTemplatePage } from '@/api/mes/qc/template'
 import { useAccess } from '@/hooks/useAccess'
@@ -93,15 +92,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const list = ref<QcTemplateVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<QcTemplateVO>>() // 分页组件引用
-const queryParams = ref<Partial<QcTemplatePageParam>>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
+const list = ref<QcTemplate[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<QcTemplate>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询质检方案列表 */
@@ -115,16 +112,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<QcTemplatePageParam>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -138,7 +133,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: QcTemplateVO) {
+function handleDetail(item: QcTemplate) {
   uni.navigateTo({ url: `/pages-mes/qc/template/detail/index?id=${item.id}` })
 }
 

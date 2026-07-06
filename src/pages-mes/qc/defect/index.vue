@@ -4,7 +4,7 @@
     <wd-navbar title="缺陷类型" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 缺陷类型列表 -->
     <z-paging
@@ -63,9 +63,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcDefectPageParam, QcDefectVO } from '@/api/mes/qc/defect'
+import type { QcDefect } from '@/api/mes/qc/defect'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getDefectPage } from '@/api/mes/qc/defect'
 import { useAccess } from '@/hooks/useAccess'
@@ -82,15 +81,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const list = ref<QcDefectVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<QcDefectVO>>() // 分页组件引用
-const queryParams = ref<Partial<QcDefectPageParam>>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
+const list = ref<QcDefect[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<QcDefect>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询缺陷类型列表 */
@@ -104,16 +101,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<QcDefectPageParam>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -127,7 +122,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: QcDefectVO) {
+function handleDetail(item: QcDefect) {
   uni.navigateTo({ url: `/pages-mes/qc/defect/detail/index?id=${item.id}` })
 }
 

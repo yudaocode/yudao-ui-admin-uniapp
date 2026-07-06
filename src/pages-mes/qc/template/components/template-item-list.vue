@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         产品关联
       </view>
@@ -38,13 +38,13 @@
           <text class="text-[#999]">规格型号：</text>{{ item.specification || '-' }}
         </view>
         <view class="mb-8rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">最低检测数：</text>{{ formatNumber(item.quantityCheck) }} {{ item.unitMeasureName || '' }}
+          <text class="text-[#999]">最低检测数：</text>{{ formatDisplayValue(item.quantityCheck) }} {{ item.unitMeasureName || '' }}
         </view>
         <view class="mb-8rpx text-26rpx text-[#666]">
           <text class="text-[#999]">最大不合格数：</text>{{ formatQuantityUnqualified(item.quantityUnqualified) }}
         </view>
         <view class="mb-16rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">缺陷率：</text>致命 {{ formatPercent(item.criticalRate) }} / 严重 {{ formatPercent(item.majorRate) }} / 轻微 {{ formatPercent(item.minorRate) }}
+          <text class="text-[#999]">缺陷率：</text>致命 {{ formatDisplayPercent(item.criticalRate) }} / 严重 {{ formatDisplayPercent(item.majorRate) }} / 轻微 {{ formatDisplayPercent(item.minorRate) }}
         </view>
         <view v-if="hasAccessByCodes(['mes:qc-template:update'])" class="flex gap-16rpx">
           <wd-button class="flex-1" size="small" variant="plain" @click="handleEdit(item)">
@@ -72,7 +72,7 @@
           <view class="text-32rpx text-[#333] font-semibold">
             {{ editingId ? '编辑产品关联' : '新增产品关联' }}
           </view>
-          <wd-button size="small" type="primary" :loading="saving" @click="handleSubmit">
+          <wd-button size="small" type="primary" :loading="formLoading" @click="handleSubmit">
             保存
           </wd-button>
         </view>
@@ -80,16 +80,12 @@
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
             <wd-cell-group border>
-              <wd-form-item title="产品物料" title-width="240rpx" prop="itemId">
-                <view class="w-full" @click="itemSelectorRef?.open()">
-                  <wd-input :model-value="itemDisplay" placeholder="请选择产品物料" readonly />
-                </view>
-              </wd-form-item>
+              <wd-form-item title="产品物料" title-width="240rpx" prop="itemId" is-link :value="itemDisplay" placeholder="请选择产品物料" @click="itemPickerRef?.open()" />
               <wd-form-item title="最低检测数" title-width="240rpx" prop="quantityCheck">
-                <wd-input-number v-model="formData.quantityCheck" :min="1" />
+                <wd-input-number v-model="formData.quantityCheck" :min="1" :precision="0" />
               </wd-form-item>
               <wd-form-item title="最大不合格数" title-width="240rpx" prop="quantityUnqualified">
-                <wd-input-number v-model="formData.quantityUnqualified" :min="0" />
+                <wd-input-number v-model="formData.quantityUnqualified" :min="0" :precision="0" />
               </wd-form-item>
               <wd-form-item title="致命缺陷率(%)" title-width="240rpx" prop="criticalRate">
                 <wd-input-number v-model="formData.criticalRate" :min="0" :max="100" :precision="2" />
@@ -110,18 +106,15 @@
       </view>
     </wd-popup>
 
-    <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
+    <wd-fab v-if="!showTitle && hasAccessByCodes(['mes:qc-template:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+    <ItemPicker ref="itemPickerRef" item-or-product="PRODUCT" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type {
-  QcTemplateItemCreateReqVO,
-  QcTemplateItemUpdateReqVO,
-  QcTemplateItemVO,
-} from '@/api/mes/qc/template/item'
+import type { MdItem } from '@/api/mes/md/item'
+import type { QcTemplateItem } from '@/api/mes/qc/template/item'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -132,32 +125,36 @@ import {
   getTemplateItemPage,
   updateTemplateItem,
 } from '@/api/mes/qc/template/item'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
 import { useAccess } from '@/hooks/useAccess'
+import { formatDisplayPercent, formatDisplayValue } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ templateId: number }>()
+const props = withDefaults(defineProps<{
+  templateId: number
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<QcTemplateItemVO[]>([]) // 产品关联
+const list = ref<QcTemplateItem[]>([]) // 产品关联
 const loading = ref(false) // 列表加载状态
 const formVisible = ref(false) // 表单弹层状态
-const saving = ref(false) // 保存状态
+const formLoading = ref(false) // 表单提交状态
 const editingId = ref<number>() // 当前编辑编号
 const formRef = ref<FormInstance>() // 表单组件引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器
-const selectedItem = ref<MdItemVO>() // 当前选择物料
-const formData = ref<Partial<QcTemplateItemVO>>({
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器
+const selectedItem = ref<MdItem>() // 当前选择物料
+const formData = ref<QcTemplateItem>({
   templateId: props.templateId,
-  itemId: undefined,
   quantityCheck: 1,
   quantityUnqualified: 0,
   criticalRate: 0,
   majorRate: 0,
   minorRate: 100,
-  remark: '',
 }) // 表单数据
 
 const formSchema = createFormSchema({
@@ -197,13 +194,11 @@ function resetForm() {
   selectedItem.value = undefined
   formData.value = {
     templateId: props.templateId,
-    itemId: undefined,
     quantityCheck: 1,
     quantityUnqualified: 0,
     criticalRate: 0,
     majorRate: 0,
     minorRate: 100,
-    remark: '',
   }
 }
 
@@ -214,7 +209,7 @@ function handleAdd() {
 }
 
 /** 编辑产品关联 */
-async function handleEdit(item: QcTemplateItemVO) {
+async function handleEdit(item: QcTemplateItem) {
   resetForm()
   formVisible.value = true
   const data = await getTemplateItem(item.id)
@@ -223,7 +218,7 @@ async function handleEdit(item: QcTemplateItemVO) {
 }
 
 /** 选择产品物料 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
   if (!item) {
     return
@@ -237,30 +232,20 @@ function handleItemConfirm(items: MdItemVO[]) {
 }
 
 /** 构造提交数据 */
-function buildSubmitData(): QcTemplateItemCreateReqVO | QcTemplateItemUpdateReqVO {
-  const data = {
+function buildSubmitData(): QcTemplateItem {
+  return {
+    ...formData.value,
     templateId: props.templateId,
-    itemId: Number(formData.value.itemId),
-    quantityCheck: formData.value.quantityCheck,
-    quantityUnqualified: formData.value.quantityUnqualified,
-    criticalRate: formData.value.criticalRate,
-    majorRate: formData.value.majorRate,
-    minorRate: formData.value.minorRate,
-    remark: formData.value.remark || undefined,
   }
-  if (editingId.value) {
-    return { ...data, id: editingId.value }
-  }
-  return data
 }
 
 /** 提交产品关联 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
-  saving.value = true
+  formLoading.value = true
   try {
     const data = buildSubmitData()
     if (editingId.value) {
@@ -273,12 +258,12 @@ async function handleSubmit() {
     formVisible.value = false
     await loadList()
   } finally {
-    saving.value = false
+    formLoading.value = false
   }
 }
 
 /** 删除产品关联 */
-async function handleDelete(item: QcTemplateItemVO) {
+async function handleDelete(item: QcTemplateItem) {
   try {
     await dialog.confirm({
       title: '提示',
@@ -292,30 +277,16 @@ async function handleDelete(item: QcTemplateItemVO) {
   await loadList()
 }
 
-/** 格式化数值 */
-function formatNumber(value?: number | string) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return String(value)
-}
-
 /** 格式化最大不合格数 */
 function formatQuantityUnqualified(value?: number) {
   if (value === 0) {
     return '不启用'
   }
-  return formatNumber(value)
+  return formatDisplayValue(value)
 }
 
-/** 格式化百分比 */
-function formatPercent(value?: number) {
-  return `${formatNumber(value)}%`
-}
-
+/** 初始化 */
 onMounted(() => {
   loadList()
 })
-
-defineExpose({ loadList })
 </script>

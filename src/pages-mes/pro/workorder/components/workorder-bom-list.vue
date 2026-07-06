@@ -1,6 +1,6 @@
 <template>
   <view class="mx-24rpx mt-24rpx">
-    <view class="mb-16rpx flex items-center justify-between">
+    <view v-if="showTitle" class="mb-16rpx flex items-center justify-between">
       <view class="text-30rpx text-[#333] font-semibold">
         工单 BOM
       </view>
@@ -161,10 +161,12 @@ const props = withDefaults(defineProps<{
   workOrderId?: number
   workOrder?: ProWorkOrder
   readonly?: boolean
+  showTitle?: boolean
 }>(), {
   workOrderId: undefined,
   workOrder: undefined,
   readonly: false,
+  showTitle: true,
 })
 
 const emit = defineEmits<{

@@ -113,7 +113,7 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -122,14 +122,6 @@ async function getDetail() {
   } finally {
     toast.close()
   }
-}
-
-/** 刷新详情 */
-function reloadDetail() {
-  if (deleting.value) {
-    return
-  }
-  getDetail()
 }
 
 /** 编辑 */
@@ -192,12 +184,12 @@ async function handleSubmitRecord() {
 
 /** 初始化 */
 onMounted(() => {
-  uni.$on('mes:dv:checkrecord:reload', reloadDetail)
+  uni.$on('mes:dv:checkrecord:reload', getDetail)
   getDetail()
 })
 
 /** 卸载 */
 onUnload(() => {
-  uni.$off('mes:dv:checkrecord:reload', reloadDetail)
+  uni.$off('mes:dv:checkrecord:reload', getDetail)
 })
 </script>

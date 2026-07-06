@@ -107,7 +107,7 @@ import { DICT_TYPE, MesDvCheckRecordStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import CheckPlanPicker from '../../checkplan/components/checkplan-picker.vue'
+import CheckPlanPicker from '../../checkplan/components/check-plan-picker.vue'
 import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 import CheckRecordLineList from '../components/check-record-line-list.vue'
 

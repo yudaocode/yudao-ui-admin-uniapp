@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         设备清单
       </view>
@@ -103,10 +103,14 @@ import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   planId?: number
   readonly?: boolean
-}>()
+  showTitle?: boolean
+}>(), {
+  readonly: false,
+  showTitle: true,
+})
 
 const dialog = useDialog()
 const toast = useToast()

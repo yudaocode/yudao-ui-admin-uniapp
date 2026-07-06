@@ -1,6 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         {{ subjectListTitle }}
       </view>
@@ -115,11 +115,15 @@ import { DICT_TYPE, MesDvSubjectTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import SubjectPicker from '../../subject/components/subject-picker.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   planId?: number
   type?: number
   readonly?: boolean
-}>()
+  showTitle?: boolean
+}>(), {
+  readonly: false,
+  showTitle: true,
+})
 
 const dialog = useDialog()
 const toast = useToast()

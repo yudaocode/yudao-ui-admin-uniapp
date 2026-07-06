@@ -77,22 +77,22 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcIndicatorPageParam, QcIndicatorVO } from '@/api/mes/qc/indicator'
+import type { QcIndicator } from '@/api/mes/qc/indicator'
 import { reactive, ref } from 'vue'
 import { getIndicatorPage } from '@/api/mes/qc/indicator'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  confirm: [item: QcIndicatorVO]
+  confirm: [item: QcIndicator]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<QcIndicatorVO[]>([]) // 指标列表
-const selected = ref<QcIndicatorVO>() // 当前选中
+const list = ref<QcIndicator[]>([]) // 指标列表
+const selected = ref<QcIndicator>() // 当前选中
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
-const query = reactive<Partial<QcIndicatorPageParam>>({
+const query = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
 }) // 搜索条件

@@ -4,7 +4,7 @@
     <wd-navbar title="质检指标" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 质检指标列表 -->
     <z-paging
@@ -69,14 +69,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcIndicatorPageParam, QcIndicatorVO } from '@/api/mes/qc/indicator'
+import type { QcIndicator } from '@/api/mes/qc/indicator'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getIndicatorPage } from '@/api/mes/qc/indicator'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesQcResultValueTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -88,23 +87,18 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const MesQcResultValueType = {
-  FILE: 5,
-} as const
-const list = ref<QcIndicatorVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<QcIndicatorVO>>() // 分页组件引用
-const queryParams = ref<Partial<QcIndicatorPageParam>>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
+const list = ref<QcIndicator[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<QcIndicator>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 格式化结果值属性 */
-function formatResultSpecification(item: QcIndicatorVO) {
-  if (item.resultType === MesQcResultValueType.FILE) {
+function formatResultSpecification(item: QcIndicator) {
+  if (item.resultType === MesQcResultValueTypeEnum.FILE) {
     return item.resultSpecification === 'IMG' ? '图片/照片' : '文件'
   }
   return item.resultSpecification || '-'
@@ -121,16 +115,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<QcIndicatorPageParam>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -144,7 +136,7 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: QcIndicatorVO) {
+function handleDetail(item: QcIndicator) {
   uni.navigateTo({ url: `/pages-mes/qc/indicator/detail/index?id=${item.id}` })
 }
 

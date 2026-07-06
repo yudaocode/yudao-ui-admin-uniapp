@@ -1,6 +1,6 @@
 <template>
   <view class="mx-24rpx mt-24rpx">
-    <view class="mb-16rpx flex items-center justify-between">
+    <view v-if="showTitle" class="mb-16rpx flex items-center justify-between">
       <view class="text-30rpx text-[#333] font-semibold">
         物料需求
       </view>
@@ -43,9 +43,12 @@ import { onMounted, ref, watch } from 'vue'
 import { getWorkOrderBomItemListByWorkOrderId } from '@/api/mes/pro/workorder/bom'
 import { DICT_TYPE } from '@/utils/constants'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   workOrderId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const loading = ref(false) // 列表加载状态
 const list = ref<ProWorkOrderBom[]>([]) // 物料需求数据

@@ -88,7 +88,7 @@ import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { MesDvSubjectTypeEnum } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import CheckPlanPicker from '../../checkplan/components/checkplan-picker.vue'
+import CheckPlanPicker from '../../checkplan/components/check-plan-picker.vue'
 import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 
 const emit = defineEmits<{

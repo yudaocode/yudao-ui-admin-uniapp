@@ -19,51 +19,15 @@
         </view>
         <wd-input v-model="formData.code" placeholder="请输入检验单编号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <wd-input
-            :model-value="selectedVendorName"
-            placeholder="请选择供应商"
-            clearable
-            readonly
-            class="min-w-0 flex-1"
-            @click="openVendorSelector"
-            @clear="clearVendor"
-          />
-          <wd-button size="small" @click="openVendorSelector">
-            选择
-          </wd-button>
-        </view>
-      </view>
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           供应商批次
         </view>
         <wd-input v-model="formData.vendorBatch" placeholder="请输入供应商批次号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          产品物料
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <wd-input
-            :model-value="selectedItemName"
-            placeholder="请选择产品物料"
-            clearable
-            readonly
-            class="min-w-0 flex-1"
-            @click="openItemSelector"
-            @clear="clearItem"
-          />
-          <wd-button size="small" @click="openItemSelector">
-            选择
-          </wd-button>
-        </view>
-      </view>
-      <yd-search-picker v-model="formData.checkResult" label="检测结果" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" all-option :all-value="undefined" />
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="产品物料" placeholder="请选择产品物料" title="选择产品物料" />
+      <yd-search-picker v-model="formData.checkResult" label="检测结果" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" all-option />
       <yd-search-date-range v-model="receiveDateRange" label="来料日期" />
       <yd-search-date-range v-model="inspectDateRange" label="检测日期" />
       <view class="yd-search-form-actions">
@@ -76,41 +40,33 @@
       </view>
     </view>
   </wd-popup>
-
-  <VendorSelector ref="vendorSelectorRef" title="选择供应商" :multiple="false" @confirm="handleVendorConfirm" />
-  <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { QcIqcPageParam } from '@/api/mes/qc/iqc'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import VendorSelector from '@/pages-mes/md/vendor/components/vendor-selector.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<QcIqcPageParam>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
 const receiveDateRange = ref<[number | undefined, number | undefined]>() // 来料日期范围
 const inspectDateRange = ref<[number | undefined, number | undefined]>() // 检测日期范围
-const selectedVendorName = ref('') // 已选供应商展示名
-const selectedItemName = ref('') // 已选物料展示名
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 const formData = reactive({
   code: '',
-  vendorId: undefined as number | undefined,
+  vendorId: undefined,
   vendorBatch: '',
-  itemId: undefined as number | undefined,
-  checkResult: undefined as number | undefined,
+  itemId: undefined,
+  checkResult: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -120,15 +76,15 @@ const placeholder = computed(() => {
     conditions.push(`编号:${formData.code}`)
   }
   if (formData.vendorId != null) {
-    conditions.push(`供应商:${selectedVendorName.value || formData.vendorId}`)
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
   if (formData.vendorBatch) {
     conditions.push(`批次:${formData.vendorBatch}`)
   }
   if (formData.itemId != null) {
-    conditions.push(`物料:${selectedItemName.value || formData.itemId}`)
+    conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.checkResult != null) {
+  if (formData.checkResult != null && formData.checkResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   if (receiveDateRange.value?.length === 2) {
@@ -140,79 +96,22 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索来料检验单（IQC）'
 })
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  vendorSelectorRef.value?.open()
-}
-
-/** 清空供应商 */
-function clearVendor() {
-  formData.vendorId = undefined
-  selectedVendorName.value = ''
-}
-
-/** 确认供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
-  formData.vendorId = vendor?.id
-  selectedVendorName.value = vendor ? `${vendor.code || '-'} ${vendor.nickname || vendor.name || ''}`.trim() : ''
-}
-
-/** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 清空物料 */
-function clearItem() {
-  formData.itemId = undefined
-  selectedItemName.value = ''
-}
-
-/** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  formData.itemId = item?.id
-  selectedItemName.value = item ? `${item.code || '-'} ${item.name || ''}`.trim() : ''
-}
-
-/** 构造搜索参数 */
-function buildParams(): Partial<QcIqcPageParam> {
-  const params: Partial<QcIqcPageParam> = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.vendorId != null) {
-    params.vendorId = formData.vendorId
-  }
-  if (formData.vendorBatch) {
-    params.vendorBatch = formData.vendorBatch
-  }
-  if (formData.itemId != null) {
-    params.itemId = formData.itemId
-  }
-  if (formData.checkResult != null) {
-    params.checkResult = formData.checkResult
-  }
-  const receiveDate = formatDateRange(receiveDateRange.value)
-  if (receiveDate) {
-    params.receiveDate = receiveDate
-  }
-  const inspectDate = formatDateRange(inspectDateRange.value)
-  if (inspectDate) {
-    params.inspectDate = inspectDate
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    vendorId: formData.vendorId,
+    vendorBatch: formData.vendorBatch || undefined,
+    itemId: formData.itemId,
+    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
+    receiveDate: formatDateRange(receiveDateRange.value),
+    inspectDate: formatDateRange(inspectDateRange.value),
+  })
 }
 
-/** 重置字段 */
-function resetFields() {
+/** 重置按钮操作 */
+function handleReset() {
   formData.code = ''
   formData.vendorId = undefined
   formData.vendorBatch = ''
@@ -220,16 +119,7 @@ function resetFields() {
   formData.checkResult = undefined
   receiveDateRange.value = undefined
   inspectDateRange.value = undefined
-  selectedVendorName.value = ''
-  selectedItemName.value = ''
-}
-
-/** 重置按钮操作 */
-function handleReset() {
-  resetFields()
   visible.value = false
   emit('reset')
 }
-
-defineExpose({ resetFields })
 </script>
