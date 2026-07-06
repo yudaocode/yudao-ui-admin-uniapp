@@ -4,11 +4,11 @@ import { http } from '@/http/http'
 /** MES 质检缺陷记录 */
 export interface QcDefectRecord {
   id?: number // 编号
-  qcType: number // 检验类型
-  qcId: number // 检验单 ID
-  lineId: number // 检验行 ID
-  name: string // 缺陷描述
-  level: number // 缺陷等级
+  qcType?: number // 检验类型
+  qcId?: number // 检验单 ID
+  lineId?: number // 检验行 ID
+  name?: string // 缺陷描述
+  level?: number // 缺陷等级
   quantity?: number // 缺陷数量
   remark?: string // 备注
   createTime?: Date // 创建时间

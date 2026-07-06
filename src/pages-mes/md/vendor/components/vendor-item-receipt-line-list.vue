@@ -1,7 +1,7 @@
 <template>
   <view class="min-h-0 flex flex-1 flex-col bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
-      <view class="text-30rpx text-[#333] font-semibold">
+    <view class="flex items-center border-b border-b-[#f0f0f0] px-24rpx py-20rpx" :class="showTitle ? 'justify-between' : 'justify-end'">
+      <view v-if="showTitle" class="text-30rpx text-[#333] font-semibold">
         物料清单
       </view>
       <view class="text-24rpx text-[#999]">
@@ -64,9 +64,12 @@ import type { WmItemReceiptLine } from '@/api/mes/wm/itemreceipt/line'
 import { nextTick, ref, watch } from 'vue'
 import { getItemReceiptLinePage } from '@/api/mes/wm/itemreceipt/line'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   vendorId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const list = ref<WmItemReceiptLine[]>([]) // 物料清单
 const total = ref(0) // 总条数

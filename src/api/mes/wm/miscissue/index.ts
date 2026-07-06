@@ -6,11 +6,11 @@ export interface WmMiscIssue {
   id?: number
   code: string
   name: string
-  type: number
+  type?: number
   sourceDocType?: string
   sourceDocId?: number
   sourceDocCode?: string
-  issueDate: string | number | Date
+  issueDate?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

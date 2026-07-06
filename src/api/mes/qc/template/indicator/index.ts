@@ -5,7 +5,7 @@ import { http } from '@/http/http'
 export interface QcTemplateIndicator {
   id?: number // 编号
   templateId: number // 质检方案ID
-  indicatorId: number // 质检指标ID
+  indicatorId?: number // 质检指标ID
   checkMethod?: string // 检测方法
   standardValue?: number // 标准值
   unitMeasureId?: number // 计量单位ID

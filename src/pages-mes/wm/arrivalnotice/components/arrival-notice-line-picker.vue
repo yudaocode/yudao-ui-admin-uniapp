@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmArrivalNoticeLineVO } from '@/api/mes/wm/arrivalnotice/line'
+import type { WmArrivalNoticeLine } from '@/api/mes/wm/arrivalnotice/line'
 import { ref } from 'vue'
 import { getArrivalNoticeLinePage } from '@/api/mes/wm/arrivalnotice/line'
 import { DICT_TYPE } from '@/utils/constants'
@@ -80,13 +80,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  confirm: [line: WmArrivalNoticeLineVO]
+  confirm: [line: WmArrivalNoticeLine]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 加载状态
-const lineList = ref<WmArrivalNoticeLineVO[]>([]) // 到货通知单行列表
-const selectedLine = ref<WmArrivalNoticeLineVO>() // 当前选中行
+const lineList = ref<WmArrivalNoticeLine[]>([]) // 到货通知单行列表
+const selectedLine = ref<WmArrivalNoticeLine>() // 当前选中行
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
 

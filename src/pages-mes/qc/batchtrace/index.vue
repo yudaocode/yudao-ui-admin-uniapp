@@ -75,8 +75,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { BatchPageParam, BatchVO } from '@/api/mes/wm/batch'
-import type { ZPagingRef } from 'z-paging'
+import type { Batch } from '@/api/mes/wm/batch'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getBatchPage } from '@/api/mes/wm/batch'
@@ -90,19 +89,19 @@ definePage({
   },
 })
 
-const list = ref<BatchVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<BatchVO>>() // 分页组件引用
-const queryParams = ref<Partial<BatchPageParam>>({}) // 查询参数
+const list = ref<Batch[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<Batch>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const params: BatchPageParam = {
+    const params = {
       ...queryParams.value,
       pageNo,
       pageSize,
@@ -115,7 +114,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Partial<BatchPageParam>) {
+function handleQuery(data: Record<string, any> = {}) {
   queryParams.value = { ...data }
   reload()
 }
@@ -131,7 +130,7 @@ function reload() {
 }
 
 /** 查看详情 */
-function handleDetail(item: BatchVO) {
+function handleDetail(item: Batch) {
   uni.navigateTo({ url: `/pages-mes/qc/batchtrace/detail/index?id=${item.id}` })
 }
 

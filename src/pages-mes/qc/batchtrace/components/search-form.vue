@@ -1,12 +1,7 @@
 <template>
   <!-- 搜索框入口 -->
-  <view class="bg-white px-24rpx py-16rpx" @click="openSearch">
-    <view class="flex items-center rounded-36rpx bg-[#f5f5f5] px-24rpx py-14rpx text-28rpx text-[#999]">
-      <wd-icon name="search" size="32rpx" />
-      <text class="ml-12rpx min-w-0 flex-1 truncate">
-        {{ placeholder }}
-      </text>
-    </view>
+  <view @click="visible = true">
+    <wd-search :placeholder="placeholder" hide-cancel disabled />
   </view>
 
   <!-- 搜索弹窗 -->
@@ -28,30 +23,9 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          产品物料
-        </view>
-        <view @click="itemSelectorRef?.open(formData.itemId)">
-          <wd-input :model-value="itemDisplay" placeholder="请选择产品物料" readonly clearable @clear="clearItem" />
-        </view>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <view @click="vendorSelectorRef?.open(formData.vendorId)">
-          <wd-input :model-value="vendorDisplay" placeholder="请选择供应商" readonly clearable @clear="clearVendor" />
-        </view>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          客户
-        </view>
-        <view @click="clientSelectorRef?.open(formData.clientId)">
-          <wd-input :model-value="clientDisplay" placeholder="请选择客户" readonly clearable @clear="clearClient" />
-        </view>
-      </view>
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="产品物料" placeholder="请选择产品物料" title="选择产品物料" />
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
+      <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           销售订单编号
@@ -82,30 +56,22 @@
       </view>
     </view>
   </wd-popup>
-
-  <ItemSelector ref="itemSelectorRef" @confirm="handleItemConfirm" />
-  <VendorSelector ref="vendorSelectorRef" @confirm="handleVendorConfirm" />
-  <ClientSelector ref="clientSelectorRef" @confirm="handleClientConfirm" />
 </template>
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import type { MdClientVO } from '@/api/mes/md/client'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { BatchPageParam } from '@/api/mes/wm/batch'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import ClientSelector from '../../../md/client/components/client-selector.vue'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
-import VendorSelector from '../../../md/vendor/components/vendor-selector.vue'
+import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<BatchPageParam>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive<Partial<BatchPageParam>>({
+const formData = reactive<Record<string, any>>({
   code: undefined,
   itemId: undefined,
   vendorId: undefined,
@@ -113,21 +79,9 @@ const formData = reactive<Partial<BatchPageParam>>({
   salesOrderCode: undefined,
   purchaseOrderCode: undefined,
 }) // 搜索表单数据
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器
-const clientSelectorRef = ref<InstanceType<typeof ClientSelector>>() // 客户选择器
-const selectedItem = ref<MdItemVO>() // 当前物料
-const selectedVendor = ref<MdVendorVO>() // 当前供应商
-const selectedClient = ref<MdClientVO>() // 当前客户
-
-const itemDisplay = computed(() => selectedItem.value ? `${selectedItem.value.code} / ${selectedItem.value.name}` : '')
-const vendorDisplay = computed(() => selectedVendor.value ? `${selectedVendor.value.code} / ${selectedVendor.value.name}` : '')
-const clientDisplay = computed(() => selectedClient.value ? `${selectedClient.value.code} / ${selectedClient.value.name}` : '')
-
-/** 打开搜索弹层 */
-function openSearch() {
-  visible.value = true
-}
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
+const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -135,14 +89,14 @@ const placeholder = computed(() => {
   if (formData.code !== undefined && formData.code !== '') {
     conditions.push(`批次号:${formData.code}`)
   }
-  if (formData.itemId !== undefined && formData.itemId !== '') {
-    conditions.push(`产品物料:${selectedItem.value?.name || formData.itemId}`)
+  if (formData.itemId !== undefined) {
+    conditions.push(`产品物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.vendorId !== undefined && formData.vendorId !== '') {
-    conditions.push(`供应商:${selectedVendor.value?.name || formData.vendorId}`)
+  if (formData.vendorId !== undefined) {
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
-  if (formData.clientId !== undefined && formData.clientId !== '') {
-    conditions.push(`客户:${selectedClient.value?.name || formData.clientId}`)
+  if (formData.clientId !== undefined) {
+    conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
   if (formData.salesOrderCode !== undefined && formData.salesOrderCode !== '') {
     conditions.push(`销售订单编号:${formData.salesOrderCode}`)
@@ -153,46 +107,17 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索批次追溯'
 })
 
-/** 选择物料 */
-function handleItemConfirm(item: MdItemVO) {
-  selectedItem.value = item
-  formData.itemId = item.id
-}
-
-/** 清空物料 */
-function clearItem() {
-  selectedItem.value = undefined
-  formData.itemId = undefined
-}
-
-/** 选择供应商 */
-function handleVendorConfirm(item: MdVendorVO) {
-  selectedVendor.value = item
-  formData.vendorId = item.id
-}
-
-/** 清空供应商 */
-function clearVendor() {
-  selectedVendor.value = undefined
-  formData.vendorId = undefined
-}
-
-/** 选择客户 */
-function handleClientConfirm(item: MdClientVO) {
-  selectedClient.value = item
-  formData.clientId = item.id
-}
-
-/** 清空客户 */
-function clearClient() {
-  selectedClient.value = undefined
-  formData.clientId = undefined
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    code: formData.code || undefined,
+    itemId: formData.itemId,
+    vendorId: formData.vendorId,
+    clientId: formData.clientId,
+    salesOrderCode: formData.salesOrderCode || undefined,
+    purchaseOrderCode: formData.purchaseOrderCode || undefined,
+  })
 }
 
 /** 重置按钮操作 */
@@ -203,9 +128,6 @@ function handleReset() {
   formData.clientId = undefined
   formData.salesOrderCode = undefined
   formData.purchaseOrderCode = undefined
-  selectedItem.value = undefined
-  selectedVendor.value = undefined
-  selectedClient.value = undefined
   visible.value = false
   emit('reset')
 }

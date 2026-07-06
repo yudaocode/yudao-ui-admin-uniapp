@@ -1,7 +1,7 @@
 <template>
   <view class="min-h-0 flex flex-1 flex-col bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
-      <view class="text-30rpx text-[#333] font-semibold">
+    <view class="flex items-center border-b border-b-[#f0f0f0] px-24rpx py-20rpx" :class="showTitle ? 'justify-between' : 'justify-end'">
+      <view v-if="showTitle" class="text-30rpx text-[#333] font-semibold">
         销售出库记录
       </view>
       <view class="text-24rpx text-[#999]">
@@ -65,9 +65,12 @@ import { getProductSalesPage } from '@/api/mes/wm/productsales'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   clientId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
 const list = ref<WmProductSales[]>([]) // 销售出库单
 const total = ref(0) // 总条数

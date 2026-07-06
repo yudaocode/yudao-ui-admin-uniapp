@@ -6,8 +6,8 @@ export interface QcDefect {
   id?: number // 编号
   code: string // 缺陷编码
   name: string // 缺陷描述
-  type: number // 检测项类型
-  level: number // 缺陷等级
+  type?: number // 检测项类型
+  level?: number // 缺陷等级
   remark?: string // 备注
   createTime?: Date // 创建时间
 }

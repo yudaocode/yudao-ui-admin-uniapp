@@ -23,10 +23,10 @@
       <view v-if="hasAccessByCodes(['mes:pro-workrecord:clock'])" class="mt-20rpx">
         <wd-button
           v-if="isClockIn"
-          :loading="submitting"
-
-          plain block
+          block
           type="warning"
+          variant="plain"
+          :loading="submitting"
           @click="handleClockOut"
         >
           下工
@@ -36,20 +36,25 @@
           block
           type="primary"
           :loading="submitting"
-          @click="openWorkstationSelector"
+          @click="openWorkstationPicker"
         >
           选择工作站上工
         </wd-button>
       </view>
     </view>
 
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
+    <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
+
+    <!-- 子组件内直接调用 useToast/useDialog，需在当前上下文挂载实例 -->
+    <wd-toast />
+    <wd-dialog />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProWorkRecordVO } from '@/api/mes/pro/workrecord'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProWorkRecord } from '@/api/mes/pro/workrecord'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import {
@@ -58,24 +63,21 @@ import {
   getMyWorkRecord,
 } from '@/api/mes/pro/workrecord'
 import { useAccess } from '@/hooks/useAccess'
+import { MesProWorkRecordTypeEnum } from '@/utils/constants/biz-mes-enum'
 import { formatDateTime } from '@/utils/date'
-import WorkstationSelector from '@/pages-mes/pro/task/components/workstation-selector.vue'
+import WorkstationPicker from '@/pages-mes/md/workstation/components/workstation-picker.vue'
 
 const emit = defineEmits<{
   change: []
 }>()
 
-const MesProWorkRecordTypeEnum = {
-  CLOCK_IN: 1,
-  CLOCK_OUT: 2,
-} as const
-
 const { hasAccessByCodes } = useAccess()
+const dialog = useDialog()
 const toast = useToast()
-const current = ref<ProWorkRecordVO | null>(null) // 当前上工状态
+const current = ref<ProWorkRecord | null>(null) // 当前上工状态
 const loading = ref(false) // 状态加载中
 const submitting = ref(false) // 上下工提交中
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器
+const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
 const isClockIn = computed(() => current.value?.type === MesProWorkRecordTypeEnum.CLOCK_IN)
 const statusDescription = computed(() => {
   if (loading.value) {
@@ -98,17 +100,18 @@ async function loadCurrent() {
 }
 
 /** 打开工作站选择器 */
-function openWorkstationSelector() {
-  workstationSelectorRef.value?.open(current.value?.workstationId)
+function openWorkstationPicker() {
+  workstationPickerRef.value?.open(current.value?.workstationId)
 }
 
 /** 确认选择工作站 */
-async function handleWorkstationConfirm(item: MdWorkstationVO) {
-  const { confirm } = await uni.showModal({
-    title: '上工确认',
-    content: `确定要在「${item.code || '-'} / ${item.name || '-'}」上工吗？`,
-  })
-  if (!confirm) {
+async function handleWorkstationConfirm(item: MdWorkstation) {
+  try {
+    await dialog.confirm({
+      title: '上工确认',
+      msg: `确定要在「${item.code || '-'} / ${item.name || '-'}」上工吗？`,
+    })
+  } catch {
     return
   }
   submitting.value = true
@@ -124,11 +127,12 @@ async function handleWorkstationConfirm(item: MdWorkstationVO) {
 
 /** 下工操作 */
 async function handleClockOut() {
-  const { confirm } = await uni.showModal({
-    title: '下工确认',
-    content: '确定要结束当前上工状态吗？',
-  })
-  if (!confirm) {
+  try {
+    await dialog.confirm({
+      title: '下工确认',
+      msg: '确定要结束当前上工状态吗？',
+    })
+  } catch {
     return
   }
   submitting.value = true

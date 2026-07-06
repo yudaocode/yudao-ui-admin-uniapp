@@ -1,8 +1,10 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between px-24rpx py-20rpx">
+    <view v-if="showTitle || editable" class="flex items-center justify-between px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
-        关联产品
+        <template v-if="showTitle">
+          关联产品
+        </template>
       </view>
       <wd-button v-if="editable" size="small" type="primary" variant="plain" @click="openForm('create')">
         关联产品
@@ -26,12 +28,12 @@
             </view>
           </view>
           <view class="flex shrink-0 gap-12rpx">
-            <text v-if="editable" class="text-26rpx text-[#1677ff]" @click="openForm('update', item)">
+            <wd-button v-if="editable" size="small" type="warning" variant="plain" @click="openForm('update', item)">
               编辑
-            </text>
-            <text v-if="editable" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+            </wd-button>
+            <wd-button v-if="editable" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </text>
+            </wd-button>
           </view>
         </view>
         <view class="text-26rpx text-[#666] space-y-8rpx">
@@ -70,20 +72,21 @@
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="productDisplayValue" placeholder="请选择产品" @click="openProductSelector" />
+            <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="productDisplayValue" placeholder="请选择产品" @click="openProductPicker" />
             <wd-form-item title="生产数量" title-width="220rpx" prop="quantity" center>
               <wd-input-number v-model="formData.quantity" :min="1" :precision="0" />
             </wd-form-item>
             <wd-form-item title="生产用时" title-width="220rpx" prop="productionTime" center>
-              <wd-input-number v-model="formData.productionTime" :min="0" :precision="2" :step="0.5" />
+              <wd-input-number
+                :model-value="formData.productionTime ?? ''"
+                allow-null
+                :min="0"
+                :precision="2"
+                :step="0.5"
+                @update:model-value="value => formData.productionTime = toFiniteNumber(value)"
+              />
             </wd-form-item>
-            <wd-form-item title="时间单位" title-width="220rpx" prop="timeUnitType">
-              <wd-radio-group v-model="formData.timeUnitType" type="button">
-                <wd-radio v-for="dict in getStrDictOptions(DICT_TYPE.MES_TIME_UNIT_TYPE)" :key="dict.value" :value="dict.value">
-                  {{ dict.label }}
-                </wd-radio>
-              </wd-radio-group>
-            </wd-form-item>
+            <yd-form-picker v-model="formData.timeUnitType" label="时间单位" label-width="220rpx" prop="timeUnitType" :dict-type="DICT_TYPE.MES_TIME_UNIT_TYPE" dict-kind="str" placeholder="请选择时间单位" />
             <wd-form-item title="备注" title-width="220rpx" prop="remark">
               <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
             </wd-form-item>
@@ -99,48 +102,47 @@
     </view>
   </wd-popup>
 
-  <ItemSelector ref="itemSelectorRef" :existing-ids="existingProductIds" :multiple="false" @confirm="handleProductConfirm" />
+  <ItemPicker ref="itemPickerRef" :existing-ids="existingProductIds" item-or-product="PRODUCT" :multiple="false" @confirm="handleProductConfirm" />
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type {
-  ProRouteProductCreateReqVO,
-  ProRouteProductUpdateReqVO,
-  ProRouteProductVO,
-} from '@/api/mes/pro/route/product'
+import type { MdItem } from '@/api/mes/md/item'
+import type { ProRouteProduct } from '@/api/mes/pro/route/product'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
   createRouteProduct,
   deleteRouteProduct,
   getRouteProductListByRoute,
   updateRouteProduct,
 } from '@/api/mes/pro/route/product'
-import { getStrDictOptions } from '@/hooks/useDict'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 import RouteProductBomList from './route-product-bom-list.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   editable: boolean
   routeId: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 const emit = defineEmits<{ changed: [] }>()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<ProRouteProductVO[]>([])
-const loading = ref(false)
-const formVisible = ref(false)
-const formLoading = ref(false)
-const formType = ref<'create' | 'update'>('create')
-const formData = ref<Partial<ProRouteProductVO>>(createDefaultFormData())
-const formRef = ref<FormInstance>()
-const selectedProduct = ref<MdItemVO>()
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>()
+const list = ref<ProRouteProduct[]>([]) // 产品列表
+const loading = ref(false) // 列表加载状态
+const formVisible = ref(false) // 表单弹窗显示状态
+const formLoading = ref(false) // 表单提交状态
+const formType = ref<'create' | 'update'>('create') // 表单类型
+const formData = ref<ProRouteProduct>(createDefaultFormData()) // 表单数据
+const formRef = ref<FormInstance>() // 表单组件引用
+const selectedProduct = ref<MdItem>() // 已选产品
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
 const formTitle = computed(() => formType.value === 'create' ? '关联产品' : '编辑产品')
 const existingProductIds = computed(() => list.value
   .filter(item => formType.value === 'create' || item.itemId !== formData.value.itemId)
@@ -165,14 +167,12 @@ const formSchema = createFormSchema({
 })
 
 /** 创建默认表单数据 */
-function createDefaultFormData(): Partial<ProRouteProductVO> {
+function createDefaultFormData(): ProRouteProduct {
   return {
     routeId: props.routeId,
-    itemId: undefined,
     quantity: 1,
     productionTime: 1,
     timeUnitType: 'MINUTE',
-    remark: '',
   }
 }
 
@@ -191,21 +191,21 @@ async function getList() {
 }
 
 /** 打开新增或编辑弹层 */
-function openForm(type: 'create' | 'update', row?: ProRouteProductVO) {
+function openForm(type: 'create' | 'update', row?: ProRouteProduct) {
   formType.value = type
   selectedProduct.value = undefined
   formData.value = row ? { ...row } : createDefaultFormData()
   formVisible.value = true
-  setTimeout(() => formRef.value?.reset(), 0)
+  nextTick(() => formRef.value?.reset())
 }
 
 /** 打开产品选择器 */
-function openProductSelector() {
-  itemSelectorRef.value?.open()
+function openProductPicker() {
+  itemPickerRef.value?.open()
 }
 
 /** 选择产品 */
-function handleProductConfirm(items: MdItemVO[]) {
+function handleProductConfirm(items: MdItem[]) {
   const product = items[0]
   if (!product) {
     return
@@ -218,26 +218,10 @@ function handleProductConfirm(items: MdItemVO[]) {
   formData.value.unitName = product.unitMeasureName
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): ProRouteProductCreateReqVO | ProRouteProductUpdateReqVO {
-  const data = {
-    routeId: props.routeId,
-    itemId: Number(formData.value.itemId),
-    quantity: formData.value.quantity == null ? undefined : Number(formData.value.quantity),
-    productionTime: formData.value.productionTime == null ? undefined : Number(formData.value.productionTime),
-    timeUnitType: formData.value.timeUnitType || undefined,
-    remark: formData.value.remark || undefined,
-  }
-  if (formType.value === 'update') {
-    return { ...data, id: Number(formData.value.id) }
-  }
-  return data
-}
-
 /** 提交关联产品 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (formType.value === 'update' && !formData.value.id) {
@@ -246,7 +230,11 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    const data: ProRouteProduct = {
+      ...formData.value,
+      routeId: props.routeId,
+      itemId: Number(formData.value.itemId),
+    }
     if (formType.value === 'create') {
       await createRouteProduct(data)
       toast.success('新增成功')
@@ -263,7 +251,7 @@ async function handleSubmit() {
 }
 
 /** 删除关联产品 */
-async function handleDelete(item: ProRouteProductVO) {
+async function handleDelete(item: ProRouteProduct) {
   if (!item.id) {
     return
   }
@@ -286,13 +274,13 @@ function handleBomChanged() {
   emit('changed')
 }
 
+/** 监听路线编号变化 */
 watch(() => props.routeId, () => {
   getList()
 })
 
+/** 初始化 */
 onMounted(() => {
   getList()
 })
-
-defineExpose({ reload: getList })
 </script>

@@ -4,11 +4,11 @@ import { http } from '@/http/http'
 /** MES 质检方案 */
 export interface QcTemplate {
   id?: number // 编号
-  code: string // 方案编号
-  name: string // 方案名称
-  types: number[] // 检测种类
-  status: number // 状态
-  remark: string // 备注
+  code?: string // 方案编号
+  name?: string // 方案名称
+  types?: number[] // 检测种类
+  status?: number // 状态
+  remark?: string // 备注
   createTime?: Date // 创建时间
 }
 

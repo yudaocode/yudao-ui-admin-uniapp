@@ -4,17 +4,17 @@ import { http } from '@/http/http'
 /** 生产工单 */
 export interface ProWorkOrder {
   id?: number // 编号
-  code: string // 工单编码
-  name: string // 工单名称
-  type: number // 工单类型
-  orderSourceType: number // 来源类型
+  code?: string // 工单编码
+  name?: string // 工单名称
+  type?: number // 工单类型
+  orderSourceType?: number // 来源类型
   orderSourceCode?: string // 来源单据编号
-  productId: number // 产品编号
+  productId?: number // 产品编号
   productName?: string // 产品名称
   productCode?: string // 产品编码
   productSpecification?: string // 规格型号
   unitMeasureName?: string // 单位名称
-  quantity: number // 生产数量
+  quantity?: number // 生产数量
   quantityProduced?: number // 已生产数量
   quantityChanged?: number // 调整数量
   quantityScheduled?: number // 已排产数量
@@ -25,7 +25,7 @@ export interface ProWorkOrder {
   vendorName?: string // 供应商名称
   vendorCode?: string // 供应商编码
   batchCode?: string // 批次号
-  requestDate: string | number | Date // 需求日期
+  requestDate?: string | number | Date // 需求日期
   parentId?: number // 父工单编号
   parentCode?: string // 父工单编码
   finishDate?: string | number | Date // 完成时间

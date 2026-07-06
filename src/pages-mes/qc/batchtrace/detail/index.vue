@@ -61,14 +61,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { BatchVO } from '@/api/mes/wm/batch'
+import type { Batch } from '@/api/mes/wm/batch'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getBatch } from '@/api/mes/wm/batch'
-import { delay, navigateBackPlus } from '@/utils'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import BatchTraceList from './trace-list.vue'
+import BatchTraceList from '../components/batch-trace-list.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -82,9 +82,8 @@ definePage({
 })
 
 const toast = useToast()
-const formData = ref<BatchVO>() // 详情数据
+const formData = ref<Batch>() // 详情数据
 const activeTab = ref('forward') // 当前追溯方向
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 
 /** 返回上一页 */
 function handleBack() {
@@ -93,28 +92,19 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getBatch(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getBatch(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

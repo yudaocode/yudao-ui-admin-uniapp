@@ -39,56 +39,60 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
-      <WorkOrderBomList :work-order-id="workOrderId" mode="bom" />
-      <WorkOrderBomList :work-order-id="workOrderId" mode="item" />
+      <WorkOrderBomList
+        :work-order-id="workOrderId"
+        :work-order="formData"
+        readonly
+        @generate-work-order="handleGenerateWorkOrder"
+      />
+      <WorkOrderItemList :work-order-id="workOrderId" />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="yd-detail-footer-actions">
-      <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-      <wd-button v-if="canAddChild" class="flex-1" type="primary" @click="handleAddChild">
-        子工单
-      </wd-button>
-      <wd-button v-if="canFinish" class="flex-1" type="success" @click="handleFinish">
-        完成
-      </wd-button>
-      <wd-button v-if="canFinish" class="flex-1" type="warning" @click="handleCancel">
-        取消
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="formData" class="flex-1" variant="plain" @click="handleBarcode">
+          条码
+        </wd-button>
+        <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+        <wd-button v-if="canAddChild" class="flex-1" type="primary" @click="handleAddChild">
+          子工单
+        </wd-button>
+        <wd-button v-if="canFinish" class="flex-1" type="success" @click="handleFinish">
+          完成
+        </wd-button>
+        <wd-button v-if="canFinish" class="flex-1" type="warning" @click="handleCancel">
+          取消
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { ProWorkOrderBom } from '@/api/mes/pro/workorder/bom'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { cancelWorkOrder, deleteWorkOrder, finishWorkOrder, getWorkOrder } from '@/api/mes/pro/workorder'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { BarcodeBizTypeEnum, DICT_TYPE, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 import WorkOrderBomList from '../components/workorder-bom-list.vue'
+import WorkOrderItemList from '../components/workorder-item-list.vue'
 
 const props = defineProps<{
   id?: number | string
 }>()
-const MesProWorkOrderStatusEnum = {
-  PREPARE: 0,
-  CONFIRMED: 1,
-} as const
-const MesProWorkOrderTypeEnum = {
-  SELF: 1,
-} as const
-
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -99,9 +103,8 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<ProWorkOrderVO>() // 详情数据
+const formData = ref<ProWorkOrder>() // 详情数据
 const deleting = ref(false) // 删除状态
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 const workOrderId = computed(() => formData.value?.id)
 const canEdit = computed(() =>
   hasAccessByCodes(['mes:pro-work-order:update']) && formData.value?.status === MesProWorkOrderStatusEnum.PREPARE,
@@ -137,25 +140,23 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
-    formData.value = undefined
+  if (!props.id || deleting.value) {
     return
   }
-  const detailData = await getWorkOrder(currentId.value)
-  if (!detailData) {
-    uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-    delay(handleBack)
-    return
+  try {
+    toast.loading('加载中...')
+    formData.value = await getWorkOrder(Number(props.id))
+  } finally {
+    toast.close()
   }
-  formData.value = detailData
 }
 
 /** 编辑 */
 function handleEdit() {
-  if (!formData.value?.id) {
+  if (!props.id) {
     return
   }
-  uni.navigateTo({ url: `/pages-mes/pro/workorder/form/index?id=${formData.value.id}` })
+  uni.navigateTo({ url: `/pages-mes/pro/workorder/form/index?id=${props.id}` })
 }
 
 /** 新增子工单 */
@@ -164,6 +165,32 @@ function handleAddChild() {
     return
   }
   uni.navigateTo({ url: `/pages-mes/pro/workorder/form/index?parentId=${formData.value.id}` })
+}
+
+/** 从 BOM 行生成子工单 */
+function handleGenerateWorkOrder(row: ProWorkOrderBom) {
+  if (!formData.value?.id || !row.id) {
+    return
+  }
+  const query = [
+    `parentId=${formData.value.id}`,
+    `bomId=${row.id}`,
+  ].join('&')
+  uni.navigateTo({ url: `/pages-mes/pro/workorder/form/index?${query}` })
+}
+
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
+    return
+  }
+  uni.navigateTo({
+    url: buildBarcodeListUrl({
+      bizType: BarcodeBizTypeEnum.WORKORDER,
+      bizId: formData.value.id,
+      bizCode: formData.value.code,
+    }),
+  })
 }
 
 /** 完成工单 */
@@ -200,7 +227,7 @@ async function handleCancel() {
 
 /** 删除 */
 async function handleDelete() {
-  if (!formData.value?.id) {
+  if (!props.id || !formData.value?.id) {
     return
   }
   try {
@@ -213,7 +240,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWorkOrder(formData.value.id)
+    await deleteWorkOrder(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:pro:workorder:reload')
     delay(handleBack)
@@ -222,11 +249,8 @@ async function handleDelete() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

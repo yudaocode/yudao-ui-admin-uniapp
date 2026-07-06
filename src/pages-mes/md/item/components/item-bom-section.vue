@@ -21,7 +21,7 @@
             <view>名称：{{ item.bomItemName || '-' }}</view>
             <view>规格：{{ item.bomItemSpecification || '-' }}</view>
             <view>单位：{{ item.unitMeasureName || '-' }}</view>
-            <view>用量比例：{{ formatQuantity(item.quantity) }}</view>
+            <view>用量比例：{{ formatDecimalValue(item.quantity, 4, { trimTrailingZeros: true }) }}</view>
             <view v-if="item.remark">
               备注：{{ item.remark }}
             </view>
@@ -119,6 +119,7 @@ import {
 } from '@/api/mes/md/item/productBom'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDecimalValue } from '@/utils/format'
 import ItemPicker from './item-picker.vue'
 
 const props = defineProps<{ itemId?: number | string }>()
@@ -155,14 +156,6 @@ const editForm = ref<MdProductBom>({
 function getItemId() {
   const value = Number(props.itemId)
   return Number.isFinite(value) && value > 0 ? value : undefined
-}
-
-/** 格式化用量比例 */
-function formatQuantity(value?: number) {
-  if (value == null) {
-    return '-'
-  }
-  return Number(value.toFixed(4)).toString()
 }
 
 /** 加载 BOM 列表 */

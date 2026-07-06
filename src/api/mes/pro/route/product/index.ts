@@ -4,7 +4,7 @@ import { http } from '@/http/http'
 export interface ProRouteProduct {
   id?: number // 编号
   routeId: number // 工艺路线编号
-  itemId: number // 产品物料编号
+  itemId?: number // 产品物料编号
   itemCode?: string // 产品编码
   itemName?: string // 产品名称
   specification?: string // 规格型号

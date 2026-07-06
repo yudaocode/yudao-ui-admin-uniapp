@@ -41,8 +41,8 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <ClientProductSalesLineList v-if="tabType === 'products' && formData?.id" :client-id="formData.id" />
-    <ClientProductSalesList v-if="tabType === 'sales' && formData?.id" :client-id="formData.id" />
+    <ClientProductSalesLineList v-if="tabType === 'products' && formData?.id" :client-id="formData.id" :show-title="false" />
+    <ClientProductSalesList v-if="tabType === 'sales' && formData?.id" :client-id="formData.id" :show-title="false" />
     <view
       v-if="tabType === 'basic' && (hasAccessByCodes(['mes:md-client:update']) || hasAccessByCodes(['mes:md-client:delete']))"
       class="yd-detail-footer"

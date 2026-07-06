@@ -4,10 +4,10 @@ import { http } from '@/http/http'
 /** MES 到货通知单 */
 export interface WmArrivalNotice {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   purchaseOrderCode?: string
-  vendorId: number
+  vendorId?: number
   vendorCode?: string
   vendorName?: string
   arrivalDate?: string | number | Date

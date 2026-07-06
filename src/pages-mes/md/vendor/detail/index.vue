@@ -42,8 +42,8 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <VendorItemReceiptLineList v-if="tabType === 'items' && formData?.id" :vendor-id="formData.id" />
-    <VendorItemReceiptList v-if="tabType === 'receipts' && formData?.id" :vendor-id="formData.id" />
+    <VendorItemReceiptLineList v-if="tabType === 'items' && formData?.id" :vendor-id="formData.id" :show-title="false" />
+    <VendorItemReceiptList v-if="tabType === 'receipts' && formData?.id" :vendor-id="formData.id" :show-title="false" />
     <view
       v-if="tabType === 'basic' && (hasAccessByCodes(['mes:md-vendor:update']) || hasAccessByCodes(['mes:md-vendor:delete']))"
       class="yd-detail-footer"

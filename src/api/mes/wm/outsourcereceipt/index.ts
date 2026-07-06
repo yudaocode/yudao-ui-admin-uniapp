@@ -8,6 +8,7 @@ export interface WmOutsourceReceipt {
   name?: string // 入库单名称
   workOrderId?: number // 外协工单编号
   workOrderCode?: string // 外协工单编码
+  workOrderName?: string // 外协工单名称
   vendorId?: number // 供应商编号
   vendorName?: string // 供应商名称
   receiptDate?: string | number | Date // 入库日期

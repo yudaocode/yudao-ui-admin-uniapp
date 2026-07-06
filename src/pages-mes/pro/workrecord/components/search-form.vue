@@ -19,26 +19,7 @@
         </view>
         <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择用户" />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          工作站
-        </view>
-        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openWorkstationPicker">
-          <text v-if="selectedWorkstationText" class="min-w-0 flex-1 truncate text-[#333]">
-            {{ selectedWorkstationText }}
-          </text>
-          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
-            请选择工作站
-          </text>
-          <wd-icon
-            v-if="selectedWorkstationText"
-            name="close-circle"
-            size="30rpx"
-            custom-style="color: #c0c4cc;"
-            @click.stop="clearWorkstation"
-          />
-        </view>
-      </view>
+      <WorkstationSearchPicker ref="workstationSearchPickerRef" v-model="formData.workstationId" label="工作站" placeholder="请选择工作站" />
       <yd-search-picker v-model="formData.type" label="操作类型" :dict-type="DICT_TYPE.MES_PRO_WORK_RECORD_TYPE" all-option />
       <yd-search-date-range v-model="createTimeRange" label="操作时间" />
       <view class="yd-search-form-actions">
@@ -51,19 +32,16 @@
       </view>
     </view>
   </wd-popup>
-
-  <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import WorkstationPicker from '@/pages-mes/pro/task/components/workstation-picker.vue'
+import WorkstationSearchPicker from '@/pages-mes/md/workstation/components/workstation-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -72,19 +50,13 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const createTimeRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 操作时间范围
-const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
+const workstationSearchPickerRef = ref<InstanceType<typeof WorkstationSearchPicker>>() // 工作站搜索选择器
 const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 用户选择器
-const selectedWorkstation = ref<MdWorkstation>() // 已选工作站
 const formData = reactive({
   userId: undefined,
   workstationId: undefined,
   type: undefined,
 }) // 搜索表单数据
-const selectedWorkstationText = computed(() => {
-  return selectedWorkstation.value
-    ? `${selectedWorkstation.value.code || '-'} / ${selectedWorkstation.value.name || '-'}`
-    : ''
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -93,8 +65,8 @@ const placeholder = computed(() => {
   if (userName) {
     conditions.push(`用户:${userName}`)
   }
-  if (selectedWorkstation.value) {
-    conditions.push(`工作站:${selectedWorkstation.value.code || selectedWorkstation.value.name}`)
+  if (formData.workstationId) {
+    conditions.push(`工作站:${workstationSearchPickerRef.value?.format(formData.workstationId) || formData.workstationId}`)
   }
   if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_PRO_WORK_RECORD_TYPE, formData.type)}`)
@@ -104,23 +76,6 @@ const placeholder = computed(() => {
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工作记录'
 })
-
-/** 打开工作站选择器 */
-function openWorkstationPicker() {
-  workstationPickerRef.value?.open(formData.workstationId)
-}
-
-/** 选择工作站 */
-function handleWorkstationConfirm(item: MdWorkstation) {
-  selectedWorkstation.value = item
-  formData.workstationId = item.id
-}
-
-/** 清空工作站 */
-function clearWorkstation() {
-  selectedWorkstation.value = undefined
-  formData.workstationId = undefined
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -138,7 +93,6 @@ function handleReset() {
   formData.userId = undefined
   formData.workstationId = undefined
   formData.type = undefined
-  selectedWorkstation.value = undefined
   createTimeRange.value = [undefined, undefined]
   visible.value = false
   emit('reset')

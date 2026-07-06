@@ -87,6 +87,14 @@ export const MesProWorkRecordTypeEnum = {
   CLOCK_OUT: 2,
 } as const
 
+/** MES 工序关系类型 */
+export const MesProLinkTypeEnum = {
+  START_START: 0,
+  FINISH_FINISH: 1,
+  START_FINISH: 2,
+  FINISH_START: 3,
+} as const
+
 /** MES 生产流转卡状态 */
 export const MesProCardStatusEnum = {
   PREPARE: 0,

@@ -4,7 +4,7 @@
       <view class="text-30rpx text-[#333] font-semibold">
         操作步骤
       </view>
-      <wd-button v-if="hasAccessByCodes(['mes:pro-process:create'])" size="small" type="primary" variant="plain" @click="openForm('create')">
+      <wd-button v-if="!props.readonly && hasAccessByCodes(['mes:pro-process:create'])" size="small" type="primary" variant="plain" @click="openForm('create')">
         添加步骤
       </wd-button>
     </view>
@@ -20,13 +20,13 @@
           <view class="text-28rpx text-[#333] font-semibold">
             步骤 {{ item.sort }}
           </view>
-          <view class="flex shrink-0 gap-12rpx">
-            <text v-if="hasAccessByCodes(['mes:pro-process:update'])" class="text-26rpx text-[#1677ff]" @click="openForm('update', item)">
+          <view v-if="!props.readonly" class="flex shrink-0 gap-12rpx">
+            <wd-button v-if="hasAccessByCodes(['mes:pro-process:update'])" size="small" type="warning" variant="plain" @click="openForm('update', item)">
               编辑
-            </text>
-            <text v-if="hasAccessByCodes(['mes:pro-process:delete'])" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+            </wd-button>
+            <wd-button v-if="hasAccessByCodes(['mes:pro-process:delete'])" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </text>
+            </wd-button>
           </view>
         </view>
         <view class="text-26rpx text-[#666] space-y-8rpx">
@@ -84,11 +84,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type {
-  ProProcessContentCreateReqVO,
-  ProProcessContentUpdateReqVO,
-  ProProcessContentVO,
-} from '@/api/mes/pro/process/content'
+import type { ProProcessContent } from '@/api/mes/pro/process/content'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -101,17 +97,22 @@ import {
 import { useAccess } from '@/hooks/useAccess'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ processId: number }>()
+const props = withDefaults(defineProps<{
+  processId: number
+  readonly?: boolean
+}>(), {
+  readonly: false,
+})
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<ProProcessContentVO[]>([])
-const loading = ref(false)
-const formVisible = ref(false)
-const formLoading = ref(false)
-const formType = ref<'create' | 'update'>('create')
-const formData = ref<Partial<ProProcessContentVO>>(createDefaultFormData(props.processId, 1))
-const formRef = ref<FormInstance>()
+const list = ref<ProProcessContent[]>([]) // 内容列表
+const loading = ref(false) // 列表加载状态
+const formVisible = ref(false) // 表单弹窗显示状态
+const formLoading = ref(false) // 表单提交状态
+const formType = ref<'create' | 'update'>('create') // 表单类型
+const formData = ref<ProProcessContent>(createDefaultFormData(props.processId, 1)) // 表单数据
+const formRef = ref<FormInstance>() // 表单组件引用
 const formTitle = computed(() => formType.value === 'create' ? '添加操作步骤' : '编辑操作步骤')
 const formSchema = createFormSchema({
   sort: [
@@ -121,15 +122,10 @@ const formSchema = createFormSchema({
 })
 
 /** 创建默认表单数据 */
-function createDefaultFormData(processId: number, sort: number): Partial<ProProcessContentVO> {
+function createDefaultFormData(processId: number, sort: number): ProProcessContent {
   return {
     processId,
     sort,
-    content: '',
-    device: '',
-    material: '',
-    docUrl: '',
-    remark: '',
   }
 }
 
@@ -149,43 +145,27 @@ async function getList() {
 }
 
 /** 打开新增或编辑弹层 */
-function openForm(type: 'create' | 'update', row?: ProProcessContentVO) {
+function openForm(type: 'create' | 'update', row?: ProProcessContent) {
   formType.value = type
   const maxSort = list.value.reduce((max, item) => Math.max(max, item.sort || 0), 0)
   formData.value = row ? { ...row } : createDefaultFormData(props.processId, maxSort + 1)
   formVisible.value = true
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): ProProcessContentCreateReqVO | ProProcessContentUpdateReqVO {
-  const data = {
-    processId: props.processId,
-    sort: Number(formData.value.sort),
-    content: formData.value.content || undefined,
-    device: formData.value.device || undefined,
-    material: formData.value.material || undefined,
-    docUrl: formData.value.docUrl || undefined,
-    remark: formData.value.remark || undefined,
-  }
-  if (formType.value === 'update') {
-    return { ...data, id: Number(formData.value.id) }
-  }
-  return data
-}
-
 /** 提交操作步骤 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (formType.value === 'update' && !formData.value.id) {
     toast.error('缺少操作步骤编号')
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    const data: ProProcessContent = { ...formData.value, processId: props.processId }
     if (formType.value === 'create') {
       await createProcessContent(data)
       toast.success('新增成功')
@@ -201,7 +181,7 @@ async function handleSubmit() {
 }
 
 /** 删除操作步骤 */
-async function handleDelete(item: ProProcessContentVO) {
+async function handleDelete(item: ProProcessContent) {
   if (!item.id) {
     return
   }
@@ -215,10 +195,12 @@ async function handleDelete(item: ProProcessContentVO) {
   await getList()
 }
 
+/** 监听工序编号变化 */
 watch(() => props.processId, () => {
   getList()
 })
 
+/** 初始化 */
 onMounted(() => {
   getList()
 })

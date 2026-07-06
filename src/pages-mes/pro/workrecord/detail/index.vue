@@ -1,14 +1,10 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <wd-navbar
-      title="MES 工作记录详情"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    />
+    <wd-navbar title="工作记录详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 详情内容 -->
-    <view>
+    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="编号" :value="formData?.id ? String(formData.id) : '-'" />
         <wd-cell title="用户" :value="formData?.userNickname || '-'" />
@@ -21,16 +17,16 @@
         <wd-cell title="操作时间" :value="formatDateTime(formData?.createTime) || '-'" />
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkRecordLogVO } from '@/api/mes/pro/workrecord'
+import type { ProWorkRecordLog } from '@/api/mes/pro/workrecord'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getWorkRecordLog } from '@/api/mes/pro/workrecord'
-import { delay, navigateBackPlus } from '@/utils'
+import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
@@ -46,8 +42,7 @@ definePage({
 })
 
 const toast = useToast()
-const formData = ref<ProWorkRecordLogVO>() // 详情数据
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
+const formData = ref<ProWorkRecordLog>() // 详情数据
 
 /** 返回上一页 */
 function handleBack() {
@@ -56,19 +51,12 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
-    formData.value = undefined
+  if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getWorkRecordLog(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getWorkRecordLog(Number(props.id))
   } finally {
     toast.close()
   }
@@ -76,10 +64,6 @@ async function getDetail() {
 
 /** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

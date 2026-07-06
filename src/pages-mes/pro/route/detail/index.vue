@@ -1,7 +1,19 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
+    <!-- 顶部导航栏 -->
     <wd-navbar title="工艺路线详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
+        <wd-tab title="基本信息" />
+        <wd-tab title="组成工序" />
+        <wd-tab title="关联产品" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="路线编码" :value="formData?.code || '-'" />
         <wd-cell title="路线名称" :value="formData?.name || '-'" />
@@ -14,58 +26,54 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <view class="mt-24rpx bg-white">
-        <view class="px-24rpx py-20rpx text-30rpx text-[#333] font-semibold">
-          配置概览
-        </view>
-        <wd-cell-group border>
-          <wd-cell title="组成工序" :value="`${routeProcessCount} 道`" />
-          <wd-cell title="关联产品" :value="`${routeProductCount} 个`" />
-          <wd-cell title="产品 BOM" :value="`${routeBomCount} 条`" />
-        </wd-cell-group>
-      </view>
-
-      <RouteProcessList
-        v-if="routeId"
-        :route-id="routeId"
-        :editable="isDisabled"
-        @changed="handleRouteProcessChanged"
-      />
-      <RouteProductList
-        v-if="routeId"
-        :route-id="routeId"
-        :editable="isDisabled"
-        @changed="handleRouteProductChanged"
-      />
       <view class="h-180rpx" />
     </scroll-view>
 
-    <MesFooterActions v-if="hasAccessByCodes(['mes:pro-route:update']) || hasAccessByCodes(['mes:pro-route:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:pro-route:update'])" class="flex-1" type="primary" variant="plain" @click="handleStatusChange">
-        {{ formData?.status === CommonStatusEnum.ENABLE ? '停用' : '启用' }}
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:pro-route:update'])" class="flex-1" type="warning" :disabled="!isDisabled" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:pro-route:delete'])" class="flex-1" type="danger" :loading="deleting" :disabled="!isDisabled" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <!-- 组成工序 -->
+    <scroll-view v-if="tabType === 'process' && formData?.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <RouteProcessList
+        :route-id="formData.id"
+        :editable="canEditRouteChildren"
+        :show-title="false"
+      />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 关联产品 -->
+    <scroll-view v-if="tabType === 'products' && formData?.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <RouteProductList
+        :route-id="formData.id"
+        :editable="canEditRouteChildren"
+        :show-title="false"
+      />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 底部操作按钮 -->
+    <view v-if="tabType === 'basic' && (hasAccessByCodes(['mes:pro-route:update']) || hasAccessByCodes(['mes:pro-route:delete']))" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['mes:pro-route:update'])" class="flex-1" type="primary" variant="plain" @click="handleStatusChange">
+          {{ formData?.status === CommonStatusEnum.ENABLE ? '停用' : '启用' }}
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:pro-route:update'])" class="flex-1" type="warning" :disabled="!isDisabled" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:pro-route:delete'])" class="flex-1" type="danger" :loading="deleting" :disabled="!isDisabled" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProRouteVO } from '@/api/mes/pro/route'
+import type { ProRoute } from '@/api/mes/pro/route'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteRoute, getRoute, updateRouteStatus } from '@/api/mes/pro/route'
-import { getRouteProcessListByRoute } from '@/api/mes/pro/route/process'
-import { getRouteProductListByRoute } from '@/api/mes/pro/route/product'
-import { getRouteProductBomList } from '@/api/mes/pro/route/productbom'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -84,77 +92,49 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<ProRouteVO>()
-const deleting = ref(false)
-const routeProcessCount = ref(0)
-const routeProductCount = ref(0)
-const routeBomCount = ref(0)
-const routeId = computed(() => props.id ? Number(props.id) : undefined)
+const formData = ref<ProRoute>() // 详情数据
+const deleting = ref(false) // 删除状态
+const tabTypes = ['basic', 'process', 'products'] // tab 配置
+const tabIndex = ref(0) // 当前 tab 索引
+const tabType = computed(() => tabTypes[tabIndex.value]) // 当前 tab 类型
 const isDisabled = computed(() => formData.value?.status === CommonStatusEnum.DISABLE)
+const canEditRouteChildren = computed(() => isDisabled.value && hasAccessByCodes(['mes:pro-route:update']))
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/pro/route/index')
 }
 
+/** Tab 切换 */
+function handleTabChange({ index }: { index: number }) {
+  tabIndex.value = index
+}
+
 /** 加载工艺路线详情 */
 async function getDetail() {
-  if (!routeId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getRoute(routeId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-    await loadOverview(routeId.value)
+    formData.value = await getRoute(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 加载子表概览 */
-async function loadOverview(id: number) {
-  const [processes, products, boms] = await Promise.all([
-    getRouteProcessListByRoute(id),
-    getRouteProductListByRoute(id),
-    getRouteProductBomList({ routeId: id }),
-  ])
-  routeProcessCount.value = processes?.length || 0
-  routeProductCount.value = products?.length || 0
-  routeBomCount.value = boms?.length || 0
-}
-
-/** 路线工序变更后刷新概览 */
-async function handleRouteProcessChanged() {
-  if (routeId.value) {
-    await loadOverview(routeId.value)
-  }
-}
-
-/** 路线产品或 BOM 变更后刷新概览 */
-async function handleRouteProductChanged() {
-  if (routeId.value) {
-    await loadOverview(routeId.value)
-  }
-}
-
 /** 编辑工艺路线 */
 function handleEdit() {
-  if (!routeId.value || !isDisabled.value) {
+  if (!props.id || !isDisabled.value) {
     toast.warning('仅停用状态可以编辑')
     return
   }
-  uni.navigateTo({ url: `/pages-mes/pro/route/form/index?id=${routeId.value}` })
+  uni.navigateTo({ url: `/pages-mes/pro/route/form/index?id=${props.id}` })
 }
 
 /** 启用或停用工艺路线 */
 async function handleStatusChange() {
-  if (!routeId.value || !formData.value || formData.value.status == null) {
+  if (!props.id || !formData.value || formData.value.status == null) {
     return
   }
   const nextStatus = formData.value.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
@@ -167,7 +147,7 @@ async function handleStatusChange() {
   } catch {
     return
   }
-  await updateRouteStatus(routeId.value, nextStatus)
+  await updateRouteStatus(Number(props.id), nextStatus)
   toast.success(`${action}成功`)
   uni.$emit('mes:pro:route:reload')
   await getDetail()
@@ -175,7 +155,7 @@ async function handleStatusChange() {
 
 /** 删除工艺路线 */
 async function handleDelete() {
-  if (!routeId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   if (!isDisabled.value) {
@@ -189,28 +169,22 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteRoute(routeId.value)
-    toast.close()
+    await deleteRoute(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:pro:route:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
 }
 
+/** 初始化 */
 onMounted(() => {
   getDetail()
   uni.$on('mes:pro:route:reload', getDetail)
 })
 
-watch(routeId, () => {
-  getDetail()
-})
-
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:pro:route:reload', getDetail)
 })

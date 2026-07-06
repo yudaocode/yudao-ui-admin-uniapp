@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { BatchVO } from '@/api/mes/wm/batch'
+import type { Batch } from '@/api/mes/wm/batch'
 import { onMounted, ref, watch } from 'vue'
 import { getBackwardList, getForwardList } from '@/api/mes/wm/batch'
 import { DICT_TYPE } from '@/utils/constants'
@@ -49,7 +49,7 @@ const props = defineProps<{
 }>()
 
 const loading = ref(false) // 加载状态
-const list = ref<BatchVO[]>([]) // 追溯列表
+const list = ref<Batch[]>([]) // 追溯列表
 
 /** 加载追溯列表 */
 async function loadList() {
@@ -67,11 +67,13 @@ async function loadList() {
   }
 }
 
+/** 监听批次和方向变化 */
 watch(
   () => [props.batchCode, props.direction],
   () => loadList(),
 )
 
+/** 初始化 */
 onMounted(() => {
   loadList()
 })

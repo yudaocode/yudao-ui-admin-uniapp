@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<{
   placeholder: '请选择生产任务',
   prop: '',
   disabled: false,
-  clearable: true,
+  clearable: false,
 })
 
 const emit = defineEmits<{

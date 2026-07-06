@@ -42,18 +42,18 @@
             </view>
           </view>
           <view class="flex shrink-0 gap-12rpx">
-            <text v-if="editable" class="text-24rpx text-[#1677ff]" @click="openForm('update', bom)">
+            <wd-button v-if="editable" size="small" type="warning" variant="plain" @click="openForm('update', bom)">
               编辑
-            </text>
-            <text v-if="editable" class="text-24rpx text-[#f56c6c]" @click="handleDelete(bom)">
+            </wd-button>
+            <wd-button v-if="editable" size="small" type="danger" variant="plain" @click="handleDelete(bom)">
               删除
-            </text>
+            </wd-button>
           </view>
         </view>
         <view class="text-24rpx text-[#666] space-y-6rpx">
           <view>规格型号：{{ bom.specification || '-' }}</view>
           <view>单位：{{ bom.unitName || '-' }}</view>
-          <view>用料比例：{{ formatQuantity(bom.quantity) }}</view>
+          <view>用料比例：{{ formatDecimalValue(bom.quantity, 4, { trimTrailingZeros: true }) }}</view>
           <view v-if="bom.remark">
             备注：{{ bom.remark }}
           </view>
@@ -72,8 +72,7 @@
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
             <wd-cell title="工序" :value="activeProcessName" />
-            <wd-form-item title="BOM 物料" title-width="220rpx" prop="itemId" is-link :value="bomItemDisplayValue" placeholder="请选择 BOM 物料" @click="bomPickerVisible = true" />
-            <wd-picker v-model:visible="bomPickerVisible" :model-value="formData.itemId !== undefined ? [formData.itemId] : []" :columns="availableBomOptions" label-key="displayName" value-key="bomItemId" @confirm="handleBomItemConfirm" />
+            <wd-form-item title="BOM 物料" title-width="220rpx" prop="itemId" is-link :value="bomDisplayValue" placeholder="请选择 BOM 物料" @click="openBomPicker" />
             <wd-form-item title="用料比例" title-width="220rpx" prop="quantity" center>
               <wd-input-number v-model="formData.quantity" :min="0" :precision="4" :step="0.1" />
             </wd-form-item>
@@ -91,21 +90,23 @@
       </view>
     </view>
   </wd-popup>
+
+  <ProductBomPicker
+    ref="productBomPickerRef"
+    :item-id="productId"
+    :existing-ids="existingBomItemIds"
+    @confirm="handleBomItemConfirm"
+  />
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdProductBomVO } from '@/api/mes/md/item/productBom'
-import type { ProRouteProcessVO } from '@/api/mes/pro/route/process'
-import type {
-  ProRouteProductBomCreateReqVO,
-  ProRouteProductBomUpdateReqVO,
-  ProRouteProductBomVO,
-} from '@/api/mes/pro/route/productbom'
+import type { MdProductBom } from '@/api/mes/md/item/productBom'
+import type { ProRouteProcess } from '@/api/mes/pro/route/process'
+import type { ProRouteProductBom } from '@/api/mes/pro/route/productbom'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
-import { getProductBomListByItemId } from '@/api/mes/md/item/productBom'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { getRouteProcessListByRoute } from '@/api/mes/pro/route/process'
 import {
   createRouteProductBom,
@@ -113,12 +114,9 @@ import {
   getRouteProductBomList,
   updateRouteProductBom,
 } from '@/api/mes/pro/route/productbom'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import type { WotPickerValue } from '@/utils/wot'
-
-interface BomOption extends MdProductBomVO {
-  displayName: string // picker 展示名称
-}
+import ProductBomPicker from '@/pages-mes/md/item/components/product-bom-picker.vue'
+import { formatDecimalValue } from '@/utils/format'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   editable: boolean
@@ -129,56 +127,43 @@ const props = defineProps<{
 const emit = defineEmits<{ changed: [] }>()
 const dialog = useDialog()
 const toast = useToast()
-const processList = ref<ProRouteProcessVO[]>([])
-const activeProcessId = ref<number>()
-const bomList = ref<ProRouteProductBomVO[]>([])
-const bomOptions = ref<BomOption[]>([])
-const loading = ref(false)
-const formVisible = ref(false)
-const formLoading = ref(false)
-const formType = ref<'create' | 'update'>('create')
-const formData = ref<Partial<ProRouteProductBomVO>>(createDefaultFormData())
-const formRef = ref<FormInstance>()
-const bomPickerVisible = ref(false)
+const processList = ref<ProRouteProcess[]>([]) // 路线工序列表
+const activeProcessId = ref<number>() // 当前工序编号
+const bomList = ref<ProRouteProductBom[]>([]) // BOM 列表
+const loading = ref(false) // 列表加载状态
+const formVisible = ref(false) // 表单弹窗显示状态
+const formLoading = ref(false) // 表单提交状态
+const formType = ref<'create' | 'update'>('create') // 表单类型
+const formData = ref<ProRouteProductBom>(createDefaultFormData()) // 表单数据
+const formRef = ref<FormInstance>() // 表单组件引用
+const productBomPickerRef = ref<InstanceType<typeof ProductBomPicker>>() // 产品 BOM 选择器引用
 const formTitle = computed(() => formType.value === 'create' ? '添加 BOM 物料' : '编辑 BOM 物料')
 const activeProcessName = computed(() => {
   const process = processList.value.find(item => item.processId === activeProcessId.value)
   return process?.processName || process?.processCode || '-'
 })
-const existingBomItemIds = computed(() => bomList.value.map(item => item.itemId))
-const availableBomOptions = computed(() => {
-  if (formType.value === 'update') {
-    return bomOptions.value.filter(item => item.bomItemId === formData.value.itemId || !existingBomItemIds.value.includes(item.bomItemId))
-  }
-  return bomOptions.value.filter(item => !existingBomItemIds.value.includes(item.bomItemId))
+const existingBomItemIds = computed(() => {
+  return bomList.value.map(item => item.itemId).filter((id): id is number => id != null)
 })
-const bomItemDisplayValue = computed(() => getWotPickerFormValue(bomOptions.value, formData.value.itemId, {
-  labelKey: 'displayName',
-  valueKey: 'bomItemId',
-}))
+const bomDisplayValue = computed(() => {
+  if (formData.value.itemName || formData.value.itemCode) {
+    return `${formData.value.itemName || '-'} (${formData.value.itemCode || '-'})`
+  }
+  return formData.value.itemId ? String(formData.value.itemId) : ''
+})
 const formSchema = createFormSchema({
   itemId: [{ required: true, message: 'BOM 物料不能为空' }],
   quantity: [{ required: true, message: '用料比例不能为空' }],
 })
 
 /** 创建默认表单数据 */
-function createDefaultFormData(): Partial<ProRouteProductBomVO> {
+function createDefaultFormData(): ProRouteProductBom {
   return {
     routeId: props.routeId,
     processId: activeProcessId.value,
     productId: props.productId,
-    itemId: undefined,
     quantity: 1,
-    remark: '',
   }
-}
-
-/** 格式化数量 */
-function formatQuantity(value?: number) {
-  if (value == null) {
-    return '-'
-  }
-  return Number(value.toFixed(4)).toString()
 }
 
 /** 加载路线工序 */
@@ -188,19 +173,6 @@ async function loadProcessList() {
   if (!activeProcessId.value || !processList.value.some(item => item.processId === activeProcessId.value)) {
     activeProcessId.value = processList.value[0]?.processId
   }
-}
-
-/** 加载产品 BOM 候选项 */
-async function loadBomOptions() {
-  if (!props.productId) {
-    bomOptions.value = []
-    return
-  }
-  const data = await getProductBomListByItemId(props.productId)
-  bomOptions.value = (data || []).map(item => ({
-    ...item,
-    displayName: `${item.bomItemName || '-'} (${item.bomItemCode || '-'})`,
-  }))
 }
 
 /** 加载当前工序 BOM 列表 */
@@ -228,7 +200,7 @@ async function handleProcessChange(processId: number) {
 }
 
 /** 打开新增或编辑弹层 */
-function openForm(type: 'create' | 'update', row?: ProRouteProductBomVO) {
+function openForm(type: 'create' | 'update', row?: ProRouteProductBom) {
   if (!activeProcessId.value) {
     toast.warning('请先配置路线工序')
     return
@@ -236,46 +208,44 @@ function openForm(type: 'create' | 'update', row?: ProRouteProductBomVO) {
   formType.value = type
   formData.value = row ? { ...row } : createDefaultFormData()
   formVisible.value = true
-  setTimeout(() => formRef.value?.reset(), 0)
+  nextTick(() => formRef.value?.reset())
+}
+
+/** 打开 BOM 物料选择器 */
+function openBomPicker() {
+  productBomPickerRef.value?.open(formData.value.itemId)
 }
 
 /** 选择 BOM 物料 */
-function handleBomItemConfirm({ value }: { value: WotPickerValue[] }) {
-  const itemId = Number(value[0])
-  const bom = bomOptions.value.find(item => item.bomItemId === itemId)
-  formData.value.itemId = itemId
-  formData.value.quantity = bom?.quantity ?? formData.value.quantity ?? 1
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): ProRouteProductBomCreateReqVO | ProRouteProductBomUpdateReqVO {
-  const data = {
-    routeId: props.routeId,
-    processId: Number(activeProcessId.value),
-    productId: props.productId,
-    itemId: Number(formData.value.itemId),
-    quantity: Number(formData.value.quantity ?? 1),
-    remark: formData.value.remark || undefined,
-  }
-  if (formType.value === 'update') {
-    return { ...data, id: Number(formData.value.id) }
-  }
-  return data
+function handleBomItemConfirm(bom: MdProductBom) {
+  formData.value.itemId = bom.bomItemId
+  formData.value.itemCode = bom.bomItemCode
+  formData.value.itemName = bom.bomItemName
+  formData.value.specification = bom.bomItemSpecification
+  formData.value.unitName = bom.unitMeasureName
+  formData.value.quantity = bom.quantity ?? formData.value.quantity ?? 1
 }
 
 /** 提交 BOM 配置 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (formType.value === 'update' && !formData.value.id) {
     toast.error('缺少 BOM 配置编号')
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    const data: ProRouteProductBom = {
+      ...formData.value,
+      routeId: props.routeId,
+      processId: Number(activeProcessId.value),
+      productId: props.productId,
+      itemId: Number(formData.value.itemId),
+    }
     if (formType.value === 'create') {
       await createRouteProductBom(data)
       toast.success('新增成功')
@@ -292,7 +262,7 @@ async function handleSubmit() {
 }
 
 /** 删除 BOM 配置 */
-async function handleDelete(item: ProRouteProductBomVO) {
+async function handleDelete(item: ProRouteProductBom) {
   if (!item.id) {
     return
   }
@@ -307,16 +277,16 @@ async function handleDelete(item: ProRouteProductBomVO) {
   emit('changed')
 }
 
+/** 监听路线和产品变化 */
 watch(() => [props.routeId, props.productId], async () => {
   activeProcessId.value = undefined
-  await Promise.all([loadProcessList(), loadBomOptions()])
+  await loadProcessList()
   await getList()
 })
 
+/** 初始化 */
 onMounted(async () => {
-  await Promise.all([loadProcessList(), loadBomOptions()])
+  await loadProcessList()
   await getList()
 })
-
-defineExpose({ reload: getList })
 </script>

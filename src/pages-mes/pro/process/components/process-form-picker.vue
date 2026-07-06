@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<{
   placeholder: '请选择工序',
   prop: '',
   disabled: false,
-  clearable: true,
+  clearable: false,
 })
 
 const emit = defineEmits<{
@@ -53,7 +53,7 @@ const displayValue = computed(() => {
   if (selectedItem.value) {
     return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
   }
-  return props.modelValue ? `工序 #${props.modelValue}` : ''
+  return props.modelValue ? String(props.modelValue) : ''
 })
 
 /** 打开选择器 */

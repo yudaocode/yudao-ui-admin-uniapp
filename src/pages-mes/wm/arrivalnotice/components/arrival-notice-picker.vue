@@ -77,7 +77,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmArrivalNoticeVO } from '@/api/mes/wm/arrivalnotice'
+import type { WmArrivalNotice } from '@/api/mes/wm/arrivalnotice'
 import { ref } from 'vue'
 import { getArrivalNoticePage } from '@/api/mes/wm/arrivalnotice'
 import { DICT_TYPE } from '@/utils/constants'
@@ -92,13 +92,13 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  confirm: [notice: WmArrivalNoticeVO]
+  confirm: [notice: WmArrivalNotice]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 加载状态
-const noticeList = ref<WmArrivalNoticeVO[]>([]) // 到货通知列表
-const selectedNotice = ref<WmArrivalNoticeVO>() // 当前选中通知
+const noticeList = ref<WmArrivalNotice[]>([]) // 到货通知列表
+const selectedNotice = ref<WmArrivalNotice>() // 当前选中通知
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
 const searchCode = ref('') // 通知单编号

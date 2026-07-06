@@ -31,8 +31,10 @@
         </view>
         <wd-input v-model="formData.orderSourceCode" placeholder="请输入来源单据编号" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="工单类型" :dict-type="DICT_TYPE.MES_PRO_WORK_ORDER_TYPE" all-option :all-value="undefined" />
-      <yd-search-picker v-model="formData.status" label="工单状态" :dict-type="DICT_TYPE.MES_PRO_WORK_ORDER_STATUS" all-option :all-value="undefined" />
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.productId" label="产品" placeholder="请选择产品" item-or-product="PRODUCT" title="选择产品" />
+      <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
+      <yd-search-picker v-model="formData.type" label="工单类型" :dict-type="DICT_TYPE.MES_PRO_WORK_ORDER_TYPE" all-option />
+      <yd-search-picker v-model="formData.status" label="工单状态" :dict-type="DICT_TYPE.MES_PRO_WORK_ORDER_STATUS" all-option />
       <yd-search-date-range v-model="requestDateRange" label="需求日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -47,26 +49,41 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrderQueryParams } from '@/api/mes/pro/workorder'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateRange } from '@/utils/date'
+import { formatDate, formatDateRange } from '@/utils/date'
+import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+
+interface SearchFormData {
+  code?: string
+  name?: string
+  orderSourceCode?: string
+  productId?: number
+  clientId?: number
+  type?: number
+  status?: number
+}
 
 const emit = defineEmits<{
-  search: [data: Partial<ProWorkOrderQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const requestDateRange = ref<[number | undefined, number | undefined]>() // 需求日期范围
-const formData = reactive({
-  code: '',
-  name: '',
-  orderSourceCode: '',
-  type: undefined as number | undefined,
-  status: undefined as number | undefined,
+const requestDateRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 需求日期范围
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 产品搜索选择器
+const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
+const formData = reactive<SearchFormData>({
+  code: undefined,
+  name: undefined,
+  orderSourceCode: undefined,
+  productId: undefined,
+  clientId: undefined,
+  type: undefined,
+  status: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -81,47 +98,37 @@ const placeholder = computed(() => {
   if (formData.orderSourceCode) {
     conditions.push(`来源:${formData.orderSourceCode}`)
   }
-  if (formData.type != null) {
+  if (formData.productId) {
+    conditions.push(`产品:${itemSearchPickerRef.value?.format(formData.productId) || formData.productId}`)
+  }
+  if (formData.clientId) {
+    conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
+  }
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_PRO_WORK_ORDER_TYPE, formData.type)}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_PRO_WORK_ORDER_STATUS, formData.status)}`)
   }
-  if (requestDateRange.value?.length === 2) {
-    conditions.push('需求日期')
+  if (requestDateRange.value[0] && requestDateRange.value[1]) {
+    conditions.push(`需求日期:${formatDate(requestDateRange.value[0])}~${formatDate(requestDateRange.value[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产工单'
 })
 
-/** 构造搜索参数 */
-function buildParams(): Partial<ProWorkOrderQueryParams> {
-  const params: Partial<ProWorkOrderQueryParams> = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.orderSourceCode) {
-    params.orderSourceCode = formData.orderSourceCode
-  }
-  if (formData.type != null) {
-    params.type = formData.type
-  }
-  if (formData.status != null) {
-    params.status = formData.status
-  }
-  const range = formatDateRange(requestDateRange.value)
-  if (range) {
-    params.requestDate = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    orderSourceCode: formData.orderSourceCode || undefined,
+    productId: formData.productId,
+    clientId: formData.clientId,
+    type: formData.type === -1 ? undefined : formData.type,
+    status: formData.status === -1 ? undefined : formData.status,
+    requestDate: formatDateRange(requestDateRange.value),
+  })
 }
 
 /** 重置按钮操作 */
@@ -137,23 +144,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索选项 */
-onMounted(async () => {
-  const [products, clients] = await Promise.all([
-    getItemPage({
-      itemOrProduct: 'PRODUCT',
-      status: CommonStatusEnum.ENABLE,
-      pageNo: 1,
-      pageSize: 100,
-    }),
-    getClientPage({
-      status: CommonStatusEnum.ENABLE,
-      pageNo: 1,
-      pageSize: 100,
-    }),
-  ])
-  productOptions.value = products.list
-  clientOptions.value = clients.list
-})
 </script>

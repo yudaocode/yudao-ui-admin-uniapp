@@ -43,18 +43,7 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <MesSearchSelectorField
-          :model-value="selectedVendorText"
-          placeholder="请选择供应商"
-          clearable
-          @click="openVendorSelector"
-          @clear="clearVendor"
-        />
-      </view>
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
       <yd-search-date-range v-model="arrivalDateRange" label="到货日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -66,39 +55,28 @@
       </view>
     </view>
   </wd-popup>
-
-  <VendorSelector ref="vendorSelectorRef" @confirm="handleVendorConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { WmArrivalNoticeQueryParams } from '@/api/mes/wm/arrivalnotice'
 import { computed, reactive, ref } from 'vue'
 import { formatDateRange } from '@/utils/date'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import MesSearchSelectorField from '@/pages-mes/components/mes-search-selector-field.vue'
-import VendorSelector from '../../../md/vendor/components/vendor-selector.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: WmArrivalNoticeQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器
-const selectedVendor = ref<MdVendorVO>() // 已选供应商
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
 const arrivalDateRange = ref<[number | undefined, number | undefined]>() // 到货日期范围
 const formData = reactive({
   code: '',
   name: '',
   purchaseOrderCode: '',
-  vendorId: undefined as number | undefined,
+  vendorId: undefined,
 }) // 搜索表单数据
-const selectedVendorText = computed(() => {
-  return selectedVendor.value
-    ? `${selectedVendor.value.code || '-'} / ${selectedVendor.value.name || '-'}`
-    : ''
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -112,8 +90,8 @@ const placeholder = computed(() => {
   if (formData.purchaseOrderCode) {
     conditions.push(`采购订单:${formData.purchaseOrderCode}`)
   }
-  if (selectedVendor.value) {
-    conditions.push(`供应商:${selectedVendor.value.name || selectedVendor.value.code}`)
+  if (formData.vendorId != null) {
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
   if (arrivalDateRange.value?.length === 2) {
     conditions.push('到货日期')
@@ -166,22 +144,14 @@ function handleSearch() {
   emit('search', buildParams())
 }
 
-/** 重置字段 */
-function resetFields() {
+/** 重置按钮操作 */
+function handleReset() {
   formData.code = ''
   formData.name = ''
   formData.purchaseOrderCode = ''
   formData.vendorId = undefined
-  selectedVendor.value = undefined
   arrivalDateRange.value = undefined
-}
-
-/** 重置按钮操作 */
-function handleReset() {
-  resetFields()
   visible.value = false
   emit('reset')
 }
-
-defineExpose({ resetFields })
 </script>

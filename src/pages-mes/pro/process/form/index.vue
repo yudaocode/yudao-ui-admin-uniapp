@@ -1,13 +1,16 @@
 <template>
   <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
     <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 表单区域 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="工序编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -16,13 +19,7 @@
           <wd-form-item title="工序名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入工序名称" clearable />
           </wd-form-item>
-          <wd-form-item title="状态" title-width="220rpx" prop="status">
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.status" label="状态" label-width="220rpx" prop="status" :dict-type="DICT_TYPE.COMMON_STATUS" placeholder="请选择状态" />
           <wd-form-item title="工序说明" title-width="220rpx" prop="attention">
             <wd-textarea v-model="formData.attention" placeholder="请输入工序说明" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -31,33 +28,34 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
+      <ProcessContentList v-if="formData.id" :process-id="formData.id" />
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+
+    <!-- 底部保存按钮 -->
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProProcessCreateReqVO, ProProcessUpdateReqVO, ProProcessVO } from '@/api/mes/pro/process'
+import type { ProProcess } from '@/api/mes/pro/process'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createProcess, getProcess, updateProcess } from '@/api/mes/pro/process'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getIntDictOptions } from '@/hooks/useDict'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE, MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
+import ProcessContentList from '../components/process-content-list.vue'
 
 const props = defineProps<{ id?: number | string }>()
-const MesAutoCodeRuleCode = {
-  PRO_PROCESS_CODE: 'PRO_PROCESS_CODE',
-} as const
 
 definePage({
   style: {
@@ -67,91 +65,64 @@ definePage({
 })
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前工序编号
-const getTitle = computed(() => currentId.value ? '编辑生产工序' : '新增生产工序')
-const formLoading = ref(false)
-const formData = ref<Partial<ProProcessVO>>(getDefaultFormData())
+const getTitle = computed(() => props.id ? '编辑生产工序' : '新增生产工序')
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<ProProcess>({
+  code: '',
+  name: '',
+  attention: '',
+  status: CommonStatusEnum.ENABLE,
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '工序编码不能为空' }],
   name: [{ required: true, message: '工序名称不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/pro/process/index')
 }
 
-/** 默认表单数据 */
-function getDefaultFormData(): Partial<ProProcessVO> {
-  return {
-    code: '',
-    name: '',
-    attention: '',
-    status: CommonStatusEnum.ENABLE,
-    remark: '',
-  }
-}
-
 /** 加载生产工序详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  formData.value = { ...getDefaultFormData(), ...await getProcess(currentId.value) }
-}
-
-/** 加载页面数据 */
-async function loadPageData() {
-  if (currentId.value) {
-    await getDetail()
-    return
-  }
-  formData.value = getDefaultFormData()
+  formData.value = await getProcess(Number(props.id))
 }
 
 /** 生成工序编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.PRO_PROCESS_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): ProProcessCreateReqVO | ProProcessUpdateReqVO {
-  const data = {
-    code: formData.value.code || '',
-    name: formData.value.name || '',
-    attention: formData.value.attention || undefined,
-    status: Number(formData.value.status),
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateProcess(data)
+    if (props.id) {
+      await updateProcess(formData.value)
       toast.success('修改成功')
     } else {
-      await createProcess(data)
+      await createProcess(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:pro:process:reload')
@@ -161,11 +132,8 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  getDetail()
 })
 </script>

@@ -6,9 +6,9 @@ export interface QcIndicator {
   id?: number // 编号
   code: string // 检测项编码
   name: string // 检测项名称
-  type: number // 检测项类型
+  type?: number // 检测项类型
   tool?: string // 检测工具
-  resultType: number // 结果值类型
+  resultType?: number // 结果值类型
   resultSpecification?: string // 结果值属性
   remark?: string // 备注
   createTime?: Date // 创建时间

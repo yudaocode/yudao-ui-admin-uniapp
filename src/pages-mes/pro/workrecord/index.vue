@@ -1,16 +1,14 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <wd-navbar
-      title="MES 工作记录管理"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    />
+    <wd-navbar title="工作记录" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 当前工作状态 -->
     <WorkRecordStatusBar ref="statusBarRef" @change="reload" />
+
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
+
     <!-- 分页列表 -->
     <z-paging
       ref="pagingRef"
@@ -58,11 +56,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkRecordLogQueryParams, ProWorkRecordLogVO } from '@/api/mes/pro/workrecord'
+import type { ProWorkRecordLog } from '@/api/mes/pro/workrecord'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getWorkRecordLogPage } from '@/api/mes/pro/workrecord'
-import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -76,16 +73,14 @@ definePage({
   },
 })
 
-const { hasAccessByCodes } = useAccess()
-const list = ref<ProWorkRecordLogVO[]>([]) // 列表数据
-const pagingRef = ref() // 分页组件引用
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索表单引用
+const list = ref<ProWorkRecordLog[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<ProWorkRecordLog>>() // 分页组件引用
 const statusBarRef = ref<InstanceType<typeof WorkRecordStatusBar>>() // 当前状态引用
-const queryParams = ref<Partial<ProWorkRecordLogQueryParams>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -103,16 +98,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<ProWorkRecordLogQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -122,7 +115,7 @@ function reload() {
 }
 
 /** 查看详情 */
-function handleDetail(item: ProWorkRecordLogVO) {
+function handleDetail(item: ProWorkRecordLog) {
   uni.navigateTo({
     url: `/pages-mes/pro/workrecord/detail/index?id=${item.id}`,
   })

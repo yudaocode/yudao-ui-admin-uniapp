@@ -1,8 +1,10 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between px-24rpx py-20rpx">
+    <view v-if="showTitle || editable" class="flex items-center justify-between px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
-        组成工序
+        <template v-if="showTitle">
+          组成工序
+        </template>
       </view>
       <wd-button v-if="editable" size="small" type="primary" variant="plain" @click="openForm('create')">
         添加工序
@@ -26,12 +28,12 @@
             </view>
           </view>
           <view class="flex shrink-0 gap-12rpx">
-            <text v-if="editable" class="text-26rpx text-[#1677ff]" @click="openForm('update', item)">
+            <wd-button v-if="editable" size="small" type="warning" variant="plain" @click="openForm('update', item)">
               编辑
-            </text>
-            <text v-if="editable" class="text-26rpx text-[#f56c6c]" @click="handleDelete(item)">
+            </wd-button>
+            <wd-button v-if="editable" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </text>
+            </wd-button>
           </view>
         </view>
         <view class="text-26rpx text-[#666] space-y-8rpx">
@@ -43,10 +45,10 @@
           </view>
           <view class="flex gap-24rpx">
             <view>
-              关键工序：<dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="normalizeBoolean(item.keyFlag)" />
+              关键工序：<dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="item.keyFlag" />
             </view>
             <view>
-              质检确认：<dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="normalizeBoolean(item.checkFlag)" />
+              质检确认：<dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="item.checkFlag" />
             </view>
           </view>
           <view>准备/等待：{{ item.prepareTime ?? 0 }} / {{ item.waitTime ?? 0 }} 分钟</view>
@@ -75,22 +77,9 @@
             <wd-form-item title="序号" title-width="220rpx" prop="sort" center>
               <wd-input-number v-model="formData.sort" :min="1" :precision="0" />
             </wd-form-item>
-            <wd-form-item title="工序" title-width="220rpx" prop="processId" is-link :value="processDisplayValue" placeholder="请选择工序" @click="processPickerVisible = true" />
-            <wd-picker v-model:visible="processPickerVisible" :model-value="formData.processId !== undefined ? [formData.processId] : []" :columns="processOptions" label-key="displayName" value-key="id" @confirm="handleProcessConfirm" />
-            <wd-form-item title="下一道工序" title-width="220rpx" prop="nextProcessId" is-link :value="nextProcessDisplayValue" placeholder="请选择下一道工序" @click="nextProcessPickerVisible = true" />
-            <wd-picker v-model:visible="nextProcessPickerVisible" :model-value="formData.nextProcessId !== undefined ? [formData.nextProcessId] : []" :columns="nextProcessOptions" label-key="displayName" value-key="id" @confirm="handleNextProcessConfirm" />
-            <view v-if="formData.nextProcessId != null" class="px-24rpx pb-16rpx text-right">
-              <text class="text-26rpx text-[#1677ff]" @click="clearNextProcess">
-                清空下一道工序
-              </text>
-            </view>
-            <wd-form-item title="与下道关系" title-width="220rpx" prop="linkType">
-              <wd-radio-group v-model="formData.linkType" type="button">
-                <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_PRO_LINK_TYPE)" :key="dict.value" :value="dict.value">
-                  {{ dict.label }}
-                </wd-radio>
-              </wd-radio-group>
-            </wd-form-item>
+            <ProcessFormPicker v-model="formData.processId" label="工序" label-width="220rpx" prop="processId" placeholder="请选择工序" @change="handleProcessChange" />
+            <ProcessFormPicker v-model="formData.nextProcessId" label="下一道工序" label-width="220rpx" prop="nextProcessId" placeholder="请选择下一道工序" clearable />
+            <yd-form-picker v-model="formData.linkType" label="与下道关系" label-width="220rpx" prop="linkType" :dict-type="DICT_TYPE.MES_PRO_LINK_TYPE" placeholder="请选择与下道关系" />
             <wd-cell title="关键工序" center>
               <view class="flex justify-end">
                 <wd-switch v-model="formData.keyFlag" />
@@ -103,13 +92,13 @@
             </wd-cell>
             <wd-form-item title="准备时间" title-width="220rpx" prop="prepareTime" center>
               <view class="flex items-center gap-12rpx">
-                <wd-input-number v-model="formData.prepareTime" :min="0" :precision="0" />
+                <wd-input-number v-model="formData.prepareTime" allow-null :min="0" :precision="0" />
                 <text class="text-26rpx text-[#999]">分钟</text>
               </view>
             </wd-form-item>
             <wd-form-item title="等待时间" title-width="220rpx" prop="waitTime" center>
               <view class="flex items-center gap-12rpx">
-                <wd-input-number v-model="formData.waitTime" :min="0" :precision="0" />
+                <wd-input-number v-model="formData.waitTime" allow-null :min="0" :precision="0" />
                 <text class="text-26rpx text-[#999]">分钟</text>
               </view>
             </wd-form-item>
@@ -137,65 +126,48 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProProcessVO } from '@/api/mes/pro/process'
-import type {
-  ProRouteProcessCreateReqVO,
-  ProRouteProcessUpdateReqVO,
-  ProRouteProcessVO,
-} from '@/api/mes/pro/route/process'
+import type { ProRouteProcess } from '@/api/mes/pro/route/process'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
   createRouteProcess,
   deleteRouteProcess,
   getRouteProcessListByRoute,
   updateRouteProcess,
 } from '@/api/mes/pro/route/process'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import type { WotPickerValue } from '@/utils/wot'
+import { DICT_TYPE, MesProLinkTypeEnum } from '@/utils/constants'
+import { createFormSchema } from '@/utils/wot'
+import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
 
-interface ProcessOption extends ProProcessVO {
-  displayName: string // picker 展示名称
-}
-
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   editable: boolean
   routeId: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 const emit = defineEmits<{ changed: [] }>()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<ProRouteProcessVO[]>([])
-const loading = ref(false)
-const processOptions = ref<ProcessOption[]>([])
-const formVisible = ref(false)
-const formLoading = ref(false)
-const formType = ref<'create' | 'update'>('create')
-const formData = ref<Partial<ProRouteProcessVO>>(createDefaultFormData(props.routeId, 1))
-const formRef = ref<FormInstance>()
-const processPickerVisible = ref(false)
-const nextProcessPickerVisible = ref(false)
+const list = ref<ProRouteProcess[]>([]) // 工序列表
+const loading = ref(false) // 列表加载状态
+const formVisible = ref(false) // 表单弹窗显示状态
+const formLoading = ref(false) // 表单提交状态
+const formType = ref<'create' | 'update'>('create') // 表单类型
+const formData = ref<ProRouteProcess>(createDefaultFormData(props.routeId, 1)) // 表单数据
+const formRef = ref<FormInstance>() // 表单组件引用
 const colorOptions = ['#00AEF3', '#67C23A', '#E6A23C', '#F56C6C', '#909399'] // 甘特图预设色
 const formTitle = computed(() => formType.value === 'create' ? '添加工序' : '编辑工序')
-const processDisplayValue = computed(() => getWotPickerFormValue(processOptions.value, formData.value.processId, {
-  labelKey: 'displayName',
-  valueKey: 'id',
-}))
-const nextProcessOptions = computed(() => processOptions.value.filter(item => item.id !== formData.value.processId))
-const nextProcessDisplayValue = computed(() => getWotPickerFormValue(nextProcessOptions.value, formData.value.nextProcessId, {
-  labelKey: 'displayName',
-  valueKey: 'id',
-}))
 const formSchema = createFormSchema({
   sort: [
     { required: true, message: '序号不能为空' },
     { validator: value => Number(value) >= 1 || '序号必须大于 0' },
   ],
   processId: [{ required: true, message: '工序不能为空' }],
+  nextProcessId: [
+    { validator: value => value == null || value !== formData.value.processId || '下一道工序不能与当前工序相同' },
+  ],
   linkType: [{ required: true, message: '工序关系不能为空' }],
   keyFlag: [{ required: true, message: '是否关键工序不能为空' }],
   checkFlag: [{ required: true, message: '是否需要质检确认不能为空' }],
@@ -203,25 +175,15 @@ const formSchema = createFormSchema({
 })
 
 /** 创建默认表单数据 */
-function createDefaultFormData(routeId: number, sort: number): Partial<ProRouteProcessVO> {
+function createDefaultFormData(routeId: number, sort: number): ProRouteProcess {
   return {
     routeId,
     sort,
-    processId: undefined,
-    nextProcessId: undefined,
-    linkType: 3,
+    linkType: MesProLinkTypeEnum.FINISH_START,
     colorCode: '#00AEF3',
     keyFlag: false,
     checkFlag: false,
-    prepareTime: 0,
-    waitTime: 0,
-    remark: '',
   }
-}
-
-/** 归一化布尔显示值 */
-function normalizeBoolean(value?: boolean | number) {
-  return `${value === true || value === 1}`
 }
 
 /** 加载路线工序列表 */
@@ -239,84 +201,44 @@ async function getList() {
   }
 }
 
-/** 加载生产工序选项 */
-async function loadProcessOptions() {
-  const data = await getProcessSimpleList()
-  processOptions.value = (data || []).map(item => ({
-    ...item,
-    displayName: `${item.name || '-'} (${item.code || '-'})`,
-  }))
-}
-
 /** 打开新增或编辑弹层 */
-function openForm(type: 'create' | 'update', row?: ProRouteProcessVO) {
+function openForm(type: 'create' | 'update', row?: ProRouteProcess) {
   formType.value = type
   const maxSort = list.value.reduce((max, item) => Math.max(max, item.sort || 0), 0)
-  formData.value = row
-    ? { ...row, keyFlag: normalizeBoolean(row.keyFlag) === 'true', checkFlag: normalizeBoolean(row.checkFlag) === 'true' }
-    : createDefaultFormData(props.routeId, maxSort + 1)
+  formData.value = {
+    ...createDefaultFormData(props.routeId, row?.sort || maxSort + 1),
+    ...row,
+    colorCode: row?.colorCode || '#00AEF3',
+  }
   formVisible.value = true
-  setTimeout(() => formRef.value?.reset(), 0)
+  nextTick(() => formRef.value?.reset())
 }
 
 /** 选择工序 */
-function handleProcessConfirm({ value }: { value: WotPickerValue[] }) {
-  const processId = value[0]
-  formData.value.processId = Number(processId)
-  if (formData.value.nextProcessId === Number(processId)) {
+function handleProcessChange() {
+  if (formData.value.nextProcessId === formData.value.processId) {
     formData.value.nextProcessId = undefined
   }
 }
 
-/** 选择下一道工序 */
-function handleNextProcessConfirm({ value }: { value: WotPickerValue[] }) {
-  formData.value.nextProcessId = Number(value[0])
-}
-
-/** 清空下一道工序 */
-function clearNextProcess() {
-  formData.value.nextProcessId = undefined
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): ProRouteProcessCreateReqVO | ProRouteProcessUpdateReqVO {
-  const data = {
-    routeId: props.routeId,
-    processId: Number(formData.value.processId),
-    sort: Number(formData.value.sort),
-    nextProcessId: formData.value.nextProcessId == null ? undefined : Number(formData.value.nextProcessId),
-    linkType: Number(formData.value.linkType),
-    prepareTime: Number(formData.value.prepareTime || 0),
-    waitTime: Number(formData.value.waitTime || 0),
-    colorCode: formData.value.colorCode || undefined,
-    keyFlag: normalizeBoolean(formData.value.keyFlag) === 'true',
-    checkFlag: normalizeBoolean(formData.value.checkFlag) === 'true',
-    remark: formData.value.remark || undefined,
-  }
-  if (formType.value === 'update') {
-    return { ...data, id: Number(formData.value.id) }
-  }
-  return data
-}
-
 /** 提交路线工序 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (formType.value === 'update' && !formData.value.id) {
     toast.error('缺少路线工序编号')
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (formType.value === 'create') {
-      await createRouteProcess(data)
+      await createRouteProcess(formData.value)
       toast.success('新增成功')
     } else {
-      await updateRouteProcess(data)
+      await updateRouteProcess(formData.value)
       toast.success('修改成功')
     }
     formVisible.value = false
@@ -328,7 +250,7 @@ async function handleSubmit() {
 }
 
 /** 删除路线工序 */
-async function handleDelete(item: ProRouteProcessVO) {
+async function handleDelete(item: ProRouteProcess) {
   if (!item.id) {
     return
   }
@@ -343,13 +265,13 @@ async function handleDelete(item: ProRouteProcessVO) {
   emit('changed')
 }
 
+/** 监听路线编号变化 */
 watch(() => props.routeId, () => {
   getList()
 })
 
+/** 初始化 */
 onMounted(async () => {
-  await Promise.all([loadProcessOptions(), getList()])
+  await getList()
 })
-
-defineExpose({ reload: getList })
 </script>

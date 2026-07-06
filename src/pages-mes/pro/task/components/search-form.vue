@@ -31,8 +31,8 @@
         </view>
         <wd-input v-model="formData.orderSourceCode" placeholder="请输入来源单据编号" clearable />
       </view>
-      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
-      <yd-search-picker v-model="formData.clientId" label="客户" :columns="clientOptions" label-key="name" value-key="id" placeholder="请选择客户" />
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.productId" label="产品" placeholder="请选择产品" item-or-product="PRODUCT" title="选择产品" />
+      <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
       <yd-search-date-range v-model="formData.requestDate" label="需求日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -47,12 +47,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getClientPage } from '@/api/mes/md/client'
-import { getItemPage } from '@/api/mes/md/item'
-import { CommonStatusEnum } from '@/utils/constants'
+import { computed, reactive, ref } from 'vue'
 import { formatDate, formatDateRange } from '@/utils/date'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
 
 interface SearchFormData {
   code?: string
@@ -63,19 +62,14 @@ interface SearchFormData {
   requestDate?: [number | undefined, number | undefined]
 }
 
-interface SearchOption {
-  id?: number
-  name: string
-}
-
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<SearchOption[]>([]) // 产品选项
-const clientOptions = ref<SearchOption[]>([]) // 客户选项
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 产品搜索选择器
+const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
 const formData = reactive<SearchFormData>({
   code: undefined,
   name: undefined,
@@ -84,14 +78,6 @@ const formData = reactive<SearchFormData>({
   clientId: undefined,
   requestDate: [undefined, undefined],
 })
-
-/** 获取选项名称 */
-function getOptionLabel(options: SearchOption[], id?: number) {
-  if (!id) {
-    return ''
-  }
-  return options.find(item => String(item.id) === String(id))?.name || String(id)
-}
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -106,10 +92,10 @@ const placeholder = computed(() => {
     conditions.push(`来源:${formData.orderSourceCode}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${getOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${itemSearchPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.clientId) {
-    conditions.push(`客户:${getOptionLabel(clientOptions.value, formData.clientId)}`)
+    conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
   if (formData.requestDate?.[0] && formData.requestDate?.[1]) {
     conditions.push(`需求日期:${formatDate(formData.requestDate[0])}~${formatDate(formData.requestDate[1])}`)
@@ -141,23 +127,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [products, clients] = await Promise.all([
-    getItemPage({
-      itemOrProduct: 'PRODUCT',
-      status: CommonStatusEnum.ENABLE,
-      pageNo: 1,
-      pageSize: 100,
-    }),
-    getClientPage({
-      status: CommonStatusEnum.ENABLE,
-      pageNo: 1,
-      pageSize: 100,
-    }),
-  ])
-  productOptions.value = products.list
-  clientOptions.value = clients.list
-})
 </script>

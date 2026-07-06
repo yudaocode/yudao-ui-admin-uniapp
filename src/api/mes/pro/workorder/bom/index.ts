@@ -4,14 +4,14 @@ import { http } from '@/http/http'
 /** MES 生产工单 BOM */
 export interface ProWorkOrderBom {
   id?: number // 编号
-  workOrderId: number // 生产工单编号
-  itemId: number // BOM 物料编号
+  workOrderId?: number // 生产工单编号
+  itemId?: number // BOM 物料编号
   itemName?: string // 物料名称
   itemCode?: string // 物料编码
   itemSpecification?: string // 规格型号
   unitMeasureId?: number // 单位编号
   unitMeasureName?: string // 单位名称
-  quantity: number // 预计使用量 / 需求数量
+  quantity?: number // 预计使用量 / 需求数量
   remark?: string // 备注
   itemOrProduct?: string // 物料产品标识
 }

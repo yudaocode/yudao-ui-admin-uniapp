@@ -4,13 +4,13 @@ import { http } from '@/http/http'
 export interface ProRouteProcess {
   id?: number // 编号
   routeId: number // 工艺路线编号
-  processId: number // 工序编号
+  processId?: number // 工序编号
   processCode?: string // 工序编码
   processName?: string // 工序名称
-  sort: number // 序号
+  sort?: number // 序号
   nextProcessId?: number // 下一道工序编号
   nextProcessName?: string // 下一道工序名称
-  linkType: number // 与下一道工序关系
+  linkType?: number // 与下一道工序关系
   prepareTime?: number // 准备时间（分钟）
   waitTime?: number // 等待时间（分钟）
   colorCode?: string // 甘特图显示颜色
