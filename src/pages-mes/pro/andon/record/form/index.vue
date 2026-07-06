@@ -33,14 +33,14 @@
             placeholder="请选择发起人"
           />
           <wd-cell v-else title="发起人" :value="formData.userNickname || '-'" />
-          <wd-form-item
-            title="生产工单"
-            title-width="220rpx"
+          <WorkOrderFormPicker
+            v-model="formData.workOrderId"
+            label="生产工单"
+            label-width="220rpx"
             prop="workOrderId"
-            :is-link="isCreateMode"
-            :value="selectedWorkOrderText"
             placeholder="请选择已确认工单（可选）"
-            @click="openWorkOrderPicker"
+            :disabled="!isCreateMode"
+            clearable
           />
           <wd-form-item
             title="工序"
@@ -123,7 +123,6 @@
     </view>
 
     <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
-    <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
     <ProcessPicker ref="processPickerRef" @confirm="handleProcessConfirm" />
     <AndonConfigPicker ref="configPickerRef" @confirm="handleConfigConfirm" />
   </view>
@@ -135,7 +134,6 @@ import type { MdWorkstation } from '@/api/mes/md/workstation'
 import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
 import type { ProAndonRecord } from '@/api/mes/pro/andon/record'
 import type { ProProcess } from '@/api/mes/pro/process'
-import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -146,9 +144,9 @@ import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesProAndonStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
+import WorkOrderFormPicker from '@/pages-mes/pro/workorder/components/workorder-form-picker.vue'
 import AndonConfigPicker from '../../config/components/andon-config-picker.vue'
-import ProcessPicker from '../components/process-picker.vue'
-import WorkOrderPicker from '../../../card/components/workorder-picker.vue'
+import ProcessPicker from '@/pages-mes/pro/process/components/process-picker.vue'
 import WorkstationPicker from '../../../task/components/workstation-picker.vue'
 
 type FormMode = 'create' | 'update'
@@ -177,11 +175,9 @@ const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状
 const routeMode = computed(() => props.mode || 'create')
 const formData = ref<ProAndonRecord>(getDefaultFormData()) // 表单数据
 const selectedWorkstation = ref<MdWorkstation>() // 已选工作站
-const selectedWorkOrder = ref<ProWorkOrder>() // 已选工单
 const selectedProcess = ref<ProProcess>() // 已选工序
 const selectedConfig = ref<ProAndonConfig>() // 已选安灯配置
 const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
-const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
 const processPickerRef = ref<InstanceType<typeof ProcessPicker>>() // 工序选择器
 const configPickerRef = ref<InstanceType<typeof AndonConfigPicker>>() // 安灯配置选择器
 const isCreateMode = computed(() => routeMode.value === 'create' || !props.id)
@@ -194,12 +190,6 @@ const selectedWorkstationText = computed(() => {
   return formData.value.workstationId
     ? `${formData.value.workstationCode || '-'} / ${formData.value.workstationName || '-'}`
     : ''
-})
-const selectedWorkOrderText = computed(() => {
-  if (selectedWorkOrder.value) {
-    return `${selectedWorkOrder.value.code || '-'} / ${selectedWorkOrder.value.name || '-'}`
-  }
-  return formData.value.workOrderCode || ''
 })
 const selectedProcessText = computed(() => {
   if (selectedProcess.value) {
@@ -234,14 +224,6 @@ function openWorkstationPicker() {
   workstationPickerRef.value?.open(formData.value.workstationId)
 }
 
-/** 打开工单选择器 */
-function openWorkOrderPicker() {
-  if (!isCreateMode.value) {
-    return
-  }
-  workOrderPickerRef.value?.open(formData.value.workOrderId)
-}
-
 /** 打开工序选择器 */
 function openProcessPicker() {
   if (!isCreateMode.value) {
@@ -262,12 +244,6 @@ function openConfigPicker() {
 function handleWorkstationConfirm(item: MdWorkstation) {
   selectedWorkstation.value = item
   formData.value.workstationId = item.id
-}
-
-/** 选择工单 */
-function handleWorkOrderConfirm(item: ProWorkOrder) {
-  selectedWorkOrder.value = item
-  formData.value.workOrderId = item.id
 }
 
 /** 选择工序 */

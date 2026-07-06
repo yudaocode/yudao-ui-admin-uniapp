@@ -16,8 +16,8 @@
               </template>
             </wd-input>
           </wd-form-item>
-          <wd-form-item title="生产工单" title-width="220rpx" prop="workOrderId" is-link :value="selectedWorkOrderText" placeholder="请选择已确认工单" @click="openWorkOrderPicker" />
-          <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="selectedProductText" placeholder="请选择产品" @click="openItemPicker" />
+          <WorkOrderFormPicker v-model="formData.workOrderId" label="生产工单" label-width="220rpx" prop="workOrderId" placeholder="请选择已确认工单" :disabled="headerReadonly" @change="handleWorkOrderChange" />
+          <ItemFormPicker v-model="formData.itemId" label="产品" label-width="220rpx" prop="itemId" item-or-product="PRODUCT" title="选择产品" :disabled="productReadonly" @change="handleItemChange" />
           <wd-cell title="规格型号" :value="productSpecText" />
           <wd-form-item title="批次号" title-width="220rpx" prop="batchCode">
             <wd-input v-model="formData.batchCode" placeholder="请输入批次号" clearable :disabled="headerReadonly" />
@@ -56,8 +56,6 @@
         </wd-button>
       </view>
     </view>
-    <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
-    <ItemPicker ref="itemPickerRef" item-or-product="PRODUCT" title="选择产品" :multiple="false" @confirm="handleItemConfirm" />
   </view>
 </template>
 
@@ -71,14 +69,13 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createCard, getCard, submitCard, updateCard } from '@/api/mes/pro/card'
-import { getWorkOrder } from '@/api/mes/pro/workorder'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesProCardStatusEnum } from '@/utils/constants'
 import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
+import ItemFormPicker from '@/pages-mes/md/item/components/item-form-picker.vue'
+import WorkOrderFormPicker from '@/pages-mes/pro/workorder/components/workorder-form-picker.vue'
 import CardProcessList from '../components/card-process-list.vue'
-import WorkOrderPicker from '../components/workorder-picker.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -96,9 +93,6 @@ const getTitle = computed(() => props.id ? '编辑流转卡' : '新增流转卡'
 const formLoading = ref(false) // 表单提交状态
 const codeLoading = ref(false) // 编码生成状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
-const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 产品选择器
-const selectedWorkOrder = ref<ProWorkOrder>() // 当前工单
 const formData = ref<ProCard>({
   code: '',
   batchCode: '',
@@ -108,43 +102,14 @@ const originalFormData = ref('') // 原始表单数据快照
 const formSchema = createFormSchema({
   code: [{ required: true, message: '流转卡编码不能为空' }],
   workOrderId: [{ required: true, message: '生产工单不能为空' }],
-  itemId: [
-    { required: true, message: '产品不能为空' },
-    {
-      validator: (value) => {
-        if (!selectedWorkOrder.value?.productId || value === selectedWorkOrder.value.productId) {
-          return true
-        }
-        return '产品必须与生产工单产品一致'
-      },
-    },
-  ],
+  itemId: [{ required: true, message: '产品不能为空' }],
   transferedQuantity: [{ required: true, message: '流转数量不能为空' }],
 })
 const isEditable = computed(() => !formData.value.id || formData.value.status === MesProCardStatusEnum.PREPARE)
 const canSubmit = computed(() => formData.value.id && formData.value.status === MesProCardStatusEnum.PREPARE)
 const headerReadonly = computed(() => !isEditable.value)
-const selectedWorkOrderText = computed(() => {
-  if (!selectedWorkOrder.value) {
-    return ''
-  }
-  return `${selectedWorkOrder.value.code || '-'} / ${selectedWorkOrder.value.name || '-'}`
-})
-const selectedProductText = computed(() => {
-  if (selectedWorkOrder.value) {
-    return `${selectedWorkOrder.value.productCode || '-'} / ${selectedWorkOrder.value.productName || '-'}`
-  }
-  if (formData.value.itemCode || formData.value.itemName) {
-    return `${formData.value.itemCode || '-'} / ${formData.value.itemName || '-'}`
-  }
-  return formData.value.itemId ? `产品 #${formData.value.itemId}` : ''
-})
-const productSpecText = computed(() => {
-  if (selectedWorkOrder.value) {
-    return `${selectedWorkOrder.value.productSpecification || '-'} / ${selectedWorkOrder.value.unitMeasureName || '-'}`
-  }
-  return `${formData.value.specification || '-'} / ${formData.value.unitMeasureName || '-'}`
-})
+const productReadonly = computed(() => headerReadonly.value || !!formData.value.workOrderId)
+const productSpecText = computed(() => `${formData.value.specification || '-'} / ${formData.value.unitMeasureName || '-'}`)
 
 /** 返回上一页 */
 function handleBack() {
@@ -158,31 +123,16 @@ async function getDetail() {
   }
   formData.value = await getCard(Number(props.id))
   originalFormData.value = JSON.stringify(formData.value)
-  if (formData.value.workOrderId) {
-    selectedWorkOrder.value = await getWorkOrder(formData.value.workOrderId)
-  }
-}
-
-/** 打开工单选择器 */
-function openWorkOrderPicker() {
-  if (headerReadonly.value) {
-    return
-  }
-  workOrderPickerRef.value?.open(formData.value.workOrderId)
-}
-
-/** 打开产品选择器 */
-function openItemPicker() {
-  if (headerReadonly.value) {
-    return
-  }
-  itemPickerRef.value?.open()
 }
 
 /** 选择工单 */
-function handleWorkOrderConfirm(item: ProWorkOrder) {
-  selectedWorkOrder.value = item
+function handleWorkOrderChange(item?: ProWorkOrder) {
+  if (!item) {
+    return
+  }
   formData.value.workOrderId = item.id
+  formData.value.workOrderCode = item.code
+  formData.value.workOrderName = item.name
   formData.value.itemId = item.productId
   formData.value.itemCode = item.productCode
   formData.value.itemName = item.productName
@@ -193,8 +143,7 @@ function handleWorkOrderConfirm(item: ProWorkOrder) {
 }
 
 /** 选择产品 */
-function handleItemConfirm(items: MdItem[]) {
-  const item = items[0]
+function handleItemChange(item?: MdItem) {
   if (!item || item.id == null) {
     return
   }
@@ -202,6 +151,7 @@ function handleItemConfirm(items: MdItem[]) {
   formData.value.itemCode = item.code
   formData.value.itemName = item.name
   formData.value.specification = item.specification || undefined
+  formData.value.unitMeasureId = item.unitMeasureId
   formData.value.unitMeasureName = item.unitMeasureName
 }
 
@@ -263,6 +213,7 @@ async function handleSubmit() {
   try {
     if (JSON.stringify(formData.value) !== originalFormData.value) {
       await updateCard(formData.value)
+      originalFormData.value = JSON.stringify(formData.value)
     }
     await submitCard(formData.value.id)
     toast.success('提交成功')

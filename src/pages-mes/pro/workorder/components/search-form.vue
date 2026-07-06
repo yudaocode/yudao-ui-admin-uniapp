@@ -124,22 +124,36 @@ function handleSearch() {
   emit('search', buildParams())
 }
 
-/** 重置字段 */
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-  formData.orderSourceCode = ''
-  formData.type = undefined
-  formData.status = undefined
-  requestDateRange.value = undefined
-}
-
 /** 重置按钮操作 */
 function handleReset() {
-  resetFields()
+  formData.code = undefined
+  formData.name = undefined
+  formData.orderSourceCode = undefined
+  formData.productId = undefined
+  formData.clientId = undefined
+  formData.type = undefined
+  formData.status = undefined
+  requestDateRange.value = [undefined, undefined]
   visible.value = false
   emit('reset')
 }
 
-defineExpose({ resetFields })
+/** 加载搜索选项 */
+onMounted(async () => {
+  const [products, clients] = await Promise.all([
+    getItemPage({
+      itemOrProduct: 'PRODUCT',
+      status: CommonStatusEnum.ENABLE,
+      pageNo: 1,
+      pageSize: 100,
+    }),
+    getClientPage({
+      status: CommonStatusEnum.ENABLE,
+      pageNo: 1,
+      pageSize: 100,
+    }),
+  ])
+  productOptions.value = products.list
+  clientOptions.value = clients.list
+})
 </script>

@@ -108,7 +108,7 @@ const placeholder = computed(() => {
   if (handlerName) {
     conditions.push(`处置人:${handlerName}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_PRO_ANDON_STATUS, formData.status)}`)
   }
   if (createTimeRange.value?.length === 2) {
@@ -141,7 +141,7 @@ function handleSearch() {
     workstationId: formData.workstationId,
     userId: formData.userId,
     handlerUserId: formData.handlerUserId,
-    status: formData.status,
+    status: formData.status === -1 ? undefined : formData.status,
     createTime: formatDateRange(createTimeRange.value),
   })
 }

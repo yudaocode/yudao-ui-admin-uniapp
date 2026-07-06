@@ -85,7 +85,7 @@ const props = withDefaults(defineProps<{
   clearable?: boolean
 }>(), {
   disabled: false,
-  clearable: true,
+  clearable: false,
 })
 
 const emit = defineEmits<{
@@ -115,14 +115,17 @@ async function open(currentId?: number) {
   }
   const selectedId = currentId ?? props.modelValue
   visible.value = true
-  selected.value = selectedItem.value
+  selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+  if (selectedId == null) {
+    selectedItem.value = undefined
+  }
   pageNo.value = 1
   total.value = 0
   list.value = []
   await loadList(false, selectedId)
-  if (selectedId && !selected.value) {
+  if (selectedId != null && !selected.value) {
     await resolveItemById(selectedId)
-    selected.value = selectedItem.value
+    selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
   }
 }
 
@@ -145,7 +148,7 @@ async function loadList(append = false, selectedId?: number) {
       list.value = data.list
     }
     total.value = data.total
-    if (selectedId && !selected.value) {
+    if (selectedId != null && !selected.value) {
       selected.value = list.value.find(item => item.id === selectedId)
     }
   } finally {

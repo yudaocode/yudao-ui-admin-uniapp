@@ -31,6 +31,8 @@
         </view>
         <wd-input v-model="formData.orderSourceCode" placeholder="请输入来源单据编号" clearable />
       </view>
+      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+      <yd-search-picker v-model="formData.clientId" label="客户" :columns="clientOptions" label-key="name" value-key="id" placeholder="请选择客户" />
       <yd-search-date-range v-model="formData.requestDate" label="需求日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -45,30 +47,51 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrderQueryParams } from '@/api/mes/pro/workorder'
-import { computed, reactive, ref } from 'vue'
-import { formatDateRange } from '@/utils/date'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { getClientPage } from '@/api/mes/md/client'
+import { getItemPage } from '@/api/mes/md/item'
+import { CommonStatusEnum } from '@/utils/constants'
+import { formatDate, formatDateRange } from '@/utils/date'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 interface SearchFormData {
   code?: string
   name?: string
   orderSourceCode?: string
+  productId?: number
+  clientId?: number
   requestDate?: [number | undefined, number | undefined]
 }
 
+interface SearchOption {
+  id?: number
+  name: string
+}
+
 const emit = defineEmits<{
-  search: [data: Partial<ProWorkOrderQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const productOptions = ref<SearchOption[]>([]) // 产品选项
+const clientOptions = ref<SearchOption[]>([]) // 客户选项
 const formData = reactive<SearchFormData>({
   code: undefined,
   name: undefined,
   orderSourceCode: undefined,
-  requestDate: undefined,
+  productId: undefined,
+  clientId: undefined,
+  requestDate: [undefined, undefined],
 })
+
+/** 获取选项名称 */
+function getOptionLabel(options: SearchOption[], id?: number) {
+  if (!id) {
+    return ''
+  }
+  return options.find(item => String(item.id) === String(id))?.name || String(id)
+}
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -82,8 +105,14 @@ const placeholder = computed(() => {
   if (formData.orderSourceCode) {
     conditions.push(`来源:${formData.orderSourceCode}`)
   }
-  if (formData.requestDate?.length === 2) {
-    conditions.push('需求日期:已选')
+  if (formData.productId) {
+    conditions.push(`产品:${getOptionLabel(productOptions.value, formData.productId)}`)
+  }
+  if (formData.clientId) {
+    conditions.push(`客户:${getOptionLabel(clientOptions.value, formData.clientId)}`)
+  }
+  if (formData.requestDate?.[0] && formData.requestDate?.[1]) {
+    conditions.push(`需求日期:${formatDate(formData.requestDate[0])}~${formatDate(formData.requestDate[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索待排产工单'
 })
@@ -95,6 +124,8 @@ function handleSearch() {
     code: formData.code || undefined,
     name: formData.name || undefined,
     orderSourceCode: formData.orderSourceCode || undefined,
+    productId: formData.productId,
+    clientId: formData.clientId,
     requestDate: formatDateRange(formData.requestDate),
   })
 }
@@ -104,10 +135,29 @@ function handleReset() {
   formData.code = undefined
   formData.name = undefined
   formData.orderSourceCode = undefined
-  formData.requestDate = undefined
+  formData.productId = undefined
+  formData.clientId = undefined
+  formData.requestDate = [undefined, undefined]
   visible.value = false
   emit('reset')
 }
 
-defineExpose({ handleReset })
+/** 加载搜索下拉选项 */
+onMounted(async () => {
+  const [products, clients] = await Promise.all([
+    getItemPage({
+      itemOrProduct: 'PRODUCT',
+      status: CommonStatusEnum.ENABLE,
+      pageNo: 1,
+      pageSize: 100,
+    }),
+    getClientPage({
+      status: CommonStatusEnum.ENABLE,
+      pageNo: 1,
+      pageSize: 100,
+    }),
+  ])
+  productOptions.value = products.list
+  clientOptions.value = clients.list
+})
 </script>

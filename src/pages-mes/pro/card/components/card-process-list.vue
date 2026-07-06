@@ -84,7 +84,7 @@
               <wd-form-item title="序号" title-width="220rpx" prop="sort" center>
                 <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
               </wd-form-item>
-              <yd-form-picker v-model="formData.processId" label="工序" label-width="220rpx" prop="processId" :columns="processOptions" label-key="name" value-key="id" placeholder="请选择工序" />
+              <ProcessFormPicker v-model="formData.processId" label="工序" label-width="220rpx" prop="processId" placeholder="请选择工序" />
               <wd-form-item title="进入时间" title-width="220rpx" prop="inputTime" is-link :value="formatDateTime(formData.inputTime) || ''" placeholder="请选择进入时间" @click="dateVisible.inputTime = true" />
               <wd-datetime-picker v-model="formData.inputTime" v-model:visible="dateVisible.inputTime" title="请选择进入时间" type="datetime" />
               <wd-form-item title="出工序时间" title-width="220rpx" prop="outputTime" is-link :value="formatDateTime(formData.outputTime) || ''" placeholder="请选择出工序时间" @click="dateVisible.outputTime = true" />
@@ -116,7 +116,7 @@
                   @update:model-value="value => formData.unqualifiedQuantity = toFiniteNumber(value)"
                 />
               </wd-form-item>
-              <yd-form-picker v-model="formData.workstationId" label="工位" label-width="220rpx" prop="workstationId" :columns="workstationOptions" label-key="name" value-key="id" placeholder="请选择工位" />
+              <WorkstationFormPicker v-model="formData.workstationId" label="工位" label-width="220rpx" prop="workstationId" placeholder="请选择工位" />
               <UserPicker v-model="formData.userId" label="操作人" label-width="220rpx" prop="userId" type="radio" placeholder="请选择操作人" />
               <wd-form-item title="备注" title-width="220rpx" prop="remark">
                 <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable />
@@ -133,19 +133,16 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProCardProcess } from '@/api/mes/pro/card/process'
-import type { ProProcess } from '@/api/mes/pro/process'
-import type { MdWorkstation } from '@/api/mes/md/workstation'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, nextTick, onMounted, ref } from 'vue'
-import { getWorkstationPage } from '@/api/mes/md/workstation'
+import { computed, nextTick, ref } from 'vue'
 import { createCardProcess, deleteCardProcess, getCardProcessPage, updateCardProcess } from '@/api/mes/pro/card/process'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
-import { CommonStatusEnum } from '@/utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
+import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
+import WorkstationFormPicker from '@/pages-mes/pro/task/components/workstation-form-picker.vue'
 
 const props = defineProps<{
   cardId: number
@@ -165,8 +162,6 @@ const formVisible = ref(false) // 表单弹层
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
 const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
-const processOptions = ref<ProProcess[]>([]) // 工序选项
-const workstationOptions = ref<MdWorkstation[]>([]) // 工位选项
 const formData = ref<ProCardProcess>(createDefaultFormData(1)) // 表单数据
 const formTitle = computed(() => formData.value.id ? '编辑工序记录' : '新增工序记录')
 const formSchema = createFormSchema({
@@ -233,21 +228,6 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 加载选择器选项 */
-async function loadOptions() {
-  const [processes, workstations] = await Promise.all([
-    getProcessSimpleList(),
-    getWorkstationPage({ pageNo: 1, pageSize: 100, status: CommonStatusEnum.ENABLE }),
-  ])
-  processOptions.value = (processes || [])
-    .filter(item => item.id !== undefined)
-    .map(item => ({ ...item, id: Number(item.id), name: `${item.name || '-'} (${item.code || '-'})` }))
-  workstationOptions.value = workstations.list.map(item => ({
-    ...item,
-    name: `${item.name || '-'} (${item.code || '-'})`,
-  }))
-}
-
 /** 打开工序记录表单 */
 function openForm(row?: ProCardProcess) {
   const data = createDefaultFormData(row?.sort || total.value + 1)
@@ -298,9 +278,4 @@ async function removeProcess(item: ProCardProcess) {
   pagingRef.value?.reload()
   emit('changed')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadOptions()
-})
 </script>

@@ -24,7 +24,7 @@
         <view class="yd-search-form-label">
           生产工单
         </view>
-        <view class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-18rpx text-28rpx text-[#333]" @click="workOrderSelectorRef?.open(formData.workOrderId)">
+        <view class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-18rpx text-28rpx text-[#333]" @click="workOrderPickerRef?.open(formData.workOrderId)">
           {{ selectedWorkOrderName || '请选择工单' }}
         </view>
       </view>
@@ -32,7 +32,7 @@
         <view class="yd-search-form-label">
           产品物料
         </view>
-        <view class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-18rpx text-28rpx text-[#333]" @click="itemSelectorRef?.open()">
+        <view class="rounded-8rpx bg-[#f7f8fa] px-20rpx py-18rpx text-28rpx text-[#333]" @click="itemPickerRef?.open()">
           {{ selectedItemName || '请选择产品物料' }}
         </view>
       </view>
@@ -65,30 +65,32 @@
     </view>
   </wd-popup>
 
-  <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-  <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
+  <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
+  <ItemPicker ref="itemPickerRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { ProFeedbackQueryParams } from '@/api/mes/pro/feedback'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { MdItem } from '@/api/mes/md/item'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { computed, reactive, ref } from 'vue'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
-import WorkOrderSelector from '../../card/components/workorder-selector.vue'
+import ItemPicker from '../../../md/item/components/item-picker.vue'
+import WorkOrderPicker from '@/pages-mes/pro/workorder/components/workorder-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<ProFeedbackQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
+type DateRangeValue = [number | undefined, number | undefined]
+const defaultFeedbackTime: DateRangeValue = [undefined, undefined]
+
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive<Partial<ProFeedbackQueryParams>>({
+const formData = reactive<Record<string, any>>({
   code: undefined,
   type: undefined,
   workOrderId: undefined,
@@ -96,12 +98,12 @@ const formData = reactive<Partial<ProFeedbackQueryParams>>({
   feedbackUserId: undefined,
   creator: undefined,
   status: undefined,
-  feedbackTime: undefined,
+  feedbackTime: defaultFeedbackTime,
 }) // 搜索表单数据
 const selectedWorkOrderName = ref('') // 已选工单展示
 const selectedItemName = ref('') // 已选物料展示
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
+const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器引用
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
 const feedbackUserPickerRef = ref<InstanceType<typeof UserPicker>>() // 报工人选择器引用
 const creatorPickerRef = ref<InstanceType<typeof UserPicker>>() // 记录人选择器引用
 
@@ -135,13 +137,13 @@ const placeholder = computed(() => {
 })
 
 /** 确认工单 */
-function handleWorkOrderConfirm(item: ProWorkOrderVO) {
+function handleWorkOrderConfirm(item: ProWorkOrder) {
   formData.workOrderId = item.id
   selectedWorkOrderName.value = item.code || item.name || `工单 #${item.id}`
 }
 
 /** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
   formData.itemId = item?.id
   selectedItemName.value = item ? `${item.code || '-'} / ${item.name || '-'}` : ''
@@ -165,7 +167,7 @@ function handleReset() {
   formData.feedbackUserId = undefined
   formData.creator = undefined
   formData.status = undefined
-  formData.feedbackTime = undefined
+  formData.feedbackTime = [undefined, undefined]
   selectedWorkOrderName.value = ''
   selectedItemName.value = ''
   visible.value = false

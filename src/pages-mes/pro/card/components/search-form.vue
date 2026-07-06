@@ -86,7 +86,7 @@ import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
-import WorkOrderPicker from './workorder-picker.vue'
+import WorkOrderPicker from '@/pages-mes/pro/workorder/components/workorder-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
