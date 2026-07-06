@@ -21,7 +21,7 @@
             :is-link="isCreateMode"
             :value="selectedWorkstationText"
             placeholder="请选择工作站"
-            @click="openWorkstationSelector"
+            @click="openWorkstationPicker"
           />
           <UserPicker
             v-if="isCreateMode"
@@ -32,7 +32,7 @@
             type="radio"
             placeholder="请选择发起人"
           />
-          <wd-cell v-else title="发起人" :value="detailData?.userNickname || '-'" />
+          <wd-cell v-else title="发起人" :value="formData.userNickname || '-'" />
           <wd-form-item
             title="生产工单"
             title-width="220rpx"
@@ -40,7 +40,7 @@
             :is-link="isCreateMode"
             :value="selectedWorkOrderText"
             placeholder="请选择已确认工单（可选）"
-            @click="openWorkOrderSelector"
+            @click="openWorkOrderPicker"
           />
           <wd-form-item
             title="工序"
@@ -49,7 +49,7 @@
             :is-link="isCreateMode"
             :value="selectedProcessText"
             placeholder="请选择工序（可选）"
-            @click="openProcessSelector"
+            @click="openProcessPicker"
           />
           <wd-form-item
             v-if="isCreateMode"
@@ -59,15 +59,15 @@
             is-link
             :value="selectedConfigText"
             placeholder="请选择呼叫原因"
-            @click="openConfigSelector"
+            @click="openConfigPicker"
           />
-          <wd-cell v-else title="呼叫原因" :value="detailData?.reason || '-'" />
+          <wd-cell v-else title="呼叫原因" :value="formData.reason || '-'" />
           <wd-cell title="级别">
             <dict-tag v-if="formData.level != null" :type="DICT_TYPE.MES_PRO_ANDON_LEVEL" :value="formData.level" />
             <text v-else>由呼叫原因自动带出</text>
           </wd-cell>
-          <wd-cell v-if="detailData?.status != null" title="处置状态">
-            <dict-tag :type="DICT_TYPE.MES_PRO_ANDON_STATUS" :value="detailData.status" />
+          <wd-cell v-if="formData.status != null" title="处置状态">
+            <dict-tag :type="DICT_TYPE.MES_PRO_ANDON_STATUS" :value="formData.status" />
           </wd-cell>
         </wd-cell-group>
 
@@ -76,13 +76,8 @@
             处置信息
           </view>
           <wd-cell-group border>
-            <wd-form-item title="处置时间" title-width="220rpx" prop="handleTime">
-              <wd-datetime-picker
-                v-model="formData.handleTime"
-                type="datetime"
-                placeholder="请选择处置时间"
-              />
-            </wd-form-item>
+            <wd-form-item title="处置时间" title-width="220rpx" prop="handleTime" is-link :value="formatDateTime(formData.handleTime) || ''" placeholder="请选择处置时间" @click="dateVisible.handleTime = true" />
+            <wd-datetime-picker v-model="formData.handleTime" v-model:visible="dateVisible.handleTime" title="请选择处置时间" type="datetime" />
             <UserPicker
               v-model="formData.handlerUserId"
               label="处置人"
@@ -113,63 +108,50 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="flex gap-16rpx">
-      <wd-button v-if="isCreateMode" class="flex-1" type="primary" :loading="formLoading" @click="handleCreate">
-        确定
-      </wd-button>
-      <wd-button v-if="isUpdateMode" class="flex-1" type="primary" :loading="formLoading" @click="handleSave">
-        保存
-      </wd-button>
-      <wd-button v-if="isUpdateMode" class="flex-1" type="success" :loading="formLoading" @click="handleFinish">
-        已处置
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="isCreateMode" class="flex-1" type="primary" :loading="formLoading" @click="handleCreate">
+          确定
+        </wd-button>
+        <wd-button v-if="isUpdateMode" class="flex-1" type="primary" :loading="formLoading" @click="handleSave">
+          保存
+        </wd-button>
+        <wd-button v-if="isUpdateMode" class="flex-1" type="success" :loading="formLoading" @click="handleFinish">
+          已处置
+        </wd-button>
+      </view>
+    </view>
 
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
-    <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-    <ProcessSelector ref="processSelectorRef" @confirm="handleProcessConfirm" />
-    <AndonConfigSelector ref="configSelectorRef" @confirm="handleConfigConfirm" />
+    <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
+    <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
+    <ProcessPicker ref="processPickerRef" @confirm="handleProcessConfirm" />
+    <AndonConfigPicker ref="configPickerRef" @confirm="handleConfigConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProAndonConfigVO } from '@/api/mes/pro/andon/config'
-import type { ProAndonRecordCreateReqVO, ProAndonRecordVO } from '@/api/mes/pro/andon/record'
-import type { ProProcessVO } from '@/api/mes/pro/process'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
+import type { ProAndonRecord } from '@/api/mes/pro/andon/record'
+import type { ProProcess } from '@/api/mes/pro/process'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createAndonRecord, getAndonRecord, updateAndonRecord } from '@/api/mes/pro/andon/record'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesProAndonStatusEnum } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import AndonConfigSelector from '../components/andon-config-selector.vue'
-import ProcessSelector from '../components/process-selector.vue'
-import WorkOrderSelector from '../../../card/components/workorder-selector.vue'
-import WorkstationSelector from '../../../task/components/workstation-selector.vue'
+import AndonConfigPicker from '../../config/components/andon-config-picker.vue'
+import ProcessPicker from '../components/process-picker.vue'
+import WorkOrderPicker from '../../../card/components/workorder-picker.vue'
+import WorkstationPicker from '../../../task/components/workstation-picker.vue'
 
 type FormMode = 'create' | 'update'
-
-interface AndonRecordFormData {
-  id?: number
-  configId?: number
-  workstationId?: number
-  userId?: number
-  workOrderId?: number
-  processId?: number
-  reason?: string
-  level?: number
-  handleTime?: string | number
-  handlerUserId?: number
-  remark?: string
-}
 
 const props = withDefaults(defineProps<{
   id?: number | string
@@ -178,11 +160,6 @@ const props = withDefaults(defineProps<{
   id: undefined,
   mode: 'create',
 })
-
-const MesProAndonStatusEnum = {
-  ACTIVE: 0,
-  HANDLED: 1,
-} as const
 
 definePage({
   style: {
@@ -196,41 +173,39 @@ const dialog = useDialog()
 const userStore = useUserStore()
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const detailData = ref<ProAndonRecordVO>() // 原始详情
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/pro/andon/record/form/index')
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const routeMode = computed(() => (getRouteQueryValue('mode') as FormMode) || 'create')
-const formData = ref<AndonRecordFormData>(getDefaultFormData()) // 表单数据
-const selectedWorkstation = ref<MdWorkstationVO>() // 已选工作站
-const selectedWorkOrder = ref<ProWorkOrderVO>() // 已选工单
-const selectedProcess = ref<ProProcessVO>() // 已选工序
-const selectedConfig = ref<ProAndonConfigVO>() // 已选安灯配置
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器
-const processSelectorRef = ref<InstanceType<typeof ProcessSelector>>() // 工序选择器
-const configSelectorRef = ref<InstanceType<typeof AndonConfigSelector>>() // 安灯配置选择器
-const isCreateMode = computed(() => routeMode.value === 'create' || !currentId.value)
-const isUpdateMode = computed(() => routeMode.value === 'update' && !!currentId.value)
+const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
+const routeMode = computed(() => props.mode || 'create')
+const formData = ref<ProAndonRecord>(getDefaultFormData()) // 表单数据
+const selectedWorkstation = ref<MdWorkstation>() // 已选工作站
+const selectedWorkOrder = ref<ProWorkOrder>() // 已选工单
+const selectedProcess = ref<ProProcess>() // 已选工序
+const selectedConfig = ref<ProAndonConfig>() // 已选安灯配置
+const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
+const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
+const processPickerRef = ref<InstanceType<typeof ProcessPicker>>() // 工序选择器
+const configPickerRef = ref<InstanceType<typeof AndonConfigPicker>>() // 安灯配置选择器
+const isCreateMode = computed(() => routeMode.value === 'create' || !props.id)
+const isUpdateMode = computed(() => routeMode.value === 'update' && !!props.id)
 const getTitle = computed(() => isCreateMode.value ? '新增安灯呼叫' : '处置安灯呼叫')
 const selectedWorkstationText = computed(() => {
   if (selectedWorkstation.value) {
     return `${selectedWorkstation.value.code || '-'} / ${selectedWorkstation.value.name || '-'}`
   }
-  return detailData.value
-    ? `${detailData.value.workstationCode || '-'} / ${detailData.value.workstationName || '-'}`
+  return formData.value.workstationId
+    ? `${formData.value.workstationCode || '-'} / ${formData.value.workstationName || '-'}`
     : ''
 })
 const selectedWorkOrderText = computed(() => {
   if (selectedWorkOrder.value) {
     return `${selectedWorkOrder.value.code || '-'} / ${selectedWorkOrder.value.name || '-'}`
   }
-  return detailData.value?.workOrderCode || ''
+  return formData.value.workOrderCode || ''
 })
 const selectedProcessText = computed(() => {
   if (selectedProcess.value) {
     return `${selectedProcess.value.code || '-'} / ${selectedProcess.value.name || '-'}`
   }
-  return detailData.value?.processName || ''
+  return formData.value.processName || ''
 })
 const selectedConfigText = computed(() => selectedConfig.value?.reason || formData.value.reason || '')
 const formSchema = createFormSchema(() => ({
@@ -245,74 +220,64 @@ function handleBack() {
 }
 
 /** 默认表单数据 */
-function getDefaultFormData(): AndonRecordFormData {
+function getDefaultFormData(): ProAndonRecord {
   return {
     userId: userStore.userInfo?.userId,
   }
 }
 
-/** 重置表单上下文 */
-function resetFormContext() {
-  detailData.value = undefined
-  formData.value = getDefaultFormData()
-  selectedWorkstation.value = undefined
-  selectedWorkOrder.value = undefined
-  selectedProcess.value = undefined
-  selectedConfig.value = undefined
-}
-
 /** 打开工作站选择器 */
-function openWorkstationSelector() {
+function openWorkstationPicker() {
   if (!isCreateMode.value) {
     return
   }
-  workstationSelectorRef.value?.open(formData.value.workstationId)
+  workstationPickerRef.value?.open(formData.value.workstationId)
 }
 
 /** 打开工单选择器 */
-function openWorkOrderSelector() {
+function openWorkOrderPicker() {
   if (!isCreateMode.value) {
     return
   }
-  workOrderSelectorRef.value?.open(formData.value.workOrderId)
+  workOrderPickerRef.value?.open(formData.value.workOrderId)
 }
 
 /** 打开工序选择器 */
-function openProcessSelector() {
+function openProcessPicker() {
   if (!isCreateMode.value) {
     return
   }
-  processSelectorRef.value?.open(formData.value.processId)
+  processPickerRef.value?.open(formData.value.processId)
 }
 
 /** 打开安灯配置选择器 */
-function openConfigSelector() {
+function openConfigPicker() {
   if (!isCreateMode.value) {
     return
   }
-  configSelectorRef.value?.open(formData.value.configId)
+  configPickerRef.value?.open(formData.value.configId)
 }
 
 /** 选择工作站 */
-function handleWorkstationConfirm(item: MdWorkstationVO) {
+function handleWorkstationConfirm(item: MdWorkstation) {
   selectedWorkstation.value = item
   formData.value.workstationId = item.id
 }
 
 /** 选择工单 */
-function handleWorkOrderConfirm(item: ProWorkOrderVO) {
+function handleWorkOrderConfirm(item: ProWorkOrder) {
   selectedWorkOrder.value = item
   formData.value.workOrderId = item.id
 }
 
 /** 选择工序 */
-function handleProcessConfirm(item: ProProcessVO) {
+function handleProcessConfirm(item: ProProcess) {
   selectedProcess.value = item
   formData.value.processId = item.id
 }
 
 /** 选择呼叫原因 */
-function handleConfigConfirm(item: ProAndonConfigVO) {
+function handleConfigConfirm(item: ProAndonConfig) {
   selectedConfig.value = item
   formData.value.configId = item.id
   formData.value.reason = item.reason
@@ -321,40 +286,22 @@ function handleConfigConfirm(item: ProAndonConfigVO) {
 
 /** 加载详情 */
 async function getDetail() {
-  resetFormContext()
-  if (!currentId.value || isCreateMode.value) {
+  if (!props.id || isCreateMode.value) {
     return
   }
-  detailData.value = await getAndonRecord(currentId.value)
-  formData.value = {
-    id: detailData.value.id,
-    workstationId: detailData.value.workstationId,
-    userId: detailData.value.userId,
-    workOrderId: detailData.value.workOrderId,
-    processId: detailData.value.processId,
-    configId: detailData.value.configId,
-    reason: detailData.value.reason,
-    level: detailData.value.level,
-    handleTime: detailData.value.handleTime || Date.now(),
-    handlerUserId: detailData.value.handlerUserId || userStore.userInfo?.userId,
-    remark: detailData.value.remark,
-  }
-}
-
-/** 校验表单 */
-async function validateForm() {
-  const result = await formRef.value?.validate()
-  return !(result && !result.valid)
+  formData.value = await getAndonRecord(Number(props.id))
 }
 
 /** 新增呼叫 */
 async function handleCreate() {
-  if (!await validateForm()) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data: ProAndonRecordCreateReqVO = {
+    const data: ProAndonRecord = {
       configId: formData.value.configId!,
       workstationId: formData.value.workstationId!,
       userId: formData.value.userId!,
@@ -378,13 +325,8 @@ async function handleSave() {
   }
   formLoading.value = true
   try {
-    await updateAndonRecord({
-      id: formData.value.id,
-      handleTime: formData.value.handleTime,
-      handlerUserId: formData.value.handlerUserId,
-      remark: formData.value.remark || undefined,
-      status: MesProAndonStatusEnum.ACTIVE,
-    })
+    const data = { ...formData.value, status: MesProAndonStatusEnum.ACTIVE }
+    await updateAndonRecord(data)
     toast.success('保存成功')
     uni.$emit('mes:pro:andon:record:reload')
     delay(handleBack)
@@ -411,15 +353,11 @@ async function handleFinish() {
   } catch {
     return
   }
+
   formLoading.value = true
   try {
-    await updateAndonRecord({
-      id: formData.value.id,
-      handleTime: formData.value.handleTime,
-      handlerUserId: formData.value.handlerUserId,
-      remark: formData.value.remark || undefined,
-      status: MesProAndonStatusEnum.HANDLED,
-    })
+    const data = { ...formData.value, status: MesProAndonStatusEnum.HANDLED }
+    await updateAndonRecord(data)
     toast.success('处置成功')
     uni.$emit('mes:pro:andon:record:reload')
     delay(handleBack)
@@ -430,10 +368,6 @@ async function handleFinish() {
 
 /** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch([currentId, routeMode], () => {
   getDetail()
 })
 </script>

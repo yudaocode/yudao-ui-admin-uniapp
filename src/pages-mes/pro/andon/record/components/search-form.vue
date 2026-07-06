@@ -17,41 +17,35 @@
         <view class="yd-search-form-label">
           工作站
         </view>
-        <MesSearchSelectorField
-          :model-value="selectedWorkstationText"
-          placeholder="请选择工作站"
-          clearable
-          @click="openWorkstationSelector"
-          @clear="clearWorkstation"
-        />
+        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openWorkstationPicker">
+          <text v-if="selectedWorkstationText" class="min-w-0 flex-1 truncate text-[#333]">
+            {{ selectedWorkstationText }}
+          </text>
+          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
+            请选择工作站
+          </text>
+          <wd-icon
+            v-if="selectedWorkstationText"
+            name="close-circle"
+            size="30rpx"
+            custom-style="color: #c0c4cc;"
+            @click.stop="clearWorkstation"
+          />
+        </view>
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           发起人
         </view>
-        <UserPicker v-model="formData.userId" type="radio" placeholder="请选择发起人" use-default-slot @confirm="handleUserConfirm">
-          <MesSearchSelectorField
-            :model-value="selectedUserName"
-            placeholder="请选择发起人"
-            clearable
-            @clear="clearUser"
-          />
-        </UserPicker>
+        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择发起人" />
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           处置人
         </view>
-        <UserPicker v-model="formData.handlerUserId" type="radio" placeholder="请选择处置人" use-default-slot @confirm="handleHandlerConfirm">
-          <MesSearchSelectorField
-            :model-value="selectedHandlerName"
-            placeholder="请选择处置人"
-            clearable
-            @clear="clearHandler"
-          />
-        </UserPicker>
+        <UserPicker ref="handlerUserPickerRef" v-model="formData.handlerUserId" type="radio" placeholder="请选择处置人" />
       </view>
-      <yd-search-picker v-model="formData.status" label="处置状态" :dict-type="DICT_TYPE.MES_PRO_ANDON_STATUS" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.status" label="处置状态" :dict-type="DICT_TYPE.MES_PRO_ANDON_STATUS" all-option />
       <yd-search-date-range v-model="createTimeRange" label="发起时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -64,38 +58,35 @@
     </view>
   </wd-popup>
 
-  <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
+  <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { User } from '@/api/system/user'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProAndonRecordQueryParams } from '@/api/mes/pro/andon/record'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import MesSearchSelectorField from '@/pages-mes/components/mes-search-selector-field.vue'
-import WorkstationSelector from '@/pages-mes/pro/task/components/workstation-selector.vue'
+import WorkstationPicker from '@/pages-mes/pro/task/components/workstation-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<ProAndonRecordQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
 const createTimeRange = ref<[number | undefined, number | undefined]>() // 发起时间范围
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器
-const selectedWorkstation = ref<MdWorkstationVO>() // 已选工作站
-const selectedUserName = ref('') // 已选发起人
-const selectedHandlerName = ref('') // 已选处置人
+const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
+const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 发起人选择器
+const handlerUserPickerRef = ref<InstanceType<typeof UserPicker>>() // 处置人选择器
+const selectedWorkstation = ref<MdWorkstation>() // 已选工作站
 const formData = reactive({
-  workstationId: undefined as number | undefined,
-  userId: undefined as number | undefined,
-  handlerUserId: undefined as number | undefined,
-  status: undefined as number | undefined,
+  workstationId: undefined,
+  userId: undefined,
+  handlerUserId: undefined,
+  status: undefined,
 }) // 搜索表单数据
 const selectedWorkstationText = computed(() => {
   return selectedWorkstation.value
@@ -109,11 +100,13 @@ const placeholder = computed(() => {
   if (selectedWorkstation.value) {
     conditions.push(`工作站:${selectedWorkstation.value.code || selectedWorkstation.value.name}`)
   }
-  if (selectedUserName.value) {
-    conditions.push(`发起人:${selectedUserName.value}`)
+  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  if (userName) {
+    conditions.push(`发起人:${userName}`)
   }
-  if (selectedHandlerName.value) {
-    conditions.push(`处置人:${selectedHandlerName.value}`)
+  const handlerName = handlerUserPickerRef.value?.getUserNickname(formData.handlerUserId)
+  if (handlerName) {
+    conditions.push(`处置人:${handlerName}`)
   }
   if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_PRO_ANDON_STATUS, formData.status)}`)
@@ -125,24 +118,14 @@ const placeholder = computed(() => {
 })
 
 /** 打开工作站选择器 */
-function openWorkstationSelector() {
-  workstationSelectorRef.value?.open(formData.workstationId)
+function openWorkstationPicker() {
+  workstationPickerRef.value?.open(formData.workstationId)
 }
 
 /** 选择工作站 */
-function handleWorkstationConfirm(item: MdWorkstationVO) {
+function handleWorkstationConfirm(item: MdWorkstation) {
   selectedWorkstation.value = item
   formData.workstationId = item.id
-}
-
-/** 选择发起人 */
-function handleUserConfirm(users: User[]) {
-  selectedUserName.value = users[0]?.nickname || ''
-}
-
-/** 选择处置人 */
-function handleHandlerConfirm(users: User[]) {
-  selectedHandlerName.value = users[0]?.nickname || ''
 }
 
 /** 清空工作站 */
@@ -151,64 +134,27 @@ function clearWorkstation() {
   formData.workstationId = undefined
 }
 
-/** 清空发起人 */
-function clearUser() {
-  selectedUserName.value = ''
-  formData.userId = undefined
-}
-
-/** 清空处置人 */
-function clearHandler() {
-  selectedHandlerName.value = ''
-  formData.handlerUserId = undefined
-}
-
-/** 构造搜索参数 */
-function buildParams(): Partial<ProAndonRecordQueryParams> {
-  const params: Partial<ProAndonRecordQueryParams> = {}
-  if (formData.workstationId != null) {
-    params.workstationId = formData.workstationId
-  }
-  if (formData.userId != null) {
-    params.userId = formData.userId
-  }
-  if (formData.handlerUserId != null) {
-    params.handlerUserId = formData.handlerUserId
-  }
-  if (formData.status != null) {
-    params.status = formData.status
-  }
-  const range = formatDateRange(createTimeRange.value)
-  if (range) {
-    params.createTime = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    workstationId: formData.workstationId,
+    userId: formData.userId,
+    handlerUserId: formData.handlerUserId,
+    status: formData.status,
+    createTime: formatDateRange(createTimeRange.value),
+  })
 }
 
-/** 重置字段 */
-function resetFields() {
+/** 重置按钮操作 */
+function handleReset() {
   formData.workstationId = undefined
   formData.userId = undefined
   formData.handlerUserId = undefined
   formData.status = undefined
   createTimeRange.value = undefined
   selectedWorkstation.value = undefined
-  selectedUserName.value = ''
-  selectedHandlerName.value = ''
-}
-
-/** 重置按钮操作 */
-function handleReset() {
-  resetFields()
   visible.value = false
   emit('reset')
 }
-
-defineExpose({ resetFields })
 </script>

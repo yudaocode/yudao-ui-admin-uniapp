@@ -92,7 +92,6 @@ import { createCheckPlan, getCheckPlan, updateCheckPlan } from '@/api/mes/dv/che
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesDvCheckPlanStatusEnum } from '@/utils/constants'
-import { formatOptionalDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import MachineryList from '../components/machinery-list.vue'
 import SubjectList from '../components/subject-list.vue'
@@ -185,11 +184,6 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    formData.value = {
-      ...formData.value,
-      startDate: formatOptionalDateTime(formData.value.startDate),
-      endDate: formatOptionalDateTime(formData.value.endDate),
-    }
     if (props.id) {
       await updateCheckPlan(formData.value)
       toast.success('修改成功')

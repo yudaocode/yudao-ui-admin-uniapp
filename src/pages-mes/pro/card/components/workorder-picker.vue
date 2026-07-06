@@ -9,9 +9,14 @@
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <!-- 头部 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
-        <wd-button variant="plain" size="small" @click="handleCancel">
-          取消
-        </wd-button>
+        <view class="flex items-center gap-12rpx">
+          <wd-button variant="plain" size="small" @click="handleCancel">
+            取消
+          </wd-button>
+          <wd-button v-if="props.clearable" variant="plain" size="small" :disabled="!canClear" @click="handleClear">
+            清空
+          </wd-button>
+        </view>
         <view class="text-32rpx text-[#333] font-semibold">
           {{ title }}
         </view>
@@ -74,49 +79,66 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import { ref } from 'vue'
-import { getWorkOrderPage } from '@/api/mes/pro/workorder'
-import { DICT_TYPE } from '@/utils/constants'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import { computed, ref, watch } from 'vue'
+import { getWorkOrder, getWorkOrderPage } from '@/api/mes/pro/workorder'
+import { DICT_TYPE, MesProWorkOrderStatusEnum } from '@/utils/constants'
 
 const props = withDefaults(defineProps<{
+  modelValue?: number
+  disabled?: boolean
+  clearable?: boolean
   confirmedOnly?: boolean
   type?: number
   title?: string
   emptyTip?: string
 }>(), {
+  disabled: false,
+  clearable: false,
   confirmedOnly: true,
   title: '选择生产工单',
   emptyTip: '暂无已确认工单',
 })
 
 const emit = defineEmits<{
-  confirm: [item: ProWorkOrderVO]
+  'update:modelValue': [value: number | undefined]
+  'change': [item: ProWorkOrder | undefined]
+  'confirm': [item: ProWorkOrder]
+  'clear': []
 }>()
-
-const MesProWorkOrderStatusEnum = {
-  CONFIRMED: 1,
-} as const
 
 const visible = ref(false) // 选择器显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<ProWorkOrderVO[]>([]) // 工单列表
-const tempSelected = ref<ProWorkOrderVO>() // 临时选择工单
+const list = ref<ProWorkOrder[]>([]) // 工单列表
+const selectedItem = ref<ProWorkOrder>() // 当前选中工单
+const tempSelected = ref<ProWorkOrder>() // 临时选择工单
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总数
 const searchCode = ref('') // 工单编码搜索
 const searchName = ref('') // 工单名称搜索
+const canClear = computed(() => Boolean(tempSelected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 
 /** 打开选择器 */
-function open(selectedId?: number) {
+async function open(selectedId?: number) {
+  if (props.disabled) {
+    return
+  }
+  const currentId = selectedId ?? props.modelValue
   visible.value = true
-  tempSelected.value = undefined
+  tempSelected.value = selectedItem.value?.id === currentId ? selectedItem.value : undefined
+  if (currentId == null) {
+    selectedItem.value = undefined
+  }
   searchCode.value = ''
   searchName.value = ''
   list.value = []
   total.value = 0
   pageNo.value = 1
-  loadList(false, selectedId)
+  await loadList(false, currentId)
+  if (currentId != null && !tempSelected.value) {
+    await resolveItemById(currentId)
+    tempSelected.value = selectedItem.value?.id === currentId ? selectedItem.value : undefined
+  }
 }
 
 /** 加载工单列表 */
@@ -140,11 +162,27 @@ async function loadList(append = false, selectedId?: number) {
       list.value = data.list
     }
     total.value = data.total
-    if (selectedId && !tempSelected.value) {
+    if (selectedId != null && !tempSelected.value) {
       tempSelected.value = list.value.find(item => item.id === selectedId)
     }
   } finally {
     loading.value = false
+  }
+}
+
+/** 根据编号加载工单回显 */
+async function resolveItemById(id?: number) {
+  if (id == null) {
+    selectedItem.value = undefined
+    return
+  }
+  if (selectedItem.value?.id === id) {
+    return
+  }
+  try {
+    selectedItem.value = await getWorkOrder(id)
+  } catch {
+    selectedItem.value = undefined
   }
 }
 
@@ -176,6 +214,16 @@ function handleCancel() {
   visible.value = false
 }
 
+/** 清空选择 */
+function handleClear() {
+  tempSelected.value = undefined
+  selectedItem.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+  emit('clear')
+  visible.value = false
+}
+
 /** 关闭时清理 */
 function handleClose() {
   tempSelected.value = undefined
@@ -188,9 +236,21 @@ function handleConfirm() {
   if (!tempSelected.value) {
     return
   }
+  selectedItem.value = tempSelected.value
+  emit('update:modelValue', tempSelected.value.id)
+  emit('change', tempSelected.value)
   emit('confirm', tempSelected.value)
   visible.value = false
 }
 
-defineExpose({ open })
+/** 同步外部绑定值 */
+watch(
+  () => props.modelValue,
+  (value) => {
+    resolveItemById(value)
+  },
+  { immediate: true },
+)
+
+defineExpose({ open, clear: handleClear, selectedItem })
 </script>

@@ -6,8 +6,17 @@
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
+
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
+
+    <!-- 操作入口 -->
+    <view v-if="hasAccessByCodes(['mes:pro-andon-config:query'])" class="bg-white px-24rpx py-16rpx">
+      <wd-button size="small" variant="plain" block @click="handleConfig">
+        安灯设置
+      </wd-button>
+    </view>
+
     <!-- 分页列表 -->
     <z-paging
       ref="pagingRef"
@@ -53,44 +62,25 @@
               <view>处置时间：{{ formatDateTime(item.handleTime) || '-' }}</view>
             </view>
           </view>
-          <view
-            v-if="hasActiveActions(item)"
-            class="flex border-t border-[#f0f0f0] text-28rpx"
-            @click.stop
-          >
-            <view v-if="canUpdate" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleDispose(item)">
-              处置
-            </view>
-            <view v-if="canDelete" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
 
     <!-- 新增按钮 -->
-    <wd-fab v-if="canCreate" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+    <wd-fab v-if="hasAccessByCodes(['mes:pro-andon-record:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProAndonRecordQueryParams, ProAndonRecordVO } from '@/api/mes/pro/andon/record'
+import type { ProAndonRecord } from '@/api/mes/pro/andon/record'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteAndonRecord, getAndonRecordPage } from '@/api/mes/pro/andon/record'
+import { onMounted, ref } from 'vue'
+import { getAndonRecordPage } from '@/api/mes/pro/andon/record'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
-
-const MesProAndonStatusEnum = {
-  ACTIVE: 0,
-  HANDLED: 1,
-} as const
 
 definePage({
   style: {
@@ -100,17 +90,12 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<ProAndonRecordVO[]>([]) // 列表数据
+const list = ref<ProAndonRecord[]>([]) // 列表数据
 const pagingRef = ref() // 分页组件引用
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索表单引用
-const queryParams = ref<Partial<ProAndonRecordQueryParams>>({}) // 查询参数
-const canCreate = computed(() => hasAccessByCodes(['mes:pro-andon-record:create']))
-const canUpdate = computed(() => hasAccessByCodes(['mes:pro-andon-record:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:pro-andon-record:delete']))/** 返回上一页 */
+const queryParams = ref<Record<string, any>>({}) // 查询参数
+/** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -127,22 +112,15 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 是否显示未处置动作 */
-function hasActiveActions(item: ProAndonRecordVO) {
-  return item.status === MesProAndonStatusEnum.ACTIVE && (canUpdate.value || canDelete.value)
-}
-
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<ProAndonRecordQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -155,26 +133,14 @@ function handleAdd() {
   uni.navigateTo({ url: '/pages-mes/pro/andon/record/form/index?mode=create' })
 }
 
-/** 处置 */
-function handleDispose(item: ProAndonRecordVO) {
-  uni.navigateTo({ url: `/pages-mes/pro/andon/record/form/index?id=${item.id}&mode=update` })
+/** 安灯设置 */
+function handleConfig() {
+  uni.navigateTo({ url: '/pages-mes/pro/andon/config/index' })
 }
 
 /** 查看详情 */
-function handleDetail(item: ProAndonRecordVO) {
+function handleDetail(item: ProAndonRecord) {
   uni.navigateTo({ url: `/pages-mes/pro/andon/record/detail/index?id=${item.id}` })
-}
-
-/** 删除 */
-async function handleDelete(item: ProAndonRecordVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除「${item.reason || item.id}」安灯呼叫记录吗？` })
-  } catch {
-    return
-  }
-  await deleteAndonRecord(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

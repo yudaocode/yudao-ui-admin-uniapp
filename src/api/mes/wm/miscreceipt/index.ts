@@ -10,7 +10,7 @@ export interface WmMiscReceipt {
   sourceDocType?: string
   sourceDocId?: number
   sourceDocCode?: string
-  receiptDate: string | Date
+  receiptDate: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

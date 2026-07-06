@@ -14,7 +14,7 @@ export interface DvMaintenRecord {
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
-  maintenTime?: string | Date // 保养时间
+  maintenTime?: string | number | Date // 保养时间
   userId?: number // 用户编号
   nickname?: string // 保养人名称
   status?: number // 状态

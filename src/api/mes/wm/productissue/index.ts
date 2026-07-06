@@ -14,8 +14,8 @@ export interface WmProductIssue {
   clientCode?: string
   clientName?: string
   taskId?: number
-  issueDate?: string
-  requiredTime: string
+  issueDate?: string | number | Date
+  requiredTime: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

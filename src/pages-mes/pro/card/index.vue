@@ -29,51 +29,24 @@
               <view>流转数量：{{ item.transferedQuantity ?? '-' }}</view>
             </view>
           </view>
-          <view class="flex flex-wrap border-t border-[#f3f4f6] text-26rpx">
-            <view v-if="canUpdate && item.status === MesProCardStatusEnum.PREPARE" class="w-1/3 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canUpdate && item.status === MesProCardStatusEnum.PREPARE" class="w-1/3 py-18rpx text-center text-[#faad14]" @click="handleSubmitCard(item)">
-              提交
-            </view>
-            <view v-if="canDelete && item.status === MesProCardStatusEnum.PREPARE" class="w-1/3 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canFinish && item.status === MesProCardStatusEnum.CONFIRMED" class="w-1/2 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              完成
-            </view>
-            <view v-if="canUpdate && item.status === MesProCardStatusEnum.CONFIRMED" class="w-1/2 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-            <view class="flex-1 py-18rpx text-center text-[#666]" @click="handleDetail(item)">
-              详情
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
 
     <!-- 新增按钮 -->
-    <wd-fab v-if="canCreate" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+    <wd-fab v-if="hasAccessByCodes(['mes:pro-card:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProCardQueryParams, ProCardVO } from '@/api/mes/pro/card'
+import type { ProCard } from '@/api/mes/pro/card'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { cancelCard, deleteCard, finishCard, getCardPage, submitCard } from '@/api/mes/pro/card'
+import { onMounted, ref } from 'vue'
+import { getCardPage } from '@/api/mes/pro/card'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
-
-const MesProCardStatusEnum = {
-  PREPARE: 0,
-  CONFIRMED: 1,
-} as const
 
 definePage({
   style: {
@@ -83,17 +56,12 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<ProCardVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<ProCardVO>>() // 分页组件引用
-const queryParams = ref<Partial<ProCardQueryParams>>({}) // 查询参数
-const canCreate = computed(() => hasAccessByCodes(['mes:pro-card:create']))
-const canUpdate = computed(() => hasAccessByCodes(['mes:pro-card:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:pro-card:delete']))
-const canFinish = computed(() => hasAccessByCodes(['mes:pro-card:finish']))/** 返回上一页 */
+const list = ref<ProCard[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<ProCard>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
+/** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -111,14 +79,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<ProCardQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery({})
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -131,68 +99,17 @@ function handleAdd() {
   uni.navigateTo({ url: '/pages-mes/pro/card/form/index' })
 }
 
-/** 编辑 */
-function handleEdit(item: ProCardVO) {
-  uni.navigateTo({ url: `/pages-mes/pro/card/form/index?id=${item.id}` })
-}
-
 /** 查看详情 */
-function handleDetail(item: ProCardVO) {
+function handleDetail(item: ProCard) {
   uni.navigateTo({ url: `/pages-mes/pro/card/detail/index?id=${item.id}` })
 }
 
-/** 提交流转卡 */
-async function handleSubmitCard(item: ProCardVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确认提交「${item.code}」流转卡吗？提交后将不能修改。` })
-  } catch {
-    return
-  }
-  await submitCard(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 完成流转卡 */
-async function handleFinish(item: ProCardVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确认完成「${item.code}」流转卡吗？` })
-  } catch {
-    return
-  }
-  await finishCard(item.id)
-  toast.success('完成成功')
-  reload()
-}
-
-/** 取消流转卡 */
-async function handleCancel(item: ProCardVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确认取消「${item.code}」流转卡吗？取消后不可恢复。` })
-  } catch {
-    return
-  }
-  await cancelCard(item.id)
-  toast.success('取消成功')
-  reload()
-}
-
-/** 删除流转卡 */
-async function handleDelete(item: ProCardVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除「${item.code}」流转卡吗？删除后会级联删除工序记录。` })
-  } catch {
-    return
-  }
-  await deleteCard(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
+/** 初始化 */
 onMounted(() => {
   uni.$on('mes:pro:card:reload', reload)
 })
 
+/** 卸载 */
 onUnload(() => {
   uni.$off('mes:pro:card:reload', reload)
 })

@@ -5,17 +5,17 @@ import { http } from '@/http/http'
 export interface ProCard {
   id?: number // 编号
   code?: string // 流转卡编码
-  workOrderId: number // 生产工单编号
+  workOrderId?: number // 生产工单编号
   workOrderCode?: string // 工单编码
   workOrderName?: string // 工单名称
-  itemId: number // 产品物料编号
+  itemId?: number // 产品物料编号
   batchCode?: string // 批次号
   itemCode?: string // 产品编码
   itemName?: string // 产品名称
   specification?: string // 规格型号
   unitMeasureId?: number // 单位编号
   unitMeasureName?: string // 单位名称
-  transferedQuantity: number // 流转数量
+  transferedQuantity?: number // 流转数量
   status?: number // 状态
   remark?: string // 备注
   createTime?: Date // 创建时间

@@ -2,53 +2,62 @@
   <view class="mx-24rpx mt-24rpx">
     <view class="mb-16rpx flex items-center justify-between">
       <view class="text-30rpx text-[#333] font-semibold">
-        工序记录
+        工序记录（{{ total }}）
       </view>
-      <wd-button v-if="editable" size="small" type="primary" @click="openForm('create')">
+      <wd-button v-if="editable" size="small" type="primary" variant="plain" @click="openForm()">
         新增工序
       </wd-button>
     </view>
 
-    <view v-if="loading" class="rounded-12rpx bg-white py-40rpx text-center text-26rpx text-[#999]">
-      加载中...
-    </view>
-    <view v-else-if="list.length === 0" class="rounded-12rpx bg-white py-40rpx text-center text-26rpx text-[#999]">
-      暂无工序记录
-    </view>
-    <view v-else>
-      <view v-for="item in list" :key="item.id" class="mb-16rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
-        <view class="p-20rpx">
-          <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-            <view class="min-w-0 flex-1">
-              <view class="truncate text-28rpx text-[#333] font-semibold">
-                {{ item.processName || '未选择工序' }}
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      height="640rpx"
+      :default-page-size="5"
+      :refresher-enabled="false"
+      :inside-more="true"
+      :to-bottom-loading-more-enabled="false"
+      loading-more-default-text="点击加载更多"
+      loading-more-no-more-text="没有更多工序记录了"
+      empty-view-text="暂无工序记录"
+      @query="queryList"
+    >
+      <view class="pb-8rpx">
+        <view v-for="item in list" :key="item.id" class="mb-16rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+          <view class="p-20rpx">
+            <view class="mb-12rpx flex items-start justify-between gap-16rpx">
+              <view class="min-w-0 flex-1">
+                <view class="truncate text-28rpx text-[#333] font-semibold">
+                  {{ item.processName || '未选择工序' }}
+                </view>
+                <view class="mt-4rpx text-24rpx text-[#999]">
+                  序号 {{ item.sort ?? '-' }}，{{ item.processCode || '-' }}
+                </view>
               </view>
-              <view class="mt-4rpx text-24rpx text-[#999]">
-                序号 {{ item.sort ?? '-' }}，{{ item.processCode || '-' }}
+              <view v-if="editable" class="flex shrink-0 gap-12rpx">
+                <wd-button size="small" type="warning" variant="plain" @click="openForm(item)">
+                  编辑
+                </wd-button>
+                <wd-button size="small" type="danger" variant="plain" @click="removeProcess(item)">
+                  删除
+                </wd-button>
               </view>
             </view>
-          </view>
-          <view class="text-24rpx text-[#666] space-y-6rpx">
-            <view>进入：{{ formatDateTime(item.inputTime) || '-' }}</view>
-            <view>出工序：{{ formatDateTime(item.outputTime) || '-' }}</view>
-            <view>数量：投入 {{ item.inputQuantity ?? '-' }}，产出 {{ item.outputQuantity ?? '-' }}，不良 {{ item.unqualifiedQuantity ?? '-' }}</view>
-            <view>工位：{{ item.workstationCode || '-' }} / {{ item.workstationName || '-' }}</view>
-            <view>操作人：{{ item.nickname || '-' }}</view>
-            <view v-if="item.remark">
-              备注：{{ item.remark }}
+            <view class="text-24rpx text-[#666] space-y-6rpx">
+              <view>进入：{{ formatDateTime(item.inputTime) || '-' }}</view>
+              <view>出工序：{{ formatDateTime(item.outputTime) || '-' }}</view>
+              <view>数量：投入 {{ item.inputQuantity ?? '-' }}，产出 {{ item.outputQuantity ?? '-' }}，不良 {{ item.unqualifiedQuantity ?? '-' }}</view>
+              <view>工位：{{ item.workstationCode || '-' }} / {{ item.workstationName || '-' }}</view>
+              <view>操作人：{{ item.nickname || '-' }}</view>
+              <view v-if="item.remark">
+                备注：{{ item.remark }}
+              </view>
             </view>
-          </view>
-        </view>
-        <view v-if="editable" class="flex border-t border-[#f3f4f6] text-26rpx">
-          <view class="flex-1 py-18rpx text-center text-[#1677ff]" @click="openForm('update', item)">
-            编辑
-          </view>
-          <view class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-            删除
           </view>
         </view>
       </view>
-    </view>
+    </z-paging>
 
     <!-- 工序记录表单 -->
     <wd-popup
@@ -63,7 +72,7 @@
             取消
           </wd-button>
           <view class="text-32rpx text-[#333] font-semibold">
-            {{ formType === 'create' ? '新增工序记录' : '编辑工序记录' }}
+            {{ formTitle }}
           </view>
           <wd-button size="small" type="primary" :loading="formLoading" @click="handleSubmit">
             保存
@@ -75,23 +84,39 @@
               <wd-form-item title="序号" title-width="220rpx" prop="sort" center>
                 <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
               </wd-form-item>
-              <wd-form-item title="工序" title-width="220rpx" prop="processId" is-link :value="processDisplayValue" placeholder="请选择工序" @click="processPickerVisible = true" />
-              <wd-form-item title="进入时间" title-width="220rpx" prop="inputTime">
-                <wd-datetime-picker v-model="formData.inputTime" type="datetime" placeholder="请选择进入时间" />
-              </wd-form-item>
-              <wd-form-item title="出工序时间" title-width="220rpx" prop="outputTime">
-                <wd-datetime-picker v-model="formData.outputTime" type="datetime" placeholder="请选择出工序时间" />
-              </wd-form-item>
+              <yd-form-picker v-model="formData.processId" label="工序" label-width="220rpx" prop="processId" :columns="processOptions" label-key="name" value-key="id" placeholder="请选择工序" />
+              <wd-form-item title="进入时间" title-width="220rpx" prop="inputTime" is-link :value="formatDateTime(formData.inputTime) || ''" placeholder="请选择进入时间" @click="dateVisible.inputTime = true" />
+              <wd-datetime-picker v-model="formData.inputTime" v-model:visible="dateVisible.inputTime" title="请选择进入时间" type="datetime" />
+              <wd-form-item title="出工序时间" title-width="220rpx" prop="outputTime" is-link :value="formatDateTime(formData.outputTime) || ''" placeholder="请选择出工序时间" @click="dateVisible.outputTime = true" />
+              <wd-datetime-picker v-model="formData.outputTime" v-model:visible="dateVisible.outputTime" title="请选择出工序时间" type="datetime" />
               <wd-form-item title="投入数量" title-width="220rpx" prop="inputQuantity" center>
-                <wd-input-number v-model="formData.inputQuantity" :min="0" :precision="2" />
+                <wd-input-number
+                  :model-value="formData.inputQuantity ?? ''"
+                  allow-null
+                  :min="0"
+                  :precision="2"
+                  @update:model-value="value => formData.inputQuantity = toFiniteNumber(value)"
+                />
               </wd-form-item>
               <wd-form-item title="产出数量" title-width="220rpx" prop="outputQuantity" center>
-                <wd-input-number v-model="formData.outputQuantity" :min="0" :precision="2" />
+                <wd-input-number
+                  :model-value="formData.outputQuantity ?? ''"
+                  allow-null
+                  :min="0"
+                  :precision="2"
+                  @update:model-value="value => formData.outputQuantity = toFiniteNumber(value)"
+                />
               </wd-form-item>
               <wd-form-item title="不良数量" title-width="220rpx" prop="unqualifiedQuantity" center>
-                <wd-input-number v-model="formData.unqualifiedQuantity" :min="0" :precision="2" />
+                <wd-input-number
+                  :model-value="formData.unqualifiedQuantity ?? ''"
+                  allow-null
+                  :min="0"
+                  :precision="2"
+                  @update:model-value="value => formData.unqualifiedQuantity = toFiniteNumber(value)"
+                />
               </wd-form-item>
-              <wd-form-item title="工位" title-width="220rpx" prop="workstationId" is-link :value="workstationDisplayValue" placeholder="请选择工位" @click="workstationPickerVisible = true" />
+              <yd-form-picker v-model="formData.workstationId" label="工位" label-width="220rpx" prop="workstationId" :columns="workstationOptions" label-key="name" value-key="id" placeholder="请选择工位" />
               <UserPicker v-model="formData.userId" label="操作人" label-width="220rpx" prop="userId" type="radio" placeholder="请选择操作人" />
               <wd-form-item title="备注" title-width="220rpx" prop="remark">
                 <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable />
@@ -102,52 +127,25 @@
         </scroll-view>
       </view>
     </wd-popup>
-
-    <wd-picker v-model:visible="processPickerVisible" :model-value="processPickerValue" title="选择工序" :columns="processOptions" label-key="displayName" value-key="id" @confirm="handleProcessConfirm" />
-    <wd-picker v-model:visible="workstationPickerVisible" :model-value="workstationPickerValue" title="选择工位" :columns="workstationOptions" label-key="displayName" value-key="id" @confirm="handleWorkstationConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProCardProcessCreateReqVO, ProCardProcessUpdateReqVO, ProCardProcessVO } from '@/api/mes/pro/card/process'
-import type { ProProcessVO } from '@/api/mes/pro/process'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
+import type { ProCardProcess } from '@/api/mes/pro/card/process'
+import type { ProProcess } from '@/api/mes/pro/process'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { getWorkstationPage } from '@/api/mes/md/workstation'
 import { createCardProcess, deleteCardProcess, getCardProcessPage, updateCardProcess } from '@/api/mes/pro/card/process'
 import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { CommonStatusEnum } from '@/utils/constants'
-import { formatDateTime } from '@/utils/date'
+import { formatDateTime, toTimestamp } from '@/utils/date'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import type { WotPickerValue } from '@/utils/wot'
-
-interface ProcessOption extends ProProcessVO {
-  id: number
-  displayName: string
-}
-
-interface WorkstationOption extends MdWorkstationVO {
-  displayName: string
-}
-
-interface ProcessFormData {
-  id?: number
-  cardId: number
-  sort?: number
-  processId?: number
-  inputTime?: number | string
-  outputTime?: number | string
-  inputQuantity?: number
-  outputQuantity?: number
-  unqualifiedQuantity?: number
-  workstationId?: number
-  userId?: number
-  remark: string
-}
 
 const props = defineProps<{
   cardId: number
@@ -160,20 +158,17 @@ const emit = defineEmits<{
 
 const dialog = useDialog()
 const toast = useToast()
-const loading = ref(false) // 列表加载状态
-const list = ref<ProCardProcessVO[]>([]) // 工序记录列表
+const list = ref<ProCardProcess[]>([]) // 工序记录列表
+const total = ref(0) // 工序记录总数
+const pagingRef = ref<ZPagingRef<ProCardProcess>>() // 分页组件引用
 const formVisible = ref(false) // 表单弹层
 const formLoading = ref(false) // 表单提交状态
-const formType = ref<'create' | 'update'>('create')
 const formRef = ref<FormInstance>() // 表单组件引用
-const processPickerVisible = ref(false) // 工序选择显示状态
-const workstationPickerVisible = ref(false) // 工位选择显示状态
-const processOptions = ref<ProcessOption[]>([]) // 工序选项
-const workstationOptions = ref<WorkstationOption[]>([]) // 工位选项
-const formData = ref<ProcessFormData>({
-  cardId: props.cardId,
-  remark: '',
-})
+const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
+const processOptions = ref<ProProcess[]>([]) // 工序选项
+const workstationOptions = ref<MdWorkstation[]>([]) // 工位选项
+const formData = ref<ProCardProcess>(createDefaultFormData(1)) // 表单数据
+const formTitle = computed(() => formData.value.id ? '编辑工序记录' : '新增工序记录')
 const formSchema = createFormSchema({
   sort: [{ required: true, message: '序号不能为空' }],
   inputTime: [
@@ -182,7 +177,9 @@ const formSchema = createFormSchema({
         if (!value || !model.outputTime) {
           return true
         }
-        return new Date(String(value)).getTime() <= new Date(String(model.outputTime)).getTime() || '进入时间不能晚于出工序时间'
+        const inputTime = toTimestamp(String(value))
+        const outputTime = toTimestamp(String(model.outputTime))
+        return inputTime <= outputTime || '进入时间不能晚于出工序时间'
       },
     },
   ],
@@ -207,29 +204,32 @@ const formSchema = createFormSchema({
     },
   ],
 })
-const processPickerValue = computed(() => formData.value.processId === undefined ? [] : [formData.value.processId])
-const workstationPickerValue = computed(() => formData.value.workstationId === undefined ? [] : [formData.value.workstationId])
-const processDisplayValue = computed(() => {
-  const process = processOptions.value.find(item => item.id === formData.value.processId)
-  return process?.displayName || ''
-})
-const workstationDisplayValue = computed(() => {
-  const workstation = workstationOptions.value.find(item => item.id === formData.value.workstationId)
-  return workstation?.displayName || ''
-})
+
+/** 创建默认表单数据 */
+function createDefaultFormData(sort: number): ProCardProcess {
+  return {
+    cardId: props.cardId,
+    sort,
+  }
+}
 
 /** 查询工序记录 */
-async function getList() {
-  loading.value = true
+async function queryList(pageNo: number, pageSize: number) {
+  if (!props.cardId) {
+    total.value = 0
+    pagingRef.value?.completeByTotal([], 0)
+    return
+  }
   try {
     const data = await getCardProcessPage({
       cardId: props.cardId,
-      pageNo: 1,
-      pageSize: 100,
+      pageNo,
+      pageSize,
     })
-    list.value = data.list
-  } finally {
-    loading.value = false
+    total.value = data.total
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
@@ -241,93 +241,42 @@ async function loadOptions() {
   ])
   processOptions.value = (processes || [])
     .filter(item => item.id !== undefined)
-    .map(item => ({ ...item, id: Number(item.id), displayName: `${item.name || '-'} (${item.code || '-'})` }))
+    .map(item => ({ ...item, id: Number(item.id), name: `${item.name || '-'} (${item.code || '-'})` }))
   workstationOptions.value = workstations.list.map(item => ({
     ...item,
-    displayName: `${item.name || '-'} (${item.code || '-'})`,
+    name: `${item.name || '-'} (${item.code || '-'})`,
   }))
 }
 
-/** 打开新增或编辑表单 */
-function openForm(type: 'create' | 'update', row?: ProCardProcessVO) {
-  formType.value = type
-  const maxSort = list.value.reduce((max, item) => Math.max(max, item.sort || 0), 0)
-  formData.value = row
-    ? {
-        id: row.id,
-        cardId: row.cardId,
-        sort: row.sort,
-        processId: row.processId,
-        inputTime: row.inputTime,
-        outputTime: row.outputTime,
-        inputQuantity: row.inputQuantity,
-        outputQuantity: row.outputQuantity,
-        unqualifiedQuantity: row.unqualifiedQuantity,
-        workstationId: row.workstationId,
-        userId: row.userId,
-        remark: row.remark || '',
-      }
-    : {
-        cardId: props.cardId,
-        sort: maxSort + 1,
-        inputQuantity: 0,
-        outputQuantity: 0,
-        unqualifiedQuantity: 0,
-        remark: '',
-      }
+/** 打开工序记录表单 */
+function openForm(row?: ProCardProcess) {
+  const data = createDefaultFormData(row?.sort || total.value + 1)
+  formData.value = {
+    ...data,
+    ...row,
+  }
   formVisible.value = true
-  setTimeout(() => formRef.value?.reset(), 0)
-}
-
-/** 选择工序 */
-function handleProcessConfirm({ value }: { value: WotPickerValue[] }) {
-  formData.value.processId = Number(value[0])
-}
-
-/** 选择工位 */
-function handleWorkstationConfirm({ value }: { value: WotPickerValue[] }) {
-  formData.value.workstationId = Number(value[0])
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): ProCardProcessCreateReqVO | ProCardProcessUpdateReqVO {
-  const data = {
-    cardId: props.cardId,
-    sort: formData.value.sort,
-    processId: formData.value.processId,
-    inputTime: formData.value.inputTime,
-    outputTime: formData.value.outputTime,
-    inputQuantity: formData.value.inputQuantity,
-    outputQuantity: formData.value.outputQuantity,
-    unqualifiedQuantity: formData.value.unqualifiedQuantity,
-    workstationId: formData.value.workstationId,
-    userId: formData.value.userId,
-    remark: formData.value.remark || undefined,
-  }
-  if (formType.value === 'update' && formData.value.id) {
-    return { ...data, id: formData.value.id }
-  }
-  return data
+  nextTick(() => formRef.value?.reset())
 }
 
 /** 提交工序记录 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (formType.value === 'create') {
-      await createCardProcess(data)
-      toast.success('新增成功')
-    } else {
-      await updateCardProcess(data)
+    if (formData.value.id) {
+      await updateCardProcess(formData.value)
       toast.success('修改成功')
+    } else {
+      await createCardProcess(formData.value)
+      toast.success('新增成功')
     }
     formVisible.value = false
-    await getList()
+    pagingRef.value?.reload()
     emit('changed')
   } finally {
     formLoading.value = false
@@ -335,7 +284,10 @@ async function handleSubmit() {
 }
 
 /** 删除工序记录 */
-async function handleDelete(item: ProCardProcessVO) {
+async function removeProcess(item: ProCardProcess) {
+  if (!item.id) {
+    return
+  }
   try {
     await dialog.confirm({ title: '提示', msg: `确定要删除「${item.processName || item.processCode || item.sort}」工序记录吗？` })
   } catch {
@@ -343,14 +295,12 @@ async function handleDelete(item: ProCardProcessVO) {
   }
   await deleteCardProcess(item.id)
   toast.success('删除成功')
-  await getList()
+  pagingRef.value?.reload()
   emit('changed')
 }
 
+/** 初始化 */
 onMounted(() => {
   loadOptions()
-  getList()
 })
-
-defineExpose({ getList })
 </script>

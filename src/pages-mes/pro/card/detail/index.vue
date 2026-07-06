@@ -22,68 +22,49 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
-      <view class="mx-24rpx mt-24rpx">
-        <BarcodePreview
-          v-if="barcodeData"
-          :content="barcodeData.content"
-          :format="barcodeData.format"
-        />
-        <view v-else class="rounded-12rpx bg-[#f7faff] p-20rpx text-24rpx text-[#666]">
-          流转卡保存后后端会自动生成条码；当前未查询到该流转卡条码，请从条码管理按业务类型“流转卡”核对。
-        </view>
-      </view>
-      <CardProcessList v-if="cardId" :card-id="cardId" :editable="canEditProcess" @changed="getDetail" />
+      <CardProcessList v-if="formData?.id" :card-id="formData.id" :editable="canEdit" @changed="getDetail" />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="formData" content-class="yd-detail-footer-actions">
-      <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="canSubmit" class="flex-1" type="primary" @click="handleSubmitCard">
-        提交
-      </wd-button>
-      <wd-button v-if="canFinish" class="flex-1" type="success" @click="handleFinish">
-        完成
-      </wd-button>
-      <wd-button v-if="canCancel" class="flex-1" type="danger" @click="handleCancel">
-        取消
-      </wd-button>
-      <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="formData" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" variant="plain" @click="handleBarcode">
+          条码
+        </wd-button>
+        <wd-button v-if="canEdit" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="canFinish" class="flex-1" type="success" @click="handleFinish">
+          完成
+        </wd-button>
+        <wd-button v-if="canCancel" class="flex-1" type="danger" @click="handleCancel">
+          取消
+        </wd-button>
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProCardVO } from '@/api/mes/pro/card'
-import type { WmBarcodeVO } from '@/api/mes/wm/barcode'
+import type { ProCard } from '@/api/mes/pro/card'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
-import { cancelCard, deleteCard, finishCard, getCard, submitCard } from '@/api/mes/pro/card'
-import { getBarcodeByBusiness } from '@/api/mes/wm/barcode'
+import { computed, onMounted, ref } from 'vue'
+import { cancelCard, deleteCard, finishCard, getCard } from '@/api/mes/pro/card'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { BarcodeBizTypeEnum, DICT_TYPE, MesProCardStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import CardProcessList from '../components/card-process-list.vue'
-import BarcodePreview from '@/pages-mes/wm/barcode/components/barcode-preview.vue'
 
 const props = defineProps<{
   id?: number | string
 }>()
-const MesProCardStatusEnum = {
-  PREPARE: 0,
-  CONFIRMED: 1,
-} as const
-const BarcodeBizTypeEnum = {
-  PROCARD: 300,
-} as const
-
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -94,16 +75,12 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<ProCardVO>() // 详情数据
-const barcodeData = ref<WmBarcodeVO>() // 条码数据
+const formData = ref<ProCard>() // 详情数据
 const deleting = ref(false) // 删除状态
-const cardId = computed(() => props.id ? Number(props.id) : 0)
 const workOrderText = computed(() => `${formData.value?.workOrderCode || '-'} / ${formData.value?.workOrderName || '-'}`)
 const isPrepare = computed(() => formData.value?.status === MesProCardStatusEnum.PREPARE)
 const isConfirmed = computed(() => formData.value?.status === MesProCardStatusEnum.CONFIRMED)
 const canEdit = computed(() => isPrepare.value && hasAccessByCodes(['mes:pro-card:update']))
-const canEditProcess = computed(() => isPrepare.value && hasAccessByCodes(['mes:pro-card:update']))
-const canSubmit = computed(() => isPrepare.value && hasAccessByCodes(['mes:pro-card:update']))
 const canFinish = computed(() => isConfirmed.value && hasAccessByCodes(['mes:pro-card:finish']))
 const canCancel = computed(() => isConfirmed.value && hasAccessByCodes(['mes:pro-card:update']))
 const canDelete = computed(() => isPrepare.value && hasAccessByCodes(['mes:pro-card:delete']))
@@ -115,55 +92,37 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!cardId.value) {
-    formData.value = undefined
-    barcodeData.value = undefined
-    return
-  }
-  const detailData = await getCard(cardId.value)
-  if (!detailData) {
-    uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-    delay(handleBack)
-    return
-  }
-  formData.value = detailData
-  await getBarcodeDetail()
-}
-
-/** 加载条码详情 */
-async function getBarcodeDetail() {
-  if (!cardId.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
-    barcodeData.value = await getBarcodeByBusiness(BarcodeBizTypeEnum.PROCARD, cardId.value)
-  } catch {
-    barcodeData.value = undefined
+    toast.loading('加载中...')
+    formData.value = await getCard(Number(props.id))
+  } finally {
+    toast.close()
   }
+}
+
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
+    return
+  }
+  uni.navigateTo({
+    url: buildBarcodeListUrl({
+      bizType: BarcodeBizTypeEnum.PROCARD,
+      bizId: formData.value.id,
+      bizCode: formData.value.code,
+    }),
+  })
 }
 
 /** 编辑 */
 function handleEdit() {
-  if (!cardId.value) {
+  if (!props.id) {
     return
   }
-  uni.navigateTo({ url: `/pages-mes/pro/card/form/index?id=${cardId.value}` })
-}
-
-/** 提交流转卡 */
-async function handleSubmitCard() {
-  if (!formData.value?.id) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '提示', msg: '确认提交该流转卡？提交后将不能修改。' })
-  } catch {
-    return
-  }
-  await submitCard(formData.value.id)
-  toast.success('提交成功')
-  uni.$emit('mes:pro:card:reload')
-  await getDetail()
+  uni.navigateTo({ url: `/pages-mes/pro/card/form/index?id=${props.id}` })
 }
 
 /** 完成流转卡 */
@@ -219,11 +178,8 @@ async function handleDelete() {
   }
 }
 
+/** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(cardId, () => {
   getDetail()
 })
 </script>

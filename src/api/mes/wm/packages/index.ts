@@ -6,7 +6,7 @@ export interface WmPackage {
   id?: number
   code: string
   parentId?: number
-  packageDate: string | Date
+  packageDate: string | number | Date
   salesOrderCode?: string
   invoiceCode?: string
   clientId?: number

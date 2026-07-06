@@ -7,8 +7,8 @@ export interface StockTakingPlan {
   code: string
   name: string
   type: number
-  startTime?: string | Date
-  endTime?: string | Date
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   blindFlag: boolean
   frozen: boolean
   status?: number

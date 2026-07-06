@@ -183,7 +183,7 @@ import { confirmRepair, createRepair, finishRepair, getRepair, submitRepair, upd
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesDvRepairResultEnum, MesDvRepairStatusEnum } from '@/utils/constants'
-import { formatDateTime, formatOptionalDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 import RepairLineList from '../components/repair-line-list.vue'
@@ -284,12 +284,7 @@ async function getDetail() {
     return
   }
   const data = await getRepair(Number(props.id))
-  formData.value = {
-    ...data,
-    requireDate: formatDateTime(data.requireDate) || '',
-    finishDate: formatDateTime(data.finishDate) || '',
-    confirmDate: formatDateTime(data.confirmDate) || '',
-  }
+  formData.value = data
   acceptedUserName.value = data.acceptedUserNickname || ''
   confirmUserName.value = data.confirmUserNickname || ''
 }
@@ -360,12 +355,6 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    formData.value = {
-      ...formData.value,
-      requireDate: formatOptionalDateTime(formData.value.requireDate),
-      finishDate: formatOptionalDateTime(formData.value.finishDate),
-      confirmDate: formatOptionalDateTime(formData.value.confirmDate),
-    }
     if (props.id) {
       await updateRepair(formData.value)
       toast.success('修改成功')
@@ -399,12 +388,6 @@ async function handleSubmitRepair() {
   }
   submitLoading.value = true
   try {
-    formData.value = {
-      ...formData.value,
-      requireDate: formatOptionalDateTime(formData.value.requireDate),
-      finishDate: formatOptionalDateTime(formData.value.finishDate),
-      confirmDate: formatOptionalDateTime(formData.value.confirmDate),
-    }
     await updateRepair(formData.value)
     await submitRepair(Number(props.id))
     toast.success('提交成功')
@@ -436,7 +419,7 @@ async function handleConfirmRepair() {
   try {
     await confirmRepair({
       id: Number(props.id),
-      finishDate: formatOptionalDateTime(formData.value.finishDate),
+      finishDate: formData.value.finishDate,
     })
     toast.success('操作成功')
     uni.$emit('mes:dv:repair:reload')

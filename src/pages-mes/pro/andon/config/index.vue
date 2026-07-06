@@ -7,35 +7,6 @@
       @click-left="handleBack"
     />
 
-    <!-- 搜索区域 -->
-    <view class="bg-white px-24rpx pb-20rpx pt-16rpx">
-      <wd-search
-        v-model="keyword"
-        placeholder="搜索呼叫原因"
-        hide-cancel
-        @search="handleSearch"
-        @clear="handleSearch"
-      />
-      <view class="mt-18rpx flex flex-wrap gap-12rpx">
-        <wd-tag
-          type="primary"
-          :plain="queryLevel !== undefined"
-          @click="handleLevelChange(undefined)"
-        >
-          全部级别
-        </wd-tag>
-        <wd-tag
-          v-for="dict in levelOptions"
-          :key="dict.value"
-          type="primary"
-          :plain="queryLevel !== dict.value"
-          @click="handleLevelChange(dict.value)"
-        >
-          {{ dict.label }}
-        </wd-tag>
-      </view>
-    </view>
-
     <!-- 分页列表 -->
     <z-paging
       ref="pagingRef"
@@ -71,15 +42,15 @@
           </view>
           <view
             v-if="hasAccessByCodes(['mes:pro-andon-config:update']) || hasAccessByCodes(['mes:pro-andon-config:delete'])"
-            class="flex border-t border-[#f0f0f0] text-28rpx"
+            class="flex gap-16rpx border-t border-[#f0f0f0] px-24rpx py-16rpx"
             @click.stop
           >
-            <view v-if="hasAccessByCodes(['mes:pro-andon-config:update'])" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
+            <wd-button v-if="hasAccessByCodes(['mes:pro-andon-config:update'])" class="flex-1" size="small" type="warning" variant="plain" @click="handleEdit(item)">
               编辑
-            </view>
-            <view v-if="hasAccessByCodes(['mes:pro-andon-config:delete'])" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
+            </wd-button>
+            <wd-button v-if="hasAccessByCodes(['mes:pro-andon-config:delete'])" class="flex-1" size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
-            </view>
+            </wd-button>
           </view>
         </view>
       </view>
@@ -123,21 +94,16 @@
                   clearable
                 />
               </wd-form-item>
-              <wd-form-item title="级别" title-width="220rpx" prop="level">
-                <wd-radio-group v-model="formData.level" type="button">
-                  <wd-radio v-for="dict in levelOptions" :key="dict.value" :value="dict.value">
-                    {{ dict.label }}
-                  </wd-radio>
-                </wd-radio-group>
-              </wd-form-item>
-              <wd-form-item
-                title="处置角色"
-                title-width="220rpx"
+              <yd-form-picker v-model="formData.level" label="级别" label-width="220rpx" prop="level" :columns="levelOptions" placeholder="请选择级别" />
+              <yd-form-picker
+                v-model="formData.handlerRoleId"
+                label="处置角色"
+                label-width="220rpx"
                 prop="handlerRoleId"
-                is-link
-                :value="selectedRoleName"
+                :columns="roleOptions"
+                label-key="name"
+                value-key="id"
                 placeholder="请选择处置角色"
-                @click="rolePickerVisible = true"
               />
               <UserPicker
                 v-model="formData.handlerUserId"
@@ -161,22 +127,12 @@
         </scroll-view>
       </view>
     </wd-popup>
-
-    <wd-picker
-      v-model:visible="rolePickerVisible"
-      :model-value="rolePickerValue"
-      title="选择处置角色"
-      :columns="roleOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="handleRoleConfirm"
-    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProAndonConfigCreateReqVO, ProAndonConfigQueryParams, ProAndonConfigVO } from '@/api/mes/pro/andon/config'
+import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
 import type { Role } from '@/api/system/role'
 import type { User } from '@/api/system/user'
 import UserPicker from '@/components/system-select/user-picker.vue'
@@ -199,16 +155,7 @@ interface ZPagingRef<T> {
   complete: (success: boolean) => void
 }
 
-interface AndonConfigFormData {
-  id?: number
-  reason: string
-  level: number
-  handlerRoleId?: number
-  handlerRoleName?: string
-  handlerUserId?: number
-  handlerUserNickname?: string
-  remark?: string
-}
+type AndonConfigFormData = ProAndonConfig
 
 definePage({
   style: {
@@ -220,21 +167,15 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const list = ref<ProAndonConfigVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<ProAndonConfigVO>>() // 分页组件引用
+const list = ref<ProAndonConfig[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<ProAndonConfig>>() // 分页组件引用
 const formRef = ref<FormInstance>() // 表单组件引用
-const keyword = ref('') // 搜索关键字
-const queryLevel = ref<number>() // 当前筛选级别
 const formVisible = ref(false) // 表单弹层
 const formLoading = ref(false) // 表单提交状态
-const rolePickerVisible = ref(false) // 角色选择弹层
 const roleOptions = ref<Role[]>([]) // 角色列表
-const selectedRole = ref<Role>() // 当前选择角色
 const selectedUser = ref<User>() // 当前选择用户
 const formData = ref<AndonConfigFormData>(getDefaultFormData()) // 表单数据
 const levelOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_PRO_ANDON_LEVEL))
-const selectedRoleName = computed(() => selectedRole.value?.name || formData.value.handlerRoleName || '')
-const rolePickerValue = computed(() => formData.value.handlerRoleId)
 const formSchema = createFormSchema({
   reason: [{ required: true, message: '呼叫原因不能为空' }],
   level: [{ required: true, message: '级别不能为空' }],
@@ -253,6 +194,9 @@ function getDefaultFormData(): AndonConfigFormData {
   return {
     reason: '',
     level: MesProAndonLevelEnum.LEVEL3,
+    handlerRoleId: null,
+    handlerUserId: null,
+    remark: null,
   }
 }
 
@@ -263,11 +207,9 @@ function handleBack() {
 
 /** 查询列表 */
 async function queryList(pageNo: number, pageSize: number) {
-  const params: ProAndonConfigQueryParams = {
+  const params = {
     pageNo,
     pageSize,
-    reason: keyword.value.trim() || undefined,
-    level: queryLevel.value,
   }
   try {
     const data = await getAndonConfigPage(params)
@@ -277,40 +219,16 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 搜索 */
-function handleSearch() {
-  pagingRef.value?.reload()
-}
-
-/** 切换级别 */
-function handleLevelChange(level?: number) {
-  queryLevel.value = level
-  handleSearch()
-}
-
 /** 新增配置 */
 function handleAdd() {
   formData.value = getDefaultFormData()
-  selectedRole.value = undefined
   selectedUser.value = undefined
   formVisible.value = true
 }
 
 /** 编辑配置 */
-function handleEdit(item: ProAndonConfigVO) {
-  formData.value = {
-    id: item.id,
-    reason: item.reason,
-    level: item.level,
-    handlerRoleId: item.handlerRoleId,
-    handlerRoleName: item.handlerRoleName,
-    handlerUserId: item.handlerUserId,
-    handlerUserNickname: item.handlerUserNickname,
-    remark: item.remark,
-  }
-  selectedRole.value = item.handlerRoleId
-    ? roleOptions.value.find(role => role.id === item.handlerRoleId)
-    : undefined
+function handleEdit(item: ProAndonConfig) {
+  formData.value = { ...item }
   selectedUser.value = undefined
   formVisible.value = true
 }
@@ -318,14 +236,6 @@ function handleEdit(item: ProAndonConfigVO) {
 /** 取消表单 */
 function handleCancelForm() {
   formVisible.value = false
-}
-
-/** 选择角色 */
-function handleRoleConfirm({ value }: { value: number }) {
-  const role = roleOptions.value.find(item => item.id === value)
-  selectedRole.value = role
-  formData.value.handlerRoleId = role?.id
-  formData.value.handlerRoleName = role?.name
 }
 
 /** 选择处置人 */
@@ -336,8 +246,8 @@ function handleUserConfirm(users: User[]) {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (!result?.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   try {
@@ -348,20 +258,14 @@ async function handleSubmit() {
   } catch {
     return
   }
+
   formLoading.value = true
   try {
-    const data: ProAndonConfigCreateReqVO = {
-      reason: formData.value.reason,
-      level: formData.value.level,
-      handlerRoleId: formData.value.handlerRoleId,
-      handlerUserId: formData.value.handlerUserId,
-      remark: formData.value.remark,
-    }
     if (formData.value.id) {
-      await updateAndonConfig({ ...data, id: formData.value.id })
+      await updateAndonConfig(formData.value)
       toast.success('修改成功')
     } else {
-      await createAndonConfig(data)
+      await createAndonConfig(formData.value)
       toast.success('新增成功')
     }
     formVisible.value = false
@@ -372,7 +276,7 @@ async function handleSubmit() {
 }
 
 /** 删除配置 */
-async function handleDelete(item: ProAndonConfigVO) {
+async function handleDelete(item: ProAndonConfig) {
   try {
     await dialog.confirm({ title: '提示', msg: `确定要删除「${item.reason || item.id}」安灯配置吗？` })
   } catch {

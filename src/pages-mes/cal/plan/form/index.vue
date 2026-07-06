@@ -20,9 +20,9 @@
             <wd-input v-model="formData.name" placeholder="请输入计划名称" clearable />
           </wd-form-item>
           <yd-form-picker v-model="formData.calendarType" label="班组类型" label-width="220rpx" prop="calendarType" :dict-type="DICT_TYPE.MES_CAL_CALENDAR_TYPE" placeholder="请选择班组类型" />
-          <wd-form-item title="开始日期" title-width="220rpx" prop="startDate" is-link :value="formData.startDate || ''" placeholder="请选择开始日期" @click="dateVisible.startDate = true" />
+          <wd-form-item title="开始日期" title-width="220rpx" prop="startDate" is-link :value="formatDateTime(formData.startDate) || ''" placeholder="请选择开始日期" @click="dateVisible.startDate = true" />
           <wd-datetime-picker v-model="formData.startDate" v-model:visible="dateVisible.startDate" title="请选择开始日期" type="date" />
-          <wd-form-item title="结束日期" title-width="220rpx" prop="endDate" is-link :value="formData.endDate || ''" placeholder="请选择结束日期" @click="dateVisible.endDate = true" />
+          <wd-form-item title="结束日期" title-width="220rpx" prop="endDate" is-link :value="formatDateTime(formData.endDate) || ''" placeholder="请选择结束日期" @click="dateVisible.endDate = true" />
           <wd-datetime-picker v-model="formData.endDate" v-model:visible="dateVisible.endDate" title="请选择结束日期" type="date" />
           <yd-form-picker v-model="formData.shiftType" label="轮班方式" label-width="220rpx" prop="shiftType" :dict-type="DICT_TYPE.MES_CAL_SHIFT_TYPE" placeholder="请选择轮班方式" />
           <yd-form-picker v-if="showShiftMethod" v-model="formData.shiftMethod" label="倒班方式" label-width="220rpx" prop="shiftMethod" :dict-type="DICT_TYPE.MES_CAL_SHIFT_METHOD" placeholder="请选择倒班方式" />
@@ -65,13 +65,12 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CalPlan } from '@/api/mes/cal/plan'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import dayjs from 'dayjs'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { confirmPlan, createPlan, getPlan, updatePlan } from '@/api/mes/cal/plan'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesCalPlanStatusEnum, MesCalShiftMethodEnum, MesCalShiftTypeEnum } from '@/utils/constants'
-import { formatDate, formatDateOnly, formatDateStartTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import PlanShiftList from '../components/plan-shift-list.vue'
 import PlanTeamList from '../components/plan-team-list.vue'
@@ -113,24 +112,14 @@ function handleBack() {
   navigateBackPlus('/pages-mes/cal/plan/index')
 }
 
-/** 日期转接口日期时间 */
-function toDateTime(day?: number | string | Date) {
-  return formatDateStartTime(day)
-}
-
-/** 日期转表单日期 */
-function toFormDate(day?: string | Date) {
-  return formatDateOnly(day)
-}
-
 /** 默认表单数据 */
 function getDefaultFormData(): CalPlan {
   return {
     code: '',
     name: '',
     calendarType: undefined,
-    startDate: formatDate(Date.now()),
-    endDate: formatDate(dayjs().add(6, 'day')),
+    startDate: undefined,
+    endDate: undefined,
     shiftType: undefined,
     shiftMethod: undefined,
     shiftCount: undefined,
@@ -145,12 +134,7 @@ async function getDetail() {
     formData.value = getDefaultFormData()
     return
   }
-  const detail = await getPlan(Number(props.id))
-  formData.value = {
-    ...detail,
-    startDate: toFormDate(detail.startDate),
-    endDate: toFormDate(detail.endDate),
-  }
+  formData.value = await getPlan(Number(props.id))
 }
 
 /** 生成排班计划编码 */
@@ -179,8 +163,6 @@ async function handleSubmit() {
     const shiftMethod = showShiftMethod.value ? formData.value.shiftMethod : undefined
     const data: CalPlan = {
       ...formData.value,
-      startDate: toDateTime(formData.value.startDate),
-      endDate: toDateTime(formData.value.endDate),
       shiftMethod,
       shiftCount: shiftMethod === MesCalShiftMethodEnum.DAY ? formData.value.shiftCount : undefined,
     }
@@ -221,8 +203,6 @@ async function handleConfirm() {
     const shiftMethod = showShiftMethod.value ? formData.value.shiftMethod : undefined
     await updatePlan({
       ...formData.value,
-      startDate: toDateTime(formData.value.startDate),
-      endDate: toDateTime(formData.value.endDate),
       shiftMethod,
       shiftCount: shiftMethod === MesCalShiftMethodEnum.DAY ? formData.value.shiftCount : undefined,
     })

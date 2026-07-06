@@ -7,9 +7,14 @@
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
-        <wd-button variant="plain" size="small" @click="visible = false">
-          取消
-        </wd-button>
+        <view class="flex items-center gap-12rpx">
+          <wd-button variant="plain" size="small" @click="visible = false">
+            取消
+          </wd-button>
+          <wd-button v-if="props.clearable" variant="plain" size="small" :disabled="!canClear" @click="handleClear">
+            清空
+          </wd-button>
+        </view>
         <view class="text-32rpx text-[#333] font-semibold">
           选择工序
         </view>
@@ -69,40 +74,60 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProProcessQueryParams, ProProcessVO } from '@/api/mes/pro/process'
-import { reactive, ref } from 'vue'
-import { getProcessPage } from '@/api/mes/pro/process'
+import type { ProProcess } from '@/api/mes/pro/process'
+import { computed, reactive, ref, watch } from 'vue'
+import { getProcess, getProcessPage } from '@/api/mes/pro/process'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
+const props = withDefaults(defineProps<{
+  modelValue?: number
+  disabled?: boolean
+  clearable?: boolean
+}>(), {
+  disabled: false,
+  clearable: true,
+})
+
 const emit = defineEmits<{
-  confirm: [item: ProProcessVO]
+  'update:modelValue': [value: number | undefined]
+  'change': [item: ProProcess | undefined]
+  'confirm': [item: ProProcess]
+  'clear': []
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<ProProcessVO[]>([]) // 工序列表
-const selected = ref<ProProcessVO>() // 当前选中
+const list = ref<ProProcess[]>([]) // 工序列表
+const selectedItem = ref<ProProcess>() // 当前选中工序
+const selected = ref<ProProcess>() // 当前选中
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
-const query = reactive<Partial<ProProcessQueryParams>>({
+const query = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
 })
+const canClear = computed(() => Boolean(selected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 
 /** 打开选择器 */
-function open(currentId?: number) {
+async function open(currentId?: number) {
+  if (props.disabled) {
+    return
+  }
+  const selectedId = currentId ?? props.modelValue
   visible.value = true
-  selected.value = undefined
+  selected.value = selectedItem.value
   pageNo.value = 1
   total.value = 0
   list.value = []
-  loadList().then(() => {
-    selected.value = list.value.find(item => item.id === currentId)
-  })
+  await loadList(false, selectedId)
+  if (selectedId && !selected.value) {
+    await resolveItemById(selectedId)
+    selected.value = selectedItem.value
+  }
 }
 
 /** 加载工序列表 */
-async function loadList(append = false) {
+async function loadList(append = false, selectedId?: number) {
   if (loading.value) {
     return
   }
@@ -120,8 +145,27 @@ async function loadList(append = false) {
       list.value = data.list
     }
     total.value = data.total
+    if (selectedId && !selected.value) {
+      selected.value = list.value.find(item => item.id === selectedId)
+    }
   } finally {
     loading.value = false
+  }
+}
+
+/** 根据编号加载工序回显 */
+async function resolveItemById(id?: number) {
+  if (id == null) {
+    selectedItem.value = undefined
+    return
+  }
+  if (selectedItem.value?.id === id) {
+    return
+  }
+  try {
+    selectedItem.value = await getProcess(id)
+  } catch {
+    selectedItem.value = undefined
   }
 }
 
@@ -148,14 +192,36 @@ async function handleLoadMore() {
   await loadList(true)
 }
 
+/** 清空选择 */
+function handleClear() {
+  selected.value = undefined
+  selectedItem.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+  emit('clear')
+  visible.value = false
+}
+
 /** 确认选择 */
 function handleConfirm() {
   if (!selected.value) {
     return
   }
+  selectedItem.value = selected.value
+  emit('update:modelValue', selected.value.id)
+  emit('change', selected.value)
   emit('confirm', selected.value)
   visible.value = false
 }
 
-defineExpose({ open })
+/** 同步外部绑定值 */
+watch(
+  () => props.modelValue,
+  (value) => {
+    resolveItemById(value)
+  },
+  { immediate: true },
+)
+
+defineExpose({ open, clear: handleClear, selectedItem })
 </script>

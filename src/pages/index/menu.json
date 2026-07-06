@@ -1668,14 +1668,6 @@
               "iconColor": "#fa8c16",
               "url": "/pages-mes/pro/andon/record/index",
               "permission": "mes:pro-andon-record:query"
-            },
-            {
-              "key": "mesProAndonConfig",
-              "name": "安灯配置",
-              "icon": "settings",
-              "iconColor": "#faad14",
-              "url": "/pages-mes/pro/andon/config/index",
-              "permission": "mes:pro-andon-config:query"
             }
           ]
         },

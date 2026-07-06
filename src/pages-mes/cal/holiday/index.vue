@@ -126,7 +126,7 @@ import { getHolidayByDay, getHolidayList, saveHoliday } from '@/api/mes/cal/holi
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesCalHolidayTypeEnum } from '@/utils/constants'
-import { formatDateEndTime, formatDateOnly, formatDateStartTime } from '@/utils/date'
+import { formatDateEndTime, formatDateOnly, formatDateStartTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 interface CalendarDay {
@@ -220,15 +220,16 @@ async function handleDayClick(day: CalendarDay) {
     return
   }
   selectedDay.value = day.date
+  const submitDay = toTimestamp(formatDateStartTime(day.date))
   formData.id = undefined
-  formData.day = formatDateStartTime(day.date)
+  formData.day = submitDay
   formData.type = MesCalHolidayTypeEnum.WORKDAY
   formData.remark = undefined
   formRef.value?.reset()
   formVisible.value = true
   formLoading.value = true
   try {
-    Object.assign(formData, await getHolidayByDay(formData.day))
+    Object.assign(formData, await getHolidayByDay(formatDateStartTime(day.date)), { day: submitDay })
   } finally {
     formLoading.value = false
   }

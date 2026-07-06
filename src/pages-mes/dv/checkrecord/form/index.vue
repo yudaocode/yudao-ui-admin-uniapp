@@ -104,7 +104,7 @@ import { computed, onMounted, ref } from 'vue'
 import { createCheckRecord, getCheckRecord, submitCheckRecord, updateCheckRecord } from '@/api/mes/dv/checkrecord'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesDvCheckRecordStatusEnum } from '@/utils/constants'
-import { formatDateTime, formatOptionalDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import CheckPlanPicker from '../../checkplan/components/checkplan-picker.vue'
@@ -175,11 +175,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getCheckRecord(Number(props.id))
-  formData.value = {
-    ...data,
-    checkTime: formatDateTime(data.checkTime) || '',
-  }
+  formData.value = await getCheckRecord(Number(props.id))
 }
 
 /** 初始化页面数据 */
@@ -237,16 +233,15 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    formData.value = {
+    const data = {
       ...formData.value,
-      checkTime: formatOptionalDateTime(formData.value.checkTime),
       status: undefined,
     }
     if (props.id) {
-      await updateCheckRecord(formData.value)
+      await updateCheckRecord(data)
       toast.success('修改成功')
     } else {
-      await createCheckRecord(formData.value)
+      await createCheckRecord(data)
       toast.success('新增成功')
     }
     uni.$emit('mes:dv:checkrecord:reload')
@@ -276,12 +271,11 @@ async function handleSubmitRecord() {
 
   submitLoading.value = true
   try {
-    formData.value = {
+    const data = {
       ...formData.value,
-      checkTime: formatOptionalDateTime(formData.value.checkTime),
       status: undefined,
     }
-    await updateCheckRecord(formData.value)
+    await updateCheckRecord(data)
     await submitCheckRecord(Number(props.id))
     toast.success('提交成功')
     uni.$emit('mes:dv:checkrecord:reload')

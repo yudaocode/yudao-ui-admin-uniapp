@@ -14,7 +14,7 @@ export interface DvCheckRecord {
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
-  checkTime?: string | Date // 点检时间
+  checkTime?: string | number | Date // 点检时间
   userId?: number // 点检人编号
   nickname?: string // 点检人名称
   status?: number // 状态

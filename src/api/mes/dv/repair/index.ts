@@ -11,9 +11,9 @@ export interface DvRepair {
   machineryName?: string // 设备名称
   machineryBrand?: string // 品牌
   machinerySpecification?: string // 规格型号
-  requireDate?: string | Date // 报修日期
-  finishDate?: string | Date // 维修完成日期
-  confirmDate?: string | Date // 验收日期
+  requireDate?: string | number | Date // 报修日期
+  finishDate?: string | number | Date // 维修完成日期
+  confirmDate?: string | number | Date // 验收日期
   result?: number // 维修结果
   acceptedUserId?: number // 维修人用户编号
   acceptedUserNickname?: string // 维修人名称
@@ -30,7 +30,7 @@ export interface DvRepair {
 /** MES 维修完成确认参数 */
 export interface DvRepairConfirmReq {
   id: number
-  finishDate?: string
+  finishDate?: string | number | Date
 }
 
 /** 查询维修工单分页 */

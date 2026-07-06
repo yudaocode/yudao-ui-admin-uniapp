@@ -7,8 +7,8 @@ export interface DvCheckPlan {
   code: string
   name: string
   type?: number
-  startDate?: string | Date
-  endDate?: string | Date
+  startDate?: string | number | Date
+  endDate?: string | number | Date
   cycleType?: number
   cycleCount: number
   status: number

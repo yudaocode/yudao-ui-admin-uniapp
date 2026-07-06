@@ -10,7 +10,7 @@ export interface WmMiscIssue {
   sourceDocType?: string
   sourceDocId?: number
   sourceDocCode?: string
-  issueDate: string | Date
+  issueDate: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

@@ -23,25 +23,41 @@
         <view class="yd-search-form-label">
           生产工单
         </view>
-        <MesSearchSelectorField
-          :model-value="selectedWorkOrderText"
-          placeholder="请选择生产工单"
-          clearable
-          @click="openWorkOrderSelector"
-          @clear="clearWorkOrder"
-        />
+        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openWorkOrderPicker">
+          <text v-if="selectedWorkOrderText" class="min-w-0 flex-1 truncate text-[#333]">
+            {{ selectedWorkOrderText }}
+          </text>
+          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
+            请选择生产工单
+          </text>
+          <wd-icon
+            v-if="selectedWorkOrderText"
+            name="close-circle"
+            size="30rpx"
+            custom-style="color: #c0c4cc;"
+            @click.stop="clearWorkOrder"
+          />
+        </view>
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           产品
         </view>
-        <MesSearchSelectorField
-          :model-value="selectedItemText"
-          placeholder="请选择产品"
-          clearable
-          @click="openItemSelector"
-          @clear="clearItem"
-        />
+        <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="openItemPicker">
+          <text v-if="selectedItemText" class="min-w-0 flex-1 truncate text-[#333]">
+            {{ selectedItemText }}
+          </text>
+          <text v-else class="min-w-0 flex-1 truncate text-[#999]">
+            请选择产品
+          </text>
+          <wd-icon
+            v-if="selectedItemText"
+            name="close-circle"
+            size="30rpx"
+            custom-style="color: #c0c4cc;"
+            @click.stop="clearItem"
+          />
+        </view>
       </view>
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -60,31 +76,29 @@
     </view>
   </wd-popup>
 
-  <WorkOrderSelector ref="workOrderSelectorRef" :confirmed-only="false" @confirm="handleWorkOrderConfirm" />
-  <ItemSelector ref="itemSelectorRef" item-or-product="PRODUCT" title="选择产品" :multiple="false" @confirm="handleItemConfirm" />
+  <WorkOrderPicker ref="workOrderPickerRef" :confirmed-only="false" @confirm="handleWorkOrderConfirm" />
+  <ItemPicker ref="itemPickerRef" item-or-product="PRODUCT" title="选择产品" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { ProCardQueryParams } from '@/api/mes/pro/card'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { MdItem } from '@/api/mes/md/item'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import MesSearchSelectorField from '@/pages-mes/components/mes-search-selector-field.vue'
-import WorkOrderSelector from './workorder-selector.vue'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
+import WorkOrderPicker from './workorder-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: Partial<ProCardQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 产品选择器
-const selectedWorkOrder = ref<ProWorkOrderVO>() // 已选工单
-const selectedItem = ref<MdItemVO>() // 已选产品
-const formData = reactive<Partial<ProCardQueryParams>>({
+const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 产品选择器
+const selectedWorkOrder = ref<ProWorkOrder>() // 已选工单
+const selectedItem = ref<MdItem>() // 已选产品
+const formData = reactive<Record<string, any>>({
   code: undefined,
   workOrderId: undefined,
   itemId: undefined,
@@ -112,23 +126,23 @@ const placeholder = computed(() => {
 })
 
 /** 打开工单选择器 */
-function openWorkOrderSelector() {
-  workOrderSelectorRef.value?.open(formData.workOrderId)
+function openWorkOrderPicker() {
+  workOrderPickerRef.value?.open(formData.workOrderId)
 }
 
 /** 打开产品选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
+function openItemPicker() {
+  itemPickerRef.value?.open()
 }
 
 /** 选择工单 */
-function handleWorkOrderConfirm(item: ProWorkOrderVO) {
+function handleWorkOrderConfirm(item: ProWorkOrder) {
   selectedWorkOrder.value = item
   formData.workOrderId = item.id
 }
 
 /** 选择产品 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
   if (!item) {
     return

@@ -6,7 +6,7 @@ export interface StockTakingTask {
   id?: number
   code: string
   name: string
-  takingDate?: string | Date
+  takingDate?: string | number | Date
   type: number
   userId: number
   userNickname?: string
@@ -15,8 +15,8 @@ export interface StockTakingTask {
   planName?: string
   blindFlag: boolean
   frozen: boolean
-  startTime?: string | Date
-  endTime?: string | Date
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

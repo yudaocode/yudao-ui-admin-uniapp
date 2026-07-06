@@ -3,7 +3,7 @@ import { http } from '@/http/http'
 /** MES 假期设置 */
 export interface CalHoliday {
   id?: number // 编号
-  day: string // 日期
+  day: string | number | Date // 日期
   type: number // 日期类型
   remark?: string // 备注
   createTime?: Date // 创建时间

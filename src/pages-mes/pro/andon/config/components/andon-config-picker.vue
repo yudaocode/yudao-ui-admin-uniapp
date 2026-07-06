@@ -7,9 +7,14 @@
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
-        <wd-button variant="plain" size="small" @click="visible = false">
-          取消
-        </wd-button>
+        <view class="flex items-center gap-12rpx">
+          <wd-button variant="plain" size="small" @click="visible = false">
+            取消
+          </wd-button>
+          <wd-button v-if="props.clearable" variant="plain" size="small" :disabled="!canClear" @click="handleClear">
+            清空
+          </wd-button>
+        </view>
         <view class="text-32rpx text-[#333] font-semibold">
           选择呼叫原因
         </view>
@@ -49,7 +54,7 @@
           <view v-if="filteredList.length === 0 && !loading" class="py-100rpx text-center">
             <wd-empty icon="content" tip="暂无安灯配置" />
             <view class="mt-24rpx flex justify-center">
-              <wd-button size="small" type="primary" plain @click="handleConfigManage">
+              <wd-button size="small" type="primary" variant="plain" @click="handleConfigManage">
                 去维护安灯配置
               </wd-button>
             </view>
@@ -64,20 +69,34 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProAndonConfigVO } from '@/api/mes/pro/andon/config'
-import { computed, ref } from 'vue'
-import { getAndonConfigList } from '@/api/mes/pro/andon/config'
+import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
+import { computed, ref, watch } from 'vue'
+import { getAndonConfig, getAndonConfigList } from '@/api/mes/pro/andon/config'
 import { DICT_TYPE } from '@/utils/constants'
 
+const props = withDefaults(defineProps<{
+  modelValue?: number
+  disabled?: boolean
+  clearable?: boolean
+}>(), {
+  disabled: false,
+  clearable: true,
+})
+
 const emit = defineEmits<{
-  confirm: [item: ProAndonConfigVO]
+  'update:modelValue': [value: number | undefined]
+  'change': [item: ProAndonConfig | undefined]
+  'confirm': [item: ProAndonConfig]
+  'clear': []
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<ProAndonConfigVO[]>([]) // 配置列表
+const list = ref<ProAndonConfig[]>([]) // 配置列表
 const keyword = ref('') // 搜索关键字
-const selected = ref<ProAndonConfigVO>() // 当前选中
+const selectedItem = ref<ProAndonConfig>() // 当前选中配置
+const selected = ref<ProAndonConfig>() // 当前选中
+const canClear = computed(() => Boolean(selected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 const filteredList = computed(() => {
   const word = keyword.value.trim().toLowerCase()
   if (!word) {
@@ -88,11 +107,19 @@ const filteredList = computed(() => {
 
 /** 打开选择器 */
 async function open(currentId?: number) {
+  if (props.disabled) {
+    return
+  }
+  const selectedId = currentId ?? props.modelValue
   visible.value = true
   keyword.value = ''
-  selected.value = undefined
+  selected.value = selectedItem.value
   await loadList()
-  selected.value = list.value.find(item => item.id === currentId)
+  selected.value = list.value.find(item => item.id === selectedId)
+  if (selectedId && !selected.value) {
+    await resolveItemById(selectedId)
+    selected.value = selectedItem.value
+  }
 }
 
 /** 加载配置列表 */
@@ -105,9 +132,35 @@ async function loadList() {
   }
 }
 
+/** 根据编号加载配置回显 */
+async function resolveItemById(id?: number) {
+  if (id == null) {
+    selectedItem.value = undefined
+    return
+  }
+  if (selectedItem.value?.id === id) {
+    return
+  }
+  try {
+    selectedItem.value = await getAndonConfig(id)
+  } catch {
+    selectedItem.value = undefined
+  }
+}
+
 /** 搜索 */
 function handleSearch() {
   selected.value = undefined
+}
+
+/** 清空选择 */
+function handleClear() {
+  selected.value = undefined
+  selectedItem.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+  emit('clear')
+  visible.value = false
 }
 
 /** 确认选择 */
@@ -115,6 +168,9 @@ function handleConfirm() {
   if (!selected.value) {
     return
   }
+  selectedItem.value = selected.value
+  emit('update:modelValue', selected.value.id)
+  emit('change', selected.value)
   emit('confirm', selected.value)
   visible.value = false
 }
@@ -125,5 +181,14 @@ function handleConfigManage() {
   uni.navigateTo({ url: '/pages-mes/pro/andon/config/index' })
 }
 
-defineExpose({ open })
+/** 同步外部绑定值 */
+watch(
+  () => props.modelValue,
+  (value) => {
+    resolveItemById(value)
+  },
+  { immediate: true },
+)
+
+defineExpose({ open, clear: handleClear, selectedItem })
 </script>

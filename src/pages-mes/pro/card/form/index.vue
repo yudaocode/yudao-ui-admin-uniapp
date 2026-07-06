@@ -10,20 +10,27 @@
           <wd-form-item title="流转卡编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" :disabled="headerReadonly" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :disabled="headerReadonly" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
             </wd-input>
           </wd-form-item>
-          <wd-form-item title="生产工单" title-width="220rpx" prop="workOrderId" is-link :value="selectedWorkOrderText" placeholder="请选择已确认工单" @click="openWorkOrderSelector" />
-          <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="selectedProductText" placeholder="请选择产品" @click="openItemSelector" />
+          <wd-form-item title="生产工单" title-width="220rpx" prop="workOrderId" is-link :value="selectedWorkOrderText" placeholder="请选择已确认工单" @click="openWorkOrderPicker" />
+          <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="selectedProductText" placeholder="请选择产品" @click="openItemPicker" />
           <wd-cell title="规格型号" :value="productSpecText" />
           <wd-form-item title="批次号" title-width="220rpx" prop="batchCode">
             <wd-input v-model="formData.batchCode" placeholder="请输入批次号" clearable :disabled="headerReadonly" />
           </wd-form-item>
           <wd-form-item title="流转数量" title-width="220rpx" prop="transferedQuantity" center>
-            <wd-input-number v-model="formData.transferedQuantity" :min="0.01" :precision="2" :disabled="headerReadonly" />
+            <wd-input-number
+              :model-value="formData.transferedQuantity ?? ''"
+              allow-null
+              :min="0"
+              :precision="2"
+              :disabled="headerReadonly"
+              @update:model-value="value => formData.transferedQuantity = toFiniteNumber(value)"
+            />
           </wd-form-item>
           <wd-cell v-if="formData.status != null" title="单据状态">
             <dict-tag :type="DICT_TYPE.MES_PRO_WORK_ORDER_STATUS" :value="formData.status" />
@@ -34,76 +41,48 @@
         </wd-cell-group>
       </wd-form>
 
-      <view v-if="formData.id" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
-        草稿流转卡可维护工序记录并提交；提交后进入已确认状态，只能完成或取消，不能再修改基础信息。
-      </view>
       <CardProcessList v-if="formData.id" :card-id="formData.id" :editable="isEditable" @changed="handleProcessChanged" />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="flex gap-16rpx">
-      <wd-button v-if="isEditable" class="flex-1" type="primary" :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-      <wd-button v-if="canSubmit" class="flex-1" type="warning" :loading="formLoading" @click="handleSubmitCard">
-        提交
-      </wd-button>
-    </MesFooterActions>
-
-    <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-    <ItemSelector ref="itemSelectorRef" item-or-product="PRODUCT" title="选择产品" :multiple="false" @confirm="handleItemConfirm" />
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="isEditable" class="flex-1" type="primary" :loading="formLoading" @click="submitForm">
+          保存
+        </wd-button>
+        <wd-button v-if="canSubmit" class="flex-1" type="warning" :loading="formLoading" @click="handleSubmit">
+          提交
+        </wd-button>
+      </view>
+    </view>
+    <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
+    <ItemPicker ref="itemPickerRef" item-or-product="PRODUCT" title="选择产品" :multiple="false" @confirm="handleItemConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { ProCardCreateReqVO, ProCardUpdateReqVO, ProCardVO } from '@/api/mes/pro/card'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { MdItem } from '@/api/mes/md/item'
+import type { ProCard } from '@/api/mes/pro/card'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createCard, getCard, submitCard, updateCard } from '@/api/mes/pro/card'
 import { getWorkOrder } from '@/api/mes/pro/workorder'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesProCardStatusEnum } from '@/utils/constants'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
 import CardProcessList from '../components/card-process-list.vue'
-import WorkOrderSelector from '../components/workorder-selector.vue'
-
-interface CardFormData {
-  id?: number
-  code: string
-  workOrderId?: number
-  itemId?: number
-  batchCode: string
-  transferedQuantity?: number
-  status?: number
-  remark: string
-}
-
-interface CardProductInfo {
-  id: number
-  code?: string
-  name?: string
-  specification?: string
-  unitMeasureName?: string
-}
+import WorkOrderPicker from '../components/workorder-picker.vue'
 
 const props = defineProps<{
   id?: number | string
 }>()
-const MesAutoCodeRuleCode = {
-  PRO_CARD_CODE: 'PRO_CARD_CODE',
-} as const
-const MesProCardStatusEnum = {
-  PREPARE: 0,
-} as const
-
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -113,15 +92,19 @@ definePage({
 
 const toast = useToast()
 const dialog = useDialog()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑流转卡' : '新增流转卡')
+const getTitle = computed(() => props.id ? '编辑流转卡' : '新增流转卡')
 const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 产品选择器
-const selectedWorkOrder = ref<ProWorkOrderVO>() // 当前工单
-const selectedItem = ref<CardProductInfo>() // 当前产品
-const formData = ref<CardFormData>(getDefaultFormData())
+const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 产品选择器
+const selectedWorkOrder = ref<ProWorkOrder>() // 当前工单
+const formData = ref<ProCard>({
+  code: '',
+  batchCode: '',
+  remark: '',
+}) // 表单数据
+const originalFormData = ref('') // 原始表单数据快照
 const formSchema = createFormSchema({
   code: [{ required: true, message: '流转卡编码不能为空' }],
   workOrderId: [{ required: true, message: '生产工单不能为空' }],
@@ -148,22 +131,19 @@ const selectedWorkOrderText = computed(() => {
   return `${selectedWorkOrder.value.code || '-'} / ${selectedWorkOrder.value.name || '-'}`
 })
 const selectedProductText = computed(() => {
-  if (selectedItem.value) {
-    return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
-  }
   if (selectedWorkOrder.value) {
     return `${selectedWorkOrder.value.productCode || '-'} / ${selectedWorkOrder.value.productName || '-'}`
   }
-  return formData.value.itemId ? `产品 #${formData.value.itemId}` : '-'
+  if (formData.value.itemCode || formData.value.itemName) {
+    return `${formData.value.itemCode || '-'} / ${formData.value.itemName || '-'}`
+  }
+  return formData.value.itemId ? `产品 #${formData.value.itemId}` : ''
 })
 const productSpecText = computed(() => {
-  if (selectedItem.value) {
-    return `${selectedItem.value.specification || '-'} / ${selectedItem.value.unitMeasureName || '-'}`
+  if (selectedWorkOrder.value) {
+    return `${selectedWorkOrder.value.productSpecification || '-'} / ${selectedWorkOrder.value.unitMeasureName || '-'}`
   }
-  if (!selectedWorkOrder.value) {
-    return '-'
-  }
-  return `${selectedWorkOrder.value.productSpecification || '-'} / ${selectedWorkOrder.value.unitMeasureName || '-'}`
+  return `${formData.value.specification || '-'} / ${formData.value.unitMeasureName || '-'}`
 })
 
 /** 返回上一页 */
@@ -171,162 +151,106 @@ function handleBack() {
   navigateBackPlus('/pages-mes/pro/card/index')
 }
 
-/** 默认表单数据 */
-function getDefaultFormData(): CardFormData {
-  return {
-    code: '',
-    workOrderId: undefined,
-    itemId: undefined,
-    batchCode: '',
-    transferedQuantity: 1,
-    status: undefined,
-    remark: '',
-  }
-}
-
-/** 重置表单上下文 */
-function resetFormContext() {
-  formData.value = getDefaultFormData()
-  selectedWorkOrder.value = undefined
-  selectedItem.value = undefined
-}
-
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
-    resetFormContext()
+  if (!props.id) {
     return
   }
-  const detail = await getCard(currentId.value)
-  setFormData(detail)
-  if (detail.workOrderId) {
-    selectedWorkOrder.value = await getWorkOrder(detail.workOrderId)
-  }
-  if (selectedWorkOrder.value?.productId === detail.itemId) {
-    selectedItem.value = {
-      id: detail.itemId,
-      code: detail.itemCode || selectedWorkOrder.value.productCode || '',
-      name: detail.itemName || selectedWorkOrder.value.productName || '',
-      specification: detail.specification || selectedWorkOrder.value.productSpecification || '',
-      unitMeasureName: detail.unitMeasureName || selectedWorkOrder.value.unitMeasureName,
-    }
-  }
-}
-
-/** 设置表单数据 */
-function setFormData(data: ProCardVO) {
-  formData.value = {
-    id: data.id,
-    code: data.code || '',
-    workOrderId: data.workOrderId,
-    itemId: data.itemId,
-    batchCode: data.batchCode || '',
-    transferedQuantity: data.transferedQuantity,
-    status: data.status,
-    remark: data.remark || '',
+  formData.value = await getCard(Number(props.id))
+  originalFormData.value = JSON.stringify(formData.value)
+  if (formData.value.workOrderId) {
+    selectedWorkOrder.value = await getWorkOrder(formData.value.workOrderId)
   }
 }
 
 /** 打开工单选择器 */
-function openWorkOrderSelector() {
+function openWorkOrderPicker() {
   if (headerReadonly.value) {
     return
   }
-  workOrderSelectorRef.value?.open(formData.value.workOrderId)
+  workOrderPickerRef.value?.open(formData.value.workOrderId)
 }
 
 /** 打开产品选择器 */
-function openItemSelector() {
+function openItemPicker() {
   if (headerReadonly.value) {
     return
   }
-  itemSelectorRef.value?.open()
+  itemPickerRef.value?.open()
 }
 
 /** 选择工单 */
-function handleWorkOrderConfirm(item: ProWorkOrderVO) {
+function handleWorkOrderConfirm(item: ProWorkOrder) {
   selectedWorkOrder.value = item
   formData.value.workOrderId = item.id
   formData.value.itemId = item.productId
-  selectedItem.value = {
-    id: item.productId,
-    code: item.productCode || '',
-    name: item.productName || '',
-    specification: item.productSpecification || '',
-    unitMeasureName: item.unitMeasureName,
-  }
+  formData.value.itemCode = item.productCode
+  formData.value.itemName = item.productName
+  formData.value.specification = item.productSpecification
+  formData.value.unitMeasureName = item.unitMeasureName
   formData.value.batchCode = item.batchCode || formData.value.batchCode
   formData.value.transferedQuantity = item.quantity
 }
 
 /** 选择产品 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
-  if (!item) {
+  if (!item || item.id == null) {
     return
   }
-  selectedItem.value = item
   formData.value.itemId = item.id
+  formData.value.itemCode = item.code
+  formData.value.itemName = item.name
+  formData.value.specification = item.specification || undefined
+  formData.value.unitMeasureName = item.unitMeasureName
 }
 
 /** 生成流转卡编码 */
 async function handleGenerateCode() {
-  if (headerReadonly.value) {
+  if (headerReadonly.value || codeLoading.value) {
     return
   }
-  formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.PRO_CARD_CODE)
+  codeLoading.value = true
+  try {
+    formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.PRO_CARD_CODE)
+    toast.success('生成成功')
+  } finally {
+    codeLoading.value = false
+  }
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): ProCardCreateReqVO | ProCardUpdateReqVO {
-  const data = {
-    code: formData.value.code,
-    workOrderId: Number(formData.value.workOrderId),
-    itemId: Number(formData.value.itemId),
-    batchCode: formData.value.batchCode || undefined,
-    transferedQuantity: Number(formData.value.transferedQuantity),
-    remark: formData.value.remark || undefined,
-  }
-  if (formData.value.id) {
-    return { ...data, id: formData.value.id }
-  }
-  return data
-}
-
-/** 提交表单 */
-async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+/** 提交表单（create/update 模式） */
+async function submitForm() {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (formData.value.id) {
-      await updateCard(data)
+      await updateCard(formData.value)
       toast.success('修改成功')
-      setFormData(await getCard(formData.value.id))
     } else {
-      const id = await createCard(data)
+      const id = await createCard(formData.value)
       toast.success('新增成功')
-      setFormData(await getCard(id))
+      formData.value.id = id
+      formData.value.status = MesProCardStatusEnum.PREPARE
     }
+    originalFormData.value = JSON.stringify(formData.value)
     uni.$emit('mes:pro:card:reload')
   } finally {
     formLoading.value = false
   }
 }
 
-/** 提交流转卡 */
-async function handleSubmitCard() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+/** 提交操作：表单修改过则先保存，再提交 */
+async function handleSubmit() {
+  if (!formData.value.id) {
     return
   }
-  if (!formData.value.id) {
-    await handleSubmit()
-  }
-  if (!formData.value.id) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   try {
@@ -334,8 +258,12 @@ async function handleSubmitCard() {
   } catch {
     return
   }
+
   formLoading.value = true
   try {
+    if (JSON.stringify(formData.value) !== originalFormData.value) {
+      await updateCard(formData.value)
+    }
     await submitCard(formData.value.id)
     toast.success('提交成功')
     uni.$emit('mes:pro:card:reload')
@@ -350,11 +278,8 @@ function handleProcessChanged() {
   uni.$emit('mes:pro:card:reload')
 }
 
+/** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

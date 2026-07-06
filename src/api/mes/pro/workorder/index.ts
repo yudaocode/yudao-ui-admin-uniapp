@@ -25,11 +25,11 @@ export interface ProWorkOrder {
   vendorName?: string // 供应商名称
   vendorCode?: string // 供应商编码
   batchCode?: string // 批次号
-  requestDate: string | Date // 需求日期
+  requestDate: string | number | Date // 需求日期
   parentId?: number // 父工单编号
   parentCode?: string // 父工单编码
-  finishDate?: string | Date // 完成时间
-  cancelDate?: string | Date // 取消时间
+  finishDate?: string | number | Date // 完成时间
+  cancelDate?: string | number | Date // 取消时间
   status?: number // 工单状态
   remark?: string // 备注
   createTime?: Date // 创建时间
