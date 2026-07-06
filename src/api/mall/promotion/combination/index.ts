@@ -15,8 +15,8 @@ export interface PromotionCombinationActivity {
   spuId?: number
   totalLimitCount?: number
   singleLimitCount?: number
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   userSize?: number
   totalCount?: number
   successCount?: number
@@ -36,15 +36,15 @@ export interface PromotionCombinationRecord {
   nickname?: string
   avatar?: string
   headId?: number
-  expireTime?: string
+  expireTime?: string | number | Date
   userSize?: number
   userCount?: number
   status?: number
   spuName?: string
   picUrl?: string
   virtualGroup?: boolean
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
 }
 
 /** 获取拼团活动分页列表 */

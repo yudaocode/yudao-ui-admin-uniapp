@@ -11,7 +11,7 @@ export interface WmReturnSales {
   clientCode?: string
   clientName?: string
   clientNickname?: string
-  returnDate?: string
+  returnDate?: string | number | Date
   returnReason?: string
   status?: number
   remark?: string

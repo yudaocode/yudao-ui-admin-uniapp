@@ -12,7 +12,7 @@ export interface WmOutsourceIssue {
   workOrderId: number
   workOrderCode?: string
   workOrderName?: string
-  issueDate?: string
+  issueDate?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

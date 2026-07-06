@@ -14,8 +14,8 @@ export interface PromotionRewardRule {
 export interface PromotionRewardActivity {
   id?: number
   name?: string
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   status?: number
   remark?: string
   conditionType?: number

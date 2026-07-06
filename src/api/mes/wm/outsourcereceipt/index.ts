@@ -10,7 +10,7 @@ export interface WmOutsourceReceipt {
   workOrderCode?: string // 外协工单编码
   vendorId?: number // 供应商编号
   vendorName?: string // 供应商名称
-  receiptDate?: string // 入库日期
+  receiptDate?: string | number | Date // 入库日期
   status?: number // 单据状态
   remark?: string // 备注
   createTime?: Date // 创建时间

@@ -15,7 +15,7 @@ export interface WmPackageLine {
   workOrderId?: number
   workOrderCode?: string
   batchCode?: string
-  expireDate?: string
+  expireDate?: string | number | Date
   remark?: string
   createTime?: Date
 }

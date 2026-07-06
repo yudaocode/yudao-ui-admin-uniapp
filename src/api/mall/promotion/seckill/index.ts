@@ -16,8 +16,8 @@ export interface PromotionSeckillActivity {
   name?: string
   status?: number
   remark?: string
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   sort?: number
   configIds?: string
   orderCount?: number

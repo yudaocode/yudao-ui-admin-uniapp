@@ -11,8 +11,8 @@ export interface Batch {
   itemSpecification?: string
   unitName?: string
   produceDate?: string | Date
-  expireDate?: string | Date
-  receiptDate?: string | Date
+  expireDate?: string | number | Date
+  receiptDate?: string | number | Date
   vendorId?: number
   vendorCode?: string
   vendorName?: string

@@ -13,7 +13,7 @@ export interface WmProductReceipt {
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  receiptDate: string
+  receiptDate: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

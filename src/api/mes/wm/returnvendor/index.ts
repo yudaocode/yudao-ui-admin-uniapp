@@ -11,7 +11,7 @@ export interface WmReturnVendor {
   vendorCode?: string // 供应商编码
   vendorName?: string // 供应商名称
   vendorNickname?: string // 供应商简称
-  returnDate?: string // 退货日期
+  returnDate?: string | number | Date // 退货日期
   returnReason?: string // 退货原因
   transportCode?: string // 物流单号
   transportTelephone?: string // 物流联系电话

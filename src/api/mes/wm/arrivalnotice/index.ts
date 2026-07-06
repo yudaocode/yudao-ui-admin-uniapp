@@ -10,7 +10,7 @@ export interface WmArrivalNotice {
   vendorId: number
   vendorCode?: string
   vendorName?: string
-  arrivalDate?: string
+  arrivalDate?: string | number | Date
   contactName?: string
   contactTelephone?: string
   status?: number

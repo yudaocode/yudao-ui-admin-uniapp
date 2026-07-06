@@ -17,8 +17,8 @@ export interface PromotionDiscountActivity {
   name?: string
   status?: number
   remark?: string
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   products?: PromotionDiscountProduct[]
   createTime?: string
 }

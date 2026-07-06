@@ -5,8 +5,8 @@ import { http } from '@/http/http'
 export interface PromotionBargainActivity {
   id?: number
   name?: string
-  startTime?: string
-  endTime?: string
+  startTime?: string | number | Date
+  endTime?: string | number | Date
   status?: number
   helpMaxCount?: number
   bargainCount?: number
@@ -32,7 +32,7 @@ export interface PromotionBargainRecord {
   bargainPrice?: number
   status?: number
   orderId?: number
-  endTime?: string
+  endTime?: string | number | Date
   createTime?: string
 }
 

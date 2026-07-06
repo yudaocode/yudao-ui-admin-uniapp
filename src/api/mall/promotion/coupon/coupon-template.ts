@@ -13,8 +13,8 @@ export interface PromotionCouponTemplate {
   productScope?: number
   productScopeValues?: number[]
   validityType?: number
-  validStartTime?: string
-  validEndTime?: string
+  validStartTime?: string | number | Date
+  validEndTime?: string | number | Date
   fixedStartTerm?: number
   fixedEndTerm?: number
   discountType?: number

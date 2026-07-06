@@ -6,7 +6,7 @@ import { http } from '@/http/http'
 export interface CheckOrder {
   id?: number
   no?: string
-  orderTime?: string | Date
+  orderTime?: string | number | Date
   status?: number
   remark?: string
   warehouseId?: number

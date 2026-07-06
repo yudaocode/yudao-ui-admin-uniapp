@@ -13,8 +13,8 @@ export interface WmOutsourceReceiptLine {
   quantity?: number // 入库数量
   batchId?: number // 批次编号
   batchCode?: string // 批次编码
-  productionDate?: string // 生产日期
-  expireDate?: string // 有效期
+  productionDate?: string | number | Date // 生产日期
+  expireDate?: string | number | Date // 有效期
   lotNumber?: string // 生产批号
   iqcCheckFlag?: boolean // 是否需要质检
   iqcId?: number // 来料检验单编号

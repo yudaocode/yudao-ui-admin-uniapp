@@ -5,9 +5,9 @@ import { http } from '@/http/http'
 export interface MemberUser {
   id?: number
   avatar?: string
-  birthday?: number | string
+  birthday?: string | number | Date
   createTime?: string
-  loginDate?: string
+  loginDate?: string | number | Date
   loginIp?: string
   mark?: string
   mobile?: string

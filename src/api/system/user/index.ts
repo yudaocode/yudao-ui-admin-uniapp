@@ -17,7 +17,7 @@ export interface User {
   status: number
   remark?: string
   loginIp?: string
-  loginDate?: string
+  loginDate?: string | number | Date
   createTime?: string
 }
 

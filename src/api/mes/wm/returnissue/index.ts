@@ -12,7 +12,7 @@ export interface WmReturnIssue {
   workOrderId?: number
   workOrderCode?: string
   type?: number
-  returnDate?: string
+  returnDate?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date
