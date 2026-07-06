@@ -43,6 +43,7 @@ export interface StatisticsSection {
   columns?: StatisticsColumn[]
   chart?: StatisticsChart
   load?: (params: Record<string, any>) => Promise<any>
+  transform?: (rows: Record<string, any>[]) => Record<string, any>[]
 }
 
 /** 统一转换统计结果（数组原样返回，对象包成单元素数组） */

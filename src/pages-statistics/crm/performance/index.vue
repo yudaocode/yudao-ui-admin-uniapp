@@ -66,6 +66,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import {
   getContractCountPerformance,
   getContractPricePerformance,
+  getContractSummary,
   getReceivablePricePerformance,
 } from '@/api/crm/statistics/performance'
 import { getSimpleDeptList } from '@/api/system/dept'
@@ -123,18 +124,42 @@ const sections = [
     columns: performanceColumns('合同金额'),
     load: getContractPricePerformance,
     chart: performanceChart('合同金额'),
+    transform: rows => rows.map(withPerformanceGrowthRate),
   },
   {
     title: '回款金额业绩',
     columns: performanceColumns('回款金额'),
     load: getReceivablePricePerformance,
     chart: performanceChart('回款金额'),
+    transform: rows => rows.map(withPerformanceGrowthRate),
   },
   {
     title: '签约合同数业绩',
     columns: performanceColumns('合同数'),
     load: getContractCountPerformance,
     chart: performanceChart('合同数'),
+    transform: rows => rows.map(withPerformanceGrowthRate),
+  },
+  {
+    title: '合同汇总表',
+    columns: [
+      { prop: 'time', label: '月份' },
+      { prop: 'contractCount', label: '合同数量' },
+      { prop: 'contractPrice', label: '合同金额', type: 'money' },
+      { prop: 'receivablePrice', label: '回款金额', type: 'money' },
+      { prop: 'unreceivedPrice', label: '未回款金额', type: 'money' },
+    ],
+    load: getContractSummary,
+    chart: {
+      type: 'bar',
+      categoryProp: 'time',
+      series: [
+        { name: '合同金额', prop: 'contractPrice', type: 'bar' },
+        { name: '回款金额', prop: 'receivablePrice', type: 'bar' },
+        { name: '未回款金额', prop: 'unreceivedPrice', type: 'line' },
+      ],
+      money: true,
+    },
   },
 ] as StatisticsSection[] // 统计分组配置
 const activeSection = computed(() => sections[tabIndex.value] || sections[0]) // 当前分类
@@ -149,7 +174,8 @@ async function loadActive() {
   const section = activeSection.value
   loadingMap.value[section.title] = true
   try {
-    sectionData.value[section.title] = normalizeRows(await section.load?.(queryParams.value)).map(withPerformanceGrowthRate)
+    const rows = normalizeRows(await section.load?.(queryParams.value))
+    sectionData.value[section.title] = section.transform ? section.transform(rows) : rows
   } catch {
     sectionData.value[section.title] = []
   } finally {

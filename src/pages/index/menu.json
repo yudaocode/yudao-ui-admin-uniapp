@@ -1213,6 +1213,22 @@
               "permission": "crm:statistics-performance:query"
             },
             {
+              "key": "crmStatisticsProduct",
+              "name": "产品分析",
+              "icon": "dashboard",
+              "iconColor": "#2f54eb",
+              "url": "/pages-statistics/crm/product/index",
+              "permission": "crm:statistics-product:query"
+            },
+            {
+              "key": "crmStatisticsPerformanceTarget",
+              "name": "业绩达成",
+              "icon": "dashboard",
+              "iconColor": "#13c2c2",
+              "url": "/pages-statistics/crm/performance-target/index",
+              "permission": "crm:statistics-performance-target:query"
+            },
+            {
               "key": "crmStatisticsPortrait",
               "name": "客户画像",
               "icon": "dashboard",
@@ -1273,6 +1289,14 @@
               "iconColor": "#ffc53d",
               "url": "/pages-crm/contract/config/index",
               "permission": "crm:contract-config:query"
+            },
+            {
+              "key": "crmPerformanceConfig",
+              "name": "业绩目标设置",
+              "icon": "settings",
+              "iconColor": "#73d13d",
+              "url": "/pages-crm/performance/config/index",
+              "permission": "crm:performance-config:query"
             }
           ]
         }

@@ -5,8 +5,8 @@ import { http } from '@/http/http'
 export interface CustomerLimitConfig {
   id?: number
   type?: number
-  userIds?: number[] | string
-  deptIds?: number[] | string
+  userIds?: number[]
+  deptIds?: number[]
   users?: { id?: number, nickname?: string }[]
   depts?: { id?: number, name?: string }[]
   maxCount?: number

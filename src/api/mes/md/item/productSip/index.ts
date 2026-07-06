@@ -6,11 +6,11 @@ export interface MdProductSip {
   id?: number // SIP 编号
   itemId: number // 物料产品 ID
   sort: number // 排列顺序
-  processId: number | null // 工序 ID
+  processId?: number | null // 工序 ID
   title: string // 标题
-  description: string | null // 详细描述
-  url: string | null // 图片地址
-  remark: string | null // 备注
+  description?: string | null // 详细描述
+  url?: string | null // 图片地址
+  remark?: string | null // 备注
   createTime?: Date // 创建时间
   processCode?: string // 工序编号
   processName?: string // 工序名称

@@ -6,24 +6,24 @@ export interface MdClient {
   id?: number
   code: string
   name: string
-  nickname: string | null
-  englishName: string | null
-  description: string | null
-  logo: string | null
+  nickname?: string | null
+  englishName?: string | null
+  description?: string | null
+  logo?: string | null
   type: number
-  address: string | null
-  website: string | null
-  email: string | null
-  telephone: string | null
-  contact1Name: string | null
-  contact1Telephone: string | null
-  contact1Email: string | null
-  contact2Name: string | null
-  contact2Telephone: string | null
-  contact2Email: string | null
-  creditCode: string | null
+  address?: string | null
+  website?: string | null
+  email?: string | null
+  telephone?: string | null
+  contact1Name?: string | null
+  contact1Telephone?: string | null
+  contact1Email?: string | null
+  contact2Name?: string | null
+  contact2Telephone?: string | null
+  contact2Email?: string | null
+  creditCode?: string | null
   status: number
-  remark: string | null
+  remark?: string | null
   createTime?: Date
 }
 

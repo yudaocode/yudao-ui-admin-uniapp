@@ -6,16 +6,16 @@ export interface MdWorkstation {
   id?: number
   code: string
   name: string
-  address: string | null
+  address?: string | null
   workshopId: number
   workshopName?: string
-  processId: number | null
+  processId: number
   processName?: string
-  warehouseId: number | null
-  locationId: number | null
-  areaId: number | null
+  warehouseId?: number | null
+  locationId?: number | null
+  areaId?: number | null
   status: number
-  remark: string | null
+  remark?: string | null
   createTime?: Date
 }
 

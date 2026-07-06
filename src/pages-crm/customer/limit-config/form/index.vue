@@ -67,27 +67,22 @@
 </template>
 
 <script lang="ts" setup>
-import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { CustomerLimitConfig } from '@/api/crm/customer/limitConfig'
-import type { Dept } from '@/api/system/dept'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import type {FormInstance} from '@wot-ui/ui/components/wd-form/types'
+import type {CustomerLimitConfig} from '@/api/crm/customer/limitConfig'
 import {
   createCustomerLimitConfig,
   getCustomerLimitConfig,
   LimitConfType,
-  updateCustomerLimitConfig,
+  updateCustomerLimitConfig
 } from '@/api/crm/customer/limitConfig'
-import { getSimpleDeptList } from '@/api/system/dept'
+import type {Dept} from '@/api/system/dept'
+import {getSimpleDeptList} from '@/api/system/dept'
+import {useToast} from '@wot-ui/ui/components/wd-toast'
+import {computed, onMounted, ref} from 'vue'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import { delay, navigateBackPlus } from '@/utils'
-import { handleTree } from '@/utils/tree'
-import { createFormSchema } from '@/utils/wot'
-
-interface CustomerLimitConfigForm extends Omit<CustomerLimitConfig, 'deptIds' | 'userIds'> {
-  deptIds?: number[]
-  userIds?: number[]
-}
+import {delay, navigateBackPlus} from '@/utils'
+import {handleTree} from '@/utils/tree'
+import {createFormSchema} from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
@@ -106,7 +101,7 @@ const getTitle = computed(() => props.id ? '编辑配置' : '新增配置')
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
 const deptTree = ref<Dept[]>([]) // 部门树
-const formData = ref<CustomerLimitConfigForm>({
+const formData = ref<CustomerLimitConfig>({
   // 新增时按 type 入参区分限额类型；编辑时由详情覆盖
   type: Number(props.type) || LimitConfType.CUSTOMER_QUANTITY_LIMIT,
   userIds: [],
@@ -136,12 +131,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getCustomerLimitConfig(Number(props.id))
-  formData.value = {
-    ...data,
-    userIds: normalizeIds(data.userIds),
-    deptIds: normalizeIds(data.deptIds),
-  }
+  formData.value = await getCustomerLimitConfig(Number(props.id))
 }
 
 /** 提交表单 */
@@ -150,14 +140,14 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
-    const data = normalizeSubmitData(formData.value)
     if (props.id) {
-      await updateCustomerLimitConfig(data)
+      await updateCustomerLimitConfig(formData.value)
       toast.success('修改成功')
     } else {
-      await createCustomerLimitConfig(data)
+      await createCustomerLimitConfig(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('crm:customer-limit-config:reload')
@@ -165,26 +155,6 @@ async function handleSubmit() {
   } finally {
     formLoading.value = false
   }
-}
-
-/** 规范化提交数据 */
-function normalizeSubmitData(data: CustomerLimitConfigForm): CustomerLimitConfig {
-  return {
-    ...data,
-    userIds: normalizeIds(data.userIds),
-    deptIds: normalizeIds(data.deptIds),
-  }
-}
-
-/** 解析编号数组 */
-function normalizeIds(value: CustomerLimitConfig['deptIds'] | CustomerLimitConfig['userIds']) {
-  if (Array.isArray(value)) {
-    return value
-  }
-  if (!value) {
-    return []
-  }
-  return String(value).split(',').filter(Boolean).map(Number)
 }
 
 /** 初始化 */

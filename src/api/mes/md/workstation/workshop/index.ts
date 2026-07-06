@@ -10,7 +10,7 @@ export interface MdWorkshop {
   chargeUserId?: number
   chargeUserName?: string
   status: number
-  remark: string | null
+  remark?: string | null
   createTime?: Date
 }
 
