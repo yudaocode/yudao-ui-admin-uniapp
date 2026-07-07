@@ -79,7 +79,7 @@ const placeholder = computed(() => {
   if (formData.itemId != null) {
     conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.checkResult != null) {
+  if (formData.checkResult != null && formData.checkResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索出货检验单（OQC）'
@@ -93,7 +93,7 @@ function handleSearch() {
     clientId: formData.clientId,
     batchCode: formData.batchCode || undefined,
     itemId: formData.itemId,
-    checkResult: formData.checkResult,
+    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
   })
 }
 

@@ -10,7 +10,7 @@
           <wd-form-item title="检验单编号" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -28,20 +28,29 @@
             <wd-cell title="来源单据编号" :value="formData.sourceDocCode || '-'" />
           </template>
 
-          <wd-form-item title="供应商" title-width="220rpx" prop="vendorId">
-            <view class="w-full py-8rpx text-28rpx" :class="isFromPendingTask ? 'text-[#999]' : 'text-[#333]'" @click="openVendorSelector">
-              {{ selectedVendorText || (isFromPendingTask ? '由待检任务带入' : '请选择供应商') }}
-            </view>
-          </wd-form-item>
+          <VendorFormPicker
+            v-model="formData.vendorId"
+            label="供应商"
+            label-width="220rpx"
+            prop="vendorId"
+            :placeholder="isFromPendingTask ? '由待检任务带入' : '请选择供应商'"
+            :disabled="isFromPendingTask"
+            @change="handleVendorChange"
+          />
           <wd-form-item title="供应商批次" title-width="220rpx" prop="vendorBatch">
             <wd-input v-model="formData.vendorBatch" placeholder="请输入供应商批次号" clearable />
           </wd-form-item>
 
-          <wd-form-item title="产品物料" title-width="220rpx" prop="itemId">
-            <view class="w-full py-8rpx text-28rpx" :class="isFromPendingTask || currentId ? 'text-[#999]' : 'text-[#333]'" @click="openItemSelector">
-              {{ selectedItemText || (isFromPendingTask || currentId ? '由单据带入' : '请选择产品物料') }}
-            </view>
-          </wd-form-item>
+          <ItemFormPicker
+            v-model="formData.itemId"
+            label="产品物料"
+            label-width="220rpx"
+            prop="itemId"
+            :placeholder="isFromPendingTask || props.id ? '由单据带入' : '请选择产品物料'"
+            title="选择产品物料"
+            :disabled="isFromPendingTask || !!props.id"
+            @change="handleItemChange"
+          />
           <wd-cell v-if="formData.itemSpecification || formData.unitName" title="规格单位" :value="`${formData.itemSpecification || '-'} / ${formData.unitName || '-'}`" />
 
           <wd-form-item title="接收数量" title-width="220rpx" prop="receivedQuantity" center>
@@ -53,108 +62,62 @@
           <wd-form-item title="不合格数量" title-width="220rpx" prop="unqualifiedQuantity" center>
             <wd-input-number v-model="formData.unqualifiedQuantity" :min="0" :precision="2" />
           </wd-form-item>
-          <wd-form-item title="来料日期" title-width="220rpx" prop="receiveDate">
-            <wd-datetime-picker v-model="formData.receiveDate" type="date" placeholder="请选择来料日期" />
-          </wd-form-item>
+          <wd-form-item title="来料日期" title-width="220rpx" prop="receiveDate" is-link :value="formatDateTime(formData.receiveDate) || ''" placeholder="请选择来料日期" @click="dateVisible.receiveDate = true" />
+          <wd-datetime-picker v-model="formData.receiveDate" v-model:visible="dateVisible.receiveDate" title="请选择来料日期" type="date" />
           <UserPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" type="radio" placeholder="请选择检测人员" />
-          <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate">
-            <wd-datetime-picker v-model="formData.inspectDate" type="date" placeholder="请选择检测日期" />
-          </wd-form-item>
-          <wd-form-item title="检测结果" title-width="220rpx" prop="checkResult">
-            <wd-radio-group v-model="formData.checkResult" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_QC_CHECK_RESULT)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate" is-link :value="formatDateTime(formData.inspectDate) || ''" placeholder="请选择检测日期" @click="dateVisible.inspectDate = true" />
+          <wd-datetime-picker v-model="formData.inspectDate" v-model:visible="dateVisible.inspectDate" title="请选择检测日期" type="date" />
+          <yd-form-picker v-model="formData.checkResult" label="检测结果" label-width="220rpx" prop="checkResult" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" placeholder="请选择检测结果" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
 
-      <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
-        保存时需满足“合格数量 + 不合格数量 = 接收数量”。检验项和检测结果当前为只读展示，维护请进入检验单详情页。
-      </view>
-      <template v-if="currentId">
-        <QcLineSection type="iqc" :order-id="currentId" :qc-type="MesQcTypeEnum.IQC" />
-        <QcIndicatorResultSection :qc-id="currentId" :qc-type="MesQcTypeEnum.IQC" />
+      <template v-if="formData.id">
+        <QcLineList :order-id="formData.id" :qc-type="MesQcTypeEnum.IQC" :readonly="!isDraft" />
+        <IndicatorResultList :qc-id="formData.id" :qc-type="MesQcTypeEnum.IQC" :readonly="!isDraft" />
       </template>
-      <view v-else class="mx-24rpx mt-20rpx rounded-12rpx bg-[#f6ffed] p-20rpx text-24rpx text-[#389e0d]">
-        新增检验单保存后，可在详情页查看检验项、检测结果和缺陷记录。
-      </view>
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
-
-    <VendorSelector ref="vendorSelectorRef" title="选择供应商" :multiple="false" @confirm="handleVendorConfirm" />
-    <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
+    <view v-if="isDraft" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { QcIqcCreateReqVO, QcIqcUpdateReqVO } from '@/api/mes/qc/iqc'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import VendorSelector from '@/pages-mes/md/vendor/components/vendor-selector.vue'
+import type { MdItem } from '@/api/mes/md/item'
+import type { MdVendor } from '@/api/mes/md/vendor'
+import type { QcIqc } from '@/api/mes/qc/iqc'
+import ItemFormPicker from '@/pages-mes/md/item/components/item-form-picker.vue'
+import VendorFormPicker from '@/pages-mes/md/vendor/components/vendor-form-picker.vue'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import dayjs from 'dayjs'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createIqc, getIqc, updateIqc } from '@/api/mes/qc/iqc'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { decodeUrlText, delay, navigateBackPlus } from '@/utils'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesQcStatusEnum, MesQcTypeEnum } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import QcIndicatorResultSection from '../../components/qc-indicator-result-section.vue'
-import QcLineSection from '../../components/qc-line-section.vue'
-
-interface QcIqcFormData {
-  id?: number
-  code: string
-  name: string
-  sourceDocType?: number
-  sourceDocId?: number
-  sourceLineId?: number
-  sourceDocCode: string
-  vendorId?: number
-  vendorNickname: string
-  vendorBatch: string
-  itemId?: number
-  itemCode: string
-  itemName: string
-  itemSpecification: string
-  unitName: string
-  receivedQuantity?: number
-  qualifiedQuantity?: number
-  unqualifiedQuantity?: number
-  inspectorUserId?: number
-  inspectDate?: string
-  checkResult?: number
-  receiveDate?: string
-  remark: string
-}
+import IndicatorResultList from '../../indicatorresult/components/indicator-result-list.vue'
+import QcLineList from '../../components/qc-line-list.vue'
 
 const props = defineProps<{
   id?: number | string
-  name?: string
   sourceDocType?: number | string
   sourceDocId?: number | string
   sourceLineId?: number | string
   sourceDocCode?: string
-  vendorId?: number | string
-  vendorNickname?: string
   itemId?: number | string
   itemCode?: string
   itemName?: string
@@ -162,14 +125,9 @@ const props = defineProps<{
   unitName?: string
   quantity?: number | string
   recordTime?: string
+  vendorId?: number | string
+  vendorName?: string
 }>()
-
-const MesAutoCodeRuleCode = {
-  QC_IQC_CODE: 'QC_IQC_CODE',
-} as const
-const MesQcTypeEnum = {
-  IQC: 1,
-} as const
 
 definePage({
   style: {
@@ -179,42 +137,19 @@ definePage({
 })
 
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/qc/iqc/form/index')
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑来料检验单（IQC）' : '新增来料检验单（IQC）')
+const getTitle = computed(() => props.id ? '编辑来料检验单（IQC）' : '新增来料检验单（IQC）')
 const formLoading = ref(false) // 表单提交状态
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
-const formData = ref<QcIqcFormData>({
+const codeLoading = ref(false) // 编码生成状态
+const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
+const formData = ref<QcIqc>({
   code: '',
   name: '',
-  sourceDocCode: '',
-  vendorNickname: '',
-  vendorBatch: '',
-  itemCode: '',
-  itemName: '',
-  itemSpecification: '',
-  unitName: '',
   receivedQuantity: 0,
   qualifiedQuantity: 0,
   unqualifiedQuantity: 0,
-  inspectDate: '',
-  receiveDate: '',
-  remark: '',
 }) // 表单数据
-const isFromPendingTask = computed(() => !currentId.value && formData.value.sourceDocId != null)
-const selectedVendorText = computed(() => {
-  if (!formData.value.vendorId) {
-    return ''
-  }
-  return `${formData.value.vendorNickname || ''}${formData.value.vendorNickname ? ' / ' : ''}${formData.value.vendorId}`
-})
-const selectedItemText = computed(() => {
-  if (!formData.value.itemId) {
-    return ''
-  }
-  return `${formData.value.itemCode || '-'} / ${formData.value.itemName || '-'}`
-})
+const isDraft = computed(() => !props.id || formData.value.status === MesQcStatusEnum.DRAFT)
+const isFromPendingTask = computed(() => !props.id && formData.value.sourceDocId != null)
 const formSchema = createFormSchema({
   code: [{ required: true, message: '检验单编号不能为空' }],
   name: [{ required: true, message: '检验单名称不能为空' }],
@@ -240,34 +175,6 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 
-/** 转换数字参数 */
-function toNumber(value?: number | string) {
-  if (value === undefined || value === '') {
-    return undefined
-  }
-  return Number(value)
-}
-
-/** 解码 URL 文本参数 */
-function decodeText(value?: string) {
-  if (!value) {
-    return ''
-  }
-  let result = value
-  for (let i = 0; i < 3 && result.includes('%'); i++) {
-    try {
-      const decoded = decodeURIComponent(result)
-      if (decoded === result) {
-        break
-      }
-      result = decoded
-    } catch {
-      break
-    }
-  }
-  return result
-}
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/qc/iqc/index')
@@ -275,87 +182,51 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getIqc(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code || '',
-    name: data.name || '',
-    sourceDocType: data.sourceDocType,
-    sourceDocId: data.sourceDocId,
-    sourceLineId: data.sourceLineId,
-    sourceDocCode: data.sourceDocCode || '',
-    vendorId: data.vendorId,
-    vendorNickname: data.vendorNickname || '',
-    vendorBatch: data.vendorBatch || '',
-    itemId: data.itemId,
-    itemCode: data.itemCode || '',
-    itemName: data.itemName || '',
-    itemSpecification: data.itemSpecification || '',
-    unitName: data.unitName || '',
-    receivedQuantity: Number(data.receivedQuantity),
-    qualifiedQuantity: Number(data.qualifiedQuantity),
-    unqualifiedQuantity: Number(data.unqualifiedQuantity),
-    inspectorUserId: data.inspectorUserId,
-    inspectDate: normalizeDate(data.inspectDate),
-    checkResult: data.checkResult,
-    receiveDate: normalizeDate(data.receiveDate),
-    remark: data.remark || '',
-  }
+  formData.value = await getIqc(Number(props.id))
+}
+
+/** 是否有待检任务参数 */
+function hasPendingInspectPreset() {
+  return [
+    toFiniteNumber(props.sourceDocType),
+    toFiniteNumber(props.sourceDocId),
+    toFiniteNumber(props.sourceLineId),
+  ].every(value => value != null)
 }
 
 /** 应用待检任务预填 */
 function applyPendingInspectPreset() {
-  if (currentId.value) {
+  if (props.id || !hasPendingInspectPreset()) {
     return
   }
-  formData.value.name = decodeText(getRouteQueryValue('name') as string | undefined) || formData.value.name
-  formData.value.sourceDocType = toNumber(getRouteQueryValue('sourceDocType'))
-  formData.value.sourceDocId = toNumber(getRouteQueryValue('sourceDocId'))
-  formData.value.sourceLineId = toNumber(getRouteQueryValue('sourceLineId'))
-  formData.value.sourceDocCode = decodeText(getRouteQueryValue('sourceDocCode') as string | undefined) || formData.value.sourceDocCode
-  formData.value.vendorId = toNumber(getRouteQueryValue('vendorId'))
-  formData.value.vendorNickname = decodeText(getRouteQueryValue('vendorNickname') as string | undefined) || formData.value.vendorNickname
-  formData.value.itemId = toNumber(getRouteQueryValue('itemId'))
-  formData.value.itemCode = decodeText(getRouteQueryValue('itemCode') as string | undefined) || formData.value.itemCode
-  formData.value.itemName = decodeText(getRouteQueryValue('itemName') as string | undefined) || formData.value.itemName
-  formData.value.itemSpecification = decodeText(getRouteQueryValue('itemSpecification') as string | undefined) || formData.value.itemSpecification
-  formData.value.unitName = decodeText(getRouteQueryValue('unitName') as string | undefined) || formData.value.unitName
-  const receivedQuantity = toNumber(getRouteQueryValue('quantity'))
-  if (receivedQuantity !== undefined) {
-    formData.value.receivedQuantity = receivedQuantity
-  }
-  formData.value.receiveDate = normalizeDate(decodeText(getRouteQueryValue('recordTime') as string | undefined))
+  const sourceDocCode = decodeUrlText(props.sourceDocCode)
+  formData.value.name = sourceDocCode ? `${sourceDocCode} 来料检验单` : formData.value.name
+  formData.value.sourceDocType = toFiniteNumber(props.sourceDocType)
+  formData.value.sourceDocId = toFiniteNumber(props.sourceDocId)
+  formData.value.sourceLineId = toFiniteNumber(props.sourceLineId)
+  formData.value.sourceDocCode = sourceDocCode
+  formData.value.vendorId = toFiniteNumber(props.vendorId)
+  formData.value.vendorNickname = decodeUrlText(props.vendorName)
+  formData.value.itemId = toFiniteNumber(props.itemId)
+  formData.value.itemCode = decodeUrlText(props.itemCode)
+  formData.value.itemName = decodeUrlText(props.itemName)
+  formData.value.itemSpecification = decodeUrlText(props.itemSpecification)
+  formData.value.unitName = decodeUrlText(props.unitName)
+  formData.value.receivedQuantity = toFiniteNumber(props.quantity) ?? 0
+  formData.value.receiveDate = toFiniteNumber(props.recordTime) ?? decodeUrlText(props.recordTime)
 }
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  if (isFromPendingTask.value) {
-    return
-  }
-  vendorSelectorRef.value?.open()
-}
-
-/** 确认供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
+/** 供应商变更 */
+function handleVendorChange(vendor?: MdVendor) {
   formData.value.vendorId = vendor?.id
   formData.value.vendorNickname = vendor?.nickname || vendor?.name || ''
 }
 
-/** 打开物料选择器 */
-function openItemSelector() {
-  if (isFromPendingTask.value || currentId.value) {
-    return
-  }
-  itemSelectorRef.value?.open()
-}
-
-/** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
+/** 物料变更 */
+function handleItemChange(item?: MdItem) {
   formData.value.itemId = item?.id
   formData.value.itemCode = item?.code || ''
   formData.value.itemName = item?.name || ''
@@ -365,32 +236,16 @@ function handleItemConfirm(items: MdItemVO[]) {
 
 /** 生成检验单编号 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
     formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.QC_IQC_CODE)
-    toast.close()
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
-}
-
-/** 日期归一化 */
-function normalizeDate(value?: Date | number | string) {
-  if (!value) {
-    return ''
-  }
-  const date = dayjs(value)
-  return date.isValid() ? date.format('YYYY-MM-DD') : String(value)
-}
-
-/** 提交日期格式 */
-function toSubmitDate(value?: string) {
-  if (!value) {
-    return ''
-  }
-  const date = dayjs(value)
-  return date.isValid() ? date.startOf('day').format('YYYY-MM-DD HH:mm:ss') : value
 }
 
 /** 校验数量平衡 */
@@ -404,47 +259,24 @@ function validateQuantitySum() {
   return Math.abs(qualified + unqualified - received) < 0.000001 || '合格数量与不合格数量之和必须等于接收数量'
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): QcIqcCreateReqVO | QcIqcUpdateReqVO {
-  const data: QcIqcCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    sourceDocType: formData.value.sourceDocType,
-    sourceDocId: formData.value.sourceDocId,
-    sourceLineId: formData.value.sourceLineId,
-    vendorId: Number(formData.value.vendorId),
-    vendorBatch: formData.value.vendorBatch || undefined,
-    itemId: Number(formData.value.itemId),
-    receivedQuantity: Number(formData.value.receivedQuantity),
-    qualifiedQuantity: Number(formData.value.qualifiedQuantity),
-    unqualifiedQuantity: Number(formData.value.unqualifiedQuantity),
-    inspectorUserId: Number(formData.value.inspectorUserId),
-    inspectDate: toSubmitDate(formData.value.inspectDate),
-    checkResult: formData.value.checkResult,
-    receiveDate: toSubmitDate(formData.value.receiveDate),
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  if (!isDraft.value) {
+    toast.warning('已完成检验单不能修改')
+    return
+  }
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateIqc(data)
+    if (props.id) {
+      await updateIqc(formData.value)
       toast.success('修改成功')
     } else {
-      await createIqc(data)
+      await createIqc(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:qc:iqc:reload')
@@ -455,8 +287,8 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onMounted(async () => {
   applyPendingInspectPreset()
-  getDetail()
+  await getDetail()
 })
 </script>

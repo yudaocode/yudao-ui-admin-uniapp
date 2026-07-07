@@ -23,26 +23,8 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          产品物料
-        </view>
-        <view class="flex items-center gap-16rpx">
-          <wd-input
-            :model-value="selectedItemName"
-            placeholder="请选择产品物料"
-            clearable
-            readonly
-            class="min-w-0 flex-1"
-            @click="openItemSelector"
-            @clear="clearItem"
-          />
-          <wd-button size="small" @click="openItemSelector">
-            选择
-          </wd-button>
-        </view>
-      </view>
-      <yd-search-picker v-model="formData.qcType" label="检验类型" :dict-type="DICT_TYPE.MES_QC_TYPE" all-option :all-value="undefined" />
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="产品物料" placeholder="请选择产品物料" title="选择产品物料" />
+      <yd-search-picker v-model="formData.qcType" label="检验类型" :dict-type="DICT_TYPE.MES_QC_TYPE" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -53,17 +35,14 @@
       </view>
     </view>
   </wd-popup>
-
-  <ItemSelector ref="itemSelectorRef" title="选择产品物料" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
 
 const props = defineProps<{
   initialQuery?: {
@@ -88,8 +67,7 @@ const formData = reactive({
   itemId: props.initialQuery?.itemId,
   qcType: props.initialQuery?.qcType,
 }) // 搜索表单数据
-const selectedItemName = ref('') // 已选物料展示名
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -98,36 +76,22 @@ const placeholder = computed(() => {
     conditions.push(`来源单据编号:${formData.sourceDocCode}`)
   }
   if (formData.itemId !== undefined) {
-    conditions.push(`产品物料:${selectedItemName.value || formData.itemId}`)
+    conditions.push(`产品物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.qcType !== undefined) {
+  if (formData.qcType !== undefined && formData.qcType !== -1) {
     conditions.push(`检验类型:${getDictLabel(DICT_TYPE.MES_QC_TYPE, formData.qcType) || formData.qcType}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索待检任务'
 })
 
-/** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 清空物料 */
-function clearItem() {
-  formData.itemId = undefined
-  selectedItemName.value = ''
-}
-
-/** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  formData.itemId = item?.id
-  selectedItemName.value = item ? `${item.code || '-'} ${item.name || ''}`.trim() : ''
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    sourceDocCode: formData.sourceDocCode || undefined,
+    qcType: formData.qcType === -1 ? undefined : formData.qcType,
+    itemId: formData.itemId,
+  })
 }
 
 /** 重置按钮操作 */
@@ -135,7 +99,6 @@ function handleReset() {
   formData.sourceDocCode = undefined
   formData.itemId = undefined
   formData.qcType = undefined
-  selectedItemName.value = ''
   visible.value = false
   emit('reset')
 }

@@ -1,59 +1,51 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <wd-navbar title="排产列表式编辑" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+    <wd-navbar title="甘特图编辑" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
-    <!-- 任务列表 -->
+    <!-- 甘特图 -->
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-24rpx text-[#8a5a00]">
-        PC 端支持甘特图拖拽编辑；移动端本轮采用列表式编辑，点击生产任务进入时间和数量维护。
-      </view>
       <view v-if="loading" class="py-100rpx text-center text-26rpx text-[#999]">
         加载中...
       </view>
-      <view v-else-if="taskRows.length === 0" class="py-100rpx text-center">
-        <wd-empty icon="content" tip="暂无生产任务" />
-      </view>
-      <view v-else class="p-24rpx">
-        <view
-          v-for="item in taskRows"
-          :key="item.originalId || item.id"
-          class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-          @click="handleEdit(item)"
-        >
-          <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-            <view class="min-w-0 flex-1">
-              <view class="truncate text-30rpx text-[#333] font-semibold">
-                {{ item.text || '-' }}
-              </view>
-              <view class="mt-4rpx text-24rpx text-[#999]">
-                {{ item.process || item.workstation || '生产任务' }}
-              </view>
-            </view>
-            <view class="h-28rpx w-28rpx rounded-full" :style="{ backgroundColor: item.colorCode || item.color || '#1677ff' }" />
+      <TaskGanttPreview
+        v-else
+        title="排产甘特图"
+        :tasks="ganttTasks"
+        editable
+        @task-click="handleEdit"
+        @task-update="handleTaskUpdate"
+      >
+        <template #actions>
+          <view class="flex items-center gap-12rpx">
+            <wd-button size="small" variant="plain" @click="handleRefresh">
+              刷新
+            </wd-button>
+            <wd-button size="small" type="primary" :loading="formLoading" :disabled="pendingCount === 0" @click="handleSave">
+              保存{{ pendingCount ? `(${pendingCount})` : '' }}
+            </wd-button>
           </view>
-          <view class="text-26rpx text-[#666] space-y-8rpx">
-            <view>工作站：{{ item.workstation || '-' }}</view>
-            <view>开始：{{ formatDateTime(item.startDate) || '-' }}</view>
-            <view>结束：{{ formatDateTime(item.endDate) || '-' }}</view>
-            <view>时长：{{ item.duration ?? '-' }}</view>
-          </view>
-        </view>
-      </view>
+        </template>
+      </TaskGanttPreview>
     </scroll-view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProTaskGanttVO } from '@/api/mes/pro/task'
+import { getGanttTaskList, updateTask } from '@/api/mes/pro/task'
+import type { ProTask, ProTaskGantt } from '@/api/mes/pro/task'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { getGanttTaskList } from '@/api/mes/pro/task'
 import { navigateBackPlus } from '@/utils'
-import { formatDateTime } from '@/utils/date'
+import { BarcodeBizTypeEnum } from '@/utils/constants'
+import TaskGanttPreview from '../components/task-gantt-preview.vue'
 
-const BarcodeBizTypeEnum = {
-  TASK: 303,
-} as const
+interface TaskGanttChange {
+  id: number
+  startTime: string
+  endTime: string
+  duration: number
+}
 
 definePage({
   style: {
@@ -62,11 +54,12 @@ definePage({
   },
 })
 
-const loading = ref(false) // 列表加载状态
-const ganttTasks = ref<ProTaskGanttVO[]>([]) // 甘特任务数据
-const taskRows = computed(() =>
-  ganttTasks.value.filter(item => item.type === BarcodeBizTypeEnum.TASK || item.type === 'task' || item.originalId),
-)
+const toast = useToast()
+const loading = ref(false) // 页面加载状态
+const formLoading = ref(false) // 保存状态
+const ganttTasks = ref<ProTaskGantt[]>([]) // 甘特任务数据
+const pendingChanges = ref(new Map<number, TaskGanttChange>()) // 待保存修改
+const pendingCount = computed(() => pendingChanges.value.size)
 
 /** 返回上一页 */
 function handleBack() {
@@ -83,15 +76,64 @@ async function getList() {
   }
 }
 
-/** 编辑任务 */
-function handleEdit(item: ProTaskGanttVO) {
-  const taskId = item.originalId || Number(item.id)
-  if (!taskId) {
-    return
-  }
-  uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${taskId}` })
+/** 记录拖拽修改 */
+function handleTaskUpdate(change: TaskGanttChange) {
+  const next = new Map(pendingChanges.value)
+  next.set(change.id, change)
+  pendingChanges.value = next
+  ganttTasks.value = ganttTasks.value.map((item) => {
+    if (item.type !== BarcodeBizTypeEnum.TASK || item.originalId !== change.id) {
+      return item
+    }
+    return {
+      ...item,
+      startDate: change.startTime,
+      endDate: change.endTime,
+      duration: change.duration,
+    }
+  })
 }
 
+/** 保存甘特修改 */
+async function handleSave() {
+  if (pendingChanges.value.size === 0) {
+    return
+  }
+
+  formLoading.value = true
+  try {
+    await Promise.all(Array.from(pendingChanges.value.values()).map(change =>
+      updateTask({
+        id: change.id,
+        startTime: change.startTime,
+        endTime: change.endTime,
+        duration: change.duration,
+      } as ProTask),
+    ))
+    toast.success(`已保存 ${pendingChanges.value.size} 条修改`)
+    pendingChanges.value = new Map()
+    uni.$emit('mes:pro:task:reload')
+    await getList()
+  } finally {
+    formLoading.value = false
+  }
+}
+
+/** 刷新甘特图 */
+async function handleRefresh() {
+  pendingChanges.value = new Map()
+  await getList()
+}
+
+/** 编辑任务 */
+function handleEdit(item: ProTaskGantt) {
+  if (item.type !== BarcodeBizTypeEnum.TASK || !item.originalId) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${item.originalId}` })
+}
+
+/** 初始化 */
 onMounted(() => {
   getList()
 })

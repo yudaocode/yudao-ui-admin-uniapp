@@ -46,6 +46,26 @@ export function ensureDecodeURIComponent(url: string) {
   return url
 }
 
+/** 解码 URL 文本值 */
+export function decodeUrlText(value: unknown) {
+  if (value === undefined || value === null) {
+    return ''
+  }
+  let result = String(value)
+  for (let i = 0; i < 3 && result.includes('%'); i++) {
+    try {
+      const decoded = decodeURIComponent(result)
+      if (decoded === result) {
+        break
+      }
+      result = decoded
+    } catch {
+      break
+    }
+  }
+  return result
+}
+
 /**
  * 解析 url 得到 path 和 query
  * 比如输入url: /pages/login/login?redirect=%2Fpages%2Fdemo%2Fbase%2Froute-interceptor

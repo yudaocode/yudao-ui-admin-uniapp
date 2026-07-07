@@ -99,49 +99,16 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索到货通知'
 })
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  vendorSelectorRef.value?.open()
-}
-
-/** 选择供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  selectedVendor.value = vendors[0]
-  formData.vendorId = vendors[0]?.id
-}
-
-/** 清空供应商 */
-function clearVendor() {
-  selectedVendor.value = undefined
-  formData.vendorId = undefined
-}
-
-/** 构造搜索参数 */
-function buildParams() {
-  const params: WmArrivalNoticeQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.purchaseOrderCode) {
-    params.purchaseOrderCode = formData.purchaseOrderCode
-  }
-  if (formData.vendorId != null) {
-    params.vendorId = formData.vendorId
-  }
-  const range = formatDateRange(arrivalDateRange.value)
-  if (range) {
-    params.arrivalDate = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    purchaseOrderCode: formData.purchaseOrderCode || undefined,
+    vendorId: formData.vendorId,
+    arrivalDate: formatDateRange(arrivalDateRange.value),
+  })
 }
 
 /** 重置按钮操作 */

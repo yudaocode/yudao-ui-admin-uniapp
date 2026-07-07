@@ -4,7 +4,7 @@
     <wd-navbar title="来料检验单（IQC）" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 来料检验单列表 -->
     <z-paging
@@ -74,15 +74,6 @@
           <view v-if="item.inspectorNickname" class="mb-16rpx text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">检测人员：</text>{{ item.inspectorNickname }}
           </view>
-
-          <view v-if="isDraft(item) && (canUpdate || canDelete)" class="flex justify-end gap-16rpx border-t border-t-[#f0f0f0] pt-20rpx" @click.stop>
-            <wd-button v-if="canUpdate" size="small" type="warning" @click="handleEdit(item)">
-              编辑
-            </wd-button>
-            <wd-button v-if="canDelete" size="small" type="danger" @click="handleDelete(item)">
-              删除
-            </wd-button>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -99,12 +90,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcIqcPageParam, QcIqcVO } from '@/api/mes/qc/iqc'
+import type { QcIqc } from '@/api/mes/qc/iqc'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteIqc, getIqcPage } from '@/api/mes/qc/iqc'
+import { onMounted, ref } from 'vue'
+import { getIqcPage } from '@/api/mes/qc/iqc'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -118,23 +107,14 @@ definePage({
   },
 })
 
-const MesQcStatusEnum = {
-  DRAFT: 0,
-} as const
-
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<QcIqcVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<QcIqcVO>>() // 分页组件引用
-const queryParams = ref<Partial<QcIqcPageParam>>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
-const canUpdate = computed(() => hasAccessByCodes(['mes:qc-iqc:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:qc-iqc:delete']))
+const list = ref<QcIqc[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<QcIqc>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -148,26 +128,19 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data: Partial<QcIqcPageParam>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
 function reload() {
   pagingRef.value?.reload()
-}
-
-/** 是否草稿 */
-function isDraft(item: QcIqcVO) {
-  return item.status === MesQcStatusEnum.DRAFT
 }
 
 /** 新增 */
@@ -176,28 +149,8 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: QcIqcVO) {
+function handleDetail(item: QcIqc) {
   uni.navigateTo({ url: `/pages-mes/qc/iqc/detail/index?id=${item.id}` })
-}
-
-/** 编辑 */
-function handleEdit(item: QcIqcVO) {
-  uni.navigateTo({ url: `/pages-mes/qc/iqc/form/index?id=${item.id}` })
-}
-
-/** 删除 */
-async function handleDelete(item: QcIqcVO) {
-  try {
-    await dialog.confirm({
-      title: '删除确认',
-      msg: `确定要删除来料检验单「${item.code}」吗？删除后将无法恢复。`,
-    })
-  } catch {
-    return
-  }
-  await deleteIqc(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

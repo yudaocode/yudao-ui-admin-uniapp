@@ -1,12 +1,21 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar title="退料检验单详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="检验项" name="lines" />
+        <wd-tab title="检测结果" name="results" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <view class="p-24rpx">
-        <wd-cell-group title="基本信息" border>
+        <wd-cell-group border>
           <wd-cell title="检验单编号" :value="formData?.code || '-'" />
           <wd-cell title="检验单名称" :value="formData?.name || '-'" />
           <wd-cell title="检验类型">
@@ -43,56 +52,70 @@
         </wd-cell-group>
 
         <wd-cell-group title="检测情况" border class="mt-24rpx">
-          <wd-cell title="检测数量" :value="formatQuantity(formData?.checkQuantity)" />
-          <wd-cell title="合格数量" :value="formatQuantity(formData?.qualifiedQuantity)" />
-          <wd-cell title="不合格数量" :value="formatQuantity(formData?.unqualifiedQuantity)" />
+          <wd-cell title="检测数量" :value="formatDisplayValue(formData?.checkQuantity)" />
+          <wd-cell title="合格数量" :value="formatDisplayValue(formData?.qualifiedQuantity)" />
+          <wd-cell title="不合格数量" :value="formatDisplayValue(formData?.unqualifiedQuantity)" />
           <wd-cell title="检测日期" :value="formatDateTime(formData?.inspectDate) || '-'" />
           <wd-cell title="检测人员" :value="formData?.inspectorNickname || '-'" />
         </wd-cell-group>
 
         <wd-cell-group title="缺陷情况" border class="mt-24rpx">
-          <wd-cell title="致命缺陷数" :value="formatQuantity(formData?.criticalQuantity)" />
-          <wd-cell title="严重缺陷数" :value="formatQuantity(formData?.majorQuantity)" />
-          <wd-cell title="轻微缺陷数" :value="formatQuantity(formData?.minorQuantity)" />
-          <wd-cell title="致命缺陷率" :value="formatRate(formData?.criticalRate)" />
-          <wd-cell title="严重缺陷率" :value="formatRate(formData?.majorRate)" />
-          <wd-cell title="轻微缺陷率" :value="formatRate(formData?.minorRate)" />
+          <wd-cell title="致命缺陷数" :value="formatDisplayValue(formData?.criticalQuantity)" />
+          <wd-cell title="严重缺陷数" :value="formatDisplayValue(formData?.majorQuantity)" />
+          <wd-cell title="轻微缺陷数" :value="formatDisplayValue(formData?.minorQuantity)" />
+          <wd-cell title="致命缺陷率" :value="formatDisplayPercent(formData?.criticalRate)" />
+          <wd-cell title="严重缺陷率" :value="formatDisplayPercent(formData?.majorRate)" />
+          <wd-cell title="轻微缺陷率" :value="formatDisplayPercent(formData?.minorRate)" />
         </wd-cell-group>
-
-        <QcLineSection type="rqc" :order-id="currentId" :qc-type="MesQcTypeEnum.RQC" />
-        <QcIndicatorResultSection :qc-id="currentId" :qc-type="MesQcTypeEnum.RQC" />
       </view>
       <view class="h-160rpx" />
     </scroll-view>
 
+    <!-- 检验项 -->
+    <scroll-view v-if="tabType === 'lines' && formData?.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <QcLineList :order-id="formData.id" :qc-type="MesQcTypeEnum.RQC" readonly :show-title="false" />
+      <view class="h-160rpx" />
+    </scroll-view>
+
+    <!-- 检测结果 -->
+    <scroll-view v-if="tabType === 'results' && formData?.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <IndicatorResultList :qc-id="formData.id" :qc-type="MesQcTypeEnum.RQC" readonly :show-title="false" />
+      <view class="h-160rpx" />
+    </scroll-view>
+
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="formData && isDraft" content-class="yd-detail-footer-actions">
-      <wd-button v-if="canUpdate" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="canUpdate" class="flex-1" type="success" :loading="finishing" @click="handleFinish">
-        完成
-      </wd-button>
-      <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view
+      v-if="tabType === 'basic' && formData && isDraft && (hasAccessByCodes(['mes:qc-rqc:update']) || hasAccessByCodes(['mes:qc-rqc:finish']) || hasAccessByCodes(['mes:qc-rqc:delete']))"
+      class="yd-detail-footer"
+    >
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['mes:qc-rqc:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:qc-rqc:finish'])" class="flex-1" type="success" :loading="finishing" @click="handleFinish">
+          完成
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:qc-rqc:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { QcRqcVO } from '@/api/mes/qc/rqc'
+import type { QcRqc } from '@/api/mes/qc/rqc'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteRqc, finishRqc, getRqc } from '@/api/mes/qc/rqc'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesQcStatusEnum, MesQcTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import QcIndicatorResultSection from '../../components/qc-indicator-result-section.vue'
-import QcLineSection from '../../components/qc-line-section.vue'
+import { formatDisplayPercent, formatDisplayValue } from '@/utils/format'
+import IndicatorResultList from '../../indicatorresult/components/indicator-result-list.vue'
+import QcLineList from '../../components/qc-line-list.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -105,59 +128,28 @@ definePage({
   },
 })
 
-const MesQcStatusEnum = {
-  DRAFT: 0,
-} as const
-const MesQcTypeEnum = {
-  RQC: 4,
-} as const
-
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<QcRqcVO>() // 详情数据
+const formData = ref<QcRqc>() // 详情数据
 const deleting = ref(false) // 删除状态
 const finishing = ref(false) // 完成状态
-const canUpdate = computed(() => hasAccessByCodes(['mes:qc-rqc:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:qc-rqc:delete']))
+const tabType = ref('basic') // 当前 tab 类型
 const isDraft = computed(() => formData.value?.status === MesQcStatusEnum.DRAFT)
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/qc/rqc/index')
 }
 
-/** 格式化数量 */
-function formatQuantity(value?: number | string) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return String(value)
-}
-
-/** 格式化百分比 */
-function formatRate(value?: number | string) {
-  if (value === undefined || value === null || value === '') {
-    return '-'
-  }
-  return `${value}%`
-}
-
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getRqc(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getRqc(Number(props.id))
   } finally {
     toast.close()
   }
@@ -165,12 +157,15 @@ async function getDetail() {
 
 /** 编辑 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/qc/rqc/form/index?id=${currentId.value}` })
+  if (!props.id) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/qc/rqc/form/index?id=${props.id}` })
 }
 
 /** 完成 */
 async function handleFinish() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -183,7 +178,7 @@ async function handleFinish() {
   }
   finishing.value = true
   try {
-    await finishRqc(currentId.value)
+    await finishRqc(Number(props.id))
     toast.success('完成成功')
     uni.$emit('mes:qc:rqc:reload')
     await getDetail()
@@ -194,7 +189,7 @@ async function handleFinish() {
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   try {
@@ -207,7 +202,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRqc(currentId.value)
+    await deleteRqc(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:qc:rqc:reload')
     delay(handleBack)
@@ -218,10 +213,6 @@ async function handleDelete() {
 
 /** 初始化 */
 onMounted(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

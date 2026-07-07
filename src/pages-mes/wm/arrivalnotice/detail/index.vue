@@ -25,78 +25,66 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
-      <ArrivalNoticeLineList v-if="currentId" :notice-id="currentId" readonly />
-      <view v-if="hasFooter" class="mx-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx">
-        <view class="mb-20rpx text-28rpx text-[#333] font-semibold">
-          通知操作
-        </view>
-        <view class="flex gap-16rpx text-28rpx">
-          <view
-            v-if="canUpdatePrepare"
-            class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-            @click="handleEdit"
-          >
-            编辑
-          </view>
-          <view
-            v-if="canDeletePrepare"
-            class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-            :class="deleting ? 'opacity-60' : ''"
-            @click="handleDelete"
-          >
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view
-            v-if="canSubmitPrepare"
-            class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-            :class="submitting ? 'opacity-60' : ''"
-            @click="handleSubmitNotice"
-          >
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-        </view>
-      </view>
+      <ArrivalNoticeLineList v-if="formData?.id" :notice-id="formData.id" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooter" content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="canUpdatePrepare"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        @click="handleEdit"
-      >
-        编辑
+    <view v-if="hasFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="canUpdatePrepare"
+          class="flex-1"
+          type="warning"
+          @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="canDeletePrepare"
+          class="flex-1"
+          type="danger"
+          :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
+        <wd-button
+          v-if="canSubmitPrepare"
+          class="flex-1"
+          type="warning"
+          :loading="submitting" @click="handleSubmitNotice"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="canPendingQc"
+          class="flex-1"
+          type="warning"
+          @click="handlePendingQc"
+        >
+          执行质检
+        </wd-button>
+        <wd-button
+          v-if="canPendingReceipt"
+          class="flex-1"
+          type="success"
+          @click="handlePendingReceipt"
+        >
+          执行入库
+        </wd-button>
       </view>
-      <view
-        v-if="canDeletePrepare"
-        class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-        :class="deleting ? 'opacity-60' : ''"
-        @click="handleDelete"
-      >
-        {{ deleting ? '删除中...' : '删除' }}
-      </view>
-      <view
-        v-if="canSubmitPrepare"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitting ? 'opacity-60' : ''"
-        @click="handleSubmitNotice"
-      >
-        {{ submitting ? '提交中...' : '提交' }}
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmArrivalNoticeVO } from '@/api/mes/wm/arrivalnotice'
-import { onShow } from '@dcloudio/uni-app'
+import type { WmArrivalNotice } from '@/api/mes/wm/arrivalnotice'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { deleteArrivalNotice, getArrivalNotice, submitArrivalNotice } from '@/api/mes/wm/arrivalnotice'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesWmArrivalNoticeStatusEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -116,8 +104,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<WmArrivalNoticeVO>() // 详情数据
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const formData = ref<WmArrivalNotice>() // 详情数据
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
 const canUpdatePrepare = computed(() => (
@@ -132,7 +119,15 @@ const canSubmitPrepare = computed(() => (
   hasAccessByCodes(['mes:wm-arrival-notice:update'])
   && formData.value?.status === MesWmArrivalNoticeStatusEnum.PREPARE
 ))
-const hasFooter = computed(() => canUpdatePrepare.value || canDeletePrepare.value || canSubmitPrepare.value)
+const canPendingQc = computed(() => formData.value?.status === MesWmArrivalNoticeStatusEnum.PENDING_QC)
+const canPendingReceipt = computed(() => formData.value?.status === MesWmArrivalNoticeStatusEnum.PENDING_RECEIPT)
+const hasFooter = computed(() => (
+  canUpdatePrepare.value
+  || canDeletePrepare.value
+  || canSubmitPrepare.value
+  || canPendingQc.value
+  || canPendingReceipt.value
+))
 
 /** 返回上一页 */
 function handleBack() {
@@ -141,44 +136,30 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getArrivalNotice(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getArrivalNotice(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
 /** 编辑 */
 function handleEdit() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/wm/arrivalnotice/form/index?id=${currentId.value}`,
+    url: `/pages-mes/wm/arrivalnotice/form/index?id=${props.id}`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   try {
@@ -191,12 +172,10 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteArrivalNotice(currentId.value)
+    await deleteArrivalNotice(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:wm:arrivalnotice:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
@@ -204,7 +183,7 @@ async function handleDelete() {
 
 /** 提交到货通知单 */
 async function handleSubmitNotice() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -217,7 +196,7 @@ async function handleSubmitNotice() {
   }
   submitting.value = true
   try {
-    await submitArrivalNotice(currentId.value)
+    await submitArrivalNotice(Number(props.id))
     toast.success('提交成功')
     await getDetail()
     uni.$emit('mes:wm:arrivalnotice:reload')
@@ -226,16 +205,32 @@ async function handleSubmitNotice() {
   }
 }
 
+/** 执行质检 */
+function handlePendingQc() {
+  if (!formData.value?.code) {
+    return
+  }
+  uni.navigateTo({
+    url: `/pages-mes/qc/pendinginspect/index?sourceDocCode=${encodeURIComponent(formData.value.code)}&qcType=1`,
+  })
+}
+
+/** 执行入库 */
+function handlePendingReceipt() {
+  if (!props.id) {
+    return
+  }
+  uni.navigateTo({ url: `/pages-mes/wm/itemreceipt/form/index?noticeId=${props.id}` })
+}
+
 /** 初始化 */
 onMounted(() => {
-  initPage()
+  uni.$on('mes:wm:arrivalnotice:reload', getDetail)
+  getDetail()
 })
 
-onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+/** 卸载 */
+onUnload(() => {
+  uni.$off('mes:wm:arrivalnotice:reload', getDetail)
 })
 </script>

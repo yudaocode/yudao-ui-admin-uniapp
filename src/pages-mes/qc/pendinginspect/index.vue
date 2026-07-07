@@ -89,15 +89,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { QcPendingInspectPageParam, QcPendingInspectVO } from '@/api/mes/qc/pendinginspect'
+import type { QcPendingInspect } from '@/api/mes/qc/pendinginspect'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getPendingInspectPage } from '@/api/mes/qc/pendinginspect'
 import { useAccess } from '@/hooks/useAccess'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
 import { navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesQcTypeEnum } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{
@@ -114,17 +113,9 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const { getRouteQueryNumber, getRouteQueryValue } = useRouteQuery(props, '/pages-mes/qc/pendinginspect/index')
-const list = ref<QcPendingInspectVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<QcPendingInspectVO>>() // 分页组件引用
-const queryParams = ref<Omit<QcPendingInspectPageParam, 'pageNo' | 'pageSize'>>(getInitialQueryParams()) // 查询参数
-
-const MesQcTypeEnum = {
-  IQC: 1,
-  IPQC: 2,
-  OQC: 3,
-  RQC: 4,
-} as const
+const list = ref<QcPendingInspect[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<QcPendingInspect>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>(getInitialQuery()) // 查询参数
 
 interface CreateAction {
   label: string
@@ -132,18 +123,41 @@ interface CreateAction {
   url: string
 }
 
+const createActions: Record<number, CreateAction> = {
+  [MesQcTypeEnum.IQC]: {
+    label: '来料检验',
+    permission: 'mes:qc-iqc:create',
+    url: '/pages-mes/qc/iqc/form/index',
+  },
+  [MesQcTypeEnum.IPQC]: {
+    label: '过程检验',
+    permission: 'mes:qc-ipqc:create',
+    url: '/pages-mes/qc/ipqc/form/index',
+  },
+  [MesQcTypeEnum.OQC]: {
+    label: '出货检验',
+    permission: 'mes:qc-oqc:create',
+    url: '/pages-mes/qc/oqc/form/index',
+  },
+  [MesQcTypeEnum.RQC]: {
+    label: '退料检验',
+    permission: 'mes:qc-rqc:create',
+    url: '/pages-mes/qc/rqc/form/index',
+  },
+}
+
 /** 初始查询参数 */
-function getInitialQueryParams() {
+function getInitialQuery(): Record<string, any> {
   return {
-    sourceDocCode: getRouteQueryValue('sourceDocCode') as string | undefined,
-    qcType: getRouteQueryNumber('qcType'),
-    itemId: getRouteQueryNumber('itemId'),
+    sourceDocCode: props.sourceDocCode,
+    qcType: (props.qcType === undefined || props.qcType === '' ? undefined : Number(props.qcType)),
+    itemId: (props.itemId === undefined || props.itemId === '' ? undefined : Number(props.itemId)),
   }
 }
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -162,7 +176,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Omit<QcPendingInspectPageParam, 'pageNo' | 'pageSize'>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -178,7 +192,7 @@ function reload() {
 }
 
 /** 生产信息展示 */
-function getProductionText(item: QcPendingInspectVO) {
+function getProductionText(item: QcPendingInspect) {
   return [
     item.taskCode ? `任务 ${item.taskCode}` : '',
     item.workstationName ? `工位 ${item.workstationName}` : '',
@@ -186,102 +200,80 @@ function getProductionText(item: QcPendingInspectVO) {
 }
 
 /** 列表唯一标识 */
-function getItemKey(item: QcPendingInspectVO) {
+function getItemKey(item: QcPendingInspect) {
   return `${item.sourceDocType}-${item.sourceDocId}-${item.sourceLineId}-${item.qcType}`
 }
 
 /** 获取创建动作 */
-function getCreateAction(item: QcPendingInspectVO): CreateAction | undefined {
-  const actionMap: Record<number, CreateAction> = {
-    [MesQcTypeEnum.IQC]: {
-      label: '来料检验',
-      permission: 'mes:qc-iqc:create',
-      url: '/pages-mes/qc/iqc/form/index',
-    },
-    [MesQcTypeEnum.IPQC]: {
-      label: '过程检验',
-      permission: 'mes:qc-ipqc:create',
-      url: '/pages-mes/qc/ipqc/form/index',
-    },
-    [MesQcTypeEnum.OQC]: {
-      label: '出货检验',
-      permission: 'mes:qc-oqc:create',
-      url: '/pages-mes/qc/oqc/form/index',
-    },
-    [MesQcTypeEnum.RQC]: {
-      label: '退料检验',
-      permission: 'mes:qc-rqc:create',
-      url: '/pages-mes/qc/rqc/form/index',
-    },
-  }
-  const action = actionMap[item.qcType]
+function getCreateAction(item: QcPendingInspect): CreateAction | undefined {
+  const action = createActions[item.qcType]
   if (!action || !hasAccessByCodes([action.permission])) {
     return undefined
   }
   return action
 }
 
-/** 拼接创建页参数 */
-function buildCreateQuery(item: QcPendingInspectVO) {
-  const params = [
-    `sourceDocType=${item.sourceDocType}`,
-    `sourceDocId=${item.sourceDocId}`,
-    `sourceLineId=${item.sourceLineId}`,
-    `sourceDocCode=${encodeURIComponent(item.sourceDocCode)}`,
-    `itemId=${item.itemId}`,
-    `itemCode=${encodeURIComponent(item.itemCode || '')}`,
-    `itemName=${encodeURIComponent(item.itemName || '')}`,
-    `itemSpecification=${encodeURIComponent(item.specification || '')}`,
-    `unitName=${encodeURIComponent(item.unitName || '')}`,
-  ]
-  if (item.recordTime) {
-    params.push(`recordTime=${encodeURIComponent(item.recordTime)}`)
+/** 添加 URL 查询参数 */
+function addQueryParam(params: string[], key: string, value: unknown) {
+  if (value === undefined || value === null || value === '') {
+    return
   }
-  if (item.vendorId) {
-    params.push(`vendorId=${item.vendorId}`)
+  params.push(`${key}=${encodeURIComponent(String(value))}`)
+}
+
+/** 构造发起检验单参数 */
+function buildCreateQuery(item: QcPendingInspect) {
+  const params: string[] = []
+  // 通用参数
+  addQueryParam(params, 'sourceDocType', item.sourceDocType)
+  addQueryParam(params, 'sourceDocId', item.sourceDocId)
+  addQueryParam(params, 'sourceLineId', item.sourceLineId)
+  addQueryParam(params, 'sourceDocCode', item.sourceDocCode)
+  addQueryParam(params, 'itemId', item.itemId)
+  addQueryParam(params, 'itemCode', item.itemCode)
+  addQueryParam(params, 'itemName', item.itemName)
+  addQueryParam(params, 'itemSpecification', item.specification)
+  addQueryParam(params, 'unitName', item.unitName)
+  addQueryParam(params, 'quantity', item.quantity)
+  addQueryParam(params, 'recordTime', item.recordTime)
+
+  // 专用参数
+  if (item.qcType === MesQcTypeEnum.IQC) {
+    addQueryParam(params, 'vendorId', item.vendorId)
+    addQueryParam(params, 'vendorName', item.vendorName)
   }
-  if (item.vendorName) {
-    params.push(`vendorNickname=${encodeURIComponent(item.vendorName)}`)
+  if (item.qcType === MesQcTypeEnum.IPQC) {
+    addQueryParam(params, 'workOrderId', item.workOrderId)
+    addQueryParam(params, 'workOrderCode', item.workOrderCode)
+    addQueryParam(params, 'workOrderName', item.workOrderName)
+    addQueryParam(params, 'workstationId', item.workstationId)
+    addQueryParam(params, 'workstationCode', item.workstationCode)
+    addQueryParam(params, 'workstationName', item.workstationName)
+    addQueryParam(params, 'processId', item.processId)
+    addQueryParam(params, 'processName', item.processName)
+    addQueryParam(params, 'taskId', item.taskId)
+    addQueryParam(params, 'taskCode', item.taskCode)
   }
-  if (item.clientId) {
-    params.push(`clientId=${item.clientId}`)
+  if (item.qcType === MesQcTypeEnum.OQC) {
+    addQueryParam(params, 'clientId', item.clientId)
+    addQueryParam(params, 'clientName', item.clientName)
+    addQueryParam(params, 'batchCode', item.batchCode)
   }
-  if (item.clientName) {
-    params.push(`clientNickname=${encodeURIComponent(item.clientName)}`)
-  }
-  if (item.workOrderId) {
-    params.push(`workOrderId=${item.workOrderId}`)
-  }
-  if (item.workstationId) {
-    params.push(`workstationId=${item.workstationId}`)
-  }
-  if (item.workstationName) {
-    params.push(`workstationName=${encodeURIComponent(item.workstationName)}`)
-  }
-  if (item.taskId) {
-    params.push(`taskId=${item.taskId}`)
-  }
-  if (item.taskCode) {
-    params.push(`taskCode=${encodeURIComponent(item.taskCode)}`)
+  if (item.qcType === MesQcTypeEnum.RQC) {
+    addQueryParam(params, 'batchCode', item.batchCode)
   }
   return params.join('&')
 }
 
 /** 创建检验单 */
-function handleCreateInspect(item: QcPendingInspectVO) {
+function handleCreateInspect(item: QcPendingInspect) {
   const action = getCreateAction(item)
   if (!action) {
     return
   }
   const query = buildCreateQuery(item)
-  const nameMap: Record<number, string> = {
-    [MesQcTypeEnum.IQC]: `${item.sourceDocCode} 来料检验单`,
-    [MesQcTypeEnum.IPQC]: `${item.sourceDocCode} 过程检验单`,
-    [MesQcTypeEnum.OQC]: `${item.sourceDocCode} 出货检验单`,
-    [MesQcTypeEnum.RQC]: `${item.sourceDocCode} 退料检验单`,
-  }
   uni.navigateTo({
-    url: `${action.url}?${query}&quantity=${item.quantity}&name=${encodeURIComponent(nameMap[item.qcType] || item.sourceDocCode)}`,
+    url: `${action.url}?${query}`,
   })
 }
 

@@ -10,7 +10,7 @@
           <wd-form-item title="检验单编号" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -19,13 +19,7 @@
           <wd-form-item title="检验单名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入检验单名称" clearable />
           </wd-form-item>
-          <wd-form-item title="检验类型" title-width="220rpx" prop="type">
-            <wd-radio-group v-model="formData.type" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_IPQC_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.type" label="检验类型" label-width="220rpx" prop="type" :dict-type="DICT_TYPE.MES_IPQC_TYPE" placeholder="请选择检验类型" />
 
           <template v-if="isFromPendingTask">
             <wd-cell title="来源单据类型">
@@ -35,21 +29,36 @@
             <wd-cell title="来源单据编号" :value="formData.sourceDocCode || '-'" />
           </template>
 
-          <wd-form-item title="生产工单" title-width="220rpx" prop="workOrderId">
-            <view class="w-full py-8rpx text-28rpx" :class="isFromPendingTask ? 'text-[#999]' : 'text-[#333]'" @click="openWorkOrderSelector">
-              {{ selectedWorkOrderText || (isFromPendingTask ? '由待检任务带入' : '请选择生产工单') }}
-            </view>
-          </wd-form-item>
-          <wd-form-item title="工位" title-width="220rpx" prop="workstationId">
-            <view class="w-full py-8rpx text-28rpx" :class="isFromPendingTask ? 'text-[#999]' : 'text-[#333]'" @click="openWorkstationSelector">
-              {{ selectedWorkstationText || (isFromPendingTask ? '由待检任务带入' : '请选择工位') }}
-            </view>
-          </wd-form-item>
-          <wd-form-item title="生产任务" title-width="220rpx" prop="taskId">
-            <view class="w-full py-8rpx text-28rpx" :class="isFromPendingTask ? 'text-[#999]' : 'text-[#333]'" @click="openTaskSelector">
-              {{ selectedTaskText || (isFromPendingTask ? '由待检任务带入' : '请选择生产任务') }}
-            </view>
-          </wd-form-item>
+          <WorkOrderFormPicker
+            v-model="formData.workOrderId"
+            label="生产工单"
+            label-width="220rpx"
+            prop="workOrderId"
+            :placeholder="isFromPendingTask ? '由待检任务带入' : '请选择生产工单'"
+            :disabled="isFromPendingTask"
+            @change="handleWorkOrderChange"
+          />
+          <WorkstationFormPicker
+            v-model="formData.workstationId"
+            label="工位"
+            label-width="220rpx"
+            prop="workstationId"
+            :placeholder="isFromPendingTask ? '由待检任务带入' : '请选择工位'"
+            :disabled="isFromPendingTask"
+            @change="handleWorkstationChange"
+          />
+          <TaskFormPicker
+            v-model="formData.taskId"
+            label="生产任务"
+            label-width="220rpx"
+            prop="taskId"
+            :work-order-id="formData.workOrderId"
+            :workstation-id="formData.workstationId"
+            :statuses="[MesProTaskStatusEnum.PREPARE]"
+            :placeholder="isFromPendingTask ? '由待检任务带入' : formData.workOrderId ? '请选择生产任务' : '请先选择生产工单'"
+            :disabled="isFromPendingTask || !formData.workOrderId"
+            @change="handleTaskChange"
+          />
           <wd-cell title="工序" :value="formData.processName || '-'" />
           <wd-cell title="产品物料" :value="selectedItemText || '-'" />
           <wd-cell v-if="formData.itemSpecification || formData.unitName" title="规格单位" :value="`${formData.itemSpecification || '-'} / ${formData.unitName || '-'}`" />
@@ -61,7 +70,7 @@
             <wd-input-number v-model="formData.qualifiedQuantity" :min="0" :precision="2" />
           </wd-form-item>
           <wd-form-item title="不合格数量" title-width="220rpx" prop="unqualifiedQuantity" center>
-            <wd-input-number v-model="formData.unqualifiedQuantity" :min="0" :precision="2" />
+            <wd-input-number :model-value="formData.unqualifiedQuantity" :min="0" :precision="2" @update:model-value="handleUnqualifiedQuantityChange" />
           </wd-form-item>
           <template v-if="Number(formData.unqualifiedQuantity || 0) > 0">
             <wd-form-item title="工废数量" title-width="220rpx" prop="laborScrapQuantity" center>
@@ -75,117 +84,57 @@
             </wd-form-item>
           </template>
           <UserPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" type="radio" placeholder="请选择检测人员" />
-          <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate">
-            <wd-datetime-picker v-model="formData.inspectDate" type="date" placeholder="请选择检测日期" />
-          </wd-form-item>
-          <wd-form-item title="检测结果" title-width="220rpx" prop="checkResult">
-            <wd-radio-group v-model="formData.checkResult" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_QC_CHECK_RESULT)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate" is-link :value="formatDateTime(formData.inspectDate) || ''" placeholder="请选择检测日期" @click="dateVisible.inspectDate = true" />
+          <wd-datetime-picker v-model="formData.inspectDate" v-model:visible="dateVisible.inspectDate" title="请选择检测日期" type="date" />
+          <yd-form-picker v-model="formData.checkResult" label="检测结果" label-width="220rpx" prop="checkResult" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" placeholder="请选择检测结果" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
 
-      <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
-        保存时需满足“合格数量 + 不合格数量 = 检测数量”，且废品数量合计不能超过不合格数量。检验项和检测结果当前为只读展示，维护请进入检验单详情页。
-      </view>
-      <template v-if="currentId">
-        <QcLineSection type="ipqc" :order-id="currentId" :qc-type="MesQcTypeEnum.IPQC" />
-        <QcIndicatorResultSection :qc-id="currentId" :qc-type="MesQcTypeEnum.IPQC" />
+      <template v-if="formData.id">
+        <QcLineList :order-id="formData.id" :qc-type="MesQcTypeEnum.IPQC" :readonly="!isDraft" />
+        <IndicatorResultList :qc-id="formData.id" :qc-type="MesQcTypeEnum.IPQC" :readonly="!isDraft" />
       </template>
-      <view v-else class="mx-24rpx mt-20rpx rounded-12rpx bg-[#f6ffed] p-20rpx text-24rpx text-[#389e0d]">
-        新增检验单保存后，可在详情页查看检验项、检测结果和缺陷记录。
-      </view>
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
-
-    <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
-    <TaskSelector
-      ref="taskSelectorRef"
-      :work-order-id="formData.workOrderId"
-      :workstation-id="formData.workstationId"
-      :statuses="[MesProTaskStatusEnum.PREPARE]"
-      @confirm="handleTaskConfirm"
-    />
+    <view v-if="isDraft" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProTaskVO } from '@/api/mes/pro/task'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import type { QcIpqcCreateReqVO, QcIpqcUpdateReqVO } from '@/api/mes/qc/ipqc'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProTask } from '@/api/mes/pro/task'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { QcIpqc } from '@/api/mes/qc/ipqc'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import TaskSelector from '@/pages-mes/pro/feedback/components/task-selector.vue'
-import WorkOrderSelector from '@/pages-mes/pro/card/components/workorder-selector.vue'
-import WorkstationSelector from '@/pages-mes/pro/task/components/workstation-selector.vue'
+import TaskFormPicker from '@/pages-mes/pro/task/components/task-form-picker.vue'
+import WorkOrderFormPicker from '@/pages-mes/pro/workorder/components/workorder-form-picker.vue'
+import WorkstationFormPicker from '@/pages-mes/md/workstation/components/workstation-form-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import dayjs from 'dayjs'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createIpqc, getIpqc, updateIpqc } from '@/api/mes/qc/ipqc'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { decodeUrlText, delay, navigateBackPlus } from '@/utils'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesProTaskStatusEnum, MesQcStatusEnum, MesQcTypeEnum } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
+import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import QcIndicatorResultSection from '../../components/qc-indicator-result-section.vue'
-import QcLineSection from '../../components/qc-line-section.vue'
-
-interface QcIpqcFormData {
-  id?: number
-  code: string
-  name: string
-  type?: number
-  sourceDocType?: number
-  sourceDocId?: number
-  sourceLineId?: number
-  sourceDocCode: string
-  workOrderId?: number
-  workOrderCode: string
-  workOrderName: string
-  taskId?: number
-  taskCode: string
-  workstationId?: number
-  workstationCode: string
-  workstationName: string
-  processId?: number
-  processName: string
-  itemId?: number
-  itemCode: string
-  itemName: string
-  itemSpecification: string
-  unitName: string
-  checkQuantity?: number
-  qualifiedQuantity?: number
-  unqualifiedQuantity?: number
-  laborScrapQuantity?: number
-  materialScrapQuantity?: number
-  otherScrapQuantity?: number
-  inspectorUserId?: number
-  inspectDate?: string
-  checkResult?: number
-  remark: string
-}
+import IndicatorResultList from '../../indicatorresult/components/indicator-result-list.vue'
+import QcLineList from '../../components/qc-line-list.vue'
 
 const props = defineProps<{
   id?: number | string
-  name?: string
   sourceDocType?: number | string
   sourceDocId?: number | string
   sourceLineId?: number | string
@@ -195,6 +144,8 @@ const props = defineProps<{
   itemName?: string
   itemSpecification?: string
   unitName?: string
+  quantity?: number | string
+  recordTime?: string
   workOrderId?: number | string
   workOrderCode?: string
   workOrderName?: string
@@ -205,20 +156,7 @@ const props = defineProps<{
   processName?: string
   taskId?: number | string
   taskCode?: string
-  quantity?: number | string
-  recordTime?: string
 }>()
-
-const MesAutoCodeRuleCode = {
-  QC_IPQC_CODE: 'QC_IPQC_CODE',
-} as const
-
-const MesProTaskStatusEnum = {
-  PREPARE: 0,
-} as const
-const MesQcTypeEnum = {
-  IPQC: 2,
-} as const
 
 definePage({
   style: {
@@ -228,55 +166,22 @@ definePage({
 })
 
 const toast = useToast()
-const { getRouteQueryNumber, getRouteQueryValue } = useRouteQuery(props, '/pages-mes/qc/ipqc/form/index')
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑过程检验单（IPQC）' : '新增过程检验单（IPQC）')
+const getTitle = computed(() => props.id ? '编辑过程检验单（IPQC）' : '新增过程检验单（IPQC）')
 const formLoading = ref(false) // 表单提交状态
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器引用
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工位选择器引用
-const taskSelectorRef = ref<InstanceType<typeof TaskSelector>>() // 任务选择器引用
-const formData = ref<QcIpqcFormData>({
+const codeLoading = ref(false) // 编码生成状态
+const dateVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
+const formData = ref<QcIpqc>({
   code: '',
   name: '',
-  sourceDocCode: '',
-  workOrderCode: '',
-  workOrderName: '',
-  taskCode: '',
-  workstationCode: '',
-  workstationName: '',
-  processName: '',
-  itemCode: '',
-  itemName: '',
-  itemSpecification: '',
-  unitName: '',
   checkQuantity: 0,
   qualifiedQuantity: 0,
   unqualifiedQuantity: 0,
   laborScrapQuantity: 0,
   materialScrapQuantity: 0,
   otherScrapQuantity: 0,
-  inspectDate: '',
-  remark: '',
 }) // 表单数据
-const isFromPendingTask = computed(() => !currentId.value && formData.value.sourceDocId != null)
-const selectedWorkOrderText = computed(() => {
-  if (!formData.value.workOrderId) {
-    return ''
-  }
-  return `${formData.value.workOrderCode || '-'} / ${formData.value.workOrderName || '-'}`
-})
-const selectedWorkstationText = computed(() => {
-  if (!formData.value.workstationId) {
-    return ''
-  }
-  return `${formData.value.workstationCode || '-'} / ${formData.value.workstationName || '-'}`
-})
-const selectedTaskText = computed(() => {
-  if (!formData.value.taskId) {
-    return ''
-  }
-  return `${formData.value.taskCode || formData.value.taskId}`
-})
+const isDraft = computed(() => !props.id || formData.value.status === MesQcStatusEnum.DRAFT)
+const isFromPendingTask = computed(() => !props.id && formData.value.sourceDocId != null)
 const selectedItemText = computed(() => {
   if (!formData.value.itemId) {
     return ''
@@ -325,26 +230,6 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 
-/** 解码 URL 文本参数 */
-function decodeText(value?: string) {
-  if (!value) {
-    return ''
-  }
-  let result = value
-  for (let i = 0; i < 3 && result.includes('%'); i++) {
-    try {
-      const decoded = decodeURIComponent(result)
-      if (decoded === result) {
-        break
-      }
-      result = decoded
-    } catch {
-      break
-    }
-  }
-  return result
-}
-
 /** 校验数量合计 */
 function validateQuantitySum() {
   const checkQuantity = Number(formData.value.checkQuantity || 0)
@@ -362,6 +247,16 @@ function validateScrapSum() {
   return scrapSum <= unqualifiedQuantity || '废品数量合计不能超过不合格数量'
 }
 
+/** 不合格数量变更 */
+function handleUnqualifiedQuantityChange(value: number) {
+  formData.value.unqualifiedQuantity = value
+  if (!Number(value || 0)) {
+    formData.value.laborScrapQuantity = 0
+    formData.value.materialScrapQuantity = 0
+    formData.value.otherScrapQuantity = 0
+  }
+}
+
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/qc/ipqc/index')
@@ -369,19 +264,23 @@ function handleBack() {
 
 /** 生成检验单编号 */
 async function handleGenerateCode() {
-  formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.QC_IPQC_CODE)
-}
-
-/** 打开工单选择器 */
-function openWorkOrderSelector() {
-  if (isFromPendingTask.value) {
+  if (codeLoading.value) {
     return
   }
-  workOrderSelectorRef.value?.open(formData.value.workOrderId)
+  codeLoading.value = true
+  try {
+    formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.QC_IPQC_CODE)
+    toast.success('生成成功')
+  } finally {
+    codeLoading.value = false
+  }
 }
 
-/** 确认工单 */
-function handleWorkOrderConfirm(workOrder: ProWorkOrderVO) {
+/** 工单变更 */
+function handleWorkOrderChange(workOrder?: ProWorkOrder) {
+  if (!workOrder) {
+    return
+  }
   formData.value.workOrderId = workOrder.id
   formData.value.workOrderCode = workOrder.code || ''
   formData.value.workOrderName = workOrder.name || ''
@@ -394,39 +293,24 @@ function handleWorkOrderConfirm(workOrder: ProWorkOrderVO) {
   formData.value.taskCode = ''
 }
 
-/** 打开工位选择器 */
-function openWorkstationSelector() {
-  if (isFromPendingTask.value) {
-    return
-  }
-  workstationSelectorRef.value?.open(formData.value.workstationId)
-}
-
-/** 确认工位 */
-function handleWorkstationConfirm(workstation: MdWorkstationVO) {
-  formData.value.workstationId = workstation.id
-  formData.value.workstationCode = workstation.code || ''
-  formData.value.workstationName = workstation.name || ''
-  formData.value.processId = workstation.processId
-  formData.value.processName = workstation.processName || ''
+/** 工位变更 */
+function handleWorkstationChange(workstation?: MdWorkstation) {
+  formData.value.workstationId = workstation?.id
+  formData.value.workstationCode = workstation?.code || ''
+  formData.value.workstationName = workstation?.name || ''
+  formData.value.processId = workstation?.processId
+  formData.value.processName = workstation?.processName || ''
   formData.value.taskId = undefined
   formData.value.taskCode = ''
 }
 
-/** 打开任务选择器 */
-function openTaskSelector() {
-  if (isFromPendingTask.value) {
+/** 生产任务变更 */
+function handleTaskChange(task?: ProTask) {
+  if (!task) {
+    formData.value.taskId = undefined
+    formData.value.taskCode = ''
     return
   }
-  if (!formData.value.workOrderId) {
-    toast.warning('请先选择生产工单')
-    return
-  }
-  taskSelectorRef.value?.open(formData.value.taskId)
-}
-
-/** 确认生产任务 */
-function handleTaskConfirm(task: ProTaskVO) {
   formData.value.taskId = task.id
   formData.value.taskCode = task.code || ''
   formData.value.workOrderId = task.workOrderId
@@ -446,107 +330,69 @@ function handleTaskConfirm(task: ProTaskVO) {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const detail = await getIpqc(currentId.value)
-  formData.value = {
-    ...formData.value,
-    ...detail,
-    sourceDocCode: detail.sourceDocCode || '',
-    workOrderCode: detail.workOrderCode || '',
-    workOrderName: detail.workOrderName || '',
-    taskCode: detail.taskCode || '',
-    workstationCode: detail.workstationCode || '',
-    workstationName: detail.workstationName || '',
-    processName: detail.processName || '',
-    itemCode: detail.itemCode || '',
-    itemName: detail.itemName || '',
-    itemSpecification: detail.itemSpecification || '',
-    unitName: detail.unitName || '',
-    laborScrapQuantity: detail.laborScrapQuantity ?? 0,
-    materialScrapQuantity: detail.materialScrapQuantity ?? 0,
-    otherScrapQuantity: detail.otherScrapQuantity ?? 0,
-    inspectDate: detail.inspectDate ? String(detail.inspectDate) : '',
-    remark: detail.remark || '',
-  }
+  formData.value = await getIpqc(Number(props.id))
+}
+
+/** 是否有待检任务参数 */
+function hasPendingInspectPreset() {
+  return [
+    toFiniteNumber(props.sourceDocType),
+    toFiniteNumber(props.sourceDocId),
+    toFiniteNumber(props.sourceLineId),
+  ].every(value => value != null)
 }
 
 /** 应用待检任务预填 */
 function applyPendingInspectPreset() {
-  if (currentId.value) {
+  if (props.id || !hasPendingInspectPreset()) {
     return
   }
-  formData.value.name = decodeText(getRouteQueryValue('name') as string) || formData.value.name
-  formData.value.sourceDocType = getRouteQueryNumber('sourceDocType')
-  formData.value.sourceDocId = getRouteQueryNumber('sourceDocId')
-  formData.value.sourceLineId = getRouteQueryNumber('sourceLineId')
-  formData.value.sourceDocCode = decodeText(getRouteQueryValue('sourceDocCode') as string) || formData.value.sourceDocCode
-  formData.value.itemId = getRouteQueryNumber('itemId')
-  formData.value.itemCode = decodeText(getRouteQueryValue('itemCode') as string) || formData.value.itemCode
-  formData.value.itemName = decodeText(getRouteQueryValue('itemName') as string) || formData.value.itemName
-  formData.value.itemSpecification = decodeText(getRouteQueryValue('itemSpecification') as string) || formData.value.itemSpecification
-  formData.value.unitName = decodeText(getRouteQueryValue('unitName') as string) || formData.value.unitName
-  formData.value.workOrderId = getRouteQueryNumber('workOrderId')
-  formData.value.workOrderCode = decodeText(getRouteQueryValue('workOrderCode') as string) || formData.value.workOrderCode
-  formData.value.workOrderName = decodeText(getRouteQueryValue('workOrderName') as string) || formData.value.workOrderName
-  formData.value.workstationId = getRouteQueryNumber('workstationId')
-  formData.value.workstationCode = decodeText(getRouteQueryValue('workstationCode') as string) || formData.value.workstationCode
-  formData.value.workstationName = decodeText(getRouteQueryValue('workstationName') as string) || formData.value.workstationName
-  formData.value.processId = getRouteQueryNumber('processId')
-  formData.value.processName = decodeText(getRouteQueryValue('processName') as string) || formData.value.processName
-  formData.value.taskId = getRouteQueryNumber('taskId')
-  formData.value.taskCode = decodeText(getRouteQueryValue('taskCode') as string) || formData.value.taskCode
-  formData.value.checkQuantity = getRouteQueryNumber('quantity') ?? formData.value.checkQuantity
-  formData.value.inspectDate = decodeText(getRouteQueryValue('recordTime') as string) || formData.value.inspectDate
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): QcIpqcCreateReqVO | QcIpqcUpdateReqVO {
-  const data: QcIpqcCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    type: Number(formData.value.type),
-    sourceDocType: formData.value.sourceDocType,
-    sourceDocId: formData.value.sourceDocId,
-    sourceLineId: formData.value.sourceLineId,
-    workOrderId: Number(formData.value.workOrderId),
-    taskId: formData.value.taskId,
-    workstationId: Number(formData.value.workstationId),
-    processId: formData.value.processId,
-    itemId: formData.value.itemId,
-    checkQuantity: Number(formData.value.checkQuantity || 0),
-    qualifiedQuantity: Number(formData.value.qualifiedQuantity || 0),
-    unqualifiedQuantity: Number(formData.value.unqualifiedQuantity || 0),
-    laborScrapQuantity: Number(formData.value.laborScrapQuantity || 0),
-    materialScrapQuantity: Number(formData.value.materialScrapQuantity || 0),
-    otherScrapQuantity: Number(formData.value.otherScrapQuantity || 0),
-    inspectorUserId: Number(formData.value.inspectorUserId),
-    inspectDate: dayjs(formData.value.inspectDate).format('YYYY-MM-DD HH:mm:ss'),
-    checkResult: formData.value.checkResult,
-    remark: formData.value.remark || undefined,
-  }
-  if (currentId.value) {
-    return { ...data, id: currentId.value }
-  }
-  return data
+  const sourceDocCode = decodeUrlText(props.sourceDocCode)
+  formData.value.name = sourceDocCode ? `${sourceDocCode} 过程检验单` : formData.value.name
+  formData.value.sourceDocType = toFiniteNumber(props.sourceDocType)
+  formData.value.sourceDocId = toFiniteNumber(props.sourceDocId)
+  formData.value.sourceLineId = toFiniteNumber(props.sourceLineId)
+  formData.value.sourceDocCode = sourceDocCode
+  formData.value.itemId = toFiniteNumber(props.itemId)
+  formData.value.itemCode = decodeUrlText(props.itemCode)
+  formData.value.itemName = decodeUrlText(props.itemName)
+  formData.value.itemSpecification = decodeUrlText(props.itemSpecification)
+  formData.value.unitName = decodeUrlText(props.unitName)
+  formData.value.workOrderId = toFiniteNumber(props.workOrderId)
+  formData.value.workOrderCode = decodeUrlText(props.workOrderCode)
+  formData.value.workOrderName = decodeUrlText(props.workOrderName)
+  formData.value.workstationId = toFiniteNumber(props.workstationId)
+  formData.value.workstationCode = decodeUrlText(props.workstationCode)
+  formData.value.workstationName = decodeUrlText(props.workstationName)
+  formData.value.processId = toFiniteNumber(props.processId)
+  formData.value.processName = decodeUrlText(props.processName)
+  formData.value.taskId = toFiniteNumber(props.taskId)
+  formData.value.taskCode = decodeUrlText(props.taskCode)
+  formData.value.checkQuantity = toFiniteNumber(props.quantity) ?? 0
+  formData.value.inspectDate = toFiniteNumber(props.recordTime) ?? decodeUrlText(props.recordTime)
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  if (!isDraft.value) {
+    toast.warning('已完成检验单不能修改')
+    return
+  }
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
-    if (currentId.value) {
-      await updateIpqc(data as QcIpqcUpdateReqVO)
+    if (props.id) {
+      await updateIpqc(formData.value)
       toast.success('修改成功')
     } else {
-      await createIpqc(data as QcIpqcCreateReqVO)
+      await createIpqc(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:qc:ipqc:reload')
@@ -556,17 +402,9 @@ async function handleSubmit() {
   }
 }
 
-watch(() => formData.value.unqualifiedQuantity, (value) => {
-  if (!Number(value || 0)) {
-    formData.value.laborScrapQuantity = 0
-    formData.value.materialScrapQuantity = 0
-    formData.value.otherScrapQuantity = 0
-  }
-})
-
 /** 初始化 */
-onMounted(() => {
+onMounted(async () => {
   applyPendingInspectPreset()
-  getDetail()
+  await getDetail()
 })
 </script>
