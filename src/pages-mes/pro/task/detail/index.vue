@@ -36,7 +36,7 @@
       <ProcessTaskList
         v-for="process in routeProcessList"
         :key="process.processId"
-        :work-order-id="workOrderId"
+        :work-order-id="formData?.id || 0"
         :route-id="currentRouteId"
         :item-id="formData?.productId || 0"
         :process="process"
@@ -47,26 +47,31 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="!isReadonly && formData?.id" content-class="yd-detail-footer-actions">
-      <wd-button class="flex-1" type="success" :loading="finishing" @click="handleFinish">
-        完成工单
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="formData?.id && (canSchedule || canFinish)" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="canSchedule" class="flex-1" type="primary" @click="handleSchedule">
+          排产
+        </wd-button>
+        <wd-button v-if="canFinish" class="flex-1" type="success" :loading="finishing" @click="handleFinish">
+          完成工单
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProRouteProcessVO } from '@/api/mes/pro/route/process'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
+import type { ProRouteProcess } from '@/api/mes/pro/route/process'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { getRouteProcessListByProduct } from '@/api/mes/pro/route/process'
 import { finishWorkOrder, getWorkOrder } from '@/api/mes/pro/workorder'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, MesProWorkOrderStatusEnum } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import ProcessTaskList from '../components/process-task-list.vue'
 
@@ -84,16 +89,24 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
+const { hasAccessByCodes } = useAccess()
 const loading = ref(false) // 页面加载状态
 const finishing = ref(false) // 完成工单状态
-const formData = ref<ProWorkOrderVO>() // 工单详情
-const routeProcessList = ref<ProRouteProcessVO[]>([]) // 工艺路线工序列表
+const formData = ref<ProWorkOrder>() // 工单详情
+const routeProcessList = ref<ProRouteProcess[]>([]) // 工艺路线工序列表
 const currentRouteId = ref(0) // 当前工艺路线编号
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/pro/task/detail/index')
-const workOrderId = computed(() => props.id ? Number(props.id) : 0)
-const routeMode = computed(() => getRouteQueryValue('mode') || props.mode)
+const routeMode = computed(() => props.mode)
 const isReadonly = computed(() => routeMode.value !== 'schedule')
 const pageTitle = computed(() => isReadonly.value ? '排产详情' : '生产排产')
+const canSchedule = computed(() =>
+  isReadonly.value
+  && hasAccessByCodes(['mes:pro-task:create'])
+  && formData.value?.status === MesProWorkOrderStatusEnum.CONFIRMED,
+)
+const canFinish = computed(() =>
+  formData.value?.status === MesProWorkOrderStatusEnum.CONFIRMED
+  && hasAccessByCodes(['mes:pro-work-order:update']),
+)
 const clientText = computed(() => {
   if (!formData.value?.clientName && !formData.value?.clientCode) {
     return '-'
@@ -108,38 +121,43 @@ function handleBack() {
 
 /** 加载工单与工艺路线 */
 async function getDetail() {
-  if (!workOrderId.value) {
-    formData.value = undefined
-    routeProcessList.value = []
-    currentRouteId.value = 0
+  if (!props.id) {
     return
   }
-  loading.value = true
   try {
-    const detailData = await getWorkOrder(workOrderId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
-    if (formData.value.productId) {
-      const processes = await getRouteProcessListByProduct(formData.value.productId)
-      const sorted = [...processes].sort((a, b) => a.sort - b.sort)
-      routeProcessList.value = sorted
-      currentRouteId.value = sorted[0]?.routeId || 0
+    toast.loading('加载中...')
+    loading.value = true
+    try {
+      formData.value = await getWorkOrder(Number(props.id))
+      routeProcessList.value = []
+      currentRouteId.value = 0
+      // 如果工单有产品编号，则加载该产品的工艺路线工序列表
+      if (formData.value.productId) {
+        const processes = await getRouteProcessListByProduct(formData.value.productId)
+        const sorted = [...processes].sort((a, b) => a.sort - b.sort)
+        routeProcessList.value = sorted
+        currentRouteId.value = sorted[0]?.routeId || 0
+      }
+    } finally {
+      loading.value = false
     }
   } finally {
-    loading.value = false
+    toast.close()
   }
 }
 
 /** 任务变更后刷新工单 */
 async function handleTaskReload() {
   uni.$emit('mes:pro:task:reload')
-  if (workOrderId.value) {
-    formData.value = await getWorkOrder(workOrderId.value)
+  await getDetail()
+}
+
+/** 进入排产 */
+function handleSchedule() {
+  if (!props.id) {
+    return
   }
+  uni.redirectTo({ url: `/pages-mes/pro/task/detail/index?id=${props.id}&mode=schedule` })
 }
 
 /** 完成工单 */
@@ -166,11 +184,8 @@ async function handleFinish() {
   }
 }
 
-onMounted(() => {
-  getDetail()
-})
-
-watch(workOrderId, () => {
+/** 初始化 */
+onShow(() => {
   getDetail()
 })
 </script>

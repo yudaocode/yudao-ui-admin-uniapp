@@ -12,7 +12,7 @@
         v-else
         title="排产甘特图"
         :tasks="ganttTasks"
-        editable
+        :editable="hasAccessByCodes(['mes:pro-task:update'])"
         @task-click="handleEdit"
         @task-update="handleTaskUpdate"
       >
@@ -21,7 +21,7 @@
             <wd-button size="small" variant="plain" @click="handleRefresh">
               刷新
             </wd-button>
-            <wd-button size="small" type="primary" :loading="formLoading" :disabled="pendingCount === 0" @click="handleSave">
+            <wd-button v-if="hasAccessByCodes(['mes:pro-task:update'])" size="small" type="primary" :loading="formLoading" :disabled="pendingCount === 0" @click="handleSave">
               保存{{ pendingCount ? `(${pendingCount})` : '' }}
             </wd-button>
           </view>
@@ -32,20 +32,16 @@
 </template>
 
 <script lang="ts" setup>
-import { getGanttTaskList, updateTask } from '@/api/mes/pro/task'
 import type { ProTask, ProTaskGantt } from '@/api/mes/pro/task'
+import { onShow } from '@dcloudio/uni-app'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
+import { getGanttTaskList, getTask, updateTask } from '@/api/mes/pro/task'
+import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { BarcodeBizTypeEnum } from '@/utils/constants'
+import { BarcodeBizTypeEnum, MesProTaskStatusEnum, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import TaskGanttPreview from '../components/task-gantt-preview.vue'
-
-interface TaskGanttChange {
-  id: number
-  startTime: string
-  endTime: string
-  duration: number
-}
 
 definePage({
   style: {
@@ -55,14 +51,20 @@ definePage({
 })
 
 const toast = useToast()
+const dialog = useDialog()
+const { hasAccessByCodes } = useAccess()
 const loading = ref(false) // 页面加载状态
 const formLoading = ref(false) // 保存状态
 const ganttTasks = ref<ProTaskGantt[]>([]) // 甘特任务数据
-const pendingChanges = ref(new Map<number, TaskGanttChange>()) // 待保存修改
+const pendingChanges = ref(new Map<number, ProTask>()) // 待保存修改
+const needReloadOnShow = ref(false) // 从任务表单返回后刷新
 const pendingCount = computed(() => pendingChanges.value.size)
 
 /** 返回上一页 */
-function handleBack() {
+async function handleBack() {
+  if (!await confirmDiscardChanges()) {
+    return
+  }
   navigateBackPlus('/pages-mes/pro/task/index')
 }
 
@@ -70,14 +72,36 @@ function handleBack() {
 async function getList() {
   loading.value = true
   try {
-    ganttTasks.value = await getGanttTaskList({})
+    ganttTasks.value = await getGanttTaskList({
+      status: MesProWorkOrderStatusEnum.CONFIRMED,
+      type: MesProWorkOrderTypeEnum.SELF,
+    })
   } finally {
     loading.value = false
   }
 }
 
+/** 确认放弃未保存修改 */
+async function confirmDiscardChanges() {
+  if (pendingChanges.value.size === 0) {
+    return true
+  }
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: '当前有未保存的排产调整，确认放弃吗？',
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** 记录拖拽修改 */
-function handleTaskUpdate(change: TaskGanttChange) {
+function handleTaskUpdate(change: ProTask) {
+  if (!change.id) {
+    return
+  }
   const next = new Map(pendingChanges.value)
   next.set(change.id, change)
   pendingChanges.value = next
@@ -102,15 +126,33 @@ async function handleSave() {
 
   formLoading.value = true
   try {
-    await Promise.all(Array.from(pendingChanges.value.values()).map(change =>
-      updateTask({
-        id: change.id,
-        startTime: change.startTime,
-        endTime: change.endTime,
-        duration: change.duration,
-      } as ProTask),
+    const changes = Array.from(pendingChanges.value.values())
+
+    // 保存前重新拉取任务状态，避免拖拽期间任务已完成或取消
+    const checkedChanges = await Promise.all(changes.map(async change => ({
+      change,
+      task: await getTask(Number(change.id)).catch(() => undefined),
+    })))
+    const updates = checkedChanges.filter(({ task }) => {
+      return task?.id
+        && task.status !== MesProTaskStatusEnum.FINISHED
+        && task.status !== MesProTaskStatusEnum.CANCELED
+    })
+    if (updates.length === 0) {
+      toast.warning('任务不存在、已完成或已取消，不能调整')
+      pendingChanges.value = new Map()
+      await getList()
+      return
+    }
+
+    // 只提交仍可调整的任务
+    await Promise.all(updates.map(({ change }) =>
+      updateTask(change),
     ))
-    toast.success(`已保存 ${pendingChanges.value.size} 条修改`)
+    const skippedCount = changes.length - updates.length
+    toast.success(skippedCount ? `已保存 ${updates.length} 条，跳过 ${skippedCount} 条终态任务` : `已保存 ${updates.length} 条修改`)
+
+    // 清空本地草稿并刷新甘特图
     pendingChanges.value = new Map()
     uni.$emit('mes:pro:task:reload')
     await getList()
@@ -121,20 +163,33 @@ async function handleSave() {
 
 /** 刷新甘特图 */
 async function handleRefresh() {
+  if (!await confirmDiscardChanges()) {
+    return
+  }
   pendingChanges.value = new Map()
   await getList()
 }
 
 /** 编辑任务 */
-function handleEdit(item: ProTaskGantt) {
+async function handleEdit(item: ProTaskGantt) {
   if (item.type !== BarcodeBizTypeEnum.TASK || !item.originalId) {
     return
   }
-  uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${item.originalId}` })
+  if (!await confirmDiscardChanges()) {
+    return
+  }
+  needReloadOnShow.value = true
+  const readonlyQuery = hasAccessByCodes(['mes:pro-task:update']) ? '' : '&readonly=true'
+  uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${item.originalId}${readonlyQuery}` })
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
+  if (ganttTasks.value.length > 0 && !needReloadOnShow.value) {
+    return
+  }
+  needReloadOnShow.value = false
+  pendingChanges.value = new Map()
   getList()
 })
 </script>

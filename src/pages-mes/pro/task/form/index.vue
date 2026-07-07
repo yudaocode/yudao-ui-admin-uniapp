@@ -11,13 +11,12 @@
           <wd-cell v-if="taskDetail?.name" title="任务名称" :value="taskDetail.name" />
           <wd-cell v-if="taskDetail?.workOrderCode" title="工单" :value="`${taskDetail.workOrderCode} / ${taskDetail.workOrderName || '-'}`" />
           <wd-cell v-if="taskDetail?.processName" title="工序" :value="taskDetail.processName" />
-          <wd-form-item title="工作站" title-width="220rpx" prop="workstationId" is-link :value="selectedWorkstationText" placeholder="请选择工作站" @click="openWorkstationSelector" />
+          <wd-form-item title="工作站" title-width="220rpx" prop="workstationId" is-link :value="selectedWorkstationText" placeholder="请选择工作站" @click="openWorkstationPicker" />
           <wd-form-item title="排产数量" title-width="220rpx" prop="quantity" center>
             <wd-input-number v-model="formData.quantity" :min="0.01" :precision="2" :disabled="readonly" />
           </wd-form-item>
-          <wd-form-item title="开始时间" title-width="220rpx" prop="startTime">
-            <wd-datetime-picker v-model="formData.startTime" type="datetime" placeholder="请选择开始时间" :disabled="readonly" />
-          </wd-form-item>
+          <wd-form-item title="开始时间" title-width="220rpx" prop="startTime" :is-link="!readonly" :value="formatDateTime(formData.startTime) || ''" placeholder="请选择开始时间" @click="openStartTimePicker" />
+          <wd-datetime-picker v-model="formData.startTime" v-model:visible="dateVisible.startTime" title="请选择开始时间" type="datetime" />
           <wd-form-item title="生产时长" title-width="220rpx" prop="duration" center>
             <wd-input-number v-model="formData.duration" :min="1" :precision="0" :disabled="readonly" />
           </wd-form-item>
@@ -29,62 +28,42 @@
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable :disabled="readonly" />
           </wd-form-item>
           <wd-cell v-if="taskDetail?.status != null" title="任务状态">
-            <TaskStatusTag :value="taskDetail.status" />
+            <dict-tag :type="DICT_TYPE.MES_PRO_TASK_STATUS" :value="taskDetail.status" />
           </wd-cell>
           <wd-cell v-if="taskDetail?.producedQuantity != null" title="已生产数量" :value="taskDetail.producedQuantity" />
           <wd-cell v-if="taskDetail?.qualifyQuantity != null" title="合格品数量" :value="taskDetail.qualifyQuantity" />
           <wd-cell v-if="taskDetail?.unqualifyQuantity != null" title="不良品数量" :value="taskDetail.unqualifyQuantity" />
         </wd-cell-group>
       </wd-form>
-      <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#f7faff] p-20rpx text-24rpx text-[#666]">
-        生产任务编码和任务名称由后端根据工单、工序、产品和数量自动生成，移动端仅维护排产工作站、数量和时间。
-      </view>
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions v-if="!readonly">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
-
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
+    <view v-if="!readonly" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
+    <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import { onShow } from '@dcloudio/uni-app'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProTaskCreateReqVO, ProTaskUpdateReqVO, ProTaskVO } from '@/api/mes/pro/task'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProTask } from '@/api/mes/pro/task'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getWorkstation } from '@/api/mes/md/workstation'
 import { createTask, getTask, updateTask } from '@/api/mes/pro/task'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDateTime } from '@/utils/date'
+import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import TaskStatusTag from '../components/task-status-tag.vue'
-import WorkstationSelector from '../components/workstation-selector.vue'
-
-interface TaskFormData {
-  id?: number
-  workOrderId?: number
-  workstationId?: number
-  routeId?: number
-  processId?: number
-  itemId?: number
-  quantity?: number
-  startTime?: number | string
-  duration?: number
-  endTime?: number | string
-  colorCode: string
-  remark: string
-}
+import WorkstationPicker from '@/pages-mes/md/workstation/components/workstation-picker.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -105,16 +84,14 @@ definePage({
 
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器
+const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
 const formLoading = ref(false) // 表单提交状态
-const taskDetail = ref<ProTaskVO>() // 编辑详情
-const selectedWorkstation = ref<MdWorkstationVO>() // 当前工作站
-const { getRouteQueryNumber, getRouteQueryValue } = useRouteQuery(props, '/pages-mes/pro/task/form/index')
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前任务编号
-const readonly = computed(() => getRouteQueryValue('readonly') === true || getRouteQueryValue('readonly') === 'true')
-const currentColorCode = computed(() => String(getRouteQueryValue('colorCode') || '#00AEF3')) // 当前甘特颜色
-const getTitle = computed(() => readonly.value ? '生产任务详情' : currentId.value ? '编辑生产任务' : '新增生产任务')
-const formData = ref<TaskFormData>(getDefaultFormData())
+const taskDetail = ref<ProTask>() // 编辑详情
+const selectedWorkstation = ref<MdWorkstation>() // 当前工作站
+const dateVisible = reactive({ startTime: false }) // 日期选择器显示状态
+const readonly = computed(() => String(props.readonly) === 'true')
+const getTitle = computed(() => readonly.value ? '生产任务详情' : props.id ? '编辑生产任务' : '新增生产任务')
+const formData = ref<ProTask>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   workstationId: [{ required: true, message: '工作站不能为空' }],
   quantity: [{ required: true, message: '排产数量不能为空' }],
@@ -125,34 +102,28 @@ const selectedWorkstationText = computed(() => {
   if (selectedWorkstation.value) {
     return `${selectedWorkstation.value.code} / ${selectedWorkstation.value.name}`
   }
-  return formData.value.workstationId ? `工作站 #${formData.value.workstationId}` : ''
+  return formData.value.workstationId ? String(formData.value.workstationId) : ''
 })
 
 /** 默认表单数据 */
-function getDefaultFormData(): TaskFormData {
+function getDefaultFormData(): ProTask {
   return {
-    workOrderId: undefined,
-    routeId: undefined,
-    processId: undefined,
-    itemId: undefined,
     quantity: 1,
-    startTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+    startTime: '',
     duration: 1,
-    endTime: undefined,
     colorCode: '#00AEF3',
-    remark: '',
   }
 }
 
 /** 创建态路由参数回填 */
-function getCreateFormData(): TaskFormData {
+function getCreateFormData(): ProTask {
   return {
     ...getDefaultFormData(),
-    workOrderId: getRouteQueryNumber('workOrderId'),
-    routeId: getRouteQueryNumber('routeId'),
-    processId: getRouteQueryNumber('processId'),
-    itemId: getRouteQueryNumber('itemId'),
-    colorCode: currentColorCode.value,
+    workOrderId: props.workOrderId ? Number(props.workOrderId) : undefined,
+    routeId: props.routeId ? Number(props.routeId) : undefined,
+    processId: props.processId ? Number(props.processId) : undefined,
+    itemId: props.itemId ? Number(props.itemId) : undefined,
+    colorCode: String(props.colorCode || '#00AEF3'),
   }
 }
 
@@ -165,38 +136,28 @@ function handleBack() {
 /** 计算结束时间 */
 function calculateEndTime() {
   if (!formData.value.startTime || !formData.value.duration) {
-    formData.value.endTime = undefined
+    formData.value.endTime = ''
     return
   }
-  const start = dayjs(formData.value.startTime)
+  const start = dayjs(toTimestamp(formData.value.startTime))
   if (!start.isValid()) {
-    formData.value.endTime = undefined
+    formData.value.endTime = ''
     return
   }
-  formData.value.endTime = start.add(Number(formData.value.duration) * 8, 'hour').format('YYYY-MM-DD HH:mm:ss')
+  formData.value.endTime = start.add(Number(formData.value.duration) * 8, 'hour').valueOf()
 }
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     calculateEndTime()
     return
   }
-  const detail = await getTask(currentId.value)
+  const detail = await getTask(Number(props.id))
   taskDetail.value = detail
   formData.value = {
-    id: detail.id,
-    workOrderId: detail.workOrderId,
-    workstationId: detail.workstationId,
-    routeId: detail.routeId,
-    processId: detail.processId,
-    itemId: detail.itemId,
-    quantity: detail.quantity,
-    startTime: detail.startTime ? dayjs(detail.startTime).format('YYYY-MM-DD HH:mm:ss') : undefined,
-    duration: detail.duration || 1,
-    endTime: detail.endTime,
+    ...detail,
     colorCode: detail.colorCode || '#00AEF3',
-    remark: detail.remark || '',
   }
   if (detail.workstationId) {
     selectedWorkstation.value = await getWorkstation(detail.workstationId)
@@ -204,72 +165,50 @@ async function getDetail() {
   calculateEndTime()
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    taskDetail.value = undefined
-    selectedWorkstation.value = undefined
-    formData.value = getCreateFormData()
-    calculateEndTime()
-    return
-  }
-  if (formData.value.id !== currentId.value) {
-    taskDetail.value = undefined
-    selectedWorkstation.value = undefined
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
-}
-
 /** 打开工作站选择器 */
-function openWorkstationSelector() {
+function openWorkstationPicker() {
   if (readonly.value) {
     return
   }
-  workstationSelectorRef.value?.open(formData.value.workstationId)
+  workstationPickerRef.value?.open(formData.value.workstationId)
 }
 
 /** 选择工作站 */
-function handleWorkstationConfirm(item: MdWorkstationVO) {
+function handleWorkstationConfirm(item: MdWorkstation) {
   selectedWorkstation.value = item
   formData.value.workstationId = item.id
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): ProTaskCreateReqVO | ProTaskUpdateReqVO {
-  const data = {
-    workOrderId: Number(formData.value.workOrderId),
-    workstationId: Number(formData.value.workstationId),
-    routeId: Number(formData.value.routeId),
-    processId: Number(formData.value.processId),
-    itemId: Number(formData.value.itemId),
-    quantity: Number(formData.value.quantity),
-    startTime: formData.value.startTime,
-    duration: Number(formData.value.duration),
-    endTime: formData.value.endTime,
-    colorCode: formData.value.colorCode || '#00AEF3',
-    remark: formData.value.remark || undefined,
+/** 打开开始时间选择器 */
+function openStartTimePicker() {
+  if (readonly.value) {
+    return
   }
-  if (formData.value.id) {
-    return { ...data, id: formData.value.id }
+  if (!formData.value.startTime) {
+    formData.value.startTime = Date.now()
   }
-  return data
+  dateVisible.startTime = true
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
+  if (!formData.value.workOrderId || !formData.value.routeId || !formData.value.processId || !formData.value.itemId) {
+    toast.warning('排产上下文不能为空，请从工单排产页进入')
+    return
+  }
+
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    formData.value.colorCode = formData.value.colorCode || '#00AEF3'
     if (formData.value.id) {
-      await updateTask(data)
+      await updateTask(formData.value)
       toast.success('修改成功')
     } else {
-      await createTask(data)
+      await createTask(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:pro:task:reload')
@@ -279,19 +218,19 @@ async function handleSubmit() {
   }
 }
 
+/** 监听开始时间变化 */
 watch(() => formData.value.startTime, calculateEndTime)
+
+/** 监听计划时长变化 */
 watch(() => formData.value.duration, calculateEndTime)
 
-onMounted(() => {
-  initPage()
-})
-
-/** 页面显示时刷新 */
-onShow(() => {
-  initPage()
-})
-
-watch([currentId, readonly, currentColorCode], () => {
-  initPage()
+/** 初始化 */
+onMounted(async () => {
+  if (!props.id) {
+    formData.value = getCreateFormData()
+    calculateEndTime()
+    return
+  }
+  await getDetail()
 })
 </script>

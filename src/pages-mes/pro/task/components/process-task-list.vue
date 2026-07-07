@@ -37,7 +37,7 @@
                 {{ item.code || '-' }}
               </view>
             </view>
-            <TaskStatusTag v-if="item.status != null" :value="item.status" />
+            <dict-tag v-if="item.status != null" :type="DICT_TYPE.MES_PRO_TASK_STATUS" :value="item.status" />
           </view>
           <view class="text-24rpx text-[#666] space-y-6rpx">
             <view>工作站：{{ item.workstationCode || '-' }} / {{ item.workstationName || '-' }}</view>
@@ -45,36 +45,39 @@
             <view>开始：{{ formatDateTime(item.startTime) || '-' }}</view>
             <view>时长：{{ item.duration ?? '-' }} 工作日，预计完成：{{ formatDateTime(item.endTime) || '-' }}</view>
           </view>
-        </view>
-        <view v-if="!readonly" class="flex border-t border-[#f3f4f6] text-26rpx">
-          <view v-if="hasAccessByCodes(['mes:pro-task:update'])" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-            编辑
-          </view>
-          <view v-if="hasAccessByCodes(['mes:pro-task:delete'])" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-            删除
+          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-12rpx">
+            <wd-button v-if="hasAccessByCodes(['mes:pro-task:update'])" size="small" type="warning" variant="plain" @click.stop="handleEdit(item)">
+              编辑
+            </wd-button>
+            <wd-button v-if="hasAccessByCodes(['mes:pro-task:delete'])" size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
+              删除
+            </wd-button>
           </view>
         </view>
       </view>
+      <wd-button v-if="hasMore" block size="small" :loading="loadingMore" variant="plain" @click="loadMore">
+        加载更多
+      </wd-button>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { ProRouteProcessVO } from '@/api/mes/pro/route/process'
-import type { ProTaskVO } from '@/api/mes/pro/task'
+import type { ProRouteProcess } from '@/api/mes/pro/route/process'
+import type { ProTask } from '@/api/mes/pro/task'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { deleteTask, getTaskPage } from '@/api/mes/pro/task'
 import { useAccess } from '@/hooks/useAccess'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import TaskStatusTag from './task-status-tag.vue'
 
 const props = withDefaults(defineProps<{
   workOrderId: number
   routeId: number
   itemId: number
-  process: ProRouteProcessVO
+  process: ProRouteProcess
   readonly?: boolean
 }>(), {
   readonly: false,
@@ -84,27 +87,62 @@ const emit = defineEmits<{
   reload: []
 }>()
 
+const PAGE_SIZE = 10
+const TASK_RELOAD_EVENT = 'mes:pro:task:reload'
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const loading = ref(false) // 列表加载状态
-const list = ref<ProTaskVO[]>([]) // 任务列表
+const loadingMore = ref(false) // 加载更多状态
+const list = ref<ProTask[]>([]) // 任务列表
+const total = ref(0) // 任务总数
+const pageNo = ref(1) // 当前页码
+const hasMore = computed(() => list.value.length < total.value)
 
 /** 查询任务列表 */
-async function getList() {
-  loading.value = true
+async function getList(currentPage = 1) {
+  if (!props.workOrderId || !props.routeId || !props.process.processId) {
+    list.value = []
+    total.value = 0
+    return
+  }
+  const firstPage = currentPage === 1
+  if (firstPage) {
+    loading.value = true
+  } else {
+    loadingMore.value = true
+  }
   try {
     const data = await getTaskPage({
       workOrderId: props.workOrderId,
       routeId: props.routeId,
       processId: props.process.processId,
-      pageNo: 1,
-      pageSize: 100,
+      pageNo: currentPage,
+      pageSize: PAGE_SIZE,
     })
-    list.value = data.list
+    pageNo.value = currentPage
+    total.value = data.total
+    list.value = firstPage ? data.list : [...list.value, ...data.list]
   } finally {
-    loading.value = false
+    if (firstPage) {
+      loading.value = false
+    } else {
+      loadingMore.value = false
+    }
   }
+}
+
+/** 加载更多 */
+function loadMore() {
+  if (!hasMore.value || loading.value || loadingMore.value) {
+    return
+  }
+  getList(pageNo.value + 1)
+}
+
+/** 任务变更后刷新 */
+function handleTaskReload() {
+  getList()
 }
 
 /** 新增任务 */
@@ -120,17 +158,17 @@ function handleAdd() {
 }
 
 /** 查看任务详情 */
-function handleDetail(item: ProTaskVO) {
+function handleDetail(item: ProTask) {
   uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${item.id}&readonly=true` })
 }
 
 /** 编辑任务 */
-function handleEdit(item: ProTaskVO) {
+function handleEdit(item: ProTask) {
   uni.navigateTo({ url: `/pages-mes/pro/task/form/index?id=${item.id}` })
 }
 
 /** 删除任务 */
-async function handleDelete(item: ProTaskVO) {
+async function handleDelete(item: ProTask) {
   try {
     await dialog.confirm({ title: '提示', msg: `确定要删除「${item.code}」生产任务吗？` })
   } catch {
@@ -138,15 +176,20 @@ async function handleDelete(item: ProTaskVO) {
   }
   await deleteTask(item.id)
   toast.success('删除成功')
-  await getList()
   emit('reload')
 }
 
-watch(() => props.process.processId, getList)
+/** 监听工序变化 */
+watch(() => props.process.processId, () => getList())
 
+/** 初始化 */
 onMounted(() => {
   getList()
+  uni.$on(TASK_RELOAD_EVENT, handleTaskReload)
 })
 
-defineExpose({ getList })
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off(TASK_RELOAD_EVENT, handleTaskReload)
+})
 </script>

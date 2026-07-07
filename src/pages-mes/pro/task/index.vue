@@ -7,7 +7,7 @@
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 甘特图入口 -->
-    <view class="bg-white px-24rpx py-16rpx">
+    <view v-if="hasAccessByCodes(['mes:pro-task:query'])" class="bg-white px-24rpx py-16rpx">
       <wd-button type="primary" block variant="plain" @click="handleGanttEdit">
         甘特图编辑
       </wd-button>
@@ -57,6 +57,7 @@ import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { getWorkOrderPage } from '@/api/mes/pro/workorder'
+import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
@@ -74,6 +75,7 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const list = ref<ProWorkOrder[]>([]) // 待排产工单树
 const pagingRef = ref<ZPagingRef<ProWorkOrder>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
