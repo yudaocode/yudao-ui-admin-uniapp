@@ -1,116 +1,133 @@
 <template>
-  <MesLineListShell
-    title="物料信息"
-    :loading="loading"
-    :empty="list.length === 0"
-    empty-text="暂无物料信息"
-    :readonly="readonly"
-    add-text="添加物料"
-    @add="openCreateForm"
-  >
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="border-b border-b-[#f5f5f5] py-20rpx last:border-b-0"
-    >
-      <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-        <view class="min-w-0 flex-1">
-          <view class="truncate text-28rpx text-[#333] font-medium">
-            {{ item.itemCode || `物料 #${item.itemId}` }}
-          </view>
-          <view class="mt-4rpx truncate text-26rpx text-[#666]">
-            {{ item.itemName || '-' }}
-          </view>
-        </view>
-        <view class="shrink-0 text-24rpx text-[#999]">
-          {{ item.batchCode || '未生成批次' }}
-        </view>
+  <view class="mt-24rpx bg-white">
+    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+      <view class="text-30rpx text-[#333] font-semibold">
+        物料信息
       </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">规格型号：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.specification || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">单位：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.unitMeasureName || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">入库数量：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.receivedQuantity ?? '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">生产日期：</text>
-        <text class="min-w-0 flex-1 truncate">{{ formatDate(item.productionDate) || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">有效期：</text>
-        <text class="min-w-0 flex-1 truncate">{{ formatDate(item.expireDate) || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">生产批号：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.lotNumber || '-' }}</text>
-      </view>
-      <view class="flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
-      </view>
-      <view v-if="!readonly" class="mt-16rpx flex rounded-8rpx bg-[#f7f8fa] text-26rpx">
-        <view class="flex-1 py-16rpx text-center text-[#1677ff]" @click="openUpdateForm(item)">
-          编辑
-        </view>
-        <view class="flex-1 py-16rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-          删除
-        </view>
-      </view>
-      <view class="mt-16rpx rounded-12rpx bg-[#f8fafc] p-16rpx">
-        <view class="mb-12rpx flex items-center justify-between">
-          <view class="text-26rpx text-[#333] font-medium">
-            上架明细
-          </view>
-          <view v-if="stockMode" class="text-24rpx text-[#1677ff]" @click="openCreateDetailForm(item)">
-            添加上架
-          </view>
-        </view>
-        <view v-if="isDetailLoading(item.id)" class="py-12rpx text-24rpx text-[#999]">
-          加载中...
-        </view>
-        <view v-else-if="getDetailList(item.id).length === 0" class="py-12rpx text-24rpx text-[#999]">
-          暂无上架明细
-        </view>
-        <view
-          v-for="detail in getDetailList(item.id)"
-          v-else
-          :key="detail.id"
-          class="mb-12rpx rounded-8rpx bg-white p-16rpx last:mb-0"
-        >
-          <view class="mb-8rpx text-26rpx text-[#333]">
-            {{ detail.warehouseName || '-' }} / {{ detail.locationName || '-' }} / {{ detail.areaName || '-' }}
-          </view>
-          <view class="mb-8rpx text-24rpx text-[#666]">
-            上架数量：{{ detail.quantity ?? '-' }}
-          </view>
-          <view v-if="detail.remark" class="text-24rpx text-[#666]">
-            备注：{{ detail.remark }}
-          </view>
-          <view v-if="stockMode" class="mt-12rpx flex rounded-8rpx bg-[#f7f8fa] text-24rpx">
-            <view class="flex-1 py-12rpx text-center text-[#1677ff]" @click="openUpdateDetailForm(item, detail)">
-              编辑
-            </view>
-            <view class="flex-1 py-12rpx text-center text-[#f56c6c]" @click="handleDeleteDetail(detail)">
-              删除
-            </view>
-          </view>
-        </view>
-      </view>
+      <wd-button v-if="!readonly" size="small" type="primary" @click="openCreateForm">
+        添加物料
+      </wd-button>
     </view>
-  </MesLineListShell>
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      height="640rpx"
+      :default-page-size="10"
+      :refresher-enabled="false"
+      :inside-more="true"
+      :to-bottom-loading-more-enabled="false"
+      loading-more-default-text="点击加载更多"
+      loading-more-no-more-text="没有更多物料信息了"
+      empty-view-text="暂无物料信息"
+      @query="queryList"
+    >
+      <view class="px-24rpx py-8rpx">
+        <view
+          v-for="item in list"
+          :key="item.id || item.itemId"
+          class="border-b border-b-[#f5f5f5] py-20rpx last:border-b-0"
+        >
+          <view class="mb-12rpx flex items-start justify-between gap-16rpx">
+            <view class="min-w-0 flex-1">
+              <view class="truncate text-28rpx text-[#333] font-medium">
+                {{ item.itemCode || `物料 #${item.itemId}` }}
+              </view>
+              <view class="mt-4rpx truncate text-26rpx text-[#666]">
+                {{ item.itemName || '-' }}
+              </view>
+            </view>
+            <view class="shrink-0 text-24rpx text-[#999]">
+              {{ item.batchCode || '未生成批次' }}
+            </view>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">规格型号：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.specification || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">单位：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.unitMeasureName || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">入库数量：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.receivedQuantity ?? '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">生产日期：</text>
+            <text class="min-w-0 flex-1 truncate">{{ formatDate(item.productionDate) || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">有效期：</text>
+            <text class="min-w-0 flex-1 truncate">{{ formatDate(item.expireDate) || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">生产批号：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.lotNumber || '-' }}</text>
+          </view>
+          <view class="flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
+          </view>
+          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button size="small" type="warning" variant="plain" @click="openUpdateForm(item)">
+              编辑
+            </wd-button>
+            <wd-button size="small" type="danger" variant="plain" @click="handleDelete(item)">
+              删除
+            </wd-button>
+          </view>
+          <view class="mt-16rpx rounded-12rpx bg-[#f8fafc] p-16rpx">
+            <view class="mb-12rpx flex items-center justify-between">
+              <view class="text-26rpx text-[#333] font-medium">
+                上架明细
+              </view>
+              <wd-button v-if="stockMode" size="small" type="primary" @click="openCreateDetailForm(item)">
+                添加上架
+              </wd-button>
+            </view>
+            <view v-if="isDetailLoading(item.id)" class="py-12rpx text-24rpx text-[#999]">
+              加载中...
+            </view>
+            <view v-else-if="getDetailList(item.id).length === 0" class="py-12rpx text-24rpx text-[#999]">
+              暂无上架明细
+            </view>
+            <view
+              v-for="detail in getDetailList(item.id)"
+              v-else
+              :key="detail.id"
+              class="mb-12rpx rounded-8rpx bg-white p-16rpx last:mb-0"
+            >
+              <view class="mb-8rpx text-26rpx text-[#333]">
+                {{ detail.warehouseName || '-' }} / {{ detail.locationName || '-' }} / {{ detail.areaName || '-' }}
+              </view>
+              <view class="mb-8rpx text-24rpx text-[#666]">
+                上架数量：{{ detail.quantity ?? '-' }}
+              </view>
+              <view v-if="detail.remark" class="text-24rpx text-[#666]">
+                备注：{{ detail.remark }}
+              </view>
+              <view v-if="stockMode" class="mt-12rpx flex justify-end gap-16rpx">
+                <wd-button size="small" type="warning" variant="plain" @click="openUpdateDetailForm(item, detail)">
+                  编辑
+                </wd-button>
+                <wd-button size="small" type="danger" variant="plain" @click="handleDeleteDetail(detail)">
+                  删除
+                </wd-button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </z-paging>
+  </view>
 
   <!-- 入库行表单弹窗 -->
   <wd-popup
     v-model="formVisible"
-    position="top"
-    :custom-style="getTopPopupStyle()"
-    :modal-style="getTopPopupModalStyle()"
+    position="bottom"
+    safe-area-inset-bottom
+    custom-style="height: 88vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -127,28 +144,27 @@
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <wd-form-item v-if="noticeId" title="到货通知行" title-width="220rpx" prop="arrivalNoticeLineId">
-              <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openNoticeLineSelector">
-                <text :class="selectedNoticeLineText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ selectedNoticeLineText || '请选择到货通知单行' }}
-                </text>
-                <wd-icon name="arrow-right" size="28rpx" color="#999" />
-              </view>
-            </wd-form-item>
-            <wd-form-item title="物料" title-width="220rpx" prop="itemId">
-              <view
-                class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx"
-                :class="formData.arrivalNoticeLineId ? 'opacity-70' : ''"
-                @click.stop="openItemSelector"
-              >
-                <text :class="selectedItemText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ selectedItemText || '请选择物料' }}
-                </text>
-                <wd-icon v-if="!formData.arrivalNoticeLineId" name="arrow-right" size="28rpx" color="#999" />
-              </view>
-            </wd-form-item>
+            <wd-form-item
+              v-if="noticeId"
+              title="到货通知行"
+              title-width="220rpx"
+              prop="arrivalNoticeLineId"
+              is-link
+              :value="selectedNoticeLineText"
+              placeholder="请选择到货通知单行"
+              @click="openNoticeLinePicker"
+            />
+            <wd-form-item
+              title="物料"
+              title-width="220rpx"
+              prop="itemId"
+              :is-link="!formData.arrivalNoticeLineId"
+              :value="selectedItemText"
+              placeholder="请选择物料"
+              @click="openItemPicker"
+            />
             <wd-form-item title="入库数量" title-width="220rpx" prop="receivedQuantity" center>
-              <wd-input-number v-model="formData.receivedQuantity" :min="0.01" :precision="2" />
+              <wd-input-number v-model="formData.receivedQuantity" allow-null :min="0.01" :precision="2" />
             </wd-form-item>
             <wd-form-item
               title="生产日期"
@@ -181,15 +197,15 @@
       </scroll-view>
     </view>
   </wd-popup>
-  <ArrivalNoticeLineSelector ref="noticeLineSelectorRef" :notice-id="noticeId" @confirm="handleNoticeLineConfirm" />
-  <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
+  <ArrivalNoticeLinePicker ref="noticeLinePickerRef" :notice-id="noticeId" @confirm="handleNoticeLineConfirm" />
+  <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 
   <!-- 上架明细表单弹窗 -->
   <wd-popup
     v-model="detailFormVisible"
-    position="top"
-    :custom-style="getTopPopupStyle()"
-    :modal-style="getTopPopupModalStyle()"
+    position="bottom"
+    safe-area-inset-bottom
+    custom-style="height: 78vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -209,14 +225,11 @@
             <wd-form-item title="物料" title-width="220rpx" prop="itemId">
               <text>{{ detailSelectedItemText || '-' }}</text>
             </wd-form-item>
-            <wd-form-item title="入库仓库" title-width="220rpx" prop="warehouseId" is-link :value="warehouseDisplayValue" placeholder="请选择仓库" @click="warehousePickerVisible = true" />
-            <wd-picker v-model:visible="warehousePickerVisible" :model-value="warehousePickerValue" :columns="warehouseOptions" label-key="name" value-key="id" @confirm="handleWarehouseConfirm" />
-            <wd-form-item title="库区" title-width="220rpx" prop="locationId" is-link :value="locationDisplayValue" placeholder="请选择库区" @click="openLocationPicker" />
-            <wd-picker v-model:visible="locationPickerVisible" :model-value="locationPickerValue" :columns="locationOptions" label-key="name" value-key="id" @confirm="handleLocationConfirm" />
-            <wd-form-item title="库位" title-width="220rpx" prop="areaId" is-link :value="areaDisplayValue" placeholder="请选择库位" @click="openAreaPicker" />
-            <wd-picker v-model:visible="areaPickerVisible" :model-value="areaPickerValue" :columns="areaOptions" label-key="name" value-key="id" @confirm="handleAreaConfirm" />
+            <WarehouseFormPicker v-model="detailFormData.warehouseId" label="入库仓库" label-width="220rpx" prop="warehouseId" @change="handleWarehouseChange" />
+            <WarehouseLocationFormPicker v-model="detailFormData.locationId" label="库区" label-width="220rpx" prop="locationId" :warehouse-id="detailFormData.warehouseId" @change="handleLocationChange" />
+            <WarehouseAreaFormPicker v-model="detailFormData.areaId" label="库位" label-width="220rpx" prop="areaId" :location-id="detailFormData.locationId" />
             <wd-form-item title="上架数量" title-width="220rpx" prop="quantity" center>
-              <wd-input-number v-model="detailFormData.quantity" :min="0.01" :precision="2" />
+              <wd-input-number v-model="detailFormData.quantity" allow-null :min="0.01" :max="detailQuantityMax" :precision="2" />
             </wd-form-item>
             <wd-form-item title="备注" title-width="220rpx" prop="remark">
               <wd-textarea v-model="detailFormData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -230,23 +243,13 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { WmArrivalNoticeLineVO } from '@/api/mes/wm/arrivalnotice/line'
-import type {
-  WmItemReceiptLineCreateReqVO,
-  WmItemReceiptLineVO,
-} from '@/api/mes/wm/itemreceipt/line'
-import type {
-  WmItemReceiptDetailCreateReqVO,
-  WmItemReceiptDetailVO,
-} from '@/api/mes/wm/itemreceipt/detail'
-import type { WmWarehouseAreaVO } from '@/api/mes/wm/warehouse/area'
-import type { WmWarehouseLocationVO } from '@/api/mes/wm/warehouse/location'
-import type { WmWarehouseVO } from '@/api/mes/wm/warehouse'
-import type { WotPickerValue } from '@/utils/wot'
+import type { MdItem } from '@/api/mes/md/item'
+import type { WmArrivalNoticeLine } from '@/api/mes/wm/arrivalnotice/line'
+import type { WmItemReceiptLine } from '@/api/mes/wm/itemreceipt/line'
+import type { WmItemReceiptDetail } from '@/api/mes/wm/itemreceipt/detail'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createItemReceiptLine,
   deleteItemReceiptLine,
@@ -254,31 +257,13 @@ import {
   updateItemReceiptLine,
 } from '@/api/mes/wm/itemreceipt/line'
 import { createItemReceiptDetail, deleteItemReceiptDetail, getItemReceiptDetailListByLineId, updateItemReceiptDetail } from '@/api/mes/wm/itemreceipt/detail'
-import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
-import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
-import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import MesLineListShell from '@/pages-mes/components/mes-line-list-shell.vue'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
-import ArrivalNoticeLineSelector from '../../arrivalnotice/components/arrival-notice-line-selector.vue'
-
-interface WmItemReceiptLineFormData extends WmItemReceiptLineCreateReqVO {
-  id?: number
-}
-
-interface WmItemReceiptDetailFormData extends WmItemReceiptDetailCreateReqVO {
-  id?: number
-}
-
-interface SelectedItemPreview {
-  id: number
-  code?: string
-  name?: string
-  specification?: string
-  unitMeasureName?: string
-}
+import { createFormSchema } from '@/utils/wot'
+import ItemPicker from '../../../md/item/components/item-picker.vue'
+import ArrivalNoticeLinePicker from '../../arrivalnotice/components/arrival-notice-line-picker.vue'
+import WarehouseAreaFormPicker from '../../warehouse/area/components/warehouse-area-form-picker.vue'
+import WarehouseFormPicker from '../../warehouse/components/warehouse-form-picker.vue'
+import WarehouseLocationFormPicker from '../../warehouse/location/components/warehouse-location-form-picker.vue'
 
 const props = defineProps<{
   receiptId?: number
@@ -289,56 +274,49 @@ const props = defineProps<{
 
 const dialog = useDialog()
 const toast = useToast()
-const loading = ref(false) // 列表加载状态
-const list = ref<WmItemReceiptLineVO[]>([]) // 入库行列表
+const list = ref<WmItemReceiptLine[]>([]) // 入库行列表
+const pagingRef = ref<ZPagingRef<WmItemReceiptLine>>() // 分页组件引用
 const formVisible = ref(false) // 行表单显示状态
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单引用
-const formData = ref<WmItemReceiptLineFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmItemReceiptLine>(getDefaultFormData()) // 表单数据
 const detailFormVisible = ref(false) // 上架明细表单显示状态
 const detailFormLoading = ref(false) // 上架明细表单提交状态
 const detailFormRef = ref<FormInstance>() // 上架明细表单引用
-const detailFormData = ref<WmItemReceiptDetailFormData>(getDefaultDetailFormData()) // 上架明细表单数据
-const detailSelectedItem = ref<SelectedItemPreview>() // 上架明细当前物料
-const selectedItem = ref<SelectedItemPreview>() // 当前选择物料
-const selectedNoticeLine = ref<WmArrivalNoticeLineVO>() // 当前选择到货通知单行
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
-const noticeLineSelectorRef = ref<InstanceType<typeof ArrivalNoticeLineSelector>>() // 到货通知单行选择器引用
+const detailFormData = ref<WmItemReceiptDetail>(getDefaultDetailFormData()) // 上架明细表单数据
+const currentDetailLine = ref<WmItemReceiptLine>() // 当前上架明细所属行
+const detailQuantityMax = ref<number>() // 上架数量上限
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
+const noticeLinePickerRef = ref<InstanceType<typeof ArrivalNoticeLinePicker>>() // 到货通知单行选择器引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器状态
-const detailMap = ref<Record<number, WmItemReceiptDetailVO[]>>({}) // 行编号对应上架明细
+const detailMap = ref<Record<number, WmItemReceiptDetail[]>>({}) // 行编号对应上架明细
 const detailLoadingMap = ref<Record<number, boolean>>({}) // 行编号对应明细加载状态
-const warehouseOptions = ref<WmWarehouseVO[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocationVO[]>([]) // 库区选项
-const areaOptions = ref<WmWarehouseAreaVO[]>([]) // 库位选项
-const warehousePickerVisible = ref(false) // 仓库选择器显示
-const locationPickerVisible = ref(false) // 库区选择器显示
-const areaPickerVisible = ref(false) // 库位选择器显示
 const formTitle = computed(() => formData.value.id ? '编辑物料' : '添加物料')
 const detailFormTitle = computed(() => detailFormData.value.id ? '编辑上架明细' : '添加上架明细')
 const selectedItemText = computed(() => {
-  if (!selectedItem.value) {
+  if (!formData.value.itemId) {
     return ''
   }
-  return `${selectedItem.value.code || '-'} ${selectedItem.value.name || ''}`.trim()
+  return `${formData.value.itemCode || '-'} ${formData.value.itemName || ''}`.trim()
 })
 const selectedNoticeLineText = computed(() => {
-  if (!selectedNoticeLine.value) {
+  if (!formData.value.arrivalNoticeLineId) {
     return ''
   }
-  return `${selectedNoticeLine.value.itemCode || `物料 #${selectedNoticeLine.value.itemId}`} / 到货 ${selectedNoticeLine.value.arrivalQuantity ?? '-'}`
+  return `${formData.value.itemCode || `物料 #${formData.value.itemId}`} / 到货 ${formData.value.receivedQuantity ?? '-'}`
 })
 const detailSelectedItemText = computed(() => {
-  if (!detailSelectedItem.value) {
+  if (currentDetailLine.value) {
+    return `${currentDetailLine.value.itemCode || '-'} ${currentDetailLine.value.itemName || ''}`.trim()
+  }
+  if (detailFormData.value.itemCode || detailFormData.value.itemName) {
+    return `${detailFormData.value.itemCode || '-'} ${detailFormData.value.itemName || ''}`.trim()
+  }
+  if (!detailFormData.value.itemId) {
     return ''
   }
-  return `${detailSelectedItem.value.code || '-'} ${detailSelectedItem.value.name || ''}`.trim()
+  return `物料 #${detailFormData.value.itemId}`
 })
-const warehousePickerValue = computed(() => detailFormData.value.warehouseId !== undefined ? [detailFormData.value.warehouseId] : [])
-const locationPickerValue = computed(() => detailFormData.value.locationId !== undefined ? [detailFormData.value.locationId] : [])
-const areaPickerValue = computed(() => detailFormData.value.areaId !== undefined ? [detailFormData.value.areaId] : [])
-const warehouseDisplayValue = computed(() => getWotPickerFormValue(warehouseOptions.value, detailFormData.value.warehouseId, { labelKey: 'name', valueKey: 'id', placeholder: '' }))
-const locationDisplayValue = computed(() => getWotPickerFormValue(locationOptions.value, detailFormData.value.locationId, { labelKey: 'name', valueKey: 'id', placeholder: '' }))
-const areaDisplayValue = computed(() => getWotPickerFormValue(areaOptions.value, detailFormData.value.areaId, { labelKey: 'name', valueKey: 'id', placeholder: '' }))
 const formSchema = createFormSchema({
   arrivalNoticeLineId: [{ required: () => !!props.noticeId, message: '到货通知单行不能为空' }],
   itemId: [{ required: true, message: '物料不能为空' }],
@@ -355,60 +333,57 @@ const detailFormSchema = createFormSchema({
   quantity: [
     { required: true, message: '上架数量不能为空' },
     { validator: value => Number(value) > 0 || '上架数量必须大于 0' },
+    { validator: value => detailQuantityMax.value == null || Number(value) <= detailQuantityMax.value || `上架数量不能大于剩余数量 ${detailQuantityMax.value}` },
   ],
 })
 
 /** 默认表单数据 */
-function getDefaultFormData() {
+function getDefaultFormData(): WmItemReceiptLine {
   return {
-    receiptId: props.receiptId || 0,
-    arrivalNoticeLineId: undefined,
-    itemId: undefined,
-    receivedQuantity: undefined,
-    productionDate: undefined,
-    expireDate: undefined,
-    lotNumber: '',
-    remark: '',
-  } as WmItemReceiptLineFormData
+    receiptId: props.receiptId,
+  }
 }
 
 /** 默认上架明细表单数据 */
-function getDefaultDetailFormData() {
+function getDefaultDetailFormData(): WmItemReceiptDetail {
   return {
-    lineId: 0,
-    receiptId: props.receiptId || 0,
-    itemId: undefined,
-    quantity: undefined,
-    batchId: undefined,
-    warehouseId: undefined,
-    locationId: undefined,
-    areaId: undefined,
-    remark: '',
-  } as WmItemReceiptDetailFormData
+    receiptId: props.receiptId,
+  }
 }
 
 /** 查询入库行列表 */
-async function getList() {
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.receiptId) {
-    list.value = []
+    detailMap.value = {}
+    pagingRef.value?.completeByTotal([], 0)
     return
   }
-  loading.value = true
   try {
     const data = await getItemReceiptLinePage({
-      pageNo: 1,
-      pageSize: 100,
+      pageNo,
+      pageSize,
       receiptId: props.receiptId,
     })
-    list.value = data.list
-    await Promise.all(list.value.map(item => getDetailListByLine(item.id)))
-  } finally {
-    loading.value = false
+    if (pageNo === 1) {
+      detailMap.value = {}
+    }
+    await Promise.all(data.list.map(item => getDetailListByLine(item.id)))
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
+/** 刷新列表 */
+function reload() {
+  pagingRef.value?.reload()
+}
+
 /** 查询单行上架明细 */
-async function getDetailListByLine(lineId: number) {
+async function getDetailListByLine(lineId?: number) {
+  if (!lineId) {
+    return
+  }
   detailLoadingMap.value[lineId] = true
   try {
     detailMap.value[lineId] = await getItemReceiptDetailListByLineId(lineId)
@@ -418,267 +393,178 @@ async function getDetailListByLine(lineId: number) {
 }
 
 /** 获取单行上架明细 */
-function getDetailList(lineId: number) {
+function getDetailList(lineId?: number) {
+  if (!lineId) {
+    return []
+  }
   return detailMap.value[lineId] || []
 }
 
+/** 计算剩余可上架数量 */
+function getDetailRemainingQuantity(line?: WmItemReceiptLine, editingDetailId?: number) {
+  if (!line) {
+    return undefined
+  }
+  const usedQuantity = getDetailList(line.id).reduce((total, item) => {
+    if (editingDetailId && item.id === editingDetailId) {
+      return total
+    }
+    return total + Number(item.quantity || 0)
+  }, 0)
+  return Math.max(Number(line.receivedQuantity || 0) - usedQuantity, 0)
+}
+
 /** 判断单行上架明细是否加载中 */
-function isDetailLoading(lineId: number) {
+function isDetailLoading(lineId?: number) {
+  if (!lineId) {
+    return false
+  }
   return !!detailLoadingMap.value[lineId]
 }
 
 /** 打开新增表单 */
 function openCreateForm() {
   formData.value = getDefaultFormData()
-  selectedItem.value = undefined
-  selectedNoticeLine.value = undefined
   formVisible.value = true
 }
 
 /** 打开编辑表单 */
-function openUpdateForm(item: WmItemReceiptLineVO) {
-  formData.value = {
-    id: item.id,
-    receiptId: item.receiptId,
-    arrivalNoticeLineId: item.arrivalNoticeLineId,
-    itemId: item.itemId,
-    receivedQuantity: item.receivedQuantity,
-    productionDate: item.productionDate,
-    expireDate: item.expireDate,
-    lotNumber: item.lotNumber || '',
-    remark: item.remark || '',
-  }
-  selectedItem.value = {
-    id: item.itemId,
-    code: item.itemCode || '',
-    name: item.itemName || '',
-    specification: item.specification || '',
-    unitMeasureName: item.unitMeasureName || '',
-  }
-  selectedNoticeLine.value = item.arrivalNoticeLineId
-    ? {
-        id: item.arrivalNoticeLineId,
-        noticeId: props.noticeId || 0,
-        itemId: item.itemId,
-        itemCode: item.itemCode || '',
-        itemName: item.itemName || '',
-        specification: item.specification || '',
-        unitMeasureName: item.unitMeasureName || '',
-        arrivalQuantity: item.receivedQuantity,
-        iqcCheckFlag: false,
-      } as WmArrivalNoticeLineVO
-    : undefined
+function openUpdateForm(item: WmItemReceiptLine) {
+  formData.value = { ...item }
   formVisible.value = true
 }
 
 /** 打开到货通知单行选择器 */
-function openNoticeLineSelector() {
-  noticeLineSelectorRef.value?.open()
+function openNoticeLinePicker() {
+  noticeLinePickerRef.value?.open()
 }
 
 /** 打开物料选择器 */
-function openItemSelector() {
+function openItemPicker() {
   if (formData.value.arrivalNoticeLineId) {
     return
   }
-  itemSelectorRef.value?.open()
+  itemPickerRef.value?.open()
 }
 
 /** 选择到货通知单行 */
-function handleNoticeLineConfirm(line: WmArrivalNoticeLineVO) {
-  selectedNoticeLine.value = line
-  formData.value.arrivalNoticeLineId = line.id
-  formData.value.itemId = line.itemId
-  formData.value.receivedQuantity = line.qualifiedQuantity ?? line.arrivalQuantity
-  selectedItem.value = {
-    id: line.itemId,
-    code: line.itemCode || '',
-    name: line.itemName || '',
-    specification: line.specification || '',
-    unitMeasureName: line.unitMeasureName || '',
+function handleNoticeLineConfirm(line: WmArrivalNoticeLine) {
+  formData.value = {
+    ...formData.value,
+    arrivalNoticeLineId: line.id,
+    itemId: line.itemId,
+    itemCode: line.itemCode,
+    itemName: line.itemName,
+    specification: line.specification,
+    unitMeasureName: line.unitMeasureName,
+    receivedQuantity: line.qualifiedQuantity ?? line.arrivalQuantity,
   }
 }
 
 /** 选择物料 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
-  if (!item) {
+  if (!item || item.id == null) {
     return
   }
-  selectedItem.value = item
-  formData.value.itemId = item.id
+  formData.value = {
+    ...formData.value,
+    itemId: item.id,
+    itemCode: item.code,
+    itemName: item.name,
+    specification: item.specification,
+    unitMeasureName: item.unitMeasureName,
+  }
 }
 
 /** 提交入库行 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!props.receiptId) {
     return
   }
+
   formLoading.value = true
   try {
-    const data: WmItemReceiptLineCreateReqVO = {
-      receiptId: props.receiptId,
-      arrivalNoticeLineId: formData.value.arrivalNoticeLineId,
-      itemId: formData.value.itemId,
-      receivedQuantity: formData.value.receivedQuantity,
-      productionDate: formData.value.productionDate,
-      expireDate: formData.value.expireDate,
-      lotNumber: formData.value.lotNumber || undefined,
-      remark: formData.value.remark || undefined,
-    }
     if (formData.value.id) {
-      await updateItemReceiptLine({ ...data, id: formData.value.id })
+      await updateItemReceiptLine(formData.value)
       toast.success('修改成功')
     } else {
-      await createItemReceiptLine(data)
+      await createItemReceiptLine(formData.value)
       toast.success('添加成功')
     }
     formVisible.value = false
-    await getList()
+    reload()
   } finally {
     formLoading.value = false
   }
 }
 
-/** 加载仓库选项 */
-async function loadWarehouseOptions() {
-  if (warehouseOptions.value.length > 0) {
-    return
-  }
-  warehouseOptions.value = await getWarehouseSimpleList() || []
-}
-
 /** 打开新增上架明细表单 */
-async function openCreateDetailForm(line: WmItemReceiptLineVO) {
+function openCreateDetailForm(line: WmItemReceiptLine) {
+  currentDetailLine.value = line
+  detailQuantityMax.value = getDetailRemainingQuantity(line)
   detailFormData.value = {
     ...getDefaultDetailFormData(),
     lineId: line.id,
-    receiptId: props.receiptId || line.receiptId,
     itemId: line.itemId,
     batchId: line.batchId,
-    quantity: line.receivedQuantity,
+    quantity: detailQuantityMax.value,
   }
-  detailSelectedItem.value = {
-    id: line.itemId,
-    code: line.itemCode || '',
-    name: line.itemName || '',
-    specification: line.specification || '',
-    unitMeasureName: line.unitMeasureName || '',
-  }
-  locationOptions.value = []
-  areaOptions.value = []
-  await loadWarehouseOptions()
   detailFormVisible.value = true
 }
 
 /** 打开编辑上架明细表单 */
-async function openUpdateDetailForm(line: WmItemReceiptLineVO, detail: WmItemReceiptDetailVO) {
-  detailFormData.value = {
-    id: detail.id,
-    lineId: detail.lineId,
-    receiptId: detail.receiptId,
-    itemId: detail.itemId,
-    quantity: detail.quantity,
-    batchId: detail.batchId,
-    warehouseId: detail.warehouseId,
-    locationId: detail.locationId,
-    areaId: detail.areaId,
-    remark: detail.remark || '',
-  }
-  detailSelectedItem.value = {
-    id: detail.itemId || line.itemId,
-    code: detail.itemCode || line.itemCode || '',
-    name: detail.itemName || line.itemName || '',
-    specification: detail.specification || line.specification || '',
-    unitMeasureName: detail.unitMeasureName || line.unitMeasureName || '',
-  }
-  await loadWarehouseOptions()
-  locationOptions.value = detail.warehouseId ? await getWarehouseLocationSimpleList(detail.warehouseId) || [] : []
-  areaOptions.value = detail.locationId ? await getWarehouseAreaSimpleList(detail.locationId) || [] : []
+function openUpdateDetailForm(line: WmItemReceiptLine, detail: WmItemReceiptDetail) {
+  currentDetailLine.value = line
+  detailQuantityMax.value = getDetailRemainingQuantity(line, detail.id)
+  detailFormData.value = { ...detail }
   detailFormVisible.value = true
 }
 
 /** 选择仓库 */
-async function handleWarehouseConfirm({ value }: { value: WotPickerValue[] }) {
-  detailFormData.value.warehouseId = Number(value[0])
+function handleWarehouseChange() {
   detailFormData.value.locationId = undefined
   detailFormData.value.areaId = undefined
-  locationOptions.value = await getWarehouseLocationSimpleList(detailFormData.value.warehouseId) || []
-  areaOptions.value = []
-}
-
-/** 打开库区选择 */
-function openLocationPicker() {
-  if (!detailFormData.value.warehouseId) {
-    toast.warning('请先选择仓库')
-    return
-  }
-  locationPickerVisible.value = true
 }
 
 /** 选择库区 */
-async function handleLocationConfirm({ value }: { value: WotPickerValue[] }) {
-  detailFormData.value.locationId = Number(value[0])
+function handleLocationChange() {
   detailFormData.value.areaId = undefined
-  areaOptions.value = await getWarehouseAreaSimpleList(detailFormData.value.locationId) || []
-}
-
-/** 打开库位选择 */
-function openAreaPicker() {
-  if (!detailFormData.value.locationId) {
-    toast.warning('请先选择库区')
-    return
-  }
-  areaPickerVisible.value = true
-}
-
-/** 选择库位 */
-function handleAreaConfirm({ value }: { value: WotPickerValue[] }) {
-  detailFormData.value.areaId = Number(value[0])
 }
 
 /** 提交上架明细 */
 async function handleSubmitDetail() {
-  const result = await detailFormRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await detailFormRef.value.validate()
+  if (!valid) {
     return
   }
   if (!props.receiptId) {
     return
   }
+
   detailFormLoading.value = true
   try {
-    const data: WmItemReceiptDetailCreateReqVO = {
-      lineId: detailFormData.value.lineId,
-      receiptId: props.receiptId,
-      itemId: detailFormData.value.itemId,
-      quantity: detailFormData.value.quantity,
-      batchId: detailFormData.value.batchId,
-      warehouseId: detailFormData.value.warehouseId,
-      locationId: detailFormData.value.locationId,
-      areaId: detailFormData.value.areaId,
-      remark: detailFormData.value.remark || undefined,
-    }
     if (detailFormData.value.id) {
-      await updateItemReceiptDetail({ ...data, id: detailFormData.value.id })
+      await updateItemReceiptDetail(detailFormData.value)
       toast.success('修改成功')
     } else {
-      await createItemReceiptDetail(data)
+      await createItemReceiptDetail(detailFormData.value)
       toast.success('添加成功')
     }
     detailFormVisible.value = false
     await getDetailListByLine(detailFormData.value.lineId)
+    reload()
   } finally {
     detailFormLoading.value = false
   }
 }
 
 /** 删除上架明细 */
-async function handleDeleteDetail(detail: WmItemReceiptDetailVO) {
+async function handleDeleteDetail(detail: WmItemReceiptDetail) {
   try {
     await dialog.confirm({
       title: '提示',
@@ -690,10 +576,11 @@ async function handleDeleteDetail(detail: WmItemReceiptDetailVO) {
   await deleteItemReceiptDetail(detail.id)
   toast.success('删除成功')
   await getDetailListByLine(detail.lineId)
+  reload()
 }
 
 /** 删除入库行 */
-async function handleDelete(item: WmItemReceiptLineVO) {
+async function handleDelete(item: WmItemReceiptLine) {
   try {
     await dialog.confirm({
       title: '提示',
@@ -704,14 +591,19 @@ async function handleDelete(item: WmItemReceiptLineVO) {
   }
   await deleteItemReceiptLine(item.id)
   toast.success('删除成功')
-  await getList()
+  reload()
 }
 
-watch(
-  () => props.receiptId,
-  () => {
-    getList()
-  },
-  { immediate: true },
-)
+/** 初始化 */
+onMounted(() => {
+  uni.$on('mes:wm:itemreceipt:reload', reload)
+})
+
+/** 监听入库单编号变化 */
+watch(() => props.receiptId, reload)
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:wm:itemreceipt:reload', reload)
+})
 </script>

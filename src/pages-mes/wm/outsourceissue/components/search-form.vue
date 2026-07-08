@@ -25,17 +25,7 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入发料单名称" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <view class="min-h-64rpx flex items-center justify-between rounded-8rpx bg-white px-4rpx" @click.stop="openVendorSelector">
-          <text :class="selectedVendorText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedVendorText || '请选择供应商' }}
-          </text>
-          <wd-icon name="arrow-right" size="28rpx" color="#999" />
-        </view>
-      </view>
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
       <yd-search-date-range v-model="issueDateRange" label="发料日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -47,38 +37,27 @@
       </view>
     </view>
   </wd-popup>
-
-  <VendorSelector ref="vendorSelectorRef" title="选择供应商" @confirm="handleVendorConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { WmOutsourceIssueQueryParams } from '@/api/mes/wm/outsourceissue'
 import { computed, reactive, ref } from 'vue'
 import { formatDateRange } from '@/utils/date'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import VendorSelector from '../../../md/vendor/components/vendor-selector.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: WmOutsourceIssueQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
 const issueDateRange = ref<[number | undefined, number | undefined]>() // 发料日期范围
-const selectedVendor = ref<MdVendorVO>() // 当前选择供应商
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
 const formData = reactive({
   code: '',
   name: '',
-  vendorId: undefined as number | undefined,
+  vendorId: undefined,
 }) // 搜索表单数据
-const selectedVendorText = computed(() => {
-  if (!selectedVendor.value) {
-    return ''
-  }
-  return `${selectedVendor.value.code || '-'} ${selectedVendor.value.name || ''}`.trim()
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -89,8 +68,8 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (selectedVendorText.value) {
-    conditions.push(`供应商:${selectedVendorText.value}`)
+  if (formData.vendorId != null) {
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
   if (issueDateRange.value?.length === 2) {
     conditions.push('发料日期')
@@ -98,41 +77,15 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索外协发料'
 })
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  vendorSelectorRef.value?.open()
-}
-
-/** 确认供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
-  selectedVendor.value = vendor
-  formData.vendorId = vendor?.id
-}
-
-/** 构造搜索参数 */
-function buildParams() {
-  const params: WmOutsourceIssueQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.vendorId) {
-    params.vendorId = formData.vendorId
-  }
-  const range = formatDateRange(issueDateRange.value)
-  if (range) {
-    params.issueDate = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    vendorId: formData.vendorId,
+    issueDate: formatDateRange(issueDateRange.value),
+  })
 }
 
 /** 重置按钮操作 */
@@ -140,7 +93,6 @@ function handleReset() {
   formData.code = ''
   formData.name = ''
   formData.vendorId = undefined
-  selectedVendor.value = undefined
   issueDateRange.value = undefined
   visible.value = false
   emit('reset')

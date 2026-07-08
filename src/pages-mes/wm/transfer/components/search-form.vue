@@ -25,8 +25,8 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入转移单名称" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="转移单类型" :dict-type="DICT_TYPE.MES_WM_TRANSFER_TYPE" all-option :all-value="undefined" />
-      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_TRANSFER_STATUS" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="转移单类型" :dict-type="DICT_TYPE.MES_WM_TRANSFER_TYPE" all-option />
+      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_TRANSFER_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -40,7 +40,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmTransferQueryParams } from '@/api/mes/wm/transfer'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -54,7 +53,7 @@ interface SearchFormData {
 }
 
 const emit = defineEmits<{
-  search: [data: WmTransferQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
@@ -70,10 +69,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_TRANSFER_TYPE, formData.type)}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_TRANSFER_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存调拨'
@@ -83,12 +82,10 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    pageNo: 1,
-    pageSize: 10,
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type,
-    status: formData.status,
+    type: formData.type === -1 ? undefined : formData.type,
+    status: formData.status === -1 ? undefined : formData.status,
   })
 }
 

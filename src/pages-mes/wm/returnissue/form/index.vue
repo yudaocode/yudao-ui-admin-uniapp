@@ -28,50 +28,42 @@
           <wd-form-item title="退料单名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" clearable :disabled="isHeaderReadonly" placeholder="请输入退料单名称" />
           </wd-form-item>
-          <wd-form-item title="退料类型" title-width="200rpx" prop="type">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openTypePicker">
-              <text :class="selectedTypeText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedTypeText || '请选择退料类型' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-            <wd-picker
-              v-model:visible="pickerVisible.type"
-              :model-value="typePickerValue"
-              :columns="typeOptions"
-              label-key="label"
-              value-key="value"
-              title="请选择退料类型"
-              placeholder="请选择退料类型"
-              :disabled="isHeaderReadonly"
-              clearable
-              @confirm="handleTypeConfirm"
-            />
-          </wd-form-item>
-          <wd-form-item title="生产工单" title-width="200rpx" prop="workOrderId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openWorkOrderSelector">
-              <text :class="selectedWorkOrderText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedWorkOrderText || '请选择生产工单' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
-          <wd-form-item title="工作站" title-width="200rpx" prop="workstationId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openWorkstationSelector">
-              <text :class="selectedWorkstationText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedWorkstationText || '请选择工作站' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
-          <wd-form-item title="退料日期" title-width="200rpx" prop="returnDate">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openReturnDatePicker">
-              <text :class="formatDateTime(formData.returnDate) ? 'text-[#333]' : 'text-[#999]'">
-                {{ formatDateTime(formData.returnDate) || '请选择退料日期' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.type"
+            label="退料类型"
+            label-width="200rpx"
+            prop="type"
+            :columns="typeOptions"
+            placeholder="请选择退料类型"
+            :disabled="isHeaderReadonly"
+          />
+          <WorkOrderFormPicker
+            v-model="formData.workOrderId"
+            label="生产工单"
+            label-width="200rpx"
+            prop="workOrderId"
+            placeholder="请选择生产工单"
+            :disabled="isHeaderReadonly"
+            @change="handleWorkOrderChange"
+          />
+          <WorkstationFormPicker
+            v-model="formData.workstationId"
+            label="工作站"
+            label-width="200rpx"
+            prop="workstationId"
+            placeholder="请选择工作站"
+            :disabled="isHeaderReadonly"
+            @change="handleWorkstationChange"
+          />
+          <wd-form-item
+            title="退料日期"
+            title-width="200rpx"
+            prop="returnDate"
+            :is-link="!isHeaderReadonly"
+            placeholder="请选择退料日期"
+            :value="formatDateTime(formData.returnDate)"
+            @click="openReturnDatePicker"
+          />
           <wd-datetime-picker
             v-model="formData.returnDate"
             v-model:visible="pickerVisible.returnDate"
@@ -112,55 +104,53 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="isEditable"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="isEditable"
+          class="flex-1"
+          type="primary"
+          :loading="formLoading" @click="handleSubmit"
+        >
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="warning"
+          :loading="submitLoading" @click="handleSubmitIssue"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="isStock"
+          class="flex-1"
+          type="success"
+          :loading="stockLoading" @click="handleStockIssue"
+        >
+          执行上架
+        </wd-button>
+        <wd-button
+          v-if="isFinish"
+          class="flex-1"
+          type="success"
+          :loading="finishLoading" @click="handleFinishIssue"
+        >
+          执行退料
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitIssue"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="isStock"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="stockLoading ? 'opacity-60' : ''"
-        @click="handleStockIssue"
-      >
-        {{ stockLoading ? '上架中...' : '执行上架' }}
-      </view>
-      <view
-        v-if="isFinish"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="finishLoading ? 'opacity-60' : ''"
-        @click="handleFinishIssue"
-      >
-        {{ finishLoading ? '执行中...' : '执行退料' }}
-      </view>
-    </MesFooterActions>
-
-    <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import type { WmReturnIssueCreateReqVO } from '@/api/mes/wm/returnissue'
-import { onShow } from '@dcloudio/uni-app'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { WmReturnIssue } from '@/api/mes/wm/returnissue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import {
   createReturnIssue,
@@ -170,31 +160,14 @@ import {
   submitReturnIssue,
   updateReturnIssue,
 } from '@/api/mes/wm/returnissue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { navigateBackPlus } from '@/utils'
+import { getIntDictOptions } from '@/hooks/useDict'
+import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmReturnIssueStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import WorkOrderSelector from '../../../pro/card/components/workorder-selector.vue'
-import WorkstationSelector from '../../../pro/task/components/workstation-selector.vue'
+import WorkstationFormPicker from '@/pages-mes/md/workstation/components/workstation-form-picker.vue'
+import WorkOrderFormPicker from '@/pages-mes/pro/workorder/components/workorder-form-picker.vue'
 import ReturnIssueLineList from '../components/return-issue-line-list.vue'
-
-interface WmReturnIssueFormData extends Omit<WmReturnIssueCreateReqVO, 'workOrderId' | 'type'> {
-  id?: number
-  workOrderId?: number
-  type?: number
-  status?: number
-  workOrderCode?: string
-  workstationCode?: string
-  workstationName?: string
-  createTime?: string
-}
-
-interface PickerConfirmPayload {
-  value: Array<number | string>
-}
 
 const props = defineProps<{
   id?: number | string
@@ -210,9 +183,8 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/returnissue/form/index')
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式
 const getTitle = computed(() => {
@@ -230,7 +202,7 @@ const stockLoading = ref(false) // 上架状态
 const finishLoading = ref(false) // 执行状态
 const codeLoading = ref(false) // 编码生成状态
 const typeOptions = getIntDictOptions(DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE) // 退料类型选项
-const formData = ref<WmReturnIssueFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmReturnIssue>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '退料单编号不能为空' }],
   name: [{ required: true, message: '退料单名称不能为空' }],
@@ -238,64 +210,22 @@ const formSchema = createFormSchema({
   workOrderId: [{ required: true, message: '生产工单不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器引用
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器引用
-const selectedWorkOrder = ref<ProWorkOrderVO>() // 当前选择工单
-const selectedWorkstation = ref<MdWorkstationVO>() // 当前选择工作站
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
-const isEditable = computed(() => !currentMode.value || currentMode.value === 'update')
+const isEditable = computed(() => (
+  ((!routeId.value && !currentId.value) || formData.value.status === MesWmReturnIssueStatusEnum.PREPARE)
+  && (!currentMode.value || currentMode.value === 'update')
+))
 const isStock = computed(() => currentMode.value === 'stock' && formData.value.status === MesWmReturnIssueStatusEnum.APPROVING)
 const isFinish = computed(() => currentMode.value === 'finish' && formData.value.status === MesWmReturnIssueStatusEnum.APPROVED)
-const isHeaderReadonly = computed(() => isStock.value || isFinish.value)
+const isHeaderReadonly = computed(() => Boolean(currentId.value) && !isEditable.value)
 const canSubmit = computed(() => (
   isEditable.value
   && currentId.value
   && formData.value.status === MesWmReturnIssueStatusEnum.PREPARE
 ))
-const selectedWorkOrderText = computed(() => {
-  if (selectedWorkOrder.value) {
-    return `${selectedWorkOrder.value.code || '-'} ${selectedWorkOrder.value.name || ''}`.trim()
-  }
-  return formData.value.workOrderCode || ''
-})
-const selectedTypeText = computed(() => {
-  if (formData.value.type == null) {
-    return ''
-  }
-  return getDictLabel(DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE, formData.value.type)
-})
-const typePickerValue = computed(() => formData.value.type != null ? [formData.value.type] : [])
-const selectedWorkstationText = computed(() => {
-  if (selectedWorkstation.value) {
-    return `${selectedWorkstation.value.code || '-'} ${selectedWorkstation.value.name || ''}`.trim()
-  }
-  if (formData.value.workstationCode || formData.value.workstationName) {
-    return `${formData.value.workstationCode || '-'} ${formData.value.workstationName || ''}`.trim()
-  }
-  return ''
-})
-
 /** 默认表单数据 */
-function getDefaultFormData(): WmReturnIssueFormData {
-  return {
-    code: '',
-    name: '',
-    workOrderId: undefined,
-    workOrderCode: '',
-    workstationId: undefined,
-    workstationCode: '',
-    workstationName: '',
-    type: undefined,
-    returnDate: '',
-    status: undefined,
-    remark: '',
-  }
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
+function getDefaultFormData(): WmReturnIssue {
+  return {}
 }
 
 /** 返回上一页 */
@@ -308,88 +238,7 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data = await getReturnIssue(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name || '',
-    workOrderId: data.workOrderId,
-    workOrderCode: data.workOrderCode || '',
-    workstationId: data.workstationId,
-    workstationCode: data.workstationCode || '',
-    workstationName: data.workstationName || '',
-    type: data.type,
-    returnDate: data.returnDate || '',
-    status: data.status,
-    remark: data.remark || '',
-    createTime: data.createTime,
-  }
-  selectedWorkOrder.value = data.workOrderId
-    ? {
-        id: data.workOrderId,
-        code: data.workOrderCode || '',
-        name: '',
-        type: 0,
-        orderSourceType: 0,
-        productId: 0,
-        productCode: '',
-        productName: '',
-        productSpecification: '',
-        unitMeasureName: '',
-        quantity: 0,
-        requestDate: '',
-        status: 0,
-      }
-    : undefined
-  selectedWorkstation.value = data.workstationId
-    ? {
-        id: data.workstationId,
-        code: data.workstationCode || '',
-        name: data.workstationName || '',
-        address: null,
-        workshopId: 0,
-        workshopName: null,
-        processId: null,
-        processName: null,
-        warehouseId: null,
-        locationId: null,
-        areaId: null,
-        status: 0,
-        remark: null,
-        createTime: '',
-      }
-    : undefined
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
-    selectedWorkOrder.value = undefined
-    selectedWorkstation.value = undefined
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
-}
-
-/** 打开退料类型选择 */
-function openTypePicker() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  pickerVisible.value.type = true
-}
-
-/** 确认退料类型 */
-function handleTypeConfirm({ value }: PickerConfirmPayload) {
-  const [type] = value
-  formData.value.type = type == null ? undefined : Number(type)
-  pickerVisible.value.type = false
+  formData.value = await getReturnIssue(currentId.value)
 }
 
 /** 打开退料日期选择 */
@@ -400,35 +249,17 @@ function openReturnDatePicker() {
   pickerVisible.value.returnDate = true
 }
 
-/** 打开工单选择器 */
-function openWorkOrderSelector() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  workOrderSelectorRef.value?.open(formData.value.workOrderId)
+/** 工单变更 */
+function handleWorkOrderChange(workOrder?: ProWorkOrder) {
+  formData.value.workOrderId = workOrder?.id
+  formData.value.workOrderCode = workOrder?.code
 }
 
-/** 打开工作站选择器 */
-function openWorkstationSelector() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  workstationSelectorRef.value?.open(formData.value.workstationId)
-}
-
-/** 确认选择工单 */
-function handleWorkOrderConfirm(workOrder: ProWorkOrderVO) {
-  selectedWorkOrder.value = workOrder
-  formData.value.workOrderId = workOrder.id
-  formData.value.workOrderCode = workOrder.code
-}
-
-/** 确认选择工作站 */
-function handleWorkstationConfirm(workstation: MdWorkstationVO) {
-  selectedWorkstation.value = workstation
-  formData.value.workstationId = workstation.id
-  formData.value.workstationCode = workstation.code
-  formData.value.workstationName = workstation.name
+/** 工作站变更 */
+function handleWorkstationChange(workstation?: MdWorkstation) {
+  formData.value.workstationId = workstation?.id
+  formData.value.workstationCode = workstation?.code
+  formData.value.workstationName = workstation?.name
 }
 
 /** 生成退料单编号 */
@@ -444,38 +275,20 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData() {
-  if (!formData.value.workOrderId || formData.value.type == null) {
-    throw new Error('生产工单和退料类型不能为空')
-  }
-  const data: WmReturnIssueCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    workOrderId: formData.value.workOrderId,
-    workstationId: formData.value.workstationId,
-    type: formData.value.type,
-    returnDate: formData.value.returnDate || undefined,
-    remark: formData.value.remark || undefined,
-  }
-  return data
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (currentId.value) {
-      await updateReturnIssue({ ...data, id: currentId.value })
+      await updateReturnIssue(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createReturnIssue(data)
+      const id = await createReturnIssue(formData.value)
       toast.success('新增成功')
       currentId.value = id
       formData.value.id = id
@@ -489,8 +302,8 @@ async function handleSubmit() {
 
 /** 提交生产退料单 */
 async function handleSubmitIssue() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!currentId.value) {
@@ -506,13 +319,11 @@ async function handleSubmitIssue() {
   }
   submitLoading.value = true
   try {
-    await updateReturnIssue({ ...buildSubmitData(), id: currentId.value })
+    await updateReturnIssue(formData.value)
     await submitReturnIssue(currentId.value)
     toast.success('提交成功')
     uni.$emit('mes:wm:returnissue:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     submitLoading.value = false
   }
@@ -536,9 +347,7 @@ async function handleStockIssue() {
     await stockReturnIssue(currentId.value)
     toast.success('上架成功')
     uni.$emit('mes:wm:returnissue:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     stockLoading.value = false
   }
@@ -562,24 +371,16 @@ async function handleFinishIssue() {
     await finishReturnIssue(currentId.value)
     toast.success('执行成功')
     uni.$emit('mes:wm:returnissue:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     finishLoading.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>

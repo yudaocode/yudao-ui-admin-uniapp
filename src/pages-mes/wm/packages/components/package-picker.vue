@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmPackageVO } from '@/api/mes/wm/packages'
+import type { WmPackage } from '@/api/mes/wm/packages'
 import { ref } from 'vue'
 import { getPackagePage } from '@/api/mes/wm/packages'
 import { DICT_TYPE, MesWmPackageStatusEnum } from '@/utils/constants'
@@ -97,33 +97,33 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  confirm: [item: WmPackageVO]
+  confirm: [item: WmPackage]
 }>()
 
 const visible = ref(false) // 选择器显示状态
 const loading = ref(false) // 列表加载状态
-const list = ref<WmPackageVO[]>([]) // 装箱单列表
-const tempSelected = ref<WmPackageVO>() // 临时选择装箱单
+const list = ref<WmPackage[]>([]) // 装箱单列表
+const tempSelected = ref<WmPackage>() // 临时选择装箱单
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总数
 const searchCode = ref('') // 装箱单编号搜索
 const searchSalesOrderCode = ref('') // 销售订单编号搜索
 
 /** 客户展示 */
-function getClientText(item: WmPackageVO) {
+function getClientText(item: WmPackage) {
   const code = item.clientCode || ''
   const name = item.clientName || ''
   return [code, name].filter(Boolean).join(' / ') || '-'
 }
 
 /** 尺寸展示 */
-function getSizeText(item: WmPackageVO) {
+function getSizeText(item: WmPackage) {
   const values = [item.length, item.width, item.height].map(value => value ?? '-').join(' x ')
   return `${values} ${item.sizeUnitName || ''}`.trim()
 }
 
 /** 重量展示 */
-function getWeightText(item: WmPackageVO) {
+function getWeightText(item: WmPackage) {
   const net = item.netWeight ?? '-'
   const gross = item.grossWeight ?? '-'
   return `净重 ${net} / 毛重 ${gross} ${item.weightUnitName || ''}`.trim()

@@ -71,29 +71,6 @@
               <text class="min-w-0 flex-1 truncate">{{ item.inspectorName || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-package:update']) && item.status === MesWmPackageStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-package:update']) && item.status === MesWmPackageStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#52c41a]"
-              @click="handleFinish(item)"
-            >
-              完成
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-package:delete']) && item.status === MesWmPackageStatusEnum.PREPARE"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -110,15 +87,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmPackageQueryParams, WmPackageVO } from '@/api/mes/wm/packages'
+import type { WmPackage } from '@/api/mes/wm/packages'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { deletePackage, finishPackage, getPackagePage } from '@/api/mes/wm/packages'
+import { getPackagePage } from '@/api/mes/wm/packages'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmPackageStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -130,19 +105,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmPackageVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmPackageVO>>() // 分页组件引用
-const queryParams = ref<WmPackageQueryParams>({}) // 查询参数
+const list = ref<WmPackage[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmPackage>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 客户展示 */
-function getClientText(item: WmPackageVO) {
+function getClientText(item: WmPackage) {
   const code = item.clientCode || ''
   const name = item.clientName || ''
   if (!code && !name) {
@@ -152,23 +125,16 @@ function getClientText(item: WmPackageVO) {
 }
 
 /** 尺寸展示 */
-function getSizeText(item: WmPackageVO) {
+function getSizeText(item: WmPackage) {
   const values = [item.length, item.width, item.height].map(value => value ?? '-').join(' x ')
   return `${values} ${item.sizeUnitName || ''}`.trim()
 }
 
 /** 重量展示 */
-function getWeightText(item: WmPackageVO) {
+function getWeightText(item: WmPackage) {
   const net = item.netWeight ?? '-'
   const gross = item.grossWeight ?? '-'
   return `净重 ${net} / 毛重 ${gross} ${item.weightUnitName || ''}`.trim()
-}
-
-/** 是否显示行操作 */
-function hasRowActions(item: WmPackageVO) {
-  return item.status === MesWmPackageStatusEnum.PREPARE && (
-    hasAccessByCodes(['mes:wm-package:update']) || hasAccessByCodes(['mes:wm-package:delete'])
-  )
 }
 
 /** 查询列表 */
@@ -187,7 +153,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmPackageQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -209,48 +175,11 @@ function handleAdd() {
   })
 }
 
-/** 编辑 */
-function handleEdit(item: WmPackageVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/packages/form/index?id=${item.id}`,
-  })
-}
-
 /** 查看详情 */
-function handleDetail(item: WmPackageVO) {
+function handleDetail(item: WmPackage) {
   uni.navigateTo({
     url: `/pages-mes/wm/packages/detail/index?id=${item.id}`,
   })
-}
-
-/** 完成装箱单 */
-async function handleFinish(item: WmPackageVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认完成装箱单「${item.code}」？完成后将不可编辑。`,
-    })
-  } catch {
-    return
-  }
-  await finishPackage(item.id)
-  toast.success('完成成功')
-  reload()
-}
-
-/** 删除装箱单 */
-async function handleDelete(item: WmPackageVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除装箱单「${item.code}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deletePackage(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

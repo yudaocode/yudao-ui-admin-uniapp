@@ -61,23 +61,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDate(item.receiptDate) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDeletePrepare(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canStockApproving(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleStock(item)">
-              执行上架
-            </view>
-            <view v-if="canFinishApproved(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              执行入库
-            </view>
-            <view v-if="canCancelActive(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -94,15 +77,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductReceiptQueryParams, WmProductReceiptVO } from '@/api/mes/wm/productreceipt'
+import type { WmProductReceipt } from '@/api/mes/wm/productreceipt'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { cancelProductReceipt, deleteProductReceipt, getProductReceiptPage } from '@/api/mes/wm/productreceipt'
+import { getProductReceiptPage } from '@/api/mes/wm/productreceipt'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmProductReceiptStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -114,19 +95,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmProductReceiptVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmProductReceiptVO>>() // 分页组件引用
-const queryParams = ref<WmProductReceiptQueryParams>({}) // 查询参数
+const list = ref<WmProductReceipt[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmProductReceipt>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 产品展示文案 */
-function getItemText(item: WmProductReceiptVO) {
+function getItemText(item: WmProductReceipt) {
   if (item.itemCode || item.itemName) {
     return `${item.itemCode || '-'} / ${item.itemName || '-'}`.trim()
   }
@@ -149,7 +128,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmProductReceiptQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -172,92 +151,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmProductReceiptVO) {
+function handleDetail(item: WmProductReceipt) {
   uni.navigateTo({
     url: `/pages-mes/wm/productreceipt/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmProductReceiptVO) {
-  return hasAccessByCodes(['mes:wm-product-receipt:update']) && item.status === MesWmProductReceiptStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmProductReceiptVO) {
-  return hasAccessByCodes(['mes:wm-product-receipt:delete']) && item.status === MesWmProductReceiptStatusEnum.PREPARE
-}
-
-/** 是否可执行上架 */
-function canStockApproving(item: WmProductReceiptVO) {
-  return hasAccessByCodes(['mes:wm-product-receipt:update']) && item.status === MesWmProductReceiptStatusEnum.APPROVING
-}
-
-/** 是否可执行入库 */
-function canFinishApproved(item: WmProductReceiptVO) {
-  return hasAccessByCodes(['mes:wm-product-receipt:finish']) && item.status === MesWmProductReceiptStatusEnum.APPROVED
-}
-
-/** 是否可取消 */
-function canCancelActive(item: WmProductReceiptVO) {
-  return hasAccessByCodes(['mes:wm-product-receipt:update'])
-    && [MesWmProductReceiptStatusEnum.APPROVING, MesWmProductReceiptStatusEnum.APPROVED].includes(item.status)
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmProductReceiptVO) {
-  return canUpdatePrepare(item) || canDeletePrepare(item) || canStockApproving(item) || canFinishApproved(item) || canCancelActive(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmProductReceiptVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productreceipt/form/index?id=${item.id}`,
-  })
-}
-
-/** 执行上架 */
-function handleStock(item: WmProductReceiptVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productreceipt/form/index?id=${item.id}&mode=stock`,
-  })
-}
-
-/** 执行入库 */
-function handleFinish(item: WmProductReceiptVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productreceipt/form/index?id=${item.id}&mode=finish`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmProductReceiptVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteProductReceipt(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 取消产品入库单 */
-async function handleCancel(item: WmProductReceiptVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认取消该产品入库单？取消后不可恢复。',
-    })
-  } catch {
-    return
-  }
-  await cancelProductReceipt(item.id)
-  toast.success('取消成功')
-  reload()
 }
 
 /** 初始化 */

@@ -58,29 +58,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.returnDate) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex flex-wrap border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canSubmitPrepare(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#faad14]" @click="handleSubmitIssue(item)">
-              提交
-            </view>
-            <view v-if="canDeletePrepare(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canQualityConfirmed(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#faad14]" @click="handleQualityHint">
-              执行质检
-            </view>
-            <view v-if="canStockApproving(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#52c41a]" @click="handleStock(item)">
-              执行上架
-            </view>
-            <view v-if="canFinishApproved(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              执行退料
-            </view>
-            <view v-if="canCancelActive(item)" class="min-w-160rpx flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -97,20 +74,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmReturnIssueQueryParams, WmReturnIssueVO } from '@/api/mes/wm/returnissue'
+import type { WmReturnIssue } from '@/api/mes/wm/returnissue'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import {
-  cancelReturnIssue,
-  deleteReturnIssue,
-  getReturnIssuePage,
-  submitReturnIssue,
-} from '@/api/mes/wm/returnissue'
+import { getReturnIssuePage } from '@/api/mes/wm/returnissue'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmReturnIssueStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -122,15 +92,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmReturnIssueVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmReturnIssueVO>>() // 分页组件引用
-const queryParams = ref<WmReturnIssueQueryParams>({}) // 查询参数
+const list = ref<WmReturnIssue[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmReturnIssue>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -149,7 +117,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmReturnIssueQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -172,136 +140,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmReturnIssueVO) {
+function handleDetail(item: WmReturnIssue) {
   uni.navigateTo({
     url: `/pages-mes/wm/returnissue/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:update']) && item.status === MesWmReturnIssueStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:delete']) && item.status === MesWmReturnIssueStatusEnum.PREPARE
-}
-
-/** 是否可提交草稿 */
-function canSubmitPrepare(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:update']) && item.status === MesWmReturnIssueStatusEnum.PREPARE
-}
-
-/** 是否可提示质检 */
-function canQualityConfirmed(item: WmReturnIssueVO) {
-  return item.status === MesWmReturnIssueStatusEnum.CONFIRMED
-}
-
-/** 是否可执行上架 */
-function canStockApproving(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:update']) && item.status === MesWmReturnIssueStatusEnum.APPROVING
-}
-
-/** 是否可执行退料 */
-function canFinishApproved(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:finish']) && item.status === MesWmReturnIssueStatusEnum.APPROVED
-}
-
-/** 是否可取消 */
-function canCancelActive(item: WmReturnIssueVO) {
-  return hasAccessByCodes(['mes:wm-return-issue:update'])
-    && [
-      MesWmReturnIssueStatusEnum.CONFIRMED,
-      MesWmReturnIssueStatusEnum.APPROVING,
-      MesWmReturnIssueStatusEnum.APPROVED,
-    ].includes(item.status ?? -1)
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmReturnIssueVO) {
-  return canUpdatePrepare(item)
-    || canSubmitPrepare(item)
-    || canDeletePrepare(item)
-    || canQualityConfirmed(item)
-    || canStockApproving(item)
-    || canFinishApproved(item)
-    || canCancelActive(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmReturnIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/returnissue/form/index?id=${item.id}`,
-  })
-}
-
-/** 执行上架 */
-function handleStock(item: WmReturnIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/returnissue/form/index?id=${item.id}&mode=stock`,
-  })
-}
-
-/** 执行退料 */
-function handleFinish(item: WmReturnIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/returnissue/form/index?id=${item.id}&mode=finish`,
-  })
-}
-
-/** 质检提示 */
-function handleQualityHint() {
-  uni.showModal({
-    title: '执行质检',
-    content: '请前往【质量管理 - 退货检验（RQC）】中进行退料检验操作。',
-    showCancel: false,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmReturnIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteReturnIssue(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 提交生产退料单 */
-async function handleSubmitIssue(item: WmReturnIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认提交该退料单？提交后将不能修改。',
-    })
-  } catch {
-    return
-  }
-  await submitReturnIssue(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 取消生产退料单 */
-async function handleCancel(item: WmReturnIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认取消该生产退料单？取消后不可恢复。',
-    })
-  } catch {
-    return
-  }
-  await cancelReturnIssue(item.id)
-  toast.success('取消成功')
-  reload()
 }
 
 /** 初始化 */

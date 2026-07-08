@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="MES 装箱单详情"
@@ -7,8 +7,17 @@
       @click-left="handleBack"
     />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="子箱" name="children" />
+        <wd-tab title="装箱清单" name="lines" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <view class="p-24rpx">
         <wd-cell-group border>
           <wd-cell title="装箱单编号" :value="formData?.code || '-'" />
@@ -33,44 +42,60 @@
           <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
         </wd-cell-group>
 
-        <SubPackageList :package-id="packageId" />
-        <PackageLineList :package-id="packageId" />
         <view class="h-180rpx" />
       </view>
     </scroll-view>
 
+    <!-- 子箱 -->
+    <scroll-view v-if="tabType === 'children' && packageId" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <view class="px-24rpx">
+        <SubPackageList :package-id="packageId" :show-title="false" />
+      </view>
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 装箱清单 -->
+    <scroll-view v-if="tabType === 'lines' && packageId" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <view class="px-24rpx">
+        <PackageLineList :package-id="packageId" :show-title="false" />
+      </view>
+      <view class="h-48rpx" />
+    </scroll-view>
+
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="canOperate" content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="canUpdate"
-        class="flex-1" type="warning" @click="handleEdit"
-      >
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="canUpdate"
-        class="flex-1" type="success" :loading="finishLoading" @click="handleFinish"
-      >
-        完成
-      </wd-button>
-      <wd-button
-        v-if="canDelete"
-        class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="tabType === 'basic' && canOperate" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="canUpdate"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="canUpdate"
+          class="flex-1" type="success" :loading="finishLoading" @click="handleFinish"
+        >
+          完成
+        </wd-button>
+        <wd-button
+          v-if="canDelete"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmPackageVO } from '@/api/mes/wm/packages'
+import type { WmPackage } from '@/api/mes/wm/packages'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { deletePackage, finishPackage, getPackage } from '@/api/mes/wm/packages'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesWmPackageStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -91,10 +116,11 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<WmPackageVO>() // 详情数据
+const formData = ref<WmPackage>() // 详情数据
 const deleting = ref(false) // 删除状态
 const finishLoading = ref(false) // 完成状态
 const packageId = computed(() => props.id ? Number(props.id) : undefined)
+const tabType = ref('basic') // 当前 tab 类型
 const canUpdate = computed(() => {
   return formData.value?.status === MesWmPackageStatusEnum.PREPARE && hasAccessByCodes(['mes:wm-package:update'])
 })
@@ -118,26 +144,14 @@ function formatMeasure(value?: number, unitName?: string) {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!packageId.value) {
+  if (!packageId.value || deleting.value) {
     return
   }
-  const detailData = await getPackage(packageId.value)
-  if (!detailData) {
-    uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-    delay(handleBack)
-    return
-  }
-  formData.value = detailData
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  if (!packageId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== packageId.value) {
-    await getDetail()
+  try {
+    toast.loading('加载中...')
+    formData.value = await getPackage(packageId.value)
+  } finally {
+    toast.close()
   }
 }
 
@@ -168,8 +182,8 @@ async function handleFinish() {
   try {
     await finishPackage(packageId.value)
     toast.success('完成成功')
-    await getDetail()
     uni.$emit('mes:wm:packages:reload')
+    await getDetail()
   } finally {
     finishLoading.value = false
   }
@@ -193,20 +207,14 @@ async function handleDelete() {
     await deletePackage(packageId.value)
     toast.success('删除成功')
     uni.$emit('mes:wm:packages:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-watch(packageId, () => {
-  initPage()
+onShow(() => {
+  getDetail()
 })
 </script>

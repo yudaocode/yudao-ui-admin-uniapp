@@ -33,7 +33,7 @@
           clearable
         />
       </view>
-      <yd-search-picker v-model="formData.type" label="杂项类型" :dict-type="DICT_TYPE.MES_WM_MISC_RECEIPT_TYPE" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="杂项类型" :dict-type="DICT_TYPE.MES_WM_MISC_RECEIPT_TYPE" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           来源单据类型
@@ -55,7 +55,7 @@
         />
       </view>
       <yd-search-date-range v-model="formData.receiptDate" label="入库日期" />
-      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_MISC_RECEIPT_STATUS" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_MISC_RECEIPT_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -69,7 +69,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmMiscReceiptQueryParams } from '@/api/mes/wm/miscreceipt'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -87,7 +86,7 @@ interface SearchFormData {
 }
 
 const emit = defineEmits<{
-  search: [data: WmMiscReceiptQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
@@ -110,7 +109,7 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_MISC_RECEIPT_TYPE, formData.type)}`)
   }
   if (formData.sourceDocType) {
@@ -119,31 +118,24 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.sourceDocCode) {
     conditions.push(`来源单据编号:${formData.sourceDocCode}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_MISC_RECEIPT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索其他入库'
 })
 
-/** 构造搜索参数 */
-function buildSearchParams(): WmMiscReceiptQueryParams {
-  return {
-    pageNo: 1,
-    pageSize: 10,
-    code: formData.code || undefined,
-    name: formData.name || undefined,
-    type: formData.type,
-    sourceDocType: formData.sourceDocType || undefined,
-    sourceDocCode: formData.sourceDocCode || undefined,
-    receiptDate: formatDateRange(formData.receiptDate),
-    status: formData.status,
-  }
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildSearchParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    type: formData.type === -1 ? undefined : formData.type,
+    sourceDocType: formData.sourceDocType || undefined,
+    sourceDocCode: formData.sourceDocCode || undefined,
+    receiptDate: formatDateRange(formData.receiptDate),
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置按钮操作 */

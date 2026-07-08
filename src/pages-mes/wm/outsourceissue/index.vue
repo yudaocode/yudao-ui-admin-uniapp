@@ -53,26 +53,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.issueDate) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canSubmitPrepare(item)" class="flex-1 py-18rpx text-center text-[#faad14]" @click="handleSubmitIssue(item)">
-              提交
-            </view>
-            <view v-if="canDeletePrepare(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canStockApproving(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleStock(item)">
-              执行拣货
-            </view>
-            <view v-if="canFinishApproved(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              执行领出
-            </view>
-            <view v-if="canCancelActive(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -89,15 +69,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmOutsourceIssueQueryParams, WmOutsourceIssueVO } from '@/api/mes/wm/outsourceissue'
+import type { WmOutsourceIssue } from '@/api/mes/wm/outsourceissue'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { cancelOutsourceIssue, deleteOutsourceIssue, getOutsourceIssuePage, submitOutsourceIssue } from '@/api/mes/wm/outsourceissue'
+import { getOutsourceIssuePage } from '@/api/mes/wm/outsourceissue'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmOutsourceIssueStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -109,19 +87,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmOutsourceIssueVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmOutsourceIssueVO>>() // 分页组件引用
-const queryParams = ref<WmOutsourceIssueQueryParams>({}) // 查询参数
+const list = ref<WmOutsourceIssue[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmOutsourceIssue>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 供应商展示文案 */
-function getVendorText(item: WmOutsourceIssueVO) {
+function getVendorText(item: WmOutsourceIssue) {
   if (item.vendorCode || item.vendorName) {
     return `${item.vendorCode || '-'} / ${item.vendorName || '-'}`.trim()
   }
@@ -144,7 +120,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmOutsourceIssueQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -167,117 +143,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmOutsourceIssueVO) {
+function handleDetail(item: WmOutsourceIssue) {
   uni.navigateTo({
     url: `/pages-mes/wm/outsourceissue/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:update']) && item.status === MesWmOutsourceIssueStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:delete']) && item.status === MesWmOutsourceIssueStatusEnum.PREPARE
-}
-
-/** 是否可提交草稿 */
-function canSubmitPrepare(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:update']) && item.status === MesWmOutsourceIssueStatusEnum.PREPARE
-}
-
-/** 是否可执行拣货 */
-function canStockApproving(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:update']) && item.status === MesWmOutsourceIssueStatusEnum.APPROVING
-}
-
-/** 是否可执行领出 */
-function canFinishApproved(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:finish']) && item.status === MesWmOutsourceIssueStatusEnum.APPROVED
-}
-
-/** 是否可取消 */
-function canCancelActive(item: WmOutsourceIssueVO) {
-  return hasAccessByCodes(['mes:wm-outsource-issue:update'])
-    && [MesWmOutsourceIssueStatusEnum.APPROVING, MesWmOutsourceIssueStatusEnum.APPROVED].includes(item.status)
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmOutsourceIssueVO) {
-  return canUpdatePrepare(item)
-    || canSubmitPrepare(item)
-    || canDeletePrepare(item)
-    || canStockApproving(item)
-    || canFinishApproved(item)
-    || canCancelActive(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmOutsourceIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/outsourceissue/form/index?id=${item.id}`,
-  })
-}
-
-/** 执行拣货 */
-function handleStock(item: WmOutsourceIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/outsourceissue/form/index?id=${item.id}&mode=stock`,
-  })
-}
-
-/** 执行领出 */
-function handleFinish(item: WmOutsourceIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/outsourceissue/form/index?id=${item.id}&mode=finish`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmOutsourceIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteOutsourceIssue(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 提交外协发料单 */
-async function handleSubmitIssue(item: WmOutsourceIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认提交该外协发料单？提交前请确认已维护发料物料，提交后将不能修改。',
-    })
-  } catch {
-    return
-  }
-  await submitOutsourceIssue(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 取消外协发料单 */
-async function handleCancel(item: WmOutsourceIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认取消该外协发料单？取消后不可恢复。',
-    })
-  } catch {
-    return
-  }
-  await cancelOutsourceIssue(item.id)
-  toast.success('取消成功')
-  reload()
 }
 
 /** 初始化 */

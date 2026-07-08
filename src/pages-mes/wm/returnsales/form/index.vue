@@ -31,14 +31,15 @@
           <wd-form-item title="销售订单号" title-width="200rpx" prop="salesOrderCode">
             <wd-input v-model="formData.salesOrderCode" clearable :disabled="isHeaderReadonly" placeholder="请输入销售订单号" />
           </wd-form-item>
-          <wd-form-item title="客户" title-width="200rpx" prop="clientId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openClientSelector">
-              <text :class="selectedClientText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedClientText || '请选择客户' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <ClientFormPicker
+            v-model="formData.clientId"
+            label="客户"
+            label-width="200rpx"
+            prop="clientId"
+            placeholder="请选择客户"
+            :disabled="isHeaderReadonly"
+            @change="handleClientChange"
+          />
           <wd-form-item
             title="退货日期"
             title-width="200rpx"
@@ -106,63 +107,60 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="isEditable"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="isEditable"
+          class="flex-1"
+          type="primary"
+          :loading="formLoading" @click="handleSubmit"
+        >
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="warning"
+          :loading="submitLoading" @click="handleSubmitReturnSales"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="isFinish"
+          class="flex-1"
+          type="success"
+          :loading="actionLoading" @click="handleFinishReturnSales"
+        >
+          执行退货
+        </wd-button>
+        <wd-button
+          v-if="isStock"
+          class="flex-1"
+          type="success"
+          :loading="actionLoading" @click="handleStockReturnSales"
+        >
+          执行上架
+        </wd-button>
+        <wd-button
+          v-if="isCancel"
+          class="flex-1"
+          type="danger"
+          :loading="actionLoading" @click="handleCancelReturnSales"
+        >
+          确认取消
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitReturnSales"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="isFinish"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleFinishReturnSales"
-      >
-        {{ actionLoading ? '处理中...' : '执行退货' }}
-      </view>
-      <view
-        v-if="isStock"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleStockReturnSales"
-      >
-        {{ actionLoading ? '处理中...' : '执行上架' }}
-      </view>
-      <view
-        v-if="isCancel"
-        class="flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleCancelReturnSales"
-      >
-        {{ actionLoading ? '处理中...' : '确认取消' }}
-      </view>
-    </MesFooterActions>
-
-    <ClientSelector ref="clientSelectorRef" @confirm="handleClientConfirm" />
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdClientVO } from '@/api/mes/md/client'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import type { WmReturnSalesCreateReqVO } from '@/api/mes/wm/returnsales'
-import { onShow } from '@dcloudio/uni-app'
+import type { MdClient } from '@/api/mes/md/client'
+import type { WmReturnSales } from '@/api/mes/wm/returnsales'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import {
   cancelReturnSales,
@@ -178,16 +176,8 @@ import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmReturnSalesStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import ClientSelector from '../../../md/client/components/client-selector.vue'
+import ClientFormPicker from '../../../md/client/components/client-form-picker.vue'
 import ReturnSalesLineList from '../components/return-sales-line-list.vue'
-
-interface WmReturnSalesFormData extends WmReturnSalesCreateReqVO {
-  id?: number
-  clientCode?: string
-  clientName?: string
-  clientNickname?: string
-  status?: number
-}
 
 const props = defineProps<{
   id?: number | string
@@ -203,9 +193,8 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/returnsales/form/index')
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式
 const getTitle = computed(() => {
@@ -224,7 +213,7 @@ const formLoading = ref(false) // 表单提交状态
 const submitLoading = ref(false) // 提交状态
 const actionLoading = ref(false) // 状态动作状态
 const codeLoading = ref(false) // 编码生成状态
-const formData = ref<WmReturnSalesFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmReturnSales>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '退货单编号不能为空' }],
   name: [{ required: true, message: '退货单名称不能为空' }],
@@ -233,16 +222,14 @@ const formSchema = createFormSchema({
   returnReason: [{ required: true, message: '退货原因不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const clientSelectorRef = ref<InstanceType<typeof ClientSelector>>() // 客户选择器引用
-const selectedClient = ref<MdClientVO>() // 当前选择客户
 const pickerVisible = ref<{ returnDate?: boolean }>({}) // 选择器显示状态
 const isFinish = computed(() => currentMode.value === 'finish' && formData.value.status === MesWmReturnSalesStatusEnum.APPROVING)
 const isStock = computed(() => currentMode.value === 'stock' && formData.value.status === MesWmReturnSalesStatusEnum.APPROVED)
-const isCancel = computed(() => currentMode.value === 'cancel' && [
-  MesWmReturnSalesStatusEnum.CONFIRMED,
-  MesWmReturnSalesStatusEnum.APPROVING,
-  MesWmReturnSalesStatusEnum.APPROVED,
-].includes(formData.value.status || -1))
+const isCancel = computed(() => currentMode.value === 'cancel' && (
+  formData.value.status === MesWmReturnSalesStatusEnum.CONFIRMED
+  || formData.value.status === MesWmReturnSalesStatusEnum.APPROVING
+  || formData.value.status === MesWmReturnSalesStatusEnum.APPROVED
+))
 const canQualityHint = computed(() => formData.value.status === MesWmReturnSalesStatusEnum.CONFIRMED)
 const isEditable = computed(() => {
   if (!currentId.value) {
@@ -257,33 +244,9 @@ const canSubmit = computed(() => (
   && currentId.value
   && formData.value.status === MesWmReturnSalesStatusEnum.PREPARE
 ))
-const selectedClientText = computed(() => {
-  return selectedClient.value
-    ? `${selectedClient.value.code || '-'} ${selectedClient.value.name || ''}`.trim()
-    : (formData.value.clientName || '')
-})
-
 /** 默认表单数据 */
-function getDefaultFormData() {
-  return {
-    code: '',
-    name: '',
-    salesOrderCode: '',
-    clientId: undefined,
-    clientCode: '',
-    clientName: '',
-    clientNickname: '',
-    returnDate: '',
-    returnReason: '',
-    status: undefined,
-    remark: '',
-  } as WmReturnSalesFormData
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
+function getDefaultFormData(): WmReturnSales {
+  return {}
 }
 
 /** 返回上一页 */
@@ -296,62 +259,7 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data = await getReturnSales(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name || '',
-    salesOrderCode: data.salesOrderCode || '',
-    clientId: data.clientId,
-    clientCode: data.clientCode || '',
-    clientName: data.clientName || '',
-    clientNickname: data.clientNickname || '',
-    returnDate: data.returnDate || '',
-    returnReason: data.returnReason || '',
-    status: data.status,
-    remark: data.remark || '',
-  }
-  selectedClient.value = data.clientId
-    ? {
-        id: data.clientId,
-        code: data.clientCode || '',
-        name: data.clientName || '',
-        nickname: data.clientNickname || null,
-        englishName: null,
-        description: null,
-        logo: null,
-        type: 0,
-        address: null,
-        website: null,
-        email: null,
-        telephone: null,
-        contact1Name: null,
-        contact1Telephone: null,
-        contact1Email: null,
-        contact2Name: null,
-        contact2Telephone: null,
-        contact2Email: null,
-        creditCode: null,
-        status: 0,
-        remark: null,
-        createTime: '',
-      }
-    : undefined
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
-    selectedClient.value = undefined
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
+  formData.value = await getReturnSales(currentId.value)
 }
 
 /** 打开退货日期选择 */
@@ -362,25 +270,12 @@ function openReturnDatePicker() {
   pickerVisible.value.returnDate = true
 }
 
-/** 打开客户选择器 */
-function openClientSelector() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  clientSelectorRef.value?.open()
-}
-
-/** 确认选择客户 */
-function handleClientConfirm(clients: MdClientVO[]) {
-  const client = clients[0]
-  if (!client) {
-    return
-  }
-  selectedClient.value = client
-  formData.value.clientId = client.id
-  formData.value.clientCode = client.code
-  formData.value.clientName = client.name
-  formData.value.clientNickname = client.nickname || ''
+/** 客户变更 */
+function handleClientChange(client?: MdClient) {
+  formData.value.clientId = client?.id
+  formData.value.clientCode = client?.code
+  formData.value.clientName = client?.name
+  formData.value.clientNickname = client?.nickname
 }
 
 /** 生成退货单编号 */
@@ -396,35 +291,20 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData() {
-  const data: WmReturnSalesCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    salesOrderCode: formData.value.salesOrderCode || undefined,
-    clientId: formData.value.clientId,
-    returnDate: formData.value.returnDate,
-    returnReason: formData.value.returnReason,
-    remark: formData.value.remark || undefined,
-  }
-  return data
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (currentId.value) {
-      await updateReturnSales({ ...data, id: currentId.value })
+      await updateReturnSales(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createReturnSales(data)
+      const id = await createReturnSales(formData.value)
       toast.success('新增成功')
       currentId.value = id
       formData.value.id = id
@@ -438,8 +318,8 @@ async function handleSubmit() {
 
 /** 提交销售退货单 */
 async function handleSubmitReturnSales() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!currentId.value) {
@@ -455,7 +335,7 @@ async function handleSubmitReturnSales() {
   }
   submitLoading.value = true
   try {
-    await updateReturnSales({ ...buildSubmitData(), id: currentId.value })
+    await updateReturnSales(formData.value)
     await submitReturnSales(currentId.value)
     toast.success('提交成功')
     uni.$emit('mes:wm:returnsales:reload')
@@ -550,15 +430,9 @@ async function handleCancelReturnSales() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>

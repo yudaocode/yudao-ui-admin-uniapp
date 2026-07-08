@@ -57,29 +57,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDate(item.returnDate) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex flex-wrap border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDeletePrepare(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canSubmitPrepare(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#faad14]" @click="handleSubmitReturnSales(item)">
-              提交
-            </view>
-            <view v-if="canQuality(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#faad14]" @click="handleQuality">
-              执行质检
-            </view>
-            <view v-if="canFinish(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              执行退货
-            </view>
-            <view v-if="canStock(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#52c41a]" @click="handleStock(item)">
-              执行上架
-            </view>
-            <view v-if="canCancel(item)" class="min-w-180rpx flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -96,15 +73,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmReturnSalesQueryParams, WmReturnSalesVO } from '@/api/mes/wm/returnsales'
+import type { WmReturnSales } from '@/api/mes/wm/returnsales'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { deleteReturnSales, getReturnSalesPage, submitReturnSales } from '@/api/mes/wm/returnsales'
+import { getReturnSalesPage } from '@/api/mes/wm/returnsales'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmReturnSalesStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -116,16 +91,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmReturnSalesVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmReturnSalesVO>>() // 分页组件引用
-const queryParams = ref<WmReturnSalesQueryParams>({}) // 查询参数
-const submitting = ref(false) // 提交状态
+const list = ref<WmReturnSales[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmReturnSales>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -144,7 +116,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmReturnSalesQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -165,126 +137,8 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmReturnSalesVO) {
+function handleDetail(item: WmReturnSales) {
   uni.navigateTo({ url: `/pages-mes/wm/returnsales/detail/index?id=${item.id}` })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:update']) && item.status === MesWmReturnSalesStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:delete']) && item.status === MesWmReturnSalesStatusEnum.PREPARE
-}
-
-/** 是否可提交草稿 */
-function canSubmitPrepare(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:submit']) && item.status === MesWmReturnSalesStatusEnum.PREPARE
-}
-
-/** 是否可执行质检 */
-function canQuality(item: WmReturnSalesVO) {
-  return item.status === MesWmReturnSalesStatusEnum.CONFIRMED
-}
-
-/** 是否可执行退货 */
-function canFinish(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:finish']) && item.status === MesWmReturnSalesStatusEnum.APPROVING
-}
-
-/** 是否可执行上架 */
-function canStock(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:stock']) && item.status === MesWmReturnSalesStatusEnum.APPROVED
-}
-
-/** 是否可取消 */
-function canCancel(item: WmReturnSalesVO) {
-  return hasAccessByCodes(['mes:wm-return-sales:cancel'])
-    && [
-      MesWmReturnSalesStatusEnum.CONFIRMED,
-      MesWmReturnSalesStatusEnum.APPROVING,
-      MesWmReturnSalesStatusEnum.APPROVED,
-    ].includes(item.status)
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmReturnSalesVO) {
-  return canUpdatePrepare(item)
-    || canDeletePrepare(item)
-    || canSubmitPrepare(item)
-    || canQuality(item)
-    || canFinish(item)
-    || canStock(item)
-    || canCancel(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmReturnSalesVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/returnsales/form/index?id=${item.id}` })
-}
-
-/** 执行质检提示 */
-function handleQuality() {
-  uni.showModal({
-    title: '执行质检',
-    content: '请前往【质量管理 - 退货检验（RQC）】中进行退货检验操作。',
-    showCancel: false,
-  })
-}
-
-/** 执行退货 */
-function handleFinish(item: WmReturnSalesVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/returnsales/form/index?id=${item.id}&mode=finish` })
-}
-
-/** 执行上架 */
-function handleStock(item: WmReturnSalesVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/returnsales/form/index?id=${item.id}&mode=stock` })
-}
-
-/** 取消 */
-function handleCancel(item: WmReturnSalesVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/returnsales/form/index?id=${item.id}&mode=cancel` })
-}
-
-/** 删除 */
-async function handleDelete(item: WmReturnSalesVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteReturnSales(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 提交销售退货单 */
-async function handleSubmitReturnSales(item: WmReturnSalesVO) {
-  if (submitting.value) {
-    return
-  }
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认提交该销售退货单？提交后将不能修改。',
-    })
-  } catch {
-    return
-  }
-  submitting.value = true
-  try {
-    await submitReturnSales(item.id)
-    toast.success('提交成功')
-    reload()
-  } finally {
-    submitting.value = false
-  }
 }
 
 /** 初始化 */

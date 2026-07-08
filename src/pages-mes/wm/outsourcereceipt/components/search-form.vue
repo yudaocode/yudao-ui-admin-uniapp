@@ -31,18 +31,8 @@
         </view>
         <wd-input v-model="formData.workOrderCode" placeholder="请输入外协工单号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <view class="min-h-72rpx flex items-center justify-between rounded-8rpx bg-white px-4rpx" @click.stop="openVendorSelector">
-          <text :class="selectedVendorText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedVendorText || '请选择供应商' }}
-          </text>
-          <wd-icon name="arrow-right" size="28rpx" color="#999" />
-        </view>
-      </view>
-      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_OUTSOURCE_RECEIPT_STATUS" all-option :all-value="undefined" />
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
+      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_OUTSOURCE_RECEIPT_STATUS" all-option />
       <yd-search-date-range v-model="formData.receiptDate" label="入库日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -54,19 +44,15 @@
       </view>
     </view>
   </wd-popup>
-
-  <VendorSelector ref="vendorSelectorRef" title="选择供应商" @confirm="handleVendorConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { WmOutsourceReceiptQueryParams } from '@/api/mes/wm/outsourcereceipt'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
-import VendorSelector from '../../../md/vendor/components/vendor-selector.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 
 interface SearchFormData {
   code?: string
@@ -78,13 +64,12 @@ interface SearchFormData {
 }
 
 const emit = defineEmits<{
-  search: [data: WmOutsourceReceiptQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
-const selectedVendor = ref<MdVendorVO>() // 当前供应商
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
 const formData = reactive<SearchFormData>({
   code: undefined,
   name: undefined,
@@ -93,11 +78,6 @@ const formData = reactive<SearchFormData>({
   status: undefined,
   receiptDate: undefined,
 }) // 搜索表单数据
-const selectedVendorText = computed(() => {
-  return selectedVendor.value
-    ? `${selectedVendor.value.code || '-'} ${selectedVendor.value.name || ''}`.trim()
-    : ''
-})
 const placeholder = computed(() => { // 搜索条件摘要
   const conditions: string[] = []
   if (formData.code) {
@@ -109,45 +89,26 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.workOrderCode) {
     conditions.push(`工单:${formData.workOrderCode}`)
   }
-  if (selectedVendorText.value) {
-    conditions.push(`供应商:${selectedVendorText.value}`)
+  if (formData.vendorId != null) {
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_OUTSOURCE_RECEIPT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索外协入库'
 })
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  vendorSelectorRef.value?.open()
-}
-
-/** 确认供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
-  selectedVendor.value = vendor
-  formData.vendorId = vendor?.id
-}
-
-/** 构造搜索参数 */
-function buildSearchParams(): WmOutsourceReceiptQueryParams {
-  return {
-    pageNo: 1,
-    pageSize: 10,
+/** 搜索按钮操作 */
+function handleSearch() {
+  visible.value = false
+  emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
     workOrderCode: formData.workOrderCode || undefined,
     vendorId: formData.vendorId,
-    status: formData.status,
+    status: formData.status === -1 ? undefined : formData.status,
     receiptDate: formatDateRange(formData.receiptDate),
-  }
-}
-
-/** 搜索按钮操作 */
-function handleSearch() {
-  visible.value = false
-  emit('search', buildSearchParams())
+  })
 }
 
 /** 重置按钮操作 */
@@ -158,7 +119,6 @@ function handleReset() {
   formData.vendorId = undefined
   formData.status = undefined
   formData.receiptDate = undefined
-  selectedVendor.value = undefined
   visible.value = false
   emit('reset')
 }

@@ -61,26 +61,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.requiredTime) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canSubmitPrepare(item)" class="flex-1 py-18rpx text-center text-[#faad14]" @click="handleSubmitIssue(item)">
-              提交
-            </view>
-            <view v-if="canDeletePrepare(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canStockApproving(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleStock(item)">
-              执行拣货
-            </view>
-            <view v-if="canFinishApproved(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              完成
-            </view>
-            <view v-if="canCancelActive(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -97,15 +77,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductIssueQueryParams, WmProductIssueVO } from '@/api/mes/wm/productissue'
+import type { WmProductIssue } from '@/api/mes/wm/productissue'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { cancelProductIssue, deleteProductIssue, getProductIssuePage, submitProductIssue } from '@/api/mes/wm/productissue'
+import { getProductIssuePage } from '@/api/mes/wm/productissue'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmProductIssueStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -117,19 +95,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmProductIssueVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmProductIssueVO>>() // 分页组件引用
-const queryParams = ref<WmProductIssueQueryParams>({}) // 查询参数
+const list = ref<WmProductIssue[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmProductIssue>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 客户展示文案 */
-function getClientText(item: WmProductIssueVO) {
+function getClientText(item: WmProductIssue) {
   if (item.clientCode || item.clientName) {
     return `${item.clientCode || '-'} / ${item.clientName || '-'}`.trim()
   }
@@ -152,7 +128,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmProductIssueQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -175,117 +151,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmProductIssueVO) {
+function handleDetail(item: WmProductIssue) {
   uni.navigateTo({
     url: `/pages-mes/wm/productissue/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:update']) && item.status === MesWmProductIssueStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:delete']) && item.status === MesWmProductIssueStatusEnum.PREPARE
-}
-
-/** 是否可提交草稿 */
-function canSubmitPrepare(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:update']) && item.status === MesWmProductIssueStatusEnum.PREPARE
-}
-
-/** 是否可执行拣货 */
-function canStockApproving(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:update']) && item.status === MesWmProductIssueStatusEnum.APPROVING
-}
-
-/** 是否可完成领料 */
-function canFinishApproved(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:finish']) && item.status === MesWmProductIssueStatusEnum.APPROVED
-}
-
-/** 是否可取消 */
-function canCancelActive(item: WmProductIssueVO) {
-  return hasAccessByCodes(['mes:wm-product-issue:update'])
-    && [MesWmProductIssueStatusEnum.APPROVING, MesWmProductIssueStatusEnum.APPROVED].includes(item.status)
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmProductIssueVO) {
-  return canUpdatePrepare(item)
-    || canSubmitPrepare(item)
-    || canDeletePrepare(item)
-    || canStockApproving(item)
-    || canFinishApproved(item)
-    || canCancelActive(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmProductIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productissue/form/index?id=${item.id}`,
-  })
-}
-
-/** 执行拣货 */
-function handleStock(item: WmProductIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productissue/form/index?id=${item.id}&mode=stock`,
-  })
-}
-
-/** 完成领料 */
-function handleFinish(item: WmProductIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/productissue/form/index?id=${item.id}&mode=finish`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmProductIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteProductIssue(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 提交领料出库单 */
-async function handleSubmitIssue(item: WmProductIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认提交该领料出库单？提交后将不能修改。',
-    })
-  } catch {
-    return
-  }
-  await submitProductIssue(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 取消领料出库单 */
-async function handleCancel(item: WmProductIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认取消该领料出库单？取消后不可恢复。',
-    })
-  } catch {
-    return
-  }
-  await cancelProductIssue(item.id)
-  toast.success('取消成功')
-  reload()
 }
 
 /** 初始化 */

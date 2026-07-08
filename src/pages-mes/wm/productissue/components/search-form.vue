@@ -26,7 +26,7 @@
         <wd-input v-model="formData.name" placeholder="请输入领料单名称" clearable />
       </view>
       <yd-search-date-range v-model="issueDateRange" label="领料日期" />
-      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_PRODUCT_ISSUE_STATUS" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_PRODUCT_ISSUE_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -40,7 +40,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductIssueQueryParams } from '@/api/mes/wm/productissue'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
@@ -48,7 +47,7 @@ import { formatDateRange } from '@/utils/date'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{
-  search: [data: WmProductIssueQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
@@ -57,7 +56,7 @@ const issueDateRange = ref<[number | undefined, number | undefined]>() // 领料
 const formData = reactive({
   code: '',
   name: '',
-  status: undefined as number | undefined,
+  status: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -72,35 +71,21 @@ const placeholder = computed(() => {
   if (issueDateRange.value?.length === 2) {
     conditions.push('领料日期')
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_PRODUCT_ISSUE_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产领料'
 })
 
-/** 构造搜索参数 */
-function buildParams() {
-  const params: WmProductIssueQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.status != null) {
-    params.status = formData.status
-  }
-  const range = formatDateRange(issueDateRange.value)
-  if (range) {
-    params.issueDate = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    issueDate: formatDateRange(issueDateRange.value),
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置按钮操作 */

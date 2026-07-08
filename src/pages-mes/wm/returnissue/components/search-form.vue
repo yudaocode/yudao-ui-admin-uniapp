@@ -25,18 +25,8 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入退料单名称" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          生产工单
-        </view>
-        <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openWorkOrderSelector">
-          <text :class="selectedWorkOrderText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedWorkOrderText || '请选择生产工单' }}
-          </text>
-          <wd-icon name="arrow-right" size="28rpx" color="#999" />
-        </view>
-      </view>
-      <yd-search-picker v-model="formData.type" label="退料类型" :dict-type="DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE" all-option :all-value="undefined" />
+      <WorkOrderSearchPicker ref="workOrderSearchPickerRef" v-model="formData.workOrderId" label="生产工单" placeholder="请选择生产工单" />
+      <yd-search-picker v-model="formData.type" label="退料类型" :dict-type="DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -47,39 +37,28 @@
       </view>
     </view>
   </wd-popup>
-
-  <WorkOrderSelector ref="workOrderSelectorRef" @confirm="handleWorkOrderConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import type { WmReturnIssueQueryParams } from '@/api/mes/wm/returnissue'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import WorkOrderSelector from '../../../pro/card/components/workorder-selector.vue'
+import WorkOrderSearchPicker from '@/pages-mes/pro/workorder/components/workorder-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: WmReturnIssueQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器引用
-const selectedWorkOrder = ref<ProWorkOrderVO>() // 当前选择工单
+const workOrderSearchPickerRef = ref<InstanceType<typeof WorkOrderSearchPicker>>() // 工单搜索选择器
 const formData = reactive({
   code: '',
   name: '',
-  workOrderId: undefined as number | undefined,
-  type: undefined as number | undefined,
+  workOrderId: undefined,
+  type: undefined,
 }) // 搜索表单数据
-const selectedWorkOrderText = computed(() => {
-  if (!selectedWorkOrder.value) {
-    return ''
-  }
-  return `${selectedWorkOrder.value.code || '-'} ${selectedWorkOrder.value.name || ''}`.trim()
-})
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
@@ -89,48 +68,24 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (selectedWorkOrderText.value) {
-    conditions.push(`工单:${selectedWorkOrderText.value}`)
+  if (formData.workOrderId != null) {
+    conditions.push(`工单:${workOrderSearchPickerRef.value?.format(formData.workOrderId) || formData.workOrderId}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产退料'
 })
 
-/** 打开生产工单选择 */
-function openWorkOrderSelector() {
-  workOrderSelectorRef.value?.open(formData.workOrderId)
-}
-
-/** 确认生产工单 */
-function handleWorkOrderConfirm(workOrder: ProWorkOrderVO) {
-  selectedWorkOrder.value = workOrder
-  formData.workOrderId = workOrder.id
-}
-
-/** 构造搜索参数 */
-function buildParams() {
-  const params: WmReturnIssueQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  if (formData.workOrderId != null) {
-    params.workOrderId = formData.workOrderId
-  }
-  if (formData.type != null) {
-    params.type = formData.type
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    workOrderId: formData.workOrderId,
+    type: formData.type === -1 ? undefined : formData.type,
+  })
 }
 
 /** 重置按钮操作 */
@@ -139,7 +94,6 @@ function handleReset() {
   formData.name = ''
   formData.workOrderId = undefined
   formData.type = undefined
-  selectedWorkOrder.value = undefined
   visible.value = false
   emit('reset')
 }

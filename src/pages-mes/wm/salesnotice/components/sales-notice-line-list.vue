@@ -1,66 +1,83 @@
 <template>
-  <MesLineListShell
-    title="发货物料"
-    :loading="loading"
-    :empty="list.length === 0"
-    empty-text="暂无发货物料"
-    :readonly="readonly"
-    add-text="添加物料"
-    @add="openCreateForm"
-  >
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="border-b border-b-[#f5f5f5] py-20rpx last:border-b-0"
-    >
-      <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-        <view class="min-w-0 flex-1">
-          <view class="truncate text-28rpx text-[#333] font-medium">
-            {{ item.itemCode || `物料 #${item.itemId}` }}
-          </view>
-          <view class="mt-4rpx truncate text-26rpx text-[#666]">
-            {{ item.itemName || '-' }}
-          </view>
-        </view>
-        <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(Boolean(item.oqcCheckFlag))" />
+  <view class="mt-24rpx bg-white">
+    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+      <view class="text-30rpx text-[#333] font-semibold">
+        发货物料
       </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">规格型号：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.specification || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">单位：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.unitMeasureName || '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">发货数量：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.quantity ?? '-' }}</text>
-      </view>
-      <view class="mb-8rpx flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">批次号：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.batchCode || '-' }}</text>
-      </view>
-      <view class="flex text-26rpx text-[#666]">
-        <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
-        <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
-      </view>
-      <view v-if="!readonly" class="mt-16rpx flex rounded-8rpx bg-[#f7f8fa] text-26rpx">
-        <view class="flex-1 py-16rpx text-center text-[#1677ff]" @click="openUpdateForm(item)">
-          编辑
-        </view>
-        <view class="flex-1 py-16rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-          删除
-        </view>
-      </view>
+      <wd-button v-if="!readonly" size="small" type="primary" @click="openCreateForm">
+        添加物料
+      </wd-button>
     </view>
-  </MesLineListShell>
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      height="640rpx"
+      :default-page-size="10"
+      :refresher-enabled="false"
+      :inside-more="true"
+      :to-bottom-loading-more-enabled="false"
+      loading-more-default-text="点击加载更多"
+      loading-more-no-more-text="没有更多发货物料了"
+      empty-view-text="暂无发货物料"
+      @query="queryList"
+    >
+      <view class="px-24rpx py-8rpx">
+        <view
+          v-for="item in list"
+          :key="item.id || item.itemId"
+          class="border-b border-b-[#f5f5f5] py-20rpx last:border-b-0"
+        >
+          <view class="mb-12rpx flex items-start justify-between gap-16rpx">
+            <view class="min-w-0 flex-1">
+              <view class="truncate text-28rpx text-[#333] font-medium">
+                {{ item.itemCode || `物料 #${item.itemId}` }}
+              </view>
+              <view class="mt-4rpx truncate text-26rpx text-[#666]">
+                {{ item.itemName || '-' }}
+              </view>
+            </view>
+            <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(Boolean(item.oqcCheckFlag))" />
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">规格型号：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.specification || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">单位：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.unitMeasureName || '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">发货数量：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.quantity ?? '-' }}</text>
+          </view>
+          <view class="mb-8rpx flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">批次号：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.batchCode || '-' }}</text>
+          </view>
+          <view class="flex text-26rpx text-[#666]">
+            <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
+            <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
+          </view>
+          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button size="small" type="warning" variant="plain" @click="openUpdateForm(item)">
+              编辑
+            </wd-button>
+            <wd-button size="small" type="danger" variant="plain" @click="handleDelete(item)">
+              删除
+            </wd-button>
+          </view>
+        </view>
+      </view>
+    </z-paging>
+  </view>
 
   <!-- 发货物料表单弹窗 -->
   <wd-popup
     v-model="formVisible"
-    position="top"
-    :custom-style="getTopPopupStyle()"
-    :modal-style="getTopPopupModalStyle()"
+    position="bottom"
+    safe-area-inset-bottom
+    custom-style="height: 88vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -77,16 +94,17 @@
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <wd-form-item title="物料" title-width="220rpx" prop="itemId">
-              <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openItemSelector">
-                <text :class="selectedItemText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ selectedItemText || '请选择物料' }}
-                </text>
-                <wd-icon name="arrow-right" size="28rpx" color="#999" />
-              </view>
-            </wd-form-item>
+            <wd-form-item
+              title="物料"
+              title-width="220rpx"
+              prop="itemId"
+              is-link
+              :value="selectedItemText"
+              placeholder="请选择物料"
+              @click="openItemPicker"
+            />
             <wd-form-item title="发货数量" title-width="220rpx" prop="quantity" center>
-              <wd-input-number v-model="formData.quantity" :min="0.01" :precision="2" />
+              <wd-input-number v-model="formData.quantity" allow-null :min="0.01" :precision="2" />
             </wd-form-item>
             <wd-form-item title="批次号" title-width="220rpx" prop="batchCode">
               <wd-input v-model="formData.batchCode" clearable placeholder="请输入批次号" />
@@ -104,42 +122,25 @@
       </scroll-view>
     </view>
   </wd-popup>
-  <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
+  <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type {
-  WmSalesNoticeLineCreateReqVO,
-  WmSalesNoticeLineVO,
-} from '@/api/mes/wm/salesnotice/line'
+import type { MdItem } from '@/api/mes/md/item'
+import type { WmSalesNoticeLine } from '@/api/mes/wm/salesnotice/line'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createSalesNoticeLine,
   deleteSalesNoticeLine,
   getSalesNoticeLinePage,
   updateSalesNoticeLine,
 } from '@/api/mes/wm/salesnotice/line'
-import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import MesLineListShell from '@/pages-mes/components/mes-line-list-shell.vue'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
-
-interface WmSalesNoticeLineFormData extends WmSalesNoticeLineCreateReqVO {
-  id?: number
-}
-
-interface SelectedItemPreview {
-  id: number
-  code?: string
-  name?: string
-  specification?: string
-  unitMeasureName?: string
-}
+import ItemPicker from '../../../md/item/components/item-picker.vue'
 
 const props = defineProps<{
   noticeId?: number
@@ -148,20 +149,19 @@ const props = defineProps<{
 
 const dialog = useDialog()
 const toast = useToast()
-const loading = ref(false) // 列表加载状态
-const list = ref<WmSalesNoticeLineVO[]>([]) // 发货物料列表
+const list = ref<WmSalesNoticeLine[]>([]) // 发货物料列表
+const pagingRef = ref<ZPagingRef<WmSalesNoticeLine>>() // 分页组件引用
 const formVisible = ref(false) // 行表单显示状态
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单引用
-const formData = ref<WmSalesNoticeLineFormData>(getDefaultFormData()) // 表单数据
-const selectedItem = ref<SelectedItemPreview>() // 当前选择物料
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
+const formData = ref<WmSalesNoticeLine>(getDefaultFormData()) // 表单数据
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
 const formTitle = computed(() => formData.value.id ? '编辑发货物料' : '添加发货物料')
 const selectedItemText = computed(() => {
-  if (!selectedItem.value) {
+  if (!formData.value.itemId) {
     return ''
   }
-  return `${selectedItem.value.code || '-'} ${selectedItem.value.name || ''}`.trim()
+  return `${formData.value.itemCode || '-'} ${formData.value.itemName || ''}`.trim()
 })
 const formSchema = createFormSchema({
   itemId: [{ required: true, message: '物料不能为空' }],
@@ -173,85 +173,76 @@ const formSchema = createFormSchema({
 })
 
 /** 默认表单数据 */
-function getDefaultFormData() {
+function getDefaultFormData(): WmSalesNoticeLine {
   return {
-    noticeId: props.noticeId || 0,
-    itemId: undefined,
-    batchId: undefined,
-    batchCode: '',
-    quantity: undefined,
+    noticeId: props.noticeId,
     oqcCheckFlag: true,
-    remark: '',
-  } as WmSalesNoticeLineFormData
+  }
 }
 
 /** 查询发货物料列表 */
-async function getList() {
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.noticeId) {
-    list.value = []
+    pagingRef.value?.completeByTotal([], 0)
     return
   }
-  loading.value = true
   try {
     const data = await getSalesNoticeLinePage({
-      pageNo: 1,
-      pageSize: 100,
+      pageNo,
+      pageSize,
       noticeId: props.noticeId,
     })
-    list.value = data.list
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
+}
+
+/** 刷新列表 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 打开新增表单 */
 function openCreateForm() {
   formData.value = getDefaultFormData()
-  selectedItem.value = undefined
   formVisible.value = true
 }
 
 /** 打开编辑表单 */
-function openUpdateForm(item: WmSalesNoticeLineVO) {
+function openUpdateForm(item: WmSalesNoticeLine) {
   formData.value = {
-    id: item.id,
-    noticeId: item.noticeId,
-    itemId: item.itemId,
-    batchId: item.batchId,
-    batchCode: item.batchCode || '',
-    quantity: item.quantity,
-    oqcCheckFlag: Boolean(item.oqcCheckFlag),
-    remark: item.remark || '',
-  }
-  selectedItem.value = {
-    id: item.itemId,
-    code: item.itemCode || '',
-    name: item.itemName || '',
-    specification: item.specification || '',
-    unitMeasureName: item.unitMeasureName || '',
+    ...item,
+    oqcCheckFlag: item.oqcCheckFlag ?? true,
   }
   formVisible.value = true
 }
 
 /** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
+function openItemPicker() {
+  itemPickerRef.value?.open()
 }
 
 /** 选择物料 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
-  if (!item) {
+  if (!item || item.id == null) {
     return
   }
-  selectedItem.value = item
-  formData.value.itemId = item.id
+  formData.value = {
+    ...formData.value,
+    itemId: item.id,
+    itemCode: item.code,
+    itemName: item.name,
+    specification: item.specification,
+    unitMeasureName: item.unitMeasureName,
+  }
 }
 
 /** 提交发货物料 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!props.noticeId) {
@@ -259,31 +250,22 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    const data: WmSalesNoticeLineCreateReqVO = {
-      noticeId: props.noticeId,
-      itemId: formData.value.itemId,
-      batchId: formData.value.batchId,
-      batchCode: formData.value.batchCode || undefined,
-      quantity: formData.value.quantity,
-      oqcCheckFlag: formData.value.oqcCheckFlag,
-      remark: formData.value.remark || undefined,
-    }
     if (formData.value.id) {
-      await updateSalesNoticeLine({ ...data, id: formData.value.id })
+      await updateSalesNoticeLine(formData.value)
       toast.success('修改成功')
     } else {
-      await createSalesNoticeLine(data)
+      await createSalesNoticeLine(formData.value)
       toast.success('添加成功')
     }
     formVisible.value = false
-    await getList()
+    reload()
   } finally {
     formLoading.value = false
   }
 }
 
 /** 删除发货物料 */
-async function handleDelete(item: WmSalesNoticeLineVO) {
+async function handleDelete(item: WmSalesNoticeLine) {
   try {
     await dialog.confirm({
       title: '提示',
@@ -294,14 +276,19 @@ async function handleDelete(item: WmSalesNoticeLineVO) {
   }
   await deleteSalesNoticeLine(item.id)
   toast.success('删除成功')
-  await getList()
+  reload()
 }
 
-watch(
-  () => props.noticeId,
-  () => {
-    getList()
-  },
-  { immediate: true },
-)
+/** 初始化 */
+onMounted(() => {
+  uni.$on('mes:wm:salesnotice:reload', reload)
+})
+
+/** 监听销售通知编号变化 */
+watch(() => props.noticeId, reload)
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:wm:salesnotice:reload', reload)
+})
 </script>

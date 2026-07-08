@@ -16,7 +16,7 @@
         <wd-cell title="销售订单编号" :value="formData?.salesOrderCode || '-'" />
         <wd-cell title="客户编码" :value="formData?.clientCode || '-'" />
         <wd-cell title="客户名称" :value="formData?.clientName || '-'" />
-        <wd-cell title="出库日期" :value="formatDate(formData?.salesDate || formData?.shipmentDate) || '-'" />
+        <wd-cell title="出库日期" :value="formatDate(formData?.salesDate) || '-'" />
         <wd-cell title="单据状态">
           <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.MES_WM_PRODUCT_SALES_STATUS" :value="formData.status" />
           <text v-else>-</text>
@@ -35,27 +35,27 @@
           销售出库操作
         </view>
         <view class="flex flex-wrap gap-16rpx text-28rpx">
-          <view v-if="canUpdatePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white" @click="handleEdit">
+          <wd-button v-if="canUpdatePrepare" class="min-w-180rpx flex-1" type="warning" @click="handleEdit">
             编辑
-          </view>
-          <view v-if="canDeletePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" :class="deleting ? 'opacity-60' : ''" @click="handleDelete">
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view v-if="canSubmitPrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" :class="submitting ? 'opacity-60' : ''" @click="handleSubmitProductSales">
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-          <view v-if="canStock" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleStock">
+          </wd-button>
+          <wd-button v-if="canSubmitPrepare" class="min-w-180rpx flex-1" type="warning" :loading="submitting" @click="handleSubmitProductSales">
+            提交
+          </wd-button>
+          <wd-button v-if="canStock" class="min-w-180rpx flex-1" type="success" @click="handleStock">
             拣货
-          </view>
-          <view v-if="canShipping" class="min-w-180rpx flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" @click="handleShipping">
+          </wd-button>
+          <wd-button v-if="canShipping" class="min-w-180rpx flex-1" type="warning" @click="handleShipping">
             填写运单
-          </view>
-          <view v-if="canFinish" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleFinish">
+          </wd-button>
+          <wd-button v-if="canFinish" class="min-w-180rpx flex-1" type="success" @click="handleFinish">
             执行出库
-          </view>
-          <view v-if="canCancelStatus" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" @click="handleCancel">
+          </wd-button>
+          <wd-button v-if="canDeletePrepare" class="min-w-180rpx flex-1" type="danger" :loading="deleting" @click="handleDelete">
+            删除
+          </wd-button>
+          <wd-button v-if="canCancelStatus" class="min-w-180rpx flex-1" type="danger" @click="handleCancel">
             取消
-          </view>
+          </wd-button>
         </view>
       </view>
       <view class="h-180rpx" />
@@ -67,10 +67,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmProductSalesVO } from '@/api/mes/wm/productsales'
+import type { WmProductSales } from '@/api/mes/wm/productsales'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteProductSales, getProductSales, submitProductSales } from '@/api/mes/wm/productsales'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -92,7 +93,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<WmProductSalesVO>() // 详情数据
+const formData = ref<WmProductSales>() // 详情数据
 const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
@@ -122,13 +123,12 @@ const canFinish = computed(() => (
 ))
 const canCancelStatus = computed(() => (
   hasAccessByCodes(['mes:wm-product-sales:cancel'])
-  && Boolean(formData.value)
-  && [
-    MesWmProductSalesStatusEnum.CONFIRMED,
-    MesWmProductSalesStatusEnum.APPROVING,
-    MesWmProductSalesStatusEnum.SHIPPING,
-    MesWmProductSalesStatusEnum.APPROVED,
-  ].includes(formData.value.status)
+  && (
+    formData.value?.status === MesWmProductSalesStatusEnum.CONFIRMED
+    || formData.value?.status === MesWmProductSalesStatusEnum.APPROVING
+    || formData.value?.status === MesWmProductSalesStatusEnum.SHIPPING
+    || formData.value?.status === MesWmProductSalesStatusEnum.APPROVED
+  )
 ))
 const hasFooter = computed(() => (
   canUpdatePrepare.value
@@ -152,25 +152,10 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getProductSales(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getProductSales(currentId.value)
   } finally {
     toast.close()
   }
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  await getDetail()
 }
 
 /** 编辑 */
@@ -247,11 +232,7 @@ async function handleSubmitProductSales() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+onShow(() => {
+  getDetail()
 })
 </script>

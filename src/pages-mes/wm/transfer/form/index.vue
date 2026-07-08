@@ -28,21 +28,16 @@
           <wd-form-item title="转移单名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" clearable :disabled="isHeaderReadonly" placeholder="请输入转移单名称" />
           </wd-form-item>
-          <wd-form-item title="转移单类型" title-width="200rpx" prop="type">
-            <wd-radio-group v-model="formData.type" :disabled="isHeaderReadonly" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.MES_WM_TRANSFER_TYPE)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <wd-form-item title="转移日期" title-width="200rpx" prop="transferDate">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openTransferDatePicker">
-              <text :class="formatDateTime(formData.transferDate) ? 'text-[#333]' : 'text-[#999]'">
-                {{ formatDateTime(formData.transferDate) || '请选择转移日期' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.type" label="转移单类型" label-width="200rpx" prop="type" :disabled="isHeaderReadonly" :dict-type="DICT_TYPE.MES_WM_TRANSFER_TYPE" placeholder="请选择转移单类型" />
+          <wd-form-item
+            title="转移日期"
+            title-width="200rpx"
+            prop="transferDate"
+            :is-link="!isHeaderReadonly"
+            placeholder="请选择转移日期"
+            :value="formatDateTime(formData.transferDate)"
+            @click="openTransferDatePicker"
+          />
           <wd-datetime-picker
             v-model="formData.transferDate"
             v-model:visible="pickerVisible.transferDate"
@@ -88,7 +83,7 @@
       </wd-form>
 
       <transfer-line-list
-        v-if="currentId && !detailMissing"
+        v-if="currentId"
         :transfer-id="currentId"
         :readonly="!isEditable && !isStock"
         :stock-mode="isStock"
@@ -115,58 +110,59 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="isEditable"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="isEditable"
+          class="flex-1"
+          type="primary"
+          :loading="formLoading" @click="handleSubmit"
+        >
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="warning"
+          :loading="submitLoading" @click="handleSubmitTransfer"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="isConfirm"
+          class="flex-1"
+          type="success"
+          :loading="actionLoading" @click="handleConfirmTransfer"
+        >
+          到货确认
+        </wd-button>
+        <wd-button
+          v-if="isStock"
+          class="flex-1"
+          type="success"
+          :loading="actionLoading" @click="handleStockTransfer"
+        >
+          执行上架
+        </wd-button>
+        <wd-button
+          v-if="isFinish"
+          class="flex-1"
+          type="success"
+          :loading="actionLoading" @click="handleFinishTransfer"
+        >
+          执行转移
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitTransfer"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="isConfirm"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleConfirmTransfer"
-      >
-        {{ actionLoading ? '确认中...' : '到货确认' }}
-      </view>
-      <view
-        v-if="isStock"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleStockTransfer"
-      >
-        {{ actionLoading ? '上架中...' : '执行上架' }}
-      </view>
-      <view
-        v-if="isFinish"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="actionLoading ? 'opacity-60' : ''"
-        @click="handleFinishTransfer"
-      >
-        {{ actionLoading ? '转移中...' : '执行转移' }}
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { WmTransferCreateReqVO } from '@/api/mes/wm/transfer'
-import { onShow } from '@dcloudio/uni-app'
+import type { WmTransfer } from '@/api/mes/wm/transfer'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import {
   confirmTransfer,
@@ -177,31 +173,11 @@ import {
   submitTransfer,
   updateTransfer,
 } from '@/api/mes/wm/transfer'
-import { getIntDictOptions } from '@/hooks/useDict'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import TransferLineList from '@/pages-mes/wm/transfer/components/transfer-line-list.vue'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmTransferStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-
-interface WmTransferFormData {
-  id?: number
-  code: string
-  name: string
-  type?: number
-  deliveryFlag: boolean
-  recipientName?: string
-  recipientTelephone?: string
-  destinationAddress?: string
-  carrier?: string
-  shippingNumber?: string
-  confirmFlag?: boolean
-  transferDate?: string | number | Date
-  status?: number
-  remark?: string
-}
 
 const props = defineProps<{
   id?: number | string
@@ -217,9 +193,8 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/transfer/form/index')
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式
 const getTitle = computed(() => {
@@ -238,8 +213,7 @@ const formLoading = ref(false) // 表单提交状态
 const submitLoading = ref(false) // 提交状态
 const actionLoading = ref(false) // 状态动作状态
 const codeLoading = ref(false) // 编码生成状态
-const detailMissing = ref(false) // 详情缺失状态
-const formData = ref<WmTransferFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmTransfer>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '转移单编号不能为空' }],
   name: [{ required: true, message: '转移单名称不能为空' }],
@@ -249,11 +223,14 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
-const isEditable = computed(() => !currentMode.value || currentMode.value === 'update')
+const isEditable = computed(() => (
+  ((!routeId.value && !currentId.value) || formData.value.status === MesWmTransferStatusEnum.PREPARE)
+  && (!currentMode.value || currentMode.value === 'update')
+))
 const isConfirm = computed(() => currentMode.value === 'confirm' && formData.value.status === MesWmTransferStatusEnum.UNCONFIRMED)
 const isStock = computed(() => currentMode.value === 'stock' && formData.value.status === MesWmTransferStatusEnum.APPROVING)
 const isFinish = computed(() => currentMode.value === 'finish' && formData.value.status === MesWmTransferStatusEnum.APPROVED)
-const isHeaderReadonly = computed(() => !!currentMode.value && currentMode.value !== 'update')
+const isHeaderReadonly = computed(() => Boolean(currentId.value) && !isEditable.value)
 const isOuterType = computed(() => Number(formData.value.type) === 2)
 const showDeliveryFields = computed(() => isOuterType.value && !!formData.value.deliveryFlag)
 const canSubmit = computed(() => (
@@ -263,27 +240,11 @@ const canSubmit = computed(() => (
 ))
 
 /** 默认表单数据 */
-function getDefaultFormData(): WmTransferFormData {
+function getDefaultFormData(): WmTransfer {
   return {
-    code: '',
-    name: '',
-    type: undefined,
     deliveryFlag: false,
-    recipientName: '',
-    recipientTelephone: '',
-    destinationAddress: '',
-    carrier: '',
-    shippingNumber: '',
     confirmFlag: false,
-    transferDate: '',
-    remark: '',
   }
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
 }
 
 /** 返回上一页 */
@@ -296,46 +257,7 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data = await getTransfer(currentId.value)
-  if (!data) {
-    detailMissing.value = true
-    formData.value = getDefaultFormData()
-    toast.warning('库存调拨单不存在或已被删除')
-    return
-  }
-  detailMissing.value = false
-  formData.value = {
-    id: data.id,
-    code: data.code || '',
-    name: data.name || '',
-    type: data.type,
-    deliveryFlag: !!data.deliveryFlag,
-    recipientName: data.recipientName || '',
-    recipientTelephone: data.recipientTelephone || '',
-    destinationAddress: data.destinationAddress || '',
-    carrier: data.carrier || '',
-    shippingNumber: data.shippingNumber || '',
-    confirmFlag: !!data.confirmFlag,
-    transferDate: data.transferDate,
-    status: data.status,
-    remark: data.remark || '',
-  }
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  if (!currentId.value) {
-    detailMissing.value = false
-    formData.value = getDefaultFormData()
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    detailMissing.value = false
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
+  formData.value = await getTransfer(currentId.value)
 }
 
 /** 打开转移日期选择 */
@@ -359,41 +281,34 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): WmTransferCreateReqVO {
-  if (formData.value.type == null || !formData.value.transferDate) {
-    throw new Error('转移单类型和转移日期不能为空')
+/** 清理配送互斥字段 */
+function normalizeDeliveryFields() {
+  formData.value.deliveryFlag = isOuterType.value ? !!formData.value.deliveryFlag : false
+  if (formData.value.deliveryFlag) {
+    return
   }
-  return {
-    code: formData.value.code,
-    name: formData.value.name,
-    type: formData.value.type,
-    deliveryFlag: !!formData.value.deliveryFlag,
-    recipientName: showDeliveryFields.value ? formData.value.recipientName || undefined : undefined,
-    recipientTelephone: showDeliveryFields.value ? formData.value.recipientTelephone || undefined : undefined,
-    destinationAddress: showDeliveryFields.value ? formData.value.destinationAddress || undefined : undefined,
-    carrier: showDeliveryFields.value ? formData.value.carrier || undefined : undefined,
-    shippingNumber: showDeliveryFields.value ? formData.value.shippingNumber || undefined : undefined,
-    transferDate: formData.value.transferDate,
-    remark: formData.value.remark || undefined,
-  }
+  formData.value.recipientName = undefined
+  formData.value.recipientTelephone = undefined
+  formData.value.destinationAddress = undefined
+  formData.value.carrier = undefined
+  formData.value.shippingNumber = undefined
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    normalizeDeliveryFields()
     if (currentId.value) {
-      await updateTransfer({ ...data, id: currentId.value })
+      await updateTransfer(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createTransfer(data)
+      const id = await createTransfer(formData.value)
       currentId.value = id
       formData.value.id = id
       formData.value.status = MesWmTransferStatusEnum.PREPARE
@@ -408,8 +323,8 @@ async function handleSubmit() {
 
 /** 提交转移单 */
 async function handleSubmitTransfer() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!currentId.value) {
@@ -425,7 +340,8 @@ async function handleSubmitTransfer() {
   }
   submitLoading.value = true
   try {
-    await updateTransfer({ ...buildSubmitData(), id: currentId.value })
+    normalizeDeliveryFields()
+    await updateTransfer(formData.value)
     await submitTransfer(currentId.value)
     toast.success('提交成功')
     await getDetail()
@@ -507,31 +423,10 @@ async function handleFinishTransfer() {
   }
 }
 
-watch(
-  () => formData.value.type,
-  () => {
-    if (!isOuterType.value) {
-      formData.value.deliveryFlag = false
-      formData.value.recipientName = ''
-      formData.value.recipientTelephone = ''
-      formData.value.destinationAddress = ''
-      formData.value.carrier = ''
-      formData.value.shippingNumber = ''
-    }
-  },
-)
-
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-/** 页面显示时刷新 */
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>

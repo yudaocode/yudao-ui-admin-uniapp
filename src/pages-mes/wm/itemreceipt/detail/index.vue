@@ -24,62 +24,44 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
-      <ItemReceiptLineList v-if="currentId" :receipt-id="currentId" :notice-id="formData?.noticeId" readonly />
-      <view v-if="hasFooter" class="mx-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx">
-        <view class="mb-20rpx text-28rpx text-[#333] font-semibold">
-          入库操作
-        </view>
-        <view class="flex flex-wrap gap-16rpx text-28rpx">
-          <view v-if="canUpdatePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white" @click="handleEdit">
-            编辑
-          </view>
-          <view v-if="canDeletePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" :class="deleting ? 'opacity-60' : ''" @click="handleDelete">
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view v-if="canSubmitPrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" :class="submitting ? 'opacity-60' : ''" @click="handleSubmitReceipt">
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-          <view v-if="canStockApproving" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleStock">
-            执行上架
-          </view>
-          <view v-if="canFinishApproved" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleFinish">
-            执行入库
-          </view>
-          <view v-if="canCancelActive" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" :class="canceling ? 'opacity-60' : ''" @click="handleCancelReceipt">
-            {{ canceling ? '取消中...' : '取消' }}
-          </view>
-        </view>
-      </view>
+      <ItemReceiptLineList v-if="formData?.id" :receipt-id="formData.id" :notice-id="formData.noticeId" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooter" content-class="flex gap-24rpx text-28rpx">
-      <view v-if="canUpdatePrepare" class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white" @click="handleEdit">
-        编辑
+    <view v-if="hasFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="canUpdatePrepare" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="canSubmitPrepare" class="flex-1" type="warning" :loading="submitting" @click="handleSubmitReceipt">
+          提交
+        </wd-button>
+        <wd-button v-if="canStockApproving" class="flex-1" type="success" @click="handleStock">
+          执行上架
+        </wd-button>
+        <wd-button v-if="canFinishApproved" class="flex-1" type="success" @click="handleFinish">
+          执行入库
+        </wd-button>
+        <wd-button v-if="canDeletePrepare" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+        <wd-button v-if="canCancelActive" class="flex-1" type="danger" :loading="canceling" @click="handleCancelReceipt">
+          取消
+        </wd-button>
       </view>
-      <view v-if="canSubmitPrepare" class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" :class="submitting ? 'opacity-60' : ''" @click="handleSubmitReceipt">
-        {{ submitting ? '提交中...' : '提交' }}
-      </view>
-      <view v-if="canStockApproving" class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleStock">
-        执行上架
-      </view>
-      <view v-if="canFinishApproved" class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleFinish">
-        执行入库
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmItemReceiptVO } from '@/api/mes/wm/itemreceipt'
+import type { WmItemReceipt } from '@/api/mes/wm/itemreceipt'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelItemReceipt, deleteItemReceipt, getItemReceipt, submitItemReceipt } from '@/api/mes/wm/itemreceipt'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesWmItemReceiptStatusEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -99,8 +81,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<WmItemReceiptVO>() // 详情数据
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const formData = ref<WmItemReceipt>() // 详情数据
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
 const canceling = ref(false) // 取消状态
@@ -126,7 +107,10 @@ const canFinishApproved = computed(() => (
 ))
 const canCancelActive = computed(() => (
   hasAccessByCodes(['mes:wm-item-receipt:update'])
-  && [MesWmItemReceiptStatusEnum.APPROVING, MesWmItemReceiptStatusEnum.APPROVED].includes(formData.value?.status as number)
+  && (
+    formData.value?.status === MesWmItemReceiptStatusEnum.APPROVING
+    || formData.value?.status === MesWmItemReceiptStatusEnum.APPROVED
+  )
 ))
 const hasFooter = computed(() => (
   canUpdatePrepare.value
@@ -144,58 +128,50 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getItemReceipt(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getItemReceipt(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
-}
-
 /** 编辑 */
 function handleEdit() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/wm/itemreceipt/form/index?id=${currentId.value}`,
+    url: `/pages-mes/wm/itemreceipt/form/index?id=${props.id}`,
   })
 }
 
 /** 执行上架 */
 function handleStock() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/wm/itemreceipt/form/index?id=${currentId.value}&mode=stock`,
+    url: `/pages-mes/wm/itemreceipt/form/index?id=${props.id}&mode=stock`,
   })
 }
 
 /** 执行入库 */
 function handleFinish() {
+  if (!props.id) {
+    return
+  }
   uni.navigateTo({
-    url: `/pages-mes/wm/itemreceipt/form/index?id=${currentId.value}&mode=finish`,
+    url: `/pages-mes/wm/itemreceipt/form/index?id=${props.id}&mode=finish`,
   })
 }
 
 /** 删除 */
 async function handleDelete() {
-  if (!currentId.value || !formData.value) {
+  if (!props.id || !formData.value) {
     return
   }
   try {
@@ -208,12 +184,10 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteItemReceipt(currentId.value)
+    await deleteItemReceipt(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:wm:itemreceipt:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
@@ -221,7 +195,7 @@ async function handleDelete() {
 
 /** 提交采购入库单 */
 async function handleSubmitReceipt() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -234,10 +208,10 @@ async function handleSubmitReceipt() {
   }
   submitting.value = true
   try {
-    await submitItemReceipt(currentId.value)
+    await submitItemReceipt(Number(props.id))
     toast.success('提交成功')
-    await getDetail()
     uni.$emit('mes:wm:itemreceipt:reload')
+    await getDetail()
   } finally {
     submitting.value = false
   }
@@ -245,7 +219,7 @@ async function handleSubmitReceipt() {
 
 /** 取消采购入库单 */
 async function handleCancelReceipt() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -258,25 +232,17 @@ async function handleCancelReceipt() {
   }
   canceling.value = true
   try {
-    await cancelItemReceipt(currentId.value)
+    await cancelItemReceipt(Number(props.id))
     toast.success('取消成功')
-    await getDetail()
     uni.$emit('mes:wm:itemreceipt:reload')
+    await getDetail()
   } finally {
     canceling.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
 onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+  getDetail()
 })
 </script>

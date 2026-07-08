@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmSalesNoticeLineVO } from '@/api/mes/wm/salesnotice/line'
+import type { WmSalesNoticeLine } from '@/api/mes/wm/salesnotice/line'
 import { ref } from 'vue'
 import { getSalesNoticeLinePage } from '@/api/mes/wm/salesnotice/line'
 import { DICT_TYPE } from '@/utils/constants'
@@ -80,13 +80,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  confirm: [line: WmSalesNoticeLineVO]
+  confirm: [line: WmSalesNoticeLine]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 加载状态
-const lineList = ref<WmSalesNoticeLineVO[]>([]) // 发货通知单行列表
-const selectedLine = ref<WmSalesNoticeLineVO>() // 当前选中行
+const lineList = ref<WmSalesNoticeLine[]>([]) // 发货通知单行列表
+const selectedLine = ref<WmSalesNoticeLine>() // 当前选中行
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
 

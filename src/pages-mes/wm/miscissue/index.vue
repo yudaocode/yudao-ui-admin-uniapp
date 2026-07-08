@@ -10,18 +10,6 @@
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 顶部操作 -->
-    <view class="bg-white px-24rpx py-16rpx">
-      <view class="grid grid-cols-2 gap-16rpx">
-        <wd-button
-          v-if="hasAccessByCodes(['mes:wm-misc-issue:create'])"
-          block variant="plain" @click="handleAdd"
-        >
-          新增出库单
-        </wd-button>
-      </view>
-    </view>
-
     <!-- 列表 -->
     <z-paging
       ref="pagingRef"
@@ -71,39 +59,29 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDate(item.issueDate) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view v-if="canUpdatePrepare(item)" class="flex-1 py-18rpx text-center text-[#1677ff]" @click="handleEdit(item)">
-              编辑
-            </view>
-            <view v-if="canDeletePrepare(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleDelete(item)">
-              删除
-            </view>
-            <view v-if="canSubmitPrepare(item)" class="flex-1 py-18rpx text-center text-[#faad14]" @click="handleSubmitIssue(item)">
-              提交
-            </view>
-            <view v-if="canFinishApproved(item)" class="flex-1 py-18rpx text-center text-[#52c41a]" @click="handleFinish(item)">
-              执行出库
-            </view>
-            <view v-if="canCancelApproved(item)" class="flex-1 py-18rpx text-center text-[#f56c6c]" @click="handleCancel(item)">
-              取消
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
+
+    <!-- 新增按钮 -->
+    <wd-fab
+      v-if="hasAccessByCodes(['mes:wm-misc-issue:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
+      @click="handleAdd"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmMiscIssueQueryParams, WmMiscIssueVO } from '@/api/mes/wm/miscissue'
+import type { WmMiscIssue } from '@/api/mes/wm/miscissue'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { cancelMiscIssue, deleteMiscIssue, getMiscIssuePage, submitMiscIssue } from '@/api/mes/wm/miscissue'
+import { getMiscIssuePage } from '@/api/mes/wm/miscissue'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmMiscIssueStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -115,15 +93,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmMiscIssueVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmMiscIssueVO>>() // 分页组件引用
-const queryParams = ref<WmMiscIssueQueryParams>({}) // 查询参数
+const list = ref<WmMiscIssue[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmMiscIssue>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -142,7 +118,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmMiscIssueQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -165,99 +141,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmMiscIssueVO) {
+function handleDetail(item: WmMiscIssue) {
   uni.navigateTo({
     url: `/pages-mes/wm/miscissue/detail/index?id=${item.id}`,
   })
-}
-
-/** 是否可编辑草稿 */
-function canUpdatePrepare(item: WmMiscIssueVO) {
-  return hasAccessByCodes(['mes:wm-misc-issue:update']) && item.status === MesWmMiscIssueStatusEnum.PREPARE
-}
-
-/** 是否可删除草稿 */
-function canDeletePrepare(item: WmMiscIssueVO) {
-  return hasAccessByCodes(['mes:wm-misc-issue:delete']) && item.status === MesWmMiscIssueStatusEnum.PREPARE
-}
-
-/** 是否可提交草稿 */
-function canSubmitPrepare(item: WmMiscIssueVO) {
-  return hasAccessByCodes(['mes:wm-misc-issue:update']) && item.status === MesWmMiscIssueStatusEnum.PREPARE
-}
-
-/** 是否可执行出库 */
-function canFinishApproved(item: WmMiscIssueVO) {
-  return hasAccessByCodes(['mes:wm-misc-issue:finish']) && item.status === MesWmMiscIssueStatusEnum.APPROVED
-}
-
-/** 是否可取消待执行出库 */
-function canCancelApproved(item: WmMiscIssueVO) {
-  return hasAccessByCodes(['mes:wm-misc-issue:update']) && item.status === MesWmMiscIssueStatusEnum.APPROVED
-}
-
-/** 是否存在行操作 */
-function hasRowActions(item: WmMiscIssueVO) {
-  return canUpdatePrepare(item) || canDeletePrepare(item) || canSubmitPrepare(item) || canFinishApproved(item) || canCancelApproved(item)
-}
-
-/** 编辑 */
-function handleEdit(item: WmMiscIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/miscissue/form/index?id=${item.id}`,
-  })
-}
-
-/** 执行出库 */
-function handleFinish(item: WmMiscIssueVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/miscissue/form/index?id=${item.id}&mode=finish`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmMiscIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.code || item.name || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteMiscIssue(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 提交 */
-async function handleSubmitIssue(item: WmMiscIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认提交该杂项出库单？提交前请确认已维护出库物料，提交后将不能修改。',
-    })
-  } catch {
-    return
-  }
-  await submitMiscIssue(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 取消 */
-async function handleCancel(item: WmMiscIssueVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: '确认取消该杂项出库单？取消后不可恢复。',
-    })
-  } catch {
-    return
-  }
-  await cancelMiscIssue(item.id)
-  toast.success('取消成功')
-  reload()
 }
 
 /** 初始化 */

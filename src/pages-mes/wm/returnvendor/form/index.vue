@@ -31,14 +31,15 @@
           <wd-form-item title="采购订单号" title-width="200rpx" prop="purchaseOrderCode">
             <wd-input v-model="formData.purchaseOrderCode" clearable :disabled="isHeaderReadonly" placeholder="请输入采购订单号" />
           </wd-form-item>
-          <wd-form-item title="供应商" title-width="200rpx" prop="vendorId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openVendorSelector">
-              <text :class="selectedVendorText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedVendorText || '请选择供应商' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <VendorFormPicker
+            v-model="formData.vendorId"
+            label="供应商"
+            label-width="200rpx"
+            prop="vendorId"
+            placeholder="请选择供应商"
+            :disabled="isHeaderReadonly"
+            @change="handleVendorChange"
+          />
           <wd-form-item
             title="退货日期"
             title-width="200rpx"
@@ -97,55 +98,52 @@
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="isEditable"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="isEditable"
+          class="flex-1"
+          type="primary"
+          :loading="formLoading" @click="handleSubmit"
+        >
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="warning"
+          :loading="submitLoading" @click="handleSubmitReturnVendor"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="isStock"
+          class="flex-1"
+          type="success"
+          :loading="stockLoading" @click="handleStockReturnVendor"
+        >
+          执行拣货
+        </wd-button>
+        <wd-button
+          v-if="isFinish"
+          class="flex-1"
+          type="success"
+          :loading="finishLoading" @click="handleFinishReturnVendor"
+        >
+          完成退货
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitReturnVendor"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="isStock"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="stockLoading ? 'opacity-60' : ''"
-        @click="handleStockReturnVendor"
-      >
-        {{ stockLoading ? '拣货中...' : '执行拣货' }}
-      </view>
-      <view
-        v-if="isFinish"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        :class="finishLoading ? 'opacity-60' : ''"
-        @click="handleFinishReturnVendor"
-      >
-        {{ finishLoading ? '退货中...' : '完成退货' }}
-      </view>
-    </MesFooterActions>
-
-    <VendorSelector ref="vendorSelectorRef" @confirm="handleVendorConfirm" />
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import type { WmReturnVendorCreateReqVO } from '@/api/mes/wm/returnvendor'
-import { onShow } from '@dcloudio/uni-app'
+import type { MdVendor } from '@/api/mes/md/vendor'
+import type { WmReturnVendor } from '@/api/mes/wm/returnvendor'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import {
   checkReturnVendorQuantity,
@@ -160,16 +158,8 @@ import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmReturnVendorStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import VendorSelector from '../../../md/vendor/components/vendor-selector.vue'
+import VendorFormPicker from '../../../md/vendor/components/vendor-form-picker.vue'
 import ReturnVendorLineList from '../components/return-vendor-line-list.vue'
-
-interface WmReturnVendorFormData extends WmReturnVendorCreateReqVO {
-  id?: number
-  vendorCode?: string
-  vendorName?: string
-  vendorNickname?: string
-  status?: number
-}
 
 const props = defineProps<{
   id?: number | string
@@ -185,9 +175,8 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/returnvendor/form/index')
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式
 const getTitle = computed(() => {
@@ -204,7 +193,7 @@ const submitLoading = ref(false) // 提交状态
 const stockLoading = ref(false) // 拣货状态
 const finishLoading = ref(false) // 退货状态
 const codeLoading = ref(false) // 编码生成状态
-const formData = ref<WmReturnVendorFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmReturnVendor>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '退货单编号不能为空' }],
   name: [{ required: true, message: '退货单名称不能为空' }],
@@ -212,8 +201,6 @@ const formSchema = createFormSchema({
   returnDate: [{ required: true, message: '退货日期不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
-const selectedVendor = ref<MdVendorVO>() // 当前选择供应商
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const isEditable = computed(() => {
   if (!currentId.value) {
@@ -230,35 +217,9 @@ const canSubmit = computed(() => (
   && currentId.value
   && formData.value.status === MesWmReturnVendorStatusEnum.PREPARE
 ))
-const selectedVendorText = computed(() => {
-  return selectedVendor.value
-    ? `${selectedVendor.value.code || '-'} ${selectedVendor.value.name || ''}`.trim()
-    : (formData.value.vendorName || '')
-})
-
 /** 默认表单数据 */
-function getDefaultFormData() {
-  return {
-    code: '',
-    name: '',
-    purchaseOrderCode: '',
-    vendorId: undefined,
-    vendorCode: '',
-    vendorName: '',
-    vendorNickname: '',
-    returnDate: '',
-    returnReason: '',
-    transportCode: '',
-    transportTelephone: '',
-    status: undefined,
-    remark: '',
-  } as WmReturnVendorFormData
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
+function getDefaultFormData(): WmReturnVendor {
+  return {}
 }
 
 /** 返回上一页 */
@@ -271,65 +232,7 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data = await getReturnVendor(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name || '',
-    purchaseOrderCode: data.purchaseOrderCode || '',
-    vendorId: data.vendorId,
-    vendorCode: data.vendorCode || '',
-    vendorName: data.vendorName || '',
-    vendorNickname: data.vendorNickname || '',
-    returnDate: data.returnDate,
-    returnReason: data.returnReason || '',
-    transportCode: data.transportCode || '',
-    transportTelephone: data.transportTelephone || '',
-    status: data.status,
-    remark: data.remark || '',
-  }
-  selectedVendor.value = data.vendorId
-    ? {
-        id: data.vendorId,
-        code: data.vendorCode || '',
-        name: data.vendorName || '',
-        nickname: data.vendorNickname || null,
-        englishName: null,
-        description: null,
-        logo: null,
-        level: null,
-        score: null,
-        address: null,
-        website: null,
-        email: null,
-        telephone: null,
-        contact1Name: null,
-        contact1Telephone: null,
-        contact1Email: null,
-        contact2Name: null,
-        contact2Telephone: null,
-        contact2Email: null,
-        creditCode: null,
-        status: 0,
-        remark: null,
-        createTime: '',
-      }
-    : undefined
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
-    selectedVendor.value = undefined
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
+  formData.value = await getReturnVendor(currentId.value)
 }
 
 /** 打开退货日期选择 */
@@ -340,25 +243,12 @@ function openReturnDatePicker() {
   pickerVisible.value.returnDate = true
 }
 
-/** 打开供应商选择器 */
-function openVendorSelector() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  vendorSelectorRef.value?.open()
-}
-
-/** 确认选择供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
-  if (!vendor) {
-    return
-  }
-  selectedVendor.value = vendor
-  formData.value.vendorId = vendor.id
-  formData.value.vendorCode = vendor.code
-  formData.value.vendorName = vendor.name
-  formData.value.vendorNickname = vendor.nickname || ''
+/** 供应商变更 */
+function handleVendorChange(vendor?: MdVendor) {
+  formData.value.vendorId = vendor?.id
+  formData.value.vendorCode = vendor?.code
+  formData.value.vendorName = vendor?.name
+  formData.value.vendorNickname = vendor?.nickname
 }
 
 /** 生成退货单编号 */
@@ -374,37 +264,20 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData() {
-  const data: WmReturnVendorCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    purchaseOrderCode: formData.value.purchaseOrderCode || undefined,
-    vendorId: formData.value.vendorId,
-    returnDate: formData.value.returnDate,
-    returnReason: formData.value.returnReason || undefined,
-    transportCode: formData.value.transportCode || undefined,
-    transportTelephone: formData.value.transportTelephone || undefined,
-    remark: formData.value.remark || undefined,
-  }
-  return data
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (currentId.value) {
-      await updateReturnVendor({ ...data, id: currentId.value })
+      await updateReturnVendor(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createReturnVendor(data)
+      const id = await createReturnVendor(formData.value)
       toast.success('新增成功')
       currentId.value = id
       formData.value.id = id
@@ -418,8 +291,8 @@ async function handleSubmit() {
 
 /** 提交供应商退货单 */
 async function handleSubmitReturnVendor() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!currentId.value) {
@@ -435,7 +308,7 @@ async function handleSubmitReturnVendor() {
   }
   submitLoading.value = true
   try {
-    await updateReturnVendor({ ...buildSubmitData(), id: currentId.value })
+    await updateReturnVendor(formData.value)
     await submitReturnVendor(currentId.value)
     toast.success('提交成功')
     uni.$emit('mes:wm:returnvendor:reload')
@@ -499,15 +372,9 @@ async function handleFinishReturnVendor() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>

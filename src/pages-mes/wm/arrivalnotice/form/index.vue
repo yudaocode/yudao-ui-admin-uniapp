@@ -17,9 +17,10 @@
                 v-model="formData.code"
                 class="min-w-0 flex-1"
                 clearable
+                :disabled="isHeaderReadonly"
                 placeholder="请输入通知单编号"
               />
-              <wd-button size="small" type="primary" :loading="codeLoading" @click="handleGenerateCode">
+              <wd-button v-if="!isHeaderReadonly" size="small" type="primary" :loading="codeLoading" @click="handleGenerateCode">
                 生成
               </wd-button>
             </view>
@@ -28,6 +29,7 @@
             <wd-input
               v-model="formData.name"
               clearable
+              :disabled="isHeaderReadonly"
               placeholder="请输入通知单名称"
             />
           </wd-form-item>
@@ -35,18 +37,19 @@
             <wd-input
               v-model="formData.purchaseOrderCode"
               clearable
+              :disabled="isHeaderReadonly"
               placeholder="请输入采购订单编号"
             />
           </wd-form-item>
-          <VendorFormPicker v-model="formData.vendorId" label="供应商" label-width="200rpx" prop="vendorId" placeholder="请选择供应商" @change="handleVendorChange" />
+          <VendorFormPicker v-model="formData.vendorId" label="供应商" label-width="200rpx" prop="vendorId" placeholder="请选择供应商" :disabled="isHeaderReadonly" @change="handleVendorChange" />
           <wd-form-item
             title="到货日期"
             title-width="200rpx"
             prop="arrivalDate"
-            is-link
+            :is-link="!isHeaderReadonly"
             placeholder="请选择到货日期"
             :value="formatDate(formData.arrivalDate)"
-            @click="pickerVisible.arrivalDate = true"
+            @click="openArrivalDatePicker"
           />
           <wd-datetime-picker
             v-model="formData.arrivalDate"
@@ -58,6 +61,7 @@
             <wd-input
               v-model="formData.contactName"
               clearable
+              :disabled="isHeaderReadonly"
               placeholder="请输入联系人"
             />
           </wd-form-item>
@@ -65,6 +69,7 @@
             <wd-input
               v-model="formData.contactTelephone"
               clearable
+              :disabled="isHeaderReadonly"
               placeholder="请输入联系方式"
             />
           </wd-form-item>
@@ -77,13 +82,14 @@
               v-model="formData.remark"
               placeholder="请输入备注"
               :maxlength="200"
+              :disabled="isHeaderReadonly"
               show-word-limit
               clearable
             />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <ArrivalNoticeLineList v-if="formData.id" :notice-id="formData.id" :readonly="false" />
+      <ArrivalNoticeLineList v-if="formData.id" :notice-id="formData.id" :readonly="!isEditable" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -91,6 +97,7 @@
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button
+          v-if="isEditable"
           class="flex-1"
           type="primary"
           :loading="formLoading" @click="handleSubmit"
@@ -157,8 +164,14 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
+const isEditable = computed(() => (
+  (!props.id && !formData.value.id)
+  || formData.value.status === MesWmArrivalNoticeStatusEnum.PREPARE
+))
+const isHeaderReadonly = computed(() => Boolean(formData.value.id || props.id) && !isEditable.value)
 const canSubmit = computed(() => (
-  props.id
+  isEditable.value
+  && props.id
   && formData.value.status === MesWmArrivalNoticeStatusEnum.PREPARE
 ))
 
@@ -184,9 +197,17 @@ function handleVendorChange(vendor?: MdVendor) {
   formData.value.contactTelephone = vendor.contact1Telephone || vendor.telephone || formData.value.contactTelephone
 }
 
+/** 打开到货日期选择 */
+function openArrivalDatePicker() {
+  if (isHeaderReadonly.value) {
+    return
+  }
+  pickerVisible.value.arrivalDate = true
+}
+
 /** 生成通知单编号 */
 async function handleGenerateCode() {
-  if (codeLoading.value) {
+  if (codeLoading.value || isHeaderReadonly.value) {
     return
   }
   codeLoading.value = true
@@ -199,6 +220,9 @@ async function handleGenerateCode() {
 
 /** 提交表单 */
 async function handleSubmit() {
+  if (!isEditable.value) {
+    return
+  }
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return

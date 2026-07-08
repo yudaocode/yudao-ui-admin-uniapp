@@ -34,56 +34,57 @@
           领料操作
         </view>
         <view class="flex flex-wrap gap-16rpx text-28rpx">
-          <view v-if="canUpdatePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white" @click="handleEdit">
+          <wd-button v-if="canUpdatePrepare" class="min-w-180rpx flex-1" type="warning" @click="handleEdit">
             编辑
-          </view>
-          <view v-if="canDeletePrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" :class="deleting ? 'opacity-60' : ''" @click="handleDelete">
-            {{ deleting ? '删除中...' : '删除' }}
-          </view>
-          <view v-if="canSubmitPrepare" class="min-w-180rpx flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" :class="submitting ? 'opacity-60' : ''" @click="handleSubmitIssue">
-            {{ submitting ? '提交中...' : '提交' }}
-          </view>
-          <view v-if="canStockApproving" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleStock">
+          </wd-button>
+          <wd-button v-if="canSubmitPrepare" class="min-w-180rpx flex-1" type="warning" :loading="submitting" @click="handleSubmitIssue">
+            提交
+          </wd-button>
+          <wd-button v-if="canStockApproving" class="min-w-180rpx flex-1" type="success" @click="handleStock">
             执行拣货
-          </view>
-          <view v-if="canFinishApproved" class="min-w-180rpx flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleFinish">
+          </wd-button>
+          <wd-button v-if="canFinishApproved" class="min-w-180rpx flex-1" type="success" @click="handleFinish">
             完成
-          </view>
-          <view v-if="canCancelActive" class="min-w-180rpx flex-1 rounded-8rpx bg-[#f56c6c] py-20rpx text-center text-white" :class="canceling ? 'opacity-60' : ''" @click="handleCancelIssue">
-            {{ canceling ? '取消中...' : '取消' }}
-          </view>
+          </wd-button>
+          <wd-button v-if="canDeletePrepare" class="min-w-180rpx flex-1" type="danger" :loading="deleting" @click="handleDelete">
+            删除
+          </wd-button>
+          <wd-button v-if="canCancelActive" class="min-w-180rpx flex-1" type="danger" :loading="canceling" @click="handleCancelIssue">
+            取消
+          </wd-button>
         </view>
       </view>
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooter" content-class="flex gap-24rpx text-28rpx">
-      <view v-if="canUpdatePrepare" class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white" @click="handleEdit">
-        编辑
+    <view v-if="hasFooter" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="canUpdatePrepare" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="canSubmitPrepare" class="flex-1" type="warning" :loading="submitting" @click="handleSubmitIssue">
+          提交
+        </wd-button>
+        <wd-button v-if="canStockApproving" class="flex-1" type="success" @click="handleStock">
+          执行拣货
+        </wd-button>
+        <wd-button v-if="canFinishApproved" class="flex-1" type="success" @click="handleFinish">
+          完成
+        </wd-button>
       </view>
-      <view v-if="canSubmitPrepare" class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white" :class="submitting ? 'opacity-60' : ''" @click="handleSubmitIssue">
-        {{ submitting ? '提交中...' : '提交' }}
-      </view>
-      <view v-if="canStockApproving" class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleStock">
-        执行拣货
-      </view>
-      <view v-if="canFinishApproved" class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white" @click="handleFinish">
-        完成
-      </view>
-    </MesFooterActions>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmProductIssueVO } from '@/api/mes/wm/productissue'
+import type { WmProductIssue } from '@/api/mes/wm/productissue'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelProductIssue, deleteProductIssue, getProductIssue, submitProductIssue } from '@/api/mes/wm/productissue'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesWmProductIssueStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -103,7 +104,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const formData = ref<WmProductIssueVO>() // 详情数据
+const formData = ref<WmProductIssue>() // 详情数据
 const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
@@ -130,7 +131,10 @@ const canFinishApproved = computed(() => (
 ))
 const canCancelActive = computed(() => (
   hasAccessByCodes(['mes:wm-product-issue:update'])
-  && [MesWmProductIssueStatusEnum.APPROVING, MesWmProductIssueStatusEnum.APPROVED].includes(formData.value?.status ?? -1)
+  && (
+    formData.value?.status === MesWmProductIssueStatusEnum.APPROVING
+    || formData.value?.status === MesWmProductIssueStatusEnum.APPROVED
+  )
 ))
 const hasFooter = computed(() => (
   canUpdatePrepare.value
@@ -148,31 +152,14 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!currentId.value || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getProductIssue(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getProductIssue(currentId.value)
   } finally {
     toast.close()
-  }
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
-    return
-  }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
   }
 }
 
@@ -215,9 +202,7 @@ async function handleDelete() {
     await deleteProductIssue(currentId.value)
     toast.success('删除成功')
     uni.$emit('mes:wm:productissue:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
@@ -240,8 +225,8 @@ async function handleSubmitIssue() {
   try {
     await submitProductIssue(currentId.value)
     toast.success('提交成功')
-    await getDetail()
     uni.$emit('mes:wm:productissue:reload')
+    await getDetail()
   } finally {
     submitting.value = false
   }
@@ -264,23 +249,15 @@ async function handleCancelIssue() {
   try {
     await cancelProductIssue(currentId.value)
     toast.success('取消成功')
-    await getDetail()
     uni.$emit('mes:wm:productissue:reload')
+    await getDetail()
   } finally {
     canceling.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
 onShow(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+  getDetail()
 })
 </script>

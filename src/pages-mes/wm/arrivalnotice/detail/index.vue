@@ -41,14 +41,6 @@
           编辑
         </wd-button>
         <wd-button
-          v-if="canDeletePrepare"
-          class="flex-1"
-          type="danger"
-          :loading="deleting" @click="handleDelete"
-        >
-          删除
-        </wd-button>
-        <wd-button
           v-if="canSubmitPrepare"
           class="flex-1"
           type="warning"
@@ -72,6 +64,14 @@
         >
           执行入库
         </wd-button>
+        <wd-button
+          v-if="canDeletePrepare"
+          class="flex-1"
+          type="danger"
+          :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
       </view>
     </view>
   </view>
@@ -79,10 +79,10 @@
 
 <script lang="ts" setup>
 import type { WmArrivalNotice } from '@/api/mes/wm/arrivalnotice'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteArrivalNotice, getArrivalNotice, submitArrivalNotice } from '@/api/mes/wm/arrivalnotice'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -198,8 +198,8 @@ async function handleSubmitNotice() {
   try {
     await submitArrivalNotice(Number(props.id))
     toast.success('提交成功')
-    await getDetail()
     uni.$emit('mes:wm:arrivalnotice:reload')
+    await getDetail()
   } finally {
     submitting.value = false
   }
@@ -224,13 +224,7 @@ function handlePendingReceipt() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:wm:arrivalnotice:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:wm:arrivalnotice:reload', getDetail)
 })
 </script>

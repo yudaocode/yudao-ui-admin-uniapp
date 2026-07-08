@@ -77,7 +77,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmSalesNoticeVO } from '@/api/mes/wm/salesnotice'
+import type { WmSalesNotice } from '@/api/mes/wm/salesnotice'
 import { ref } from 'vue'
 import { getSalesNoticePage } from '@/api/mes/wm/salesnotice'
 import { DICT_TYPE, MesWmSalesNoticeStatusEnum } from '@/utils/constants'
@@ -92,13 +92,13 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  confirm: [notice: WmSalesNoticeVO]
+  confirm: [notice: WmSalesNotice]
 }>()
 
 const visible = ref(false) // 弹层显示状态
 const loading = ref(false) // 加载状态
-const noticeList = ref<WmSalesNoticeVO[]>([]) // 发货通知列表
-const selectedNotice = ref<WmSalesNoticeVO>() // 当前选中通知
+const noticeList = ref<WmSalesNotice[]>([]) // 发货通知列表
+const selectedNotice = ref<WmSalesNotice>() // 当前选中通知
 const pageNo = ref(1) // 当前页码
 const total = ref(0) // 总条数
 const searchCode = ref('') // 通知单编号

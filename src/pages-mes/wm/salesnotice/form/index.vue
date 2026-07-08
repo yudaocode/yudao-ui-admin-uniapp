@@ -31,14 +31,15 @@
           <wd-form-item title="销售订单编号" title-width="200rpx" prop="salesOrderCode">
             <wd-input v-model="formData.salesOrderCode" clearable :disabled="isHeaderReadonly" placeholder="请输入销售订单编号" />
           </wd-form-item>
-          <wd-form-item title="客户" title-width="200rpx" prop="clientId">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openClientSelector">
-              <text :class="selectedClientText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedClientText || '请选择客户' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <ClientFormPicker
+            v-model="formData.clientId"
+            label="客户"
+            label-width="200rpx"
+            prop="clientId"
+            placeholder="请选择客户"
+            :disabled="isHeaderReadonly"
+            @change="handleClientChange"
+          />
           <wd-form-item
             title="发货日期"
             title-width="200rpx"
@@ -80,68 +81,56 @@
         </wd-cell-group>
       </wd-form>
       <SalesNoticeLineList v-if="currentId" :notice-id="currentId" :readonly="!isEditable" />
-      <view v-if="isFinish" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-24rpx text-26rpx text-[#ad6800]">
-        销售出库模块已完成迁移；点击“执行出库”将带入当前发货通知，进入销售出库新增页继续维护出库单和出库物料。
-      </view>
       <view class="h-180rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="flex gap-24rpx text-28rpx">
-      <view
-        v-if="isEditable"
-        class="flex-1 rounded-8rpx bg-[#1677ff] py-20rpx text-center text-white"
-        :class="formLoading ? 'opacity-60' : ''"
-        @click="handleSubmit"
-      >
-        {{ formLoading ? '保存中...' : '保存' }}
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="isEditable"
+          class="flex-1"
+          type="primary"
+          :loading="formLoading" @click="handleSubmit"
+        >
+          保存
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1"
+          type="warning"
+          :loading="submitLoading" @click="handleSubmitSalesNotice"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="isFinish"
+          class="flex-1"
+          type="success"
+          @click="handleFinishSalesNotice"
+        >
+          执行出库
+        </wd-button>
       </view>
-      <view
-        v-if="canSubmit"
-        class="flex-1 rounded-8rpx bg-[#faad14] py-20rpx text-center text-white"
-        :class="submitLoading ? 'opacity-60' : ''"
-        @click="handleSubmitSalesNotice"
-      >
-        {{ submitLoading ? '提交中...' : '提交' }}
-      </view>
-      <view
-        v-if="isFinish"
-        class="flex-1 rounded-8rpx bg-[#52c41a] py-20rpx text-center text-white"
-        @click="handleFinishSalesNotice"
-      >
-        执行出库
-      </view>
-    </MesFooterActions>
-
-    <ClientSelector ref="clientSelectorRef" @confirm="handleClientConfirm" />
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdClientVO } from '@/api/mes/md/client'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import type { WmSalesNoticeCreateReqVO } from '@/api/mes/wm/salesnotice'
-import { onShow } from '@dcloudio/uni-app'
+import type { MdClient } from '@/api/mes/md/client'
+import type { WmSalesNotice } from '@/api/mes/wm/salesnotice'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createSalesNotice, getSalesNotice, submitSalesNotice, updateSalesNotice } from '@/api/mes/wm/salesnotice'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmSalesNoticeStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import ClientSelector from '../../../md/client/components/client-selector.vue'
+import ClientFormPicker from '../../../md/client/components/client-form-picker.vue'
 import SalesNoticeLineList from '../components/sales-notice-line-list.vue'
-
-interface WmSalesNoticeFormData extends WmSalesNoticeCreateReqVO {
-  id?: number
-  clientCode?: string
-  clientName?: string
-  status?: number
-}
 
 const props = defineProps<{
   id?: number | string
@@ -157,9 +146,8 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/salesnotice/form/index')
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式
 const getTitle = computed(() => {
@@ -171,7 +159,7 @@ const getTitle = computed(() => {
 const formLoading = ref(false) // 表单提交状态
 const submitLoading = ref(false) // 提交状态
 const codeLoading = ref(false) // 编码生成状态
-const formData = ref<WmSalesNoticeFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<WmSalesNotice>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '通知单编号不能为空' }],
   name: [{ required: true, message: '通知单名称不能为空' }],
@@ -179,8 +167,6 @@ const formSchema = createFormSchema({
   salesDate: [{ required: true, message: '发货日期不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const clientSelectorRef = ref<InstanceType<typeof ClientSelector>>() // 客户选择器引用
-const selectedClient = ref<MdClientVO>() // 当前选择客户
 const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const isEditable = computed(() => {
   if (!currentId.value) {
@@ -196,34 +182,9 @@ const canSubmit = computed(() => (
   && currentId.value
   && formData.value.status === MesWmSalesNoticeStatusEnum.PREPARE
 ))
-const selectedClientText = computed(() => {
-  return selectedClient.value
-    ? `${selectedClient.value.code || '-'} ${selectedClient.value.name || ''}`.trim()
-    : (formData.value.clientName || '')
-})
-
 /** 默认表单数据 */
-function getDefaultFormData() {
-  return {
-    code: '',
-    name: '',
-    salesOrderCode: '',
-    clientId: undefined,
-    clientCode: '',
-    clientName: '',
-    salesDate: '',
-    recipientName: '',
-    recipientTelephone: '',
-    recipientAddress: '',
-    status: undefined,
-    remark: '',
-  } as WmSalesNoticeFormData
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
+function getDefaultFormData(): WmSalesNotice {
+  return {}
 }
 
 /** 返回上一页 */
@@ -236,63 +197,7 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data = await getSalesNotice(currentId.value)
-  formData.value = {
-    id: data.id,
-    code: data.code,
-    name: data.name || '',
-    salesOrderCode: data.salesOrderCode || '',
-    clientId: data.clientId,
-    clientCode: data.clientCode || '',
-    clientName: data.clientName || '',
-    salesDate: data.salesDate || '',
-    recipientName: data.recipientName || '',
-    recipientTelephone: data.recipientTelephone || '',
-    recipientAddress: data.recipientAddress || '',
-    status: data.status,
-    remark: data.remark || '',
-  }
-  selectedClient.value = data.clientId
-    ? {
-        id: data.clientId,
-        code: data.clientCode || '',
-        name: data.clientName || '',
-        nickname: null,
-        englishName: null,
-        description: null,
-        logo: null,
-        type: 0,
-        address: null,
-        website: null,
-        email: null,
-        telephone: null,
-        contact1Name: null,
-        contact1Telephone: null,
-        contact1Email: null,
-        contact2Name: null,
-        contact2Telephone: null,
-        contact2Email: null,
-        creditCode: null,
-        status: 0,
-        remark: null,
-        createTime: '',
-      }
-    : undefined
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
-    selectedClient.value = undefined
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    formData.value = getDefaultFormData()
-    await getDetail()
-  }
+  formData.value = await getSalesNotice(currentId.value)
 }
 
 /** 打开发货日期选择 */
@@ -303,24 +208,11 @@ function openSalesDatePicker() {
   pickerVisible.value.salesDate = true
 }
 
-/** 打开客户选择器 */
-function openClientSelector() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  clientSelectorRef.value?.open()
-}
-
-/** 确认选择客户 */
-function handleClientConfirm(clients: MdClientVO[]) {
-  const client = clients[0]
-  if (!client) {
-    return
-  }
-  selectedClient.value = client
-  formData.value.clientId = client.id
-  formData.value.clientCode = client.code
-  formData.value.clientName = client.name
+/** 客户变更 */
+function handleClientChange(client?: MdClient) {
+  formData.value.clientId = client?.id
+  formData.value.clientCode = client?.code
+  formData.value.clientName = client?.name
 }
 
 /** 生成通知单编号 */
@@ -336,37 +228,20 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData() {
-  const data: WmSalesNoticeCreateReqVO = {
-    code: formData.value.code,
-    name: formData.value.name,
-    salesOrderCode: formData.value.salesOrderCode || undefined,
-    clientId: formData.value.clientId,
-    salesDate: formData.value.salesDate,
-    recipientName: formData.value.recipientName || undefined,
-    recipientTelephone: formData.value.recipientTelephone || undefined,
-    recipientAddress: formData.value.recipientAddress || undefined,
-    remark: formData.value.remark || undefined,
-  }
-  return data
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (currentId.value) {
-      await updateSalesNotice({ ...data, id: currentId.value })
+      await updateSalesNotice(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createSalesNotice(data)
+      const id = await createSalesNotice(formData.value)
       toast.success('新增成功')
       currentId.value = id
       formData.value.id = id
@@ -380,8 +255,8 @@ async function handleSubmit() {
 
 /** 提交发货通知单 */
 async function handleSubmitSalesNotice() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   if (!currentId.value) {
@@ -397,7 +272,7 @@ async function handleSubmitSalesNotice() {
   }
   submitLoading.value = true
   try {
-    await updateSalesNotice({ ...buildSubmitData(), id: currentId.value })
+    await updateSalesNotice(formData.value)
     await submitSalesNotice(currentId.value)
     toast.success('提交成功')
     uni.$emit('mes:wm:salesnotice:reload')
@@ -416,15 +291,9 @@ function handleFinishSalesNotice() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>
