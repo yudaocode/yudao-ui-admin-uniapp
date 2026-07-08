@@ -59,10 +59,10 @@
 
 <script lang="ts" setup>
 import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteUnitMeasure, getUnitMeasure, getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -153,13 +153,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:md:unitmeasure:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:md:unitmeasure:reload', getDetail)
 })
 </script>

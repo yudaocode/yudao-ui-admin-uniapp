@@ -4,12 +4,12 @@ import { http } from '@/http/http'
 /** MES 外协发料单 */
 export interface WmOutsourceIssue {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   vendorId?: number
   vendorCode?: string
   vendorName?: string
-  workOrderId: number
+  workOrderId?: number
   workOrderCode?: string
   workOrderName?: string
   issueDate?: string | number | Date

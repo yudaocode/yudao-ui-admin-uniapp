@@ -202,7 +202,7 @@ import {
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getBoolDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { MesAutoCodePartTypeEnum } from '@/utils/constants/biz-mes-enum'
@@ -381,5 +381,15 @@ function normalizeSubmitData(): AutoCodePart {
 /** 初始化 */
 onMounted(() => {
   queryList()
+})
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:md:autocode:reload', queryList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:md:autocode:reload', queryList)
 })
 </script>

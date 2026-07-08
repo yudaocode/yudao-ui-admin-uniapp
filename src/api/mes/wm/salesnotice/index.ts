@@ -4,10 +4,10 @@ import { http } from '@/http/http'
 /** MES 发货通知单 */
 export interface WmSalesNotice {
   id?: number // 发货通知编号
-  code: string // 通知单编码
-  name: string // 通知单名称
+  code?: string // 通知单编码
+  name?: string // 通知单名称
   salesOrderCode?: string // 销售订单编号
-  clientId: number // 客户编号
+  clientId?: number // 客户编号
   clientCode?: string // 客户编码
   clientName?: string // 客户名称
   salesDate?: string | number | Date // 发货日期

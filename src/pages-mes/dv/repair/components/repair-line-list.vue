@@ -136,7 +136,7 @@ import type { DvSubject } from '@/api/mes/dv/subject'
 import type { DvRepairLine } from '@/api/mes/dv/repair/line'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createRepairLine,
   deleteRepairLine,
@@ -283,4 +283,14 @@ watch(
   },
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:dv:repair:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:dv:repair:reload', getList)
+})
 </script>

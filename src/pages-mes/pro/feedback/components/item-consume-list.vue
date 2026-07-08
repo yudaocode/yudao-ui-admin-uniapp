@@ -27,7 +27,7 @@
 
 <script lang="ts" setup>
 import type { WmItemConsumeLine } from '@/api/mes/wm/itemconsume/line'
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getItemConsumeLinePage } from '@/api/mes/wm/itemconsume/line'
 
 const props = withDefaults(defineProps<{
@@ -65,4 +65,14 @@ watch(
   () => loadList(),
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:feedback:reload', loadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:feedback:reload', loadList)
+})
 </script>

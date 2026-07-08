@@ -87,7 +87,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProProcessContent } from '@/api/mes/pro/process/content'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createProcessContent,
   deleteProcessContent,
@@ -103,6 +103,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   readonly: false,
 })
+
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
@@ -203,5 +204,15 @@ watch(() => props.processId, () => {
 /** 初始化 */
 onMounted(() => {
   getList()
+})
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:process:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:process:reload', getList)
 })
 </script>

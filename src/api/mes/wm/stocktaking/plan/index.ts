@@ -4,13 +4,13 @@ import { http } from '@/http/http'
 /** 盘点方案 */
 export interface StockTakingPlan {
   id?: number
-  code: string
-  name: string
-  type: number
+  code?: string
+  name?: string
+  type?: number
   startTime?: string | number | Date
   endTime?: string | number | Date
-  blindFlag: boolean
-  frozen: boolean
+  blindFlag?: boolean
+  frozen?: boolean
   status?: number
   remark?: string
   createTime?: Date
@@ -19,8 +19,8 @@ export interface StockTakingPlan {
 /** 盘点方案参数 */
 export interface StockTakingPlanParam {
   id?: number
-  planId: number
-  type: number
+  planId?: number
+  type?: number
   valueId?: number
   valueCode?: string
   valueName?: string

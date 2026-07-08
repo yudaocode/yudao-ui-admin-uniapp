@@ -124,7 +124,6 @@ const props = defineProps<{
   productName?: string
   routeId: number
 }>()
-const emit = defineEmits<{ changed: [] }>()
 const dialog = useDialog()
 const toast = useToast()
 const processList = ref<ProRouteProcess[]>([]) // 路线工序列表
@@ -255,7 +254,6 @@ async function handleSubmit() {
     }
     formVisible.value = false
     await getList()
-    emit('changed')
   } finally {
     formLoading.value = false
   }
@@ -274,7 +272,6 @@ async function handleDelete(item: ProRouteProductBom) {
   await deleteRouteProductBom(item.id)
   toast.success('删除成功')
   await getList()
-  emit('changed')
 }
 
 /** 监听路线和产品变化 */

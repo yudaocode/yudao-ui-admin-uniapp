@@ -39,7 +39,7 @@
 
 <script lang="ts" setup>
 import type { ProWorkOrderBom } from '@/api/mes/pro/workorder/bom'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getWorkOrderBomItemListByWorkOrderId } from '@/api/mes/pro/workorder/bom'
 import { DICT_TYPE } from '@/utils/constants'
 
@@ -69,6 +69,16 @@ async function getList() {
 
 /** 监听工单变化 */
 watch(() => props.workOrderId, () => getList())
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:workorder:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:workorder:reload', getList)
+})
 
 /** 初始化 */
 onMounted(() => {

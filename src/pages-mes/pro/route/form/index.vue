@@ -31,13 +31,11 @@
         v-if="formData.id"
         :route-id="formData.id"
         :editable="isDisabled"
-        @changed="handleRouteChildrenChanged"
       />
       <RouteProductList
         v-if="formData.id"
         :route-id="formData.id"
         :editable="isDisabled"
-        @changed="handleRouteChildrenChanged"
       />
       <view class="h-160rpx" />
     </scroll-view>
@@ -117,11 +115,6 @@ async function handleGenerateCode() {
   } finally {
     codeLoading.value = false
   }
-}
-
-/** 路线子表变更 */
-function handleRouteChildrenChanged() {
-  uni.$emit('mes:pro:route:reload')
 }
 
 /** 提交表单 */

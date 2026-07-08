@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 领料出库单行 */
 export interface WmProductIssueLine {
   id?: number // 行编号
-  issueId: number // 领料单编号
-  itemId: number // 物料编号
+  issueId?: number // 领料单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号

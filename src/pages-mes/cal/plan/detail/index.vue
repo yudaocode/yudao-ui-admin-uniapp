@@ -73,9 +73,10 @@
 
 <script lang="ts" setup>
 import type { CalPlan } from '@/api/mes/cal/plan'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { deletePlan, getPlan } from '@/api/mes/cal/plan'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -152,7 +153,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 

@@ -122,7 +122,7 @@ import type { DvSubject } from '@/api/mes/dv/subject'
 import type { DvMaintenRecordLine } from '@/api/mes/dv/maintenrecord/line'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createMaintenRecordLine,
   deleteMaintenRecordLine,
@@ -271,4 +271,14 @@ watch(
   },
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:dv:maintenrecord:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:dv:maintenrecord:reload', getList)
+})
 </script>

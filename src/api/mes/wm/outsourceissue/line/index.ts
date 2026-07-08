@@ -4,9 +4,9 @@ import { http } from '@/http/http'
 /** MES 外协发料单行 */
 export interface WmOutsourceIssueLine {
   id?: number // 行编号
-  issueId: number // 发料单编号
+  issueId?: number // 发料单编号
   materialStockId?: number // 库存记录编号
-  itemId: number // 物料编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号

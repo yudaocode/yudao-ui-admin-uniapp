@@ -4,15 +4,15 @@ import { http } from '@/http/http'
 /** MES 到货通知单行 */
 export interface WmArrivalNoticeLine {
   id?: number // 行编号
-  noticeId: number // 到货通知单编号
-  itemId: number // 物料编号
+  noticeId?: number // 到货通知单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号
   unitMeasureName?: string // 单位
-  arrivalQuantity: number // 到货数量
+  arrivalQuantity?: number // 到货数量
   qualifiedQuantity?: number // 合格数量
-  iqcCheckFlag: boolean // 是否需要来料检验
+  iqcCheckFlag?: boolean // 是否需要来料检验
   iqcId?: number // 来料检验单编号
   iqcCode?: string // 来料检验单编码
   remark?: string // 备注

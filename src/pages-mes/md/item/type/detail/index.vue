@@ -59,7 +59,7 @@
 
 <script lang="ts" setup>
 import type { MdItemType } from '@/api/mes/md/item/type'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -159,12 +159,10 @@ async function handleDelete() {
 /** 初始化 */
 onMounted(async () => {
   itemTypeList.value = await getItemTypeSimpleList()
-  uni.$on('mes:md:item:type:reload', getDetail)
-  await getDetail()
 })
 
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:md:item:type:reload', getDetail)
+/** 加载详情 */
+onShow(() => {
+  getDetail()
 })
 </script>

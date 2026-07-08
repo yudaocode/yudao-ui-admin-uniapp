@@ -110,7 +110,7 @@ import type { MdItem } from '@/api/mes/md/item'
 import type { MdProductBom } from '@/api/mes/md/item/productBom'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createProductBom,
   deleteProductBom,
@@ -292,4 +292,14 @@ async function handleDelete(item: MdProductBom) {
 
 /** 监听物料编号变化 */
 watch(() => props.itemId, loadList, { immediate: true })
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:md:item:reload', loadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:md:item:reload', loadList)
+})
 </script>

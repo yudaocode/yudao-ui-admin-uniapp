@@ -64,10 +64,10 @@
 
 <script lang="ts" setup>
 import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteMaintenRecord, getMaintenRecord, submitMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -175,21 +175,15 @@ async function handleSubmitRecord() {
   try {
     await submitMaintenRecord(Number(props.id))
     toast.success('提交成功')
-    await getDetail()
     uni.$emit('mes:dv:maintenrecord:reload')
+    await getDetail()
   } finally {
     submitting.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:dv:maintenrecord:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:dv:maintenrecord:reload', getDetail)
 })
 </script>

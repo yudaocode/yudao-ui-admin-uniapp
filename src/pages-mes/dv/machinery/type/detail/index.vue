@@ -42,7 +42,7 @@
 
 <script lang="ts" setup>
 import type { DvMachineryType } from '@/api/mes/dv/machinery/type'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -135,12 +135,10 @@ async function handleDelete() {
 /** 初始化 */
 onMounted(async () => {
   machineryTypeList.value = await getMachineryTypeSimpleList()
-  uni.$on('mes:dv:machinery-type:reload', getDetail)
-  await getDetail()
 })
 
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:dv:machinery-type:reload', getDetail)
+/** 加载详情 */
+onShow(() => {
+  getDetail()
 })
 </script>

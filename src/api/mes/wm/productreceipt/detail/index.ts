@@ -3,14 +3,14 @@ import { http } from '@/http/http'
 /** MES 产品入库单明细 */
 export interface WmProductReceiptDetail {
   id?: number
-  lineId: number
-  receiptId: number
-  itemId: number
+  lineId?: number
+  receiptId?: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  quantity: number
+  quantity?: number
   batchId?: number
   warehouseId?: number
   warehouseName?: string

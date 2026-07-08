@@ -108,7 +108,7 @@ import type { DvSubject } from '@/api/mes/dv/subject'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { create, deleteCheckPlanSubject, getListByPlan } from '@/api/mes/dv/checkplan/subject'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE, MesDvSubjectTypeEnum } from '@/utils/constants'
@@ -251,4 +251,14 @@ watch(
   },
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:dv:checkplan:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:dv:checkplan:reload', getList)
+})
 </script>

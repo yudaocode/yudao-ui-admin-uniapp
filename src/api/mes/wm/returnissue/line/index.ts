@@ -4,14 +4,14 @@ import { http } from '@/http/http'
 /** MES 生产退料单行 */
 export interface WmReturnIssueLine {
   id?: number
-  issueId: number
-  itemId: number
+  issueId?: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitMeasureName?: string
   materialStockId?: number
-  quantity: number
+  quantity?: number
   batchId?: number
   batchCode?: string
   rqcCheckFlag?: boolean

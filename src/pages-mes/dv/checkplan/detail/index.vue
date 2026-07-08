@@ -88,10 +88,10 @@
 
 <script lang="ts" setup>
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteCheckPlan, disableCheckPlan, enableCheckPlan, getCheckPlan } from '@/api/mes/dv/checkplan'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -204,8 +204,8 @@ async function handleEnable() {
   }
   await enableCheckPlan(Number(props.id))
   toast.success('启用成功')
-  await getDetail()
   uni.$emit('mes:dv:checkplan:reload')
+  await getDetail()
 }
 
 /** 停用 */
@@ -223,18 +223,12 @@ async function handleDisable() {
   }
   await disableCheckPlan(Number(props.id))
   toast.success('停用成功')
-  await getDetail()
   uni.$emit('mes:dv:checkplan:reload')
+  await getDetail()
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:dv:checkplan:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:dv:checkplan:reload', getDetail)
 })
 </script>

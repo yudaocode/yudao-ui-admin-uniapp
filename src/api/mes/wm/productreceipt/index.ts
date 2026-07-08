@@ -4,7 +4,7 @@ import { http } from '@/http/http'
 /** MES 产品入库单 */
 export interface WmProductReceipt {
   id?: number
-  code: string
+  code?: string
   name?: string
   workOrderId?: number
   workOrderCode?: string
@@ -13,7 +13,7 @@ export interface WmProductReceipt {
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  receiptDate: string | number | Date
+  receiptDate?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

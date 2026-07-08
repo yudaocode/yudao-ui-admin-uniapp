@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 杂项入库单 */
 export interface WmMiscReceipt {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   type?: number
   sourceDocType?: string
   sourceDocId?: number

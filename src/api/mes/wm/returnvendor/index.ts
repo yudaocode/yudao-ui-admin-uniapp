@@ -4,10 +4,10 @@ import { http } from '@/http/http'
 /** MES 供应商退货单 */
 export interface WmReturnVendor {
   id?: number // 退货单编号
-  code: string // 退货单编码
-  name: string // 退货单名称
+  code?: string // 退货单编码
+  name?: string // 退货单名称
   purchaseOrderCode?: string // 采购订单编号
-  vendorId: number // 供应商编号
+  vendorId?: number // 供应商编号
   vendorCode?: string // 供应商编码
   vendorName?: string // 供应商名称
   vendorNickname?: string // 供应商简称

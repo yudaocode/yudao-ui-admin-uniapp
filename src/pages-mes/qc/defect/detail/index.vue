@@ -49,10 +49,10 @@
 
 <script lang="ts" setup>
 import type { QcDefect } from '@/api/mes/qc/defect'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { deleteDefect, getDefect } from '@/api/mes/qc/defect'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -125,13 +125,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:qc:defect:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:qc:defect:reload', getDetail)
 })
 </script>

@@ -97,7 +97,7 @@ import type { DvMachinery } from '@/api/mes/dv/machinery'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { create, deleteCheckPlanMachinery, getListByPlan } from '@/api/mes/dv/checkplan/machinery'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
@@ -228,4 +228,14 @@ watch(
   },
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:dv:checkplan:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:dv:checkplan:reload', getList)
+})
 </script>

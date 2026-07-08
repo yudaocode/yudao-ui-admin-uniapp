@@ -67,10 +67,10 @@
 
 <script lang="ts" setup>
 import type { MdWorkstation } from '@/api/mes/md/workstation'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteWorkstation, getWorkstation } from '@/api/mes/md/workstation'
 import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
 import { getProcessSimpleList } from '@/api/mes/pro/process'
@@ -194,13 +194,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:md:workstation:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:md:workstation:reload', getDetail)
 })
 </script>

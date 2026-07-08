@@ -4,16 +4,16 @@ import { http } from '@/http/http'
 /** MES 采购入库单行 */
 export interface WmItemReceiptLine {
   id?: number // 行编号
-  receiptId: number // 入库单编号
+  receiptId?: number // 入库单编号
   receiptCode?: string // 入库单编码
   purchaseOrderCode?: string // 采购订单号
   arrivalNoticeLineId?: number // 到货通知单行编号
-  itemId: number // 物料编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号
   unitMeasureName?: string // 单位
-  receivedQuantity: number // 入库数量
+  receivedQuantity?: number // 入库数量
   batchId?: number // 批次编号
   batchCode?: string // 批次编码
   productionDate?: string | number | Date // 生产日期

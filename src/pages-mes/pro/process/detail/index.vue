@@ -36,10 +36,10 @@
 
 <script lang="ts" setup>
 import type { ProProcess } from '@/api/mes/pro/process'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { deleteProcess, getProcess } from '@/api/mes/pro/process'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -110,13 +110,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:pro:process:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:pro:process:reload', getDetail)
 })
 </script>

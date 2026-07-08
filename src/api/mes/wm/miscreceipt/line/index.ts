@@ -4,22 +4,22 @@ import { http } from '@/http/http'
 /** MES 杂项入库单行 */
 export interface WmMiscReceiptLine {
   id?: number
-  receiptId: number
+  receiptId?: number
   sourceDocLineId?: number
   materialStockId?: number
-  itemId: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  quantity: number
+  quantity?: number
   batchId?: number
   batchCode?: string
-  warehouseId: number
+  warehouseId?: number
   warehouseName?: string
-  locationId: number
+  locationId?: number
   locationName?: string
-  areaId: number
+  areaId?: number
   areaName?: string
   remark?: string
   createTime?: Date

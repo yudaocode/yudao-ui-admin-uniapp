@@ -61,9 +61,10 @@
 </template>
 
 <script lang="ts" setup>
+import { onShow } from '@dcloudio/uni-app'
 import type { Batch } from '@/api/mes/wm/batch'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { getBatch } from '@/api/mes/wm/batch'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -104,7 +105,7 @@ async function getDetail() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

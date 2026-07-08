@@ -4,7 +4,7 @@ import { http } from '@/http/http'
 /** MES 生产退料单 */
 export interface WmReturnIssue {
   id?: number
-  code: string
+  code?: string
   name?: string
   workstationId?: number
   workstationCode?: string

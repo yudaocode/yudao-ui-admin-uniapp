@@ -3,14 +3,14 @@ import { http } from '@/http/http'
 /** MES 采购入库上架明细 */
 export interface WmItemReceiptDetail {
   id?: number // 明细编号
-  lineId: number // 入库单行编号
-  receiptId: number // 入库单编号
-  itemId: number // 物料编号
+  lineId?: number // 入库单行编号
+  receiptId?: number // 入库单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号
   unitMeasureName?: string // 单位
-  quantity: number // 上架数量
+  quantity?: number // 上架数量
   batchId?: number // 批次编号
   warehouseId?: number // 仓库编号
   warehouseName?: string // 仓库名称

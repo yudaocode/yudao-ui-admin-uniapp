@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 外协入库单行 */
 export interface WmOutsourceReceiptLine {
   id?: number // 行编号
-  receiptId: number // 入库单编号
-  itemId: number // 物料编号
+  receiptId?: number // 入库单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号

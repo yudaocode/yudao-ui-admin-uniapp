@@ -234,12 +234,12 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { QcIndicatorResult, QcIndicatorResultDetail } from '@/api/mes/qc/indicatorresult'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createResult, deleteResult, getDetail, getResultPage, updateResult } from '@/api/mes/qc/indicatorresult'
 import { useAccess } from '@/hooks/useAccess'
 import { getDictLabel, getStrDictOptions } from '@/hooks/useDict'
-import { DICT_TYPE, MesAutoCodeRuleCode, MesQcResultValueTypeEnum } from '@/utils/constants'
+import { DICT_TYPE, MesAutoCodeRuleCode, MesQcResultValueTypeEnum, MesQcTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
@@ -309,6 +309,20 @@ function reloadList() {
   total.value = 0
   list.value = []
   pagingRef.value?.reload()
+}
+
+/** 获取刷新事件 */
+function getReloadEvent() {
+  if (props.qcType === MesQcTypeEnum.IQC) {
+    return 'mes:qc:iqc:reload'
+  }
+  if (props.qcType === MesQcTypeEnum.IPQC) {
+    return 'mes:qc:ipqc:reload'
+  }
+  if (props.qcType === MesQcTypeEnum.OQC) {
+    return 'mes:qc:oqc:reload'
+  }
+  return 'mes:qc:rqc:reload'
 }
 
 /** 打开检测值明细 */
@@ -455,9 +469,19 @@ function formatResultValue(item: QcIndicatorResultDetail) {
   return item.value
 }
 
+/** 初始化 */
+onMounted(() => {
+  uni.$on(getReloadEvent(), reloadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off(getReloadEvent(), reloadList)
+})
+
 /** 监听质检单变化 */
 watch(
-  () => [props.qcId, props.qcType],
+  () => props.qcId,
   async () => {
     total.value = 0
     list.value = []

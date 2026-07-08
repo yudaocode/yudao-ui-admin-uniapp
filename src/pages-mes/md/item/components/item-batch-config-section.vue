@@ -142,7 +142,7 @@
 import type { MdItemBatchConfig } from '@/api/mes/md/item/batchConfig'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getBatchConfigByItemId, saveBatchConfig } from '@/api/mes/md/item/batchConfig'
 import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
@@ -262,6 +262,7 @@ async function handleSave() {
     await saveBatchConfig(formData.value)
     toast.success('保存成功')
     formData.value = hydrateConfig(await getBatchConfigByItemId(Number(props.itemId)))
+    loadConfig()
   } finally {
     saving.value = false
   }
@@ -269,4 +270,14 @@ async function handleSave() {
 
 /** 监听物料编号变化 */
 watch(() => props.itemId, loadConfig, { immediate: true })
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:md:item:reload', loadConfig)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:md:item:reload', loadConfig)
+})
 </script>

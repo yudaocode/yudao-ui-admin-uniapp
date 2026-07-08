@@ -129,7 +129,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProRouteProcess } from '@/api/mes/pro/route/process'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createRouteProcess,
   deleteRouteProcess,
@@ -147,7 +147,6 @@ const props = withDefaults(defineProps<{
 }>(), {
   showTitle: true,
 })
-const emit = defineEmits<{ changed: [] }>()
 const dialog = useDialog()
 const toast = useToast()
 const list = ref<ProRouteProcess[]>([]) // 工序列表
@@ -201,6 +200,11 @@ async function getList() {
   }
 }
 
+/** 刷新列表 */
+function reload() {
+  getList()
+}
+
 /** 打开新增或编辑弹层 */
 function openForm(type: 'create' | 'update', row?: ProRouteProcess) {
   formType.value = type
@@ -243,7 +247,6 @@ async function handleSubmit() {
     }
     formVisible.value = false
     await getList()
-    emit('changed')
   } finally {
     formLoading.value = false
   }
@@ -262,16 +265,23 @@ async function handleDelete(item: ProRouteProcess) {
   await deleteRouteProcess(item.id)
   toast.success('删除成功')
   await getList()
-  emit('changed')
 }
 
 /** 监听路线编号变化 */
-watch(() => props.routeId, () => {
-  getList()
-})
+watch(() => props.routeId, reload)
 
 /** 初始化 */
 onMounted(async () => {
   await getList()
+})
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:route:reload', reload)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:route:reload', reload)
 })
 </script>

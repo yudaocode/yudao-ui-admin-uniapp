@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 杂项出库单 */
 export interface WmMiscIssue {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   type?: number
   sourceDocType?: string
   sourceDocId?: number

@@ -4,17 +4,17 @@ import { http } from '@/http/http'
 /** 盘点任务 */
 export interface StockTakingTask {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   takingDate?: string | number | Date
-  type: number
-  userId: number
+  type?: number
+  userId?: number
   userNickname?: string
-  planId: number
+  planId?: number
   planCode?: string
   planName?: string
-  blindFlag: boolean
-  frozen: boolean
+  blindFlag?: boolean
+  frozen?: boolean
   startTime?: string | number | Date
   endTime?: string | number | Date
   status?: number

@@ -136,7 +136,7 @@ import type { ProCardProcess } from '@/api/mes/pro/card/process'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { createCardProcess, deleteCardProcess, getCardProcessPage, updateCardProcess } from '@/api/mes/pro/card/process'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { toFiniteNumber } from '@/utils/format'
@@ -147,10 +147,6 @@ import WorkstationFormPicker from '@/pages-mes/md/workstation/components/worksta
 const props = defineProps<{
   cardId: number
   editable?: boolean
-}>()
-
-const emit = defineEmits<{
-  changed: []
 }>()
 
 const dialog = useDialog()
@@ -228,6 +224,11 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
+/** 刷新工序记录 */
+function reload() {
+  pagingRef.value?.reload()
+}
+
 /** 打开工序记录表单 */
 function openForm(row?: ProCardProcess) {
   const data = createDefaultFormData(row?.sort || total.value + 1)
@@ -256,8 +257,7 @@ async function handleSubmit() {
       toast.success('新增成功')
     }
     formVisible.value = false
-    pagingRef.value?.reload()
-    emit('changed')
+    reload()
   } finally {
     formLoading.value = false
   }
@@ -275,7 +275,16 @@ async function removeProcess(item: ProCardProcess) {
   }
   await deleteCardProcess(item.id)
   toast.success('删除成功')
-  pagingRef.value?.reload()
-  emit('changed')
+  reload()
 }
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:card:reload', reload)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:card:reload', reload)
+})
 </script>

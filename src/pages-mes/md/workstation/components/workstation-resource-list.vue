@@ -229,7 +229,7 @@ import type { MdWorkstationWorker } from '@/api/mes/md/workstation/worker'
 import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getSimplePostList } from '@/api/system/post'
 import {
   createWorkstationMachine,
@@ -619,4 +619,14 @@ function getResourceLabel(type: ResourceType, row: ResourceRow) {
 
 /** 监听工作站编号变化 */
 watch(() => [props.workstationId, props.resourceType], loadList, { immediate: true })
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:md:workstation:reload', loadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:md:workstation:reload', loadList)
+})
 </script>

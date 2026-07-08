@@ -3,18 +3,18 @@ import { http } from '@/http/http'
 /** MES 生产退料明细 */
 export interface WmReturnIssueDetail {
   id?: number
-  issueId: number
-  lineId: number
+  issueId?: number
+  lineId?: number
   materialStockId?: number
-  itemId: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  quantity: number
+  quantity?: number
   batchId?: number
   batchCode?: string
-  warehouseId: number
+  warehouseId?: number
   warehouseName?: string
   locationId?: number
   locationName?: string

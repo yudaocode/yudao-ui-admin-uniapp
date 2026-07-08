@@ -22,7 +22,7 @@
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
 
-      <CardProcessList v-if="formData?.id" :card-id="formData.id" :editable="canEdit" @changed="getDetail" />
+      <CardProcessList v-if="formData?.id" :card-id="formData.id" :editable="canEdit" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -51,9 +51,10 @@
 
 <script lang="ts" setup>
 import type { ProCard } from '@/api/mes/pro/card'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelCard, deleteCard, finishCard, getCard } from '@/api/mes/pro/card'
 import { useAccess } from '@/hooks/useAccess'
 import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
@@ -179,7 +180,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

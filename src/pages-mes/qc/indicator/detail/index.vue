@@ -52,10 +52,10 @@
 <script lang="ts" setup>
 import type { QcIndicator } from '@/api/mes/qc/indicator'
 import type { DictType } from '@/api/system/dict/type'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { deleteIndicator, getIndicator } from '@/api/mes/qc/indicator'
 import { getSimpleDictTypeList } from '@/api/system/dict/type'
 import { useAccess } from '@/hooks/useAccess'
@@ -147,13 +147,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:qc:indicator:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:qc:indicator:reload', getDetail)
 })
 </script>

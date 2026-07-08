@@ -4,7 +4,7 @@ import { http } from '@/http/http'
 /** MES 采购入库单 */
 export interface WmItemReceipt {
   id?: number // 入库单编号
-  code: string // 入库单编码
+  code?: string // 入库单编码
   name?: string // 入库单名称
   iqcId?: number // 来料检验单编号
   iqcCode?: string // 来料检验单编码

@@ -68,10 +68,11 @@
 </template>
 
 <script lang="ts" setup>
+import { onShow } from '@dcloudio/uni-app'
 import type { ProAndonRecord } from '@/api/mes/pro/andon/record'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteAndonRecord, getAndonRecord } from '@/api/mes/pro/andon/record'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -150,7 +151,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

@@ -60,10 +60,10 @@
 
 <script lang="ts" setup>
 import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteWorkshop, getWorkshop } from '@/api/mes/md/workstation/workshop'
 import { useAccess } from '@/hooks/useAccess'
 import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
@@ -160,13 +160,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:md:workshop:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:md:workshop:reload', getDetail)
 })
 </script>

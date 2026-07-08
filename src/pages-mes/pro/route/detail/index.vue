@@ -68,10 +68,10 @@
 
 <script lang="ts" setup>
 import type { ProRoute } from '@/api/mes/pro/route'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteRoute, getRoute, updateRouteStatus } from '@/api/mes/pro/route'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -179,13 +179,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
-  uni.$on('mes:pro:route:reload', getDetail)
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:pro:route:reload', getDetail)
 })
 </script>

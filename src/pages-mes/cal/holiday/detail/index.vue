@@ -34,9 +34,10 @@
 </template>
 
 <script lang="ts" setup>
+import { onShow } from '@dcloudio/uni-app'
 import type { CalHoliday } from '@/api/mes/cal/holiday'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getHolidayByDay } from '@/api/mes/cal/holiday'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
@@ -84,7 +85,7 @@ function handleEdit() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

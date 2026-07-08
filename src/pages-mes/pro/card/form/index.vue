@@ -41,7 +41,7 @@
         </wd-cell-group>
       </wd-form>
 
-      <CardProcessList v-if="formData.id" :card-id="formData.id" :editable="isEditable" @changed="handleProcessChanged" />
+      <CardProcessList v-if="formData.id" :card-id="formData.id" :editable="isEditable" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -222,11 +222,6 @@ async function handleSubmit() {
   } finally {
     formLoading.value = false
   }
-}
-
-/** 工序记录变更 */
-function handleProcessChanged() {
-  uni.$emit('mes:pro:card:reload')
 }
 
 /** 初始化 */

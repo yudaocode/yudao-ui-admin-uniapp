@@ -100,9 +100,10 @@
 
 <script lang="ts" setup>
 import type { ProFeedback } from '@/api/mes/pro/feedback'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteFeedback, getFeedback, submitFeedback } from '@/api/mes/pro/feedback'
 import { useAccess } from '@/hooks/useAccess'
 import { useUserStore } from '@/store/user'
@@ -247,7 +248,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

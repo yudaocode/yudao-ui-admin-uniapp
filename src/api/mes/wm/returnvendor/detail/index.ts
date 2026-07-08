@@ -3,15 +3,15 @@ import { http } from '@/http/http'
 /** MES 供应商退货明细 */
 export interface WmReturnVendorDetail {
   id?: number // 明细编号
-  returnId: number // 退货单编号
-  lineId: number // 退货单行编号
+  returnId?: number // 退货单编号
+  lineId?: number // 退货单行编号
   materialStockId?: number // 库存记录编号
-  itemId: number // 物料编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号
   unitMeasureName?: string // 单位名称
-  quantity: number // 拣货数量
+  quantity?: number // 拣货数量
   batchId?: number // 批次编号
   batchCode?: string // 批次号
   warehouseId?: number // 仓库编号

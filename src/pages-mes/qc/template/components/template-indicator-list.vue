@@ -123,7 +123,7 @@ import type { QcIndicator } from '@/api/mes/qc/indicator'
 import type { QcTemplateIndicator } from '@/api/mes/qc/template/indicator'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   createTemplateIndicator,
   deleteTemplateIndicator,
@@ -266,7 +266,7 @@ async function handleSubmit() {
       toast.success('新增成功')
     }
     formVisible.value = false
-    await loadList()
+    loadList()
   } finally {
     formLoading.value = false
   }
@@ -284,11 +284,17 @@ async function handleDelete(item: QcTemplateIndicator) {
   }
   await deleteTemplateIndicator(item.id)
   toast.success('删除成功')
-  await loadList()
+  loadList()
 }
 
 /** 初始化 */
 onMounted(() => {
+  uni.$on('mes:qc:template:reload', loadList)
   loadList()
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:qc:template:reload', loadList)
 })
 </script>

@@ -39,10 +39,10 @@
 
 <script lang="ts" setup>
 import type { TmToolType } from '@/api/mes/tm/tool/type'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { deleteToolType, getToolType } from '@/api/mes/tm/tool/type'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -123,13 +123,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:tm:tool-type:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:tm:tool-type:reload', getDetail)
 })
 </script>

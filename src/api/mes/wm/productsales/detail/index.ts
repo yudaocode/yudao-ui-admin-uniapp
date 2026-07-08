@@ -3,14 +3,14 @@ import { http } from '@/http/http'
 /** MES 销售出库明细 */
 export interface WmProductSalesDetail {
   id?: number // 明细编号
-  lineId: number // 出库单行编号
-  salesId: number // 出库单编号
-  itemId: number // 物料编号
+  lineId?: number // 出库单行编号
+  salesId?: number // 出库单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号
   unitMeasureName?: string // 单位名称
-  quantity: number // 拣货数量
+  quantity?: number // 拣货数量
   materialStockId?: number // 库存记录编号
   batchId?: number // 批次编号
   batchCode?: string // 批次号

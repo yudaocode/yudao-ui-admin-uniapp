@@ -117,7 +117,7 @@ import type { MdItem } from '@/api/mes/md/item'
 import type { QcTemplateItem } from '@/api/mes/qc/template/item'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   createTemplateItem,
   deleteTemplateItem,
@@ -256,7 +256,7 @@ async function handleSubmit() {
       toast.success('新增成功')
     }
     formVisible.value = false
-    await loadList()
+    loadList()
   } finally {
     formLoading.value = false
   }
@@ -274,7 +274,7 @@ async function handleDelete(item: QcTemplateItem) {
   }
   await deleteTemplateItem(item.id)
   toast.success('删除成功')
-  await loadList()
+  loadList()
 }
 
 /** 格式化最大不合格数 */
@@ -287,6 +287,12 @@ function formatQuantityUnqualified(value?: number) {
 
 /** 初始化 */
 onMounted(() => {
+  uni.$on('mes:qc:template:reload', loadList)
   loadList()
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:qc:template:reload', loadList)
 })
 </script>

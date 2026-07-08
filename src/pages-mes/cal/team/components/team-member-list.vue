@@ -87,7 +87,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CalTeamMember } from '@/api/mes/cal/team/member'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { reactive, ref, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { createTeamMember, deleteTeamMember, getTeamMemberListByTeam } from '@/api/mes/cal/team/member'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { createFormSchema } from '@/utils/wot'
@@ -188,4 +188,14 @@ watch(
   () => getList(),
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:cal:team:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:cal:team:reload', getList)
+})
 </script>

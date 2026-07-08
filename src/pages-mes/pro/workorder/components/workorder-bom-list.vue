@@ -145,7 +145,7 @@ import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import type { ProWorkOrderBom } from '@/api/mes/pro/workorder/bom'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createWorkOrderBom,
   deleteWorkOrderBom,
@@ -207,6 +207,11 @@ async function queryList(pageNo: number, pageSize: number) {
   } catch {
     pagingRef.value?.complete(false)
   }
+}
+
+/** 刷新列表 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 加载已有 BOM 物料编号 */
@@ -284,7 +289,7 @@ async function handleSubmit() {
       toast.success('新增成功')
     }
     formVisible.value = false
-    pagingRef.value?.reload()
+    reload()
   } finally {
     formLoading.value = false
   }
@@ -302,7 +307,7 @@ async function handleDelete(item: ProWorkOrderBom) {
   }
   await deleteWorkOrderBom(item.id)
   toast.success('删除成功')
-  pagingRef.value?.reload()
+  reload()
 }
 
 /** 是否可从 BOM 生成子工单 */
@@ -318,5 +323,15 @@ function handleGenerateWorkOrder(item: ProWorkOrderBom) {
 }
 
 /** 监听工单变化 */
-watch(() => props.workOrderId, () => pagingRef.value?.reload())
+watch(() => props.workOrderId, reload)
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:workorder:reload', reload)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:workorder:reload', reload)
+})
 </script>

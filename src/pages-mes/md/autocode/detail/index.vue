@@ -70,9 +70,10 @@
 
 <script lang="ts" setup>
 import type { AutoCodeRule } from '@/api/mes/md/autocode/rule'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { deleteAutoCodeRule, getAutoCodeRule } from '@/api/mes/md/autocode/rule'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -150,7 +151,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

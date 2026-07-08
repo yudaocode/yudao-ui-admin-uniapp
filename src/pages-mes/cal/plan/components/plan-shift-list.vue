@@ -88,7 +88,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CalPlanShift } from '@/api/mes/cal/plan/shift'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { reactive, ref, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { createPlanShift, deletePlanShift, getPlanShiftListByPlan, updatePlanShift } from '@/api/mes/cal/plan/shift'
 import { createFormSchema } from '@/utils/wot'
 
@@ -206,4 +206,14 @@ watch(
   () => getList(),
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:cal:plan:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:cal:plan:reload', getList)
+})
 </script>

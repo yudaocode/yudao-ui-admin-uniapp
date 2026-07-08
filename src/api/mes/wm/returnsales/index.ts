@@ -4,10 +4,10 @@ import { http } from '@/http/http'
 /** MES 销售退货单 */
 export interface WmReturnSales {
   id?: number
-  code: string
-  name: string
+  code?: string
+  name?: string
   salesOrderCode?: string
-  clientId: number
+  clientId?: number
   clientCode?: string
   clientName?: string
   clientNickname?: string

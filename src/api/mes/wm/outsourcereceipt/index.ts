@@ -4,7 +4,7 @@ import { http } from '@/http/http'
 /** MES 外协入库单 */
 export interface WmOutsourceReceipt {
   id?: number // 入库单编号
-  code: string // 入库单编码
+  code?: string // 入库单编码
   name?: string // 入库单名称
   workOrderId?: number // 外协工单编号
   workOrderCode?: string // 外协工单编码

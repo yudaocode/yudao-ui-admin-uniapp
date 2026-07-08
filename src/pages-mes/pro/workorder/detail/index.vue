@@ -98,9 +98,10 @@
 <script lang="ts" setup>
 import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import type { ProWorkOrderBom } from '@/api/mes/pro/workorder/bom'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelWorkOrder, deleteWorkOrder, finishWorkOrder, getWorkOrder } from '@/api/mes/pro/workorder'
 import { useAccess } from '@/hooks/useAccess'
 import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
@@ -271,7 +272,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 </script>

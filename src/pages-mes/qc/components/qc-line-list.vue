@@ -236,7 +236,7 @@ import type { QcRqcLine } from '@/api/mes/qc/rqc/line'
 import type { QcDefectRecord } from '@/api/mes/qc/defectrecord'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createDefectRecord, deleteDefectRecord, getDefectRecordPage, updateDefectRecord } from '@/api/mes/qc/defectrecord'
 import { getIqcLinePage } from '@/api/mes/qc/iqc/line'
 import { getIpqcLinePage } from '@/api/mes/qc/ipqc/line'
@@ -305,6 +305,20 @@ function reloadList() {
   total.value = 0
   list.value = []
   pagingRef.value?.reload()
+}
+
+/** 获取刷新事件 */
+function getReloadEvent() {
+  if (props.qcType === MesQcTypeEnum.IQC) {
+    return 'mes:qc:iqc:reload'
+  }
+  if (props.qcType === MesQcTypeEnum.IPQC) {
+    return 'mes:qc:ipqc:reload'
+  }
+  if (props.qcType === MesQcTypeEnum.OQC) {
+    return 'mes:qc:oqc:reload'
+  }
+  return 'mes:qc:rqc:reload'
 }
 
 /** 查询对应检验单行 */
@@ -447,9 +461,19 @@ async function handleDeleteDefect(record: QcDefectRecord) {
   reloadList()
 }
 
+/** 初始化 */
+onMounted(() => {
+  uni.$on(getReloadEvent(), reloadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off(getReloadEvent(), reloadList)
+})
+
 /** 监听检验单编号变化 */
 watch(
-  () => [props.orderId, props.qcType],
+  () => props.orderId,
   async () => {
     total.value = 0
     list.value = []

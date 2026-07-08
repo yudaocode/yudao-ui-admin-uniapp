@@ -3,9 +3,9 @@ import { http } from '@/http/http'
 /** MES 外协入库上架明细 */
 export interface WmOutsourceReceiptDetail {
   id?: number // 明细编号
-  lineId: number // 入库单行编号
-  receiptId: number // 入库单编号
-  itemId: number // 物料编号
+  lineId?: number // 入库单行编号
+  receiptId?: number // 入库单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号

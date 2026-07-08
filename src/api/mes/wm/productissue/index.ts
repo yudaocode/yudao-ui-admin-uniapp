@@ -4,9 +4,9 @@ import { http } from '@/http/http'
 /** MES 领料出库单 */
 export interface WmProductIssue {
   id?: number
-  code: string
-  name: string
-  workOrderId: number
+  code?: string
+  name?: string
+  workOrderId?: number
   workOrderCode?: string
   workstationId?: number
   workstationCode?: string
@@ -15,7 +15,7 @@ export interface WmProductIssue {
   clientName?: string
   taskId?: number
   issueDate?: string | number | Date
-  requiredTime: string | number | Date
+  requiredTime?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

@@ -4,9 +4,9 @@ import { http } from '@/http/http'
 /** MES 转移单 */
 export interface WmTransfer {
   id?: number
-  code: string
-  name: string
-  type: number
+  code?: string
+  name?: string
+  type?: number
   deliveryFlag?: boolean
   recipientName?: string
   recipientTelephone?: string
@@ -14,7 +14,7 @@ export interface WmTransfer {
   carrier?: string
   shippingNumber?: string
   confirmFlag?: boolean
-  transferDate: string | number | Date
+  transferDate?: string | number | Date
   status?: number
   remark?: string
   createTime?: Date

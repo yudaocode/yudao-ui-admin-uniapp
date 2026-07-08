@@ -87,10 +87,10 @@
 
 <script lang="ts" setup>
 import type { DvRepair } from '@/api/mes/dv/repair'
-import { onUnload } from '@dcloudio/uni-app'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { deleteRepair, getRepair, submitRepair } from '@/api/mes/dv/repair'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -212,8 +212,8 @@ async function handleSubmitRepair() {
   try {
     await submitRepair(Number(props.id))
     toast.success('提交成功')
-    await getDetail()
     uni.$emit('mes:dv:repair:reload')
+    await getDetail()
   } finally {
     submitting.value = false
   }
@@ -240,13 +240,7 @@ function handleFinish() {
 }
 
 /** 初始化 */
-onMounted(() => {
-  uni.$on('mes:dv:repair:reload', getDetail)
+onShow(() => {
   getDetail()
-})
-
-/** 卸载 */
-onUnload(() => {
-  uni.$off('mes:dv:repair:reload', getDetail)
 })
 </script>

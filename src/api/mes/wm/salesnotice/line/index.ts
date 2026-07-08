@@ -4,8 +4,8 @@ import { http } from '@/http/http'
 /** MES 发货通知单行 */
 export interface WmSalesNoticeLine {
   id?: number // 行编号
-  noticeId: number // 发货通知单编号
-  itemId: number // 物料编号
+  noticeId?: number // 发货通知单编号
+  itemId?: number // 物料编号
   itemCode?: string // 物料编码
   itemName?: string // 物料名称
   specification?: string // 规格型号

@@ -4,9 +4,9 @@ import { http } from '@/http/http'
 /** 装箱单 */
 export interface WmPackage {
   id?: number
-  code: string
+  code?: string
   parentId?: number
-  packageDate: string | number | Date
+  packageDate?: string | number | Date
   salesOrderCode?: string
   invoiceCode?: string
   clientId?: number

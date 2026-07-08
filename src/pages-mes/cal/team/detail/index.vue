@@ -53,9 +53,10 @@
 
 <script lang="ts" setup>
 import type { CalTeam } from '@/api/mes/cal/team'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { deleteTeam, getTeam } from '@/api/mes/cal/team'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
@@ -129,7 +130,7 @@ async function handleDelete() {
 }
 
 /** 初始化 */
-onMounted(() => {
+onShow(() => {
   getDetail()
 })
 

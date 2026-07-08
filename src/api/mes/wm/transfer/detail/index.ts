@@ -3,22 +3,22 @@ import { http } from '@/http/http'
 /** MES 调拨明细 */
 export interface WmTransferDetail {
   id?: number
-  lineId: number
-  transferId: number
-  itemId: number
+  lineId?: number
+  transferId?: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitName?: string
   unitMeasureName?: string
-  quantity: number
-  batchId: number
+  quantity?: number
+  batchId?: number
   batchCode?: string
-  toWarehouseId: number
+  toWarehouseId?: number
   toWarehouseName?: string
-  toLocationId: number
+  toLocationId?: number
   toLocationName?: string
-  toAreaId: number
+  toAreaId?: number
   toAreaName?: string
   remark?: string
   createTime?: Date

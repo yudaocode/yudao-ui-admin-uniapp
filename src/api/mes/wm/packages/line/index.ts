@@ -4,14 +4,14 @@ import { http } from '@/http/http'
 /** 装箱明细 */
 export interface WmPackageLine {
   id?: number
-  packageId: number
+  packageId?: number
   materialStockId?: number
-  itemId: number
+  itemId?: number
   itemCode?: string
   itemName?: string
   specification?: string
   unitMeasureName?: string
-  quantity: number
+  quantity?: number
   workOrderId?: number
   workOrderCode?: string
   batchCode?: string

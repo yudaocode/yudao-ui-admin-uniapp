@@ -4,9 +4,9 @@ import { http } from '@/http/http'
 /** MES 销售出库单 */
 export interface WmProductSales {
   id?: number // 销售出库编号
-  code: string // 出库单编号
+  code?: string // 出库单编号
   name?: string // 出库单名称
-  clientId: number // 客户编号
+  clientId?: number // 客户编号
   clientCode?: string // 客户编码
   clientName?: string // 客户名称
   salesOrderCode?: string // 销售订单编号

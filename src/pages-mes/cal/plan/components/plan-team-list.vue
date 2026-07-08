@@ -109,7 +109,7 @@ import type { CalTeam } from '@/api/mes/cal/team'
 import type { CalPlanTeam } from '@/api/mes/cal/plan/team'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { createPlanTeam, deletePlanTeam, getPlanTeamListByPlan } from '@/api/mes/cal/plan/team'
 import { getTeamPage } from '@/api/mes/cal/team'
 import { getTeamMemberListByTeam } from '@/api/mes/cal/team/member'
@@ -255,4 +255,14 @@ watch(
   () => getList(),
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:cal:plan:reload', getList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:cal:plan:reload', getList)
+})
 </script>

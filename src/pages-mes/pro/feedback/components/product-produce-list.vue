@@ -30,7 +30,7 @@
 
 <script lang="ts" setup>
 import type { WmProductProduceLine } from '@/api/mes/wm/productproduce/line'
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getProductProduceLinePage } from '@/api/mes/wm/productproduce/line'
 import { DICT_TYPE } from '@/utils/constants'
 
@@ -69,4 +69,14 @@ watch(
   () => loadList(),
   { immediate: true },
 )
+
+/** 监听刷新事件 */
+onMounted(() => {
+  uni.$on('mes:pro:feedback:reload', loadList)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:pro:feedback:reload', loadList)
+})
 </script>
