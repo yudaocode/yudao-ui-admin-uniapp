@@ -28,8 +28,11 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="formData && (hasAccessByCodes(['mes:tm-tool:update']) || hasAccessByCodes(['mes:tm-tool:delete']))" class="yd-detail-footer">
+    <view v-if="formData" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" variant="plain" @click="handleBarcode">
+          条码
+        </wd-button>
         <wd-button v-if="hasAccessByCodes(['mes:tm-tool:update'])" class="flex-1" type="warning" @click="handleEdit">
           编辑
         </wd-button>
@@ -38,6 +41,9 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
@@ -49,8 +55,9 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
 import { deleteTool, getTool } from '@/api/mes/tm/tool'
 import { useAccess } from '@/hooks/useAccess'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
+import { BarcodeBizTypeEnum, DICT_TYPE, MesMaintenTypeEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | string }>()
@@ -67,6 +74,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<TmTool>() // 详情数据
 const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 
 /** 返回上一页 */
 function handleBack() {
@@ -89,6 +97,19 @@ async function getDetail() {
 /** 编辑 */
 function handleEdit() {
   uni.navigateTo({ url: `/pages-mes/tm/tool/form/index?id=${props.id}` })
+}
+
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
+    return
+  }
+  barcodeDetailPopupRef.value?.openByBusiness(
+    formData.value.id,
+    BarcodeBizTypeEnum.TOOL,
+    formData.value.code,
+    formData.value.name,
+  )
 }
 
 /** 格式化下次保养 */

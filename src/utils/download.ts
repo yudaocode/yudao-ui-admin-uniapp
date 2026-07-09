@@ -139,6 +139,31 @@ async function downloadFileH5(url: string, fileName?: string): Promise<void> {
   document.body.removeChild(link)
 }
 
+/** H5 端下载内存文件 */
+export async function downloadBlobH5(blob: Blob, fileName: string): Promise<void> {
+  const objectUrl = URL.createObjectURL(blob)
+  try {
+    await downloadFileH5(objectUrl, fileName)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+/** H5 端下载文本文件 */
+export function downloadTextFileH5(content: string, fileName: string, mimeType = 'text/plain;charset=utf-8'): Promise<void> {
+  return downloadBlobH5(new Blob([content], { type: mimeType }), fileName)
+}
+
+/** H5 端下载 SVG 文件 */
+export function downloadSvgFileH5(svg: string, fileName: string): Promise<void> {
+  return downloadTextFileH5(svg, fileName, 'image/svg+xml;charset=utf-8')
+}
+
+/** 清理下载文件名 */
+export function sanitizeFileName(value: string) {
+  return value.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'content'
+}
+
 /** 构造后端下载地址 */
 function buildApiDownloadUrl(url: string, params?: Record<string, any>) {
   let requestUrl = url

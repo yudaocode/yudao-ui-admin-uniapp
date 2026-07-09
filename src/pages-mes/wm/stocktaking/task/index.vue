@@ -28,8 +28,9 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+          @click="handleDetail(item)"
         >
-          <view class="p-24rpx" @click="handleDetail(item)">
+          <view class="p-24rpx">
             <view class="mb-16rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1">
                 <view class="truncate text-32rpx text-[#333] font-semibold">
@@ -61,43 +62,6 @@
               创建时间：{{ formatDateTime(item.createTime) || '-' }}
             </view>
           </view>
-          <view v-if="hasRowActions(item)" class="flex border-t border-t-[#f0f0f0] text-28rpx">
-            <view
-              v-if="canUpdate(item)"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="canSubmit(item)"
-              class="flex-1 py-18rpx text-center text-[#52c41a]"
-              @click="handleSubmitTask(item)"
-            >
-              提交
-            </view>
-            <view
-              v-if="canExecute(item)"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleExecute(item)"
-            >
-              执行盘点
-            </view>
-            <view
-              v-if="canCancel(item)"
-              class="flex-1 py-18rpx text-center text-[#fa8c16]"
-              @click="handleCancelTask(item)"
-            >
-              取消
-            </view>
-            <view
-              v-if="canDelete(item)"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -114,22 +78,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingTaskQueryParams, StockTakingTaskVO } from '@/api/mes/wm/stocktaking/task'
-import type { ZPagingInstance } from 'z-paging'
+import type { StockTakingTask } from '@/api/mes/wm/stocktaking/task'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import {
-  cancelStockTaking,
-  deleteStockTaking,
-  finishStockTaking,
-  getStockTakingPage,
-  submitStockTaking,
-} from '@/api/mes/wm/stocktaking/task'
+import { getStockTakingPage } from '@/api/mes/wm/stocktaking/task'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesWmStockTakingTaskStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -141,15 +96,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<StockTakingTaskVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingInstance<StockTakingTaskVO>>() // 分页组件引用
-const queryParams = ref<Partial<StockTakingTaskQueryParams>>({}) // 查询参数
+const list = ref<StockTakingTask[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<StockTakingTask>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -167,7 +120,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: StockTakingTaskQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -188,103 +141,8 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: StockTakingTaskVO) {
+function handleDetail(item: StockTakingTask) {
   uni.navigateTo({ url: `/pages-mes/wm/stocktaking/task/detail/index?id=${item.id}` })
-}
-
-/** 编辑 */
-function handleEdit(item: StockTakingTaskVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/stocktaking/task/form/index?id=${item.id}` })
-}
-
-/** 执行盘点 */
-function handleExecute(item: StockTakingTaskVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/stocktaking/task/form/index?id=${item.id}&mode=execute` })
-}
-
-/** 是否有行操作 */
-function hasRowActions(item: StockTakingTaskVO) {
-  return canUpdate(item) || canSubmit(item) || canExecute(item) || canCancel(item) || canDelete(item)
-}
-
-/** 是否可编辑 */
-function canUpdate(item: StockTakingTaskVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-task:update'])
-    && item.status === MesWmStockTakingTaskStatusEnum.PREPARE
-}
-
-/** 是否可提交 */
-function canSubmit(item: StockTakingTaskVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-task:update'])
-    && item.status === MesWmStockTakingTaskStatusEnum.PREPARE
-}
-
-/** 是否可执行 */
-function canExecute(item: StockTakingTaskVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-task:update'])
-    && item.status === MesWmStockTakingTaskStatusEnum.APPROVING
-}
-
-/** 是否可取消 */
-function canCancel(item: StockTakingTaskVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-task:update'])
-    && item.status === MesWmStockTakingTaskStatusEnum.APPROVING
-}
-
-/** 是否可删除 */
-function canDelete(item: StockTakingTaskVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-task:delete'])
-    && item.status === MesWmStockTakingTaskStatusEnum.PREPARE
-}
-
-/** 提交任务 */
-async function handleSubmitTask(item: StockTakingTaskVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认提交盘点任务「${item.name}」吗？提交后将不能修改。`,
-    })
-  } catch {
-    return
-  }
-  await submitStockTaking(item.id)
-  toast.success('提交成功')
-  reload()
-}
-
-/** 取消任务 */
-async function handleCancelTask(item: StockTakingTaskVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认取消盘点任务「${item.name}」吗？取消后不可恢复。`,
-    })
-  } catch {
-    return
-  }
-  await cancelStockTaking(item.id)
-  toast.success('取消成功')
-  reload()
-}
-
-/** 删除任务 */
-async function handleDelete(item: StockTakingTaskVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除盘点任务「${item.name}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteStockTaking(item.id)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 完成盘点，供执行页面后续复用 */
-async function handleFinish(item: StockTakingTaskVO) {
-  await finishStockTaking(item.id)
 }
 
 /** 初始化 */
@@ -295,9 +153,5 @@ onMounted(() => {
 /** 卸载 */
 onUnload(() => {
   uni.$off('mes:wm:stocktaking:task:reload', reload)
-})
-
-defineExpose({
-  handleFinish,
 })
 </script>

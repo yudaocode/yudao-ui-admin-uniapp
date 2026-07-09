@@ -25,9 +25,9 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入任务名称" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="盘点类型" :columns="stockTakingTypeOptions" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="盘点类型" :columns="stockTakingTypeOptions" all-option />
       <yd-search-date-range v-model="formData.takingDate" label="盘点日期" />
-      <yd-search-picker v-model="formData.status" label="单据状态" :columns="statusOptions" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.status" label="单据状态" :columns="statusOptions" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -41,7 +41,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingTaskQueryParams } from '@/api/mes/wm/stocktaking/task'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -57,7 +56,7 @@ interface SearchFormData {
 }
 
 const emit = defineEmits<{
-  search: [data: StockTakingTaskQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
@@ -80,32 +79,25 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_STOCK_TAKING_TYPE, formData.type)}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_STOCK_TAKING_TASK_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索盘点任务'
 })
 
-/** 构造搜索参数 */
-function buildSearchParams(): StockTakingTaskQueryParams {
-  return {
-    pageNo: 1,
-    pageSize: 10,
-    code: formData.code || undefined,
-    name: formData.name || undefined,
-    type: formData.type,
-    takingDate: formatDateRange(formData.takingDate),
-    status: formData.status,
-  }
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildSearchParams())
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+    type: formData.type === -1 ? undefined : formData.type,
+    takingDate: formatDateRange(formData.takingDate),
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置按钮操作 */

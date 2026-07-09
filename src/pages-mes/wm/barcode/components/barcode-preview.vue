@@ -13,15 +13,15 @@
         class="flex items-center justify-center border-2rpx border-[#dbeafe] rounded-12rpx bg-white p-24rpx"
         :class="isQrCode ? 'h-280rpx w-280rpx' : 'h-180rpx w-full'"
       >
-        <view v-if="isQrCode" class="qr-preview-grid">
+        <view v-if="isQrCode" class="grid grid-cols-[repeat(11,1fr)] grid-rows-[repeat(11,1fr)] h-220rpx w-220rpx gap-4rpx">
           <view
             v-for="(dot, index) in qrDots"
             :key="index"
-            class="qr-preview-dot"
+            class="rounded-3rpx"
             :class="dot ? 'bg-[#111827]' : 'bg-white'"
           />
         </view>
-        <view v-else class="barcode-preview-lines">
+        <view v-else class="h-120rpx w-full flex items-stretch justify-center gap-4rpx">
           <view
             v-for="(bar, index) in barcodeBars"
             :key="index"
@@ -42,7 +42,7 @@
         <wd-button size="small" variant="plain" @click.stop="handleCopy">
           复制条码内容
         </wd-button>
-        <wd-button size="small" type="primary" plain @click.stop="handleDownloadPreview">
+        <wd-button size="small" type="primary" variant="plain" @click.stop="handleDownloadPreview">
           下载预览 SVG
         </wd-button>
       </view>
@@ -54,6 +54,8 @@
 import { computed } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { DICT_TYPE } from '@/utils/constants'
+import { downloadSvgFileH5, sanitizeFileName } from '@/utils/download'
+import { escapeXml } from '@/utils/format'
 
 const props = withDefaults(defineProps<{
   content?: string
@@ -63,18 +65,16 @@ const props = withDefaults(defineProps<{
   showActions: true,
 })
 
-const BarcodeFormatEnum = {
-  QR_CODE: 1,
-} as const
+const BARCODE_FORMAT_QR_CODE = 1 // 二维码格式
 
 const toast = useToast()
 const showActions = computed(() => props.showActions)
-const isQrCode = computed(() => props.format === BarcodeFormatEnum.QR_CODE)
+const isQrCode = computed(() => props.format === BARCODE_FORMAT_QR_CODE)
 const previewTip = computed(() => {
   if (!showActions.value) {
-    return '移动端当前提供只读标签预览；点击卡片进入详情后可复制内容或下载 H5 预览 SVG。'
+    return '移动端当前提供标签预览；点击卡片进入详情后可复制内容或下载 H5 预览 SVG。'
   }
-  return '移动端当前提供只读标签预览、内容复制和 H5 预览下载；正式打印和真实条码图像归入报表/打印专项。'
+  return '移动端当前提供标签预览、内容复制和 H5 预览下载；正式打印和真实条码图像归入报表/打印专项。'
 })
 const qrDots = computed(() => buildPreviewBits(props.content || '', 121))
 const barcodeBars = computed(() => {
@@ -84,7 +84,7 @@ const barcodeBars = computed(() => {
   }))
 })
 
-/** 根据条码内容生成稳定的只读预览点阵 */
+/** 根据条码内容生成稳定的预览点阵 */
 function buildPreviewBits(content: string, count: number) {
   let seed = 0
   for (const char of content) {
@@ -106,7 +106,7 @@ async function handleCopy() {
 }
 
 /** 下载当前预览 SVG */
-function handleDownloadPreview() {
+async function handleDownloadPreview() {
   if (!props.content) {
     return
   }
@@ -114,7 +114,7 @@ function handleDownloadPreview() {
   // #ifdef H5
   try {
     const svg = isQrCode.value ? buildQrSvg(props.content, qrDots.value) : buildBarcodeSvg(props.content, barcodeBars.value)
-    triggerSvgDownload(svg, props.content)
+    await downloadSvgFileH5(svg, `barcode-preview-${sanitizeFileName(props.content)}.svg`)
     toast.success('预览 SVG 已下载')
   } catch {
     toast.warning('下载失败，请先复制条码内容')
@@ -124,24 +124,6 @@ function handleDownloadPreview() {
   // #ifndef H5
   toast.warning('当前平台暂仅支持复制条码内容')
   // #endif
-}
-
-/** 触发 H5 SVG 下载 */
-function triggerSvgDownload(svg: string, content: string) {
-  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-
-  try {
-    link.href = url
-    link.download = `barcode-preview-${sanitizeFileName(content)}.svg`
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    link.click()
-  } finally {
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
 }
 
 /** 生成二维码预览 SVG */
@@ -183,43 +165,4 @@ function buildBarcodeSvg(content: string, bars: Array<{ active: boolean, width: 
   <text x="${totalWidth / 2}" y="136" text-anchor="middle" font-size="14" fill="#4b5563">${escapeXml(content)}</text>
 </svg>`
 }
-
-/** 转义 SVG 文本 */
-function escapeXml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('\'', '&apos;')
-}
-
-/** 清理下载文件名 */
-function sanitizeFileName(value: string) {
-  return value.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'content'
-}
 </script>
-
-<style lang="scss" scoped>
-.qr-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  grid-template-rows: repeat(11, 1fr);
-  gap: 4rpx;
-  width: 220rpx;
-  height: 220rpx;
-}
-
-.qr-preview-dot {
-  border-radius: 3rpx;
-}
-
-.barcode-preview-lines {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  gap: 4rpx;
-  width: 100%;
-  height: 120rpx;
-}
-</style>

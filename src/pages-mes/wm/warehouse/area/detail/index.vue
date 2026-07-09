@@ -41,6 +41,8 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
     <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>

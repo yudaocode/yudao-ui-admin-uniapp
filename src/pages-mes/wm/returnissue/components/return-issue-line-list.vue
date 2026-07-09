@@ -66,11 +66,14 @@
             <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
             <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
           </view>
-          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-16rpx">
-            <wd-button size="small" type="warning" variant="plain" @click.stop="openUpdateForm(item)">
+          <view v-if="item.itemId || !readonly" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button v-if="item.itemId" size="small" type="primary" variant="plain" @click.stop="handleBarcode(item)">
+              条码
+            </wd-button>
+            <wd-button v-if="!readonly" size="small" type="warning" variant="plain" @click.stop="openUpdateForm(item)">
               编辑
             </wd-button>
-            <wd-button size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
+            <wd-button v-if="!readonly" size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
               删除
             </wd-button>
           </view>
@@ -231,8 +234,10 @@
       </scroll-view>
     </view>
   </wd-popup>
-
+  <!-- 库存选择弹窗 -->
   <MaterialStockPicker ref="stockPickerRef" :multiple="false" virtual-filter="only" positive-only @confirm="handleStockConfirm" />
+  <!-- 条码详情弹窗 -->
+  <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
 </template>
 
 <script lang="ts" setup>
@@ -256,7 +261,8 @@ import {
   updateReturnIssueLine,
 } from '@/api/mes/wm/returnissue/line'
 import { getMaterialStock } from '@/api/mes/wm/materialstock'
-import { DICT_TYPE } from '@/utils/constants'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
+import { BarcodeBizTypeEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import MaterialStockPicker from '../../materialstock/components/material-stock-picker.vue'
 
@@ -285,6 +291,7 @@ const detailListMap = ref<Record<number, WmReturnIssueDetail[]>>({}) // 上架�
 const detailLoadingMap = ref<Record<number, boolean>>({}) // 上架明细加载状态
 const stockPickerTarget = ref<'line' | 'detail'>('line') // 当前库存选择目标
 const stockPickerRef = ref<InstanceType<typeof MaterialStockPicker>>() // 库存选择器引用
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const selectedDetailStock = ref<WmMaterialStock>() // 上架明细库存记录
 const detailQuantityMax = ref<number>() // 上架明细数量上限
 const formTitle = computed(() => formData.value.id ? '编辑退料物料' : '添加退料物料')
@@ -555,6 +562,19 @@ async function handleDelete(item: WmReturnIssueLine) {
   await deleteReturnIssueLine(item.id)
   toast.success('删除成功')
   reload()
+}
+
+/** 查看物料条码 */
+function handleBarcode(item: WmReturnIssueLine) {
+  if (!item.itemId) {
+    return
+  }
+  barcodeDetailPopupRef.value?.openByBusiness(
+    item.itemId,
+    BarcodeBizTypeEnum.ITEM,
+    item.itemCode,
+    item.itemName,
+  )
 }
 
 /** 打开新增上架明细 */

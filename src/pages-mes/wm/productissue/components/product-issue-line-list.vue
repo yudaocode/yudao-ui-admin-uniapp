@@ -152,6 +152,7 @@
     </view>
   </wd-popup>
 
+  <!-- 物料选择弹窗 -->
   <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 
   <!-- 拣货明细表单弹窗 -->
@@ -211,7 +212,7 @@
       </scroll-view>
     </view>
   </wd-popup>
-
+  <!-- 库存选择弹窗 -->
   <MaterialStockPicker ref="stockPickerRef" :multiple="false" @confirm="handleStockConfirm" />
 </template>
 

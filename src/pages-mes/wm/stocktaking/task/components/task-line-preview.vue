@@ -1,11 +1,8 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         盘点清单
-      </view>
-      <view class="text-24rpx text-[#999]">
-        只读
       </view>
     </view>
     <view v-if="loading" class="px-24rpx py-32rpx text-center text-26rpx text-[#999]">
@@ -59,16 +56,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingTaskLineVO } from '@/api/mes/wm/stocktaking/task/line'
-import { onMounted, ref, watch } from 'vue'
+import type { StockTakingTaskLine } from '@/api/mes/wm/stocktaking/task/line'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getStockTakingTaskLineSimpleList } from '@/api/mes/wm/stocktaking/task/line'
 import { DICT_TYPE } from '@/utils/constants'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   taskId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
-const list = ref<StockTakingTaskLineVO[]>([]) // 清单数据
+const list = ref<StockTakingTaskLine[]>([]) // 清单数据
 const loading = ref(false) // 加载状态
 
 /** 加载盘点清单 */
@@ -85,10 +85,17 @@ async function loadList() {
   }
 }
 
+/** 监听任务编号变化 */
 watch(() => props.taskId, loadList)
 
 /** 初始化 */
 onMounted(() => {
+  uni.$on('mes:wm:stocktaking:task:reload', loadList)
   loadList()
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:wm:stocktaking:task:reload', loadList)
 })
 </script>

@@ -124,6 +124,16 @@ export function formatJson(value: unknown, fallback = '', space = 2): string {
   }
 }
 
+/** 转义 XML 文本 */
+export function escapeXml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
 /** 格式化金额：空值（null/undefined/''）显示「-」，否则保留两位小数，非数字也回退「-」 */
 export function formatMoney(value: any): string {
   if (value === null || value === undefined || value === '') {

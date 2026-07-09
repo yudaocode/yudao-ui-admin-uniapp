@@ -59,29 +59,6 @@
               创建时间：{{ formatDateTime(item.createTime) || '-' }}
             </view>
           </view>
-          <view class="flex border-t border-t-[#f0f0f0] text-28rpx">
-            <view
-              v-if="canUpdate(item)"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="canUpdateStatus"
-              class="flex-1 py-18rpx text-center text-[#52c41a]"
-              @click="handleStatusChange(item)"
-            >
-              {{ item.status === CommonStatusEnum.ENABLE ? '停用' : '启用' }}
-            </view>
-            <view
-              v-if="canDelete(item)"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -98,20 +75,13 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingPlanQueryParams, StockTakingPlanVO } from '@/api/mes/wm/stocktaking/plan'
-import type { ZPagingInstance } from 'z-paging'
+import type { StockTakingPlan } from '@/api/mes/wm/stocktaking/plan'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import {
-  deleteStockTakingPlan,
-  getStockTakingPlanPage,
-  updateStockTakingPlanStatus,
-} from '@/api/mes/wm/stocktaking/plan'
+import { onMounted, ref } from 'vue'
+import { getStockTakingPlanPage } from '@/api/mes/wm/stocktaking/plan'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -123,20 +93,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<StockTakingPlanVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingInstance<StockTakingPlanVO>>() // 分页组件引用
-const queryParams = ref<Partial<StockTakingPlanQueryParams>>({}) // 查询参数
-const canUpdateStatus = computed(() => hasAccessByCodes(['mes:wm-stock-taking-plan:update']))
+const list = ref<StockTakingPlan[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<StockTakingPlan>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 计划时间展示 */
-function getPlanTimeText(item: StockTakingPlanVO) {
+function getPlanTimeText(item: StockTakingPlan) {
   const start = formatDateTime(item.startTime)
   const end = formatDateTime(item.endTime)
   if (!start && !end) {
@@ -160,7 +127,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Partial<StockTakingPlanQueryParams>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -181,55 +148,8 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: StockTakingPlanVO) {
+function handleDetail(item: StockTakingPlan) {
   uni.navigateTo({ url: `/pages-mes/wm/stocktaking/plan/detail/index?id=${item.id}` })
-}
-
-/** 编辑 */
-function handleEdit(item: StockTakingPlanVO) {
-  uni.navigateTo({ url: `/pages-mes/wm/stocktaking/plan/form/index?id=${item.id}` })
-}
-
-/** 是否可编辑 */
-function canUpdate(item: StockTakingPlanVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-plan:update']) && item.status === CommonStatusEnum.DISABLE
-}
-
-/** 是否可删除 */
-function canDelete(item: StockTakingPlanVO) {
-  return hasAccessByCodes(['mes:wm-stock-taking-plan:delete']) && item.status === CommonStatusEnum.DISABLE
-}
-
-/** 修改状态 */
-async function handleStatusChange(item: StockTakingPlanVO) {
-  const newStatus = item.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
-  const text = newStatus === CommonStatusEnum.ENABLE ? '启用' : '停用'
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认要${text}盘点方案「${item.name}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await updateStockTakingPlanStatus(item.id, newStatus)
-  toast.success(`${text}成功`)
-  reload()
-}
-
-/** 删除 */
-async function handleDelete(item: StockTakingPlanVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除盘点方案「${item.name}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteStockTakingPlan(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

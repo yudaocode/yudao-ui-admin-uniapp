@@ -203,6 +203,8 @@
       </scroll-view>
     </view>
   </wd-popup>
+
+  <!-- 物料选择弹窗 -->
   <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 
   <!-- 上架明细表单弹窗 -->

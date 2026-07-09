@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="盘点任务详情"
@@ -7,8 +7,17 @@
       @click-left="handleBack"
     />
 
-    <!-- 详情内容 -->
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+    <!-- Tab 切换 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabType" shrink>
+        <wd-tab title="基本信息" name="basic" />
+        <wd-tab title="盘点清单" name="lines" />
+        <wd-tab title="盘点结果" name="results" />
+      </wd-tabs>
+    </view>
+
+    <!-- 基本信息 -->
+    <scroll-view v-if="tabType === 'basic'" class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-cell-group border>
         <wd-cell title="任务编码" :value="formData?.code || '-'" />
         <wd-cell title="任务名称" :value="formData?.name || '-'" />
@@ -37,54 +46,65 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <view v-if="currentId" class="px-24rpx">
-        <TaskLinePreview :task-id="currentId" />
-        <TaskResultPreview :task-id="currentId" />
-      </view>
+      <view class="h-180rpx" />
+    </scroll-view>
+
+    <!-- 盘点清单 -->
+    <scroll-view v-if="tabType === 'lines' && currentId" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <TaskLinePreview :task-id="currentId" :show-title="false" />
+      <view class="h-48rpx" />
+    </scroll-view>
+
+    <!-- 盘点结果 -->
+    <scroll-view v-if="tabType === 'results' && currentId" class="min-h-0 flex-1" scroll-y scroll-with-animation>
+      <TaskResultPreview :task-id="currentId" :show-title="false" />
+      <view class="h-48rpx" />
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions v-if="hasFooterActions" content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="canUpdate"
-        class="flex-1" type="warning" @click="handleEdit"
-      >
-        编辑
-      </wd-button>
-      <wd-button
-        v-if="canSubmit"
-        class="flex-1" type="success" @click="handleSubmitTask"
-      >
-        提交
-      </wd-button>
-      <wd-button
-        v-if="canExecute"
-        class="flex-1" type="primary" @click="handleExecute"
-      >
-        执行盘点
-      </wd-button>
-      <wd-button
-        v-if="canCancel"
-        class="flex-1" type="warning" @click="handleCancelTask"
-      >
-        取消
-      </wd-button>
-      <wd-button
-        v-if="canDelete"
-        class="flex-1" type="error" :loading="deleting" @click="handleDelete"
-      >
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="tabType === 'basic' && hasFooterActions" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="canUpdate"
+          class="flex-1" type="warning" @click="handleEdit"
+        >
+          编辑
+        </wd-button>
+        <wd-button
+          v-if="canSubmit"
+          class="flex-1" type="success" @click="handleSubmitTask"
+        >
+          提交
+        </wd-button>
+        <wd-button
+          v-if="canExecute"
+          class="flex-1" type="primary" @click="handleExecute"
+        >
+          执行盘点
+        </wd-button>
+        <wd-button
+          v-if="canCancel"
+          class="flex-1" type="warning" @click="handleCancelTask"
+        >
+          取消
+        </wd-button>
+        <wd-button
+          v-if="canDelete"
+          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+        >
+          删除
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingTaskVO } from '@/api/mes/wm/stocktaking/task'
+import type { StockTakingTask } from '@/api/mes/wm/stocktaking/task'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import {
   cancelStockTaking,
   deleteStockTaking,
@@ -92,7 +112,6 @@ import {
   submitStockTaking,
 } from '@/api/mes/wm/stocktaking/task'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesWmStockTakingTaskStatusEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -114,17 +133,17 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
-const formData = ref<StockTakingTaskVO>() // 详情数据
+const formData = ref<StockTakingTask>() // 详情数据
 const deleting = ref(false) // 删除状态
-const canUpdatePermission = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']))
-const canDeletePermission = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:delete']))
+const tabType = ref('basic') // 当前 tab 类型
+
 const isPrepare = computed(() => formData.value?.status === MesWmStockTakingTaskStatusEnum.PREPARE)
 const isApproving = computed(() => formData.value?.status === MesWmStockTakingTaskStatusEnum.APPROVING)
-const canUpdate = computed(() => canUpdatePermission.value && isPrepare.value)
-const canSubmit = computed(() => canUpdatePermission.value && isPrepare.value)
-const canExecute = computed(() => canUpdatePermission.value && isApproving.value)
-const canCancel = computed(() => canUpdatePermission.value && isApproving.value)
-const canDelete = computed(() => canDeletePermission.value && isPrepare.value)
+const canUpdate = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isPrepare.value)
+const canSubmit = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isPrepare.value)
+const canExecute = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isApproving.value)
+const canCancel = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isApproving.value)
+const canDelete = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:delete']) && isPrepare.value)
 const hasFooterActions = computed(() => {
   return canUpdate.value || canSubmit.value || canExecute.value || canCancel.value || canDelete.value
 })
@@ -147,18 +166,12 @@ function getPlanText() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!currentId.value || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getStockTaking(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getStockTaking(currentId.value)
   } finally {
     toast.close()
   }
@@ -196,7 +209,7 @@ async function handleSubmitTask() {
   await submitStockTaking(currentId.value)
   toast.success('提交成功')
   uni.$emit('mes:wm:stocktaking:task:reload')
-  getDetail()
+  await getDetail()
 }
 
 /** 取消任务 */
@@ -215,7 +228,7 @@ async function handleCancelTask() {
   await cancelStockTaking(currentId.value)
   toast.success('取消成功')
   uni.$emit('mes:wm:stocktaking:task:reload')
-  getDetail()
+  await getDetail()
 }
 
 /** 删除 */
@@ -236,25 +249,14 @@ async function handleDelete() {
     await deleteStockTaking(currentId.value)
     toast.success('删除成功')
     uni.$emit('mes:wm:stocktaking:task:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     deleting.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  getDetail()
-})
-
-/** 页面显示时刷新 */
 onShow(() => {
-  getDetail()
-})
-
-watch(currentId, () => {
   getDetail()
 })
 </script>

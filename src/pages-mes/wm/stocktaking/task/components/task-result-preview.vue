@@ -1,11 +1,8 @@
 <template>
   <view class="mt-24rpx bg-white">
-    <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
+    <view v-if="showTitle" class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         盘点结果
-      </view>
-      <view class="text-24rpx text-[#999]">
-        只读
       </view>
     </view>
     <view v-if="loading" class="px-24rpx py-32rpx text-center text-26rpx text-[#999]">
@@ -57,15 +54,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingResultVO } from '@/api/mes/wm/stocktaking/task/result'
-import { onMounted, ref, watch } from 'vue'
+import type { StockTakingResult } from '@/api/mes/wm/stocktaking/task/result'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getStockTakingResultPage } from '@/api/mes/wm/stocktaking/task/result'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   taskId?: number
-}>()
+  showTitle?: boolean
+}>(), {
+  showTitle: true,
+})
 
-const list = ref<StockTakingResultVO[]>([]) // 结果数据
+const list = ref<StockTakingResult[]>([]) // 结果数据
 const loading = ref(false) // 加载状态
 
 /** 加载盘点结果 */
@@ -87,10 +87,17 @@ async function loadList() {
   }
 }
 
+/** 监听任务编号变化 */
 watch(() => props.taskId, loadList)
 
 /** 初始化 */
 onMounted(() => {
+  uni.$on('mes:wm:stocktaking:task:reload', loadList)
   loadList()
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:wm:stocktaking:task:reload', loadList)
 })
 </script>

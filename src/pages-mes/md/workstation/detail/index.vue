@@ -62,6 +62,9 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
@@ -78,7 +81,7 @@ import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
 import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
 import { useAccess } from '@/hooks/useAccess'
-import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -102,6 +105,7 @@ interface MdWorkstationDetail extends MdWorkstation {
 }
 const formData = ref<MdWorkstationDetail>() // 详情数据
 const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const tabs = [ // 详情 tab 配置
   { key: 'basic', title: '基本信息' },
   { key: 'machine', title: '设备资源' },
@@ -155,13 +159,12 @@ function handleBarcode() {
   if (!formData.value?.id) {
     return
   }
-  uni.navigateTo({
-    url: buildBarcodeListUrl({
-      bizType: BarcodeBizTypeEnum.WORKSTATION,
-      bizId: formData.value.id,
-      bizCode: formData.value.code,
-    }),
-  })
+  barcodeDetailPopupRef.value?.openByBusiness(
+    formData.value.id,
+    BarcodeBizTypeEnum.WORKSTATION,
+    formData.value.code,
+    formData.value.name,
+  )
 }
 
 /** 编辑 */

@@ -10,62 +10,72 @@
           {{ total }} 条
         </view>
       </view>
-      <view
+      <wd-button
         v-if="!readonly"
-        class="border border-[#1677ff] rounded-8rpx px-20rpx py-8rpx text-24rpx text-[#1677ff]"
+        size="small"
+        type="primary"
         @click.stop="openCreateForm"
       >
         添加条件
-      </view>
-      <view v-else class="text-24rpx text-[#999]">
-        只读
-      </view>
+      </wd-button>
     </view>
 
     <!-- 参数列表 -->
-    <view v-if="list.length > 0">
-      <view
-        v-for="item in list"
-        :key="item.id"
-        class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-      >
-        <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-          <view class="min-w-0 flex-1">
-            <dict-tag v-if="item.type != null" :type="DICT_TYPE.MES_WM_STOCK_TAKING_PLAN_PARAM_TYPE" :value="item.type" />
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      height="640rpx"
+      :default-page-size="10"
+      :refresher-enabled="false"
+      :inside-more="true"
+      :to-bottom-loading-more-enabled="false"
+      loading-more-default-text="点击加载更多"
+      loading-more-no-more-text="没有更多盘点参数了"
+      empty-view-text="暂无盘点参数"
+      @query="queryList"
+    >
+      <view class="py-4rpx">
+        <view
+          v-for="item in list"
+          :key="item.id"
+          class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+        >
+          <view class="mb-12rpx flex items-start justify-between gap-16rpx">
+            <view class="min-w-0 flex-1">
+              <dict-tag v-if="item.type != null" :type="DICT_TYPE.MES_WM_STOCK_TAKING_PLAN_PARAM_TYPE" :value="item.type" />
+            </view>
+            <view class="shrink-0 text-24rpx text-[#999]">
+              #{{ item.id }}
+            </view>
           </view>
-          <view class="shrink-0 text-24rpx text-[#999]">
-            #{{ item.id }}
+          <view class="mb-10rpx text-26rpx text-[#666]">
+            <text class="text-[#999]">条件值编码：</text>{{ item.valueCode || '-' }}
           </view>
-        </view>
-        <view class="mb-10rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">条件值编码：</text>{{ item.valueCode || '-' }}
-        </view>
-        <view class="mb-10rpx text-26rpx text-[#666]">
-          <text class="text-[#999]">条件值名称：</text>{{ item.valueName || '-' }}
-        </view>
-        <view class="text-26rpx text-[#666]">
-          <text class="text-[#999]">备注：</text>{{ item.remark || '-' }}
-        </view>
-        <view v-if="!readonly" class="mt-16rpx flex border-t border-t-[#f0f0f0] pt-16rpx text-28rpx">
-          <view class="flex-1 py-12rpx text-center text-[#1677ff]" @click.stop="openUpdateForm(item)">
-            编辑
+          <view class="mb-10rpx text-26rpx text-[#666]">
+            <text class="text-[#999]">条件值名称：</text>{{ item.valueName || '-' }}
           </view>
-          <view class="flex-1 py-12rpx text-center text-[#f56c6c]" @click.stop="handleDelete(item)">
-            删除
+          <view class="text-26rpx text-[#666]">
+            <text class="text-[#999]">备注：</text>{{ item.remark || '-' }}
+          </view>
+          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button size="small" type="warning" variant="plain" @click.stop="openUpdateForm(item)">
+              编辑
+            </wd-button>
+            <wd-button size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
+              删除
+            </wd-button>
           </view>
         </view>
       </view>
-    </view>
-    <view v-else class="rounded-12rpx bg-white py-64rpx text-center text-26rpx text-[#999]">
-      {{ loading ? '加载中...' : '暂无盘点参数' }}
-    </view>
+    </z-paging>
 
     <!-- 参数表单 -->
     <wd-popup
       v-model="formVisible"
-      position="top"
-      :custom-style="getTopPopupStyle()"
-      :modal-style="getTopPopupModalStyle()"
+      position="bottom"
+      safe-area-inset-bottom
+      custom-style="height: 88vh; border-radius: 24rpx 24rpx 0 0;"
     >
       <view class="h-full flex flex-col bg-[#f5f5f5]">
         <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -82,72 +92,62 @@
         <scroll-view class="min-h-0 flex-1" scroll-y>
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
             <wd-cell-group border>
-              <wd-form-item title="条件类型" title-width="220rpx" prop="type">
-                <wd-radio-group v-model="formData.type" type="button">
-                  <wd-radio v-for="dict in paramTypeOptions" :key="dict.value" :value="dict.value">
-                    {{ dict.label }}
-                  </wd-radio>
-                </wd-radio-group>
-              </wd-form-item>
+              <yd-form-picker v-model="formData.type" label="条件类型" label-width="220rpx" prop="type" :columns="paramTypeOptions" placeholder="请选择条件类型" />
 
-              <wd-form-item
+              <WarehouseFormPicker
                 v-if="formData.type === MesWmStockTakingParamTypeEnum.WAREHOUSE"
-                title="仓库"
-                title-width="220rpx"
+                v-model="formData.valueId"
+                label="仓库"
+                label-width="220rpx"
                 prop="valueId"
-              >
-                <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openWarehousePicker">
-                  <text :class="formData.valueName ? 'text-[#333]' : 'text-[#999]'">
-                    {{ getValueText('请选择仓库') }}
-                  </text>
-                  <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                </view>
-              </wd-form-item>
+                placeholder="请选择仓库"
+                @change="fillSelectedValue"
+              />
 
               <template v-if="formData.type === MesWmStockTakingParamTypeEnum.LOCATION">
-                <wd-form-item title="仓库" title-width="220rpx">
-                  <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openLocationWarehousePicker">
-                    <text :class="locationWarehouseName ? 'text-[#333]' : 'text-[#999]'">
-                      {{ locationWarehouseName || '请先选择仓库' }}
-                    </text>
-                    <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                  </view>
-                </wd-form-item>
-                <wd-form-item title="库区" title-width="220rpx" prop="valueId">
-                  <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openLocationPicker">
-                    <text :class="formData.valueName ? 'text-[#333]' : 'text-[#999]'">
-                      {{ getValueText('请选择库区') }}
-                    </text>
-                    <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                  </view>
-                </wd-form-item>
+                <WarehouseFormPicker
+                  v-model="locationWarehouseId"
+                  label="仓库"
+                  label-width="220rpx"
+                  placeholder="请先选择仓库"
+                  @change="handleLocationWarehouseChange"
+                />
+                <WarehouseLocationFormPicker
+                  v-model="formData.valueId"
+                  label="库区"
+                  label-width="220rpx"
+                  prop="valueId"
+                  :warehouse-id="locationWarehouseId"
+                  placeholder="请选择库区"
+                  @change="fillSelectedValue"
+                />
               </template>
 
               <template v-if="formData.type === MesWmStockTakingParamTypeEnum.AREA">
-                <wd-form-item title="仓库" title-width="220rpx">
-                  <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openAreaWarehousePicker">
-                    <text :class="areaWarehouseName ? 'text-[#333]' : 'text-[#999]'">
-                      {{ areaWarehouseName || '请先选择仓库' }}
-                    </text>
-                    <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                  </view>
-                </wd-form-item>
-                <wd-form-item title="库区" title-width="220rpx">
-                  <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openAreaLocationPicker">
-                    <text :class="areaLocationName ? 'text-[#333]' : 'text-[#999]'">
-                      {{ areaLocationName || '请再选择库区' }}
-                    </text>
-                    <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                  </view>
-                </wd-form-item>
-                <wd-form-item title="库位" title-width="220rpx" prop="valueId">
-                  <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openAreaPicker">
-                    <text :class="formData.valueName ? 'text-[#333]' : 'text-[#999]'">
-                      {{ getValueText('请选择库位') }}
-                    </text>
-                    <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                  </view>
-                </wd-form-item>
+                <WarehouseFormPicker
+                  v-model="areaWarehouseId"
+                  label="仓库"
+                  label-width="220rpx"
+                  placeholder="请先选择仓库"
+                  @change="handleAreaWarehouseChange"
+                />
+                <WarehouseLocationFormPicker
+                  v-model="areaLocationId"
+                  label="库区"
+                  label-width="220rpx"
+                  :warehouse-id="areaWarehouseId"
+                  placeholder="请再选择库区"
+                  @change="handleAreaLocationChange"
+                />
+                <WarehouseAreaFormPicker
+                  v-model="formData.valueId"
+                  label="库位"
+                  label-width="220rpx"
+                  prop="valueId"
+                  :location-id="areaLocationId"
+                  placeholder="请选择库位"
+                  @change="fillSelectedValue"
+                />
               </template>
 
               <wd-form-item
@@ -155,41 +155,32 @@
                 title="物料"
                 title-width="220rpx"
                 prop="valueId"
-              >
-                <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openItemSelector">
-                  <text :class="formData.valueName ? 'text-[#333]' : 'text-[#999]'">
-                    {{ getValueText('请选择物料') }}
-                  </text>
-                  <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                </view>
-              </wd-form-item>
+                is-link
+                :value="getValueText()"
+                placeholder="请选择物料"
+                @click="openItemPicker"
+              />
 
               <wd-form-item
                 v-if="formData.type === MesWmStockTakingParamTypeEnum.BATCH"
                 title="批次"
                 title-width="220rpx"
                 prop="valueId"
-              >
-                <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openBatchSelector">
-                  <text :class="formData.valueName ? 'text-[#333]' : 'text-[#999]'">
-                    {{ getValueText('请选择批次') }}
-                  </text>
-                  <wd-icon name="arrow-right" size="28rpx" color="#999" />
-                </view>
-              </wd-form-item>
+                is-link
+                :value="getValueText()"
+                placeholder="请选择批次"
+                @click="openBatchPicker"
+              />
 
-              <wd-form-item
+              <yd-form-picker
                 v-if="formData.type === MesWmStockTakingParamTypeEnum.QUALITY_STATUS"
-                title="质量状态"
-                title-width="220rpx"
+                v-model="qualityStatusValue"
+                label="质量状态"
+                label-width="220rpx"
                 prop="valueId"
-              >
-                <wd-radio-group v-model="qualityStatusValue" type="button">
-                  <wd-radio v-for="dict in qualityStatusOptions" :key="dict.value" :value="dict.value">
-                    {{ dict.label }}
-                  </wd-radio>
-                </wd-radio-group>
-              </wd-form-item>
+                :columns="qualityStatusOptions"
+                placeholder="请选择质量状态"
+              />
 
               <wd-form-item title="备注" title-width="220rpx" prop="remark">
                 <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -200,135 +191,27 @@
       </view>
     </wd-popup>
 
-    <!-- 仓储条件选择 -->
-    <wd-popup
-      v-model="storageSelectorVisible"
-      position="bottom"
-      safe-area-inset-bottom
-      custom-style="height: 72vh; border-radius: 24rpx 24rpx 0 0; z-index: 20;"
-    >
-      <view class="h-full flex flex-col bg-[#f5f5f5]">
-        <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
-          <wd-button variant="plain" size="small" @click="storageSelectorVisible = false">
-            取消
-          </wd-button>
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ storageSelectorTitle }}
-          </view>
-          <view class="w-96rpx" />
-        </view>
-        <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-          <view class="p-24rpx">
-            <view
-              v-for="item in storageOptions"
-              :key="item.id"
-              class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-              @click="handleStorageConfirm(item)"
-            >
-              <view class="mb-10rpx text-30rpx text-[#333] font-semibold">
-                {{ item.code || '-' }}
-              </view>
-              <view class="text-26rpx text-[#666]">
-                {{ item.name || '-' }}
-              </view>
-            </view>
-            <view v-if="storageOptions.length === 0" class="py-100rpx text-center">
-              <wd-empty icon="content" tip="暂无可选数据" />
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </wd-popup>
-
-    <!-- 物料选择 -->
-    <ItemSelector
-      ref="itemSelectorRef"
+    <!-- 物料选择弹窗 -->
+    <ItemPicker
+      ref="itemPickerRef"
       :multiple="false"
       @confirm="handleItemConfirm"
     />
-
-    <!-- 批次选择 -->
-    <wd-popup
-      v-model="batchSelectorVisible"
-      position="bottom"
-      safe-area-inset-bottom
-      custom-style="height: 78vh; border-radius: 24rpx 24rpx 0 0; z-index: 20;"
-    >
-      <view class="h-full flex flex-col bg-[#f5f5f5]">
-        <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
-          <wd-button variant="plain" size="small" @click="batchSelectorVisible = false">
-            取消
-          </wd-button>
-          <view class="text-32rpx text-[#333] font-semibold">
-            选择批次
-          </view>
-          <wd-button size="small" type="primary" :disabled="!selectedBatch" @click="handleBatchConfirm">
-            确定
-          </wd-button>
-        </view>
-        <view class="bg-white px-24rpx pb-20rpx">
-          <wd-input v-model="batchSearchCode" placeholder="批次号" clearable />
-          <view class="mt-16rpx flex gap-16rpx">
-            <wd-button class="flex-1" variant="plain" @click="handleBatchReset">
-              重置
-            </wd-button>
-            <wd-button class="flex-1" type="primary" @click="handleBatchSearch">
-              搜索
-            </wd-button>
-          </view>
-        </view>
-        <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleBatchLoadMore">
-          <view class="p-24rpx">
-            <view
-              v-for="batch in batchList"
-              :key="batch.id"
-              class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-              :class="selectedBatch?.id === batch.id ? 'ring-2 ring-[#1677ff]' : ''"
-              @click="selectedBatch = batch"
-            >
-              <view class="mb-12rpx flex items-start justify-between gap-16rpx">
-                <view class="min-w-0 flex-1 truncate text-30rpx text-[#333] font-semibold">
-                  {{ batch.code || '-' }}
-                </view>
-                <dict-tag v-if="batch.qualityStatus != null" :type="DICT_TYPE.MES_WM_QUALITY_STATUS" :value="batch.qualityStatus" />
-              </view>
-              <view class="mb-10rpx text-26rpx text-[#666]">
-                <text class="text-[#999]">物料：</text>{{ batch.itemCode || '-' }} {{ batch.itemName || '' }}
-              </view>
-              <view class="mb-10rpx text-26rpx text-[#666]">
-                <text class="text-[#999]">规格：</text>{{ batch.itemSpecification || '-' }}
-              </view>
-              <view class="text-26rpx text-[#666]">
-                <text class="text-[#999]">有效期：</text>{{ formatDate(batch.expireDate) || '-' }}
-              </view>
-            </view>
-            <view v-if="batchList.length === 0 && !batchLoading" class="py-100rpx text-center">
-              <wd-empty icon="content" tip="暂无可选批次" />
-            </view>
-            <view v-if="batchLoading" class="flex justify-center py-24rpx">
-              <wd-loading />
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </wd-popup>
+    <!-- 批次选择弹窗 -->
+    <BatchPicker ref="batchPickerRef" @confirm="handleBatchConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { BatchVO } from '@/api/mes/wm/batch'
-import type {
-  StockTakingPlanParamCreateReqVO,
-  StockTakingPlanParamVO,
-} from '@/api/mes/wm/stocktaking/plan'
-import type { WmWarehouseVO } from '@/api/mes/wm/warehouse'
-import type { WmWarehouseAreaVO } from '@/api/mes/wm/warehouse/area'
-import type { WmWarehouseLocationVO } from '@/api/mes/wm/warehouse/location'
+import type { MdItem } from '@/api/mes/md/item'
+import type { Batch } from '@/api/mes/wm/batch'
+import type { StockTakingPlanParam } from '@/api/mes/wm/stocktaking/plan'
+import type { WmWarehouse } from '@/api/mes/wm/warehouse'
+import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
-import { getBatchPage } from '@/api/mes/wm/batch'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createStockTakingPlanParam,
   deleteStockTakingPlanParam,
@@ -336,67 +219,38 @@ import {
   getStockTakingPlanParamPage,
   updateStockTakingPlanParam,
 } from '@/api/mes/wm/stocktaking/plan'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
-import { getWarehouseArea, getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
-import { getWarehouseLocation, getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
+import { getWarehouseArea } from '@/api/mes/wm/warehouse/area'
+import { getWarehouseLocation } from '@/api/mes/wm/warehouse/location'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
+import BatchPicker from '@/pages-mes/wm/batch/components/batch-picker.vue'
+import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-form-picker.vue'
+import WarehouseAreaFormPicker from '@/pages-mes/wm/warehouse/area/components/warehouse-area-form-picker.vue'
+import WarehouseLocationFormPicker from '@/pages-mes/wm/warehouse/location/components/warehouse-location-form-picker.vue'
 import { DICT_TYPE, MesWmStockTakingParamTypeEnum } from '@/utils/constants'
-import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-
-interface StockTakingPlanParamFormData {
-  id?: number
-  type?: number
-  valueId?: number
-  valueCode: string
-  valueName: string
-  remark?: string
-}
-
-type WarehousePickerMode = 'warehouse' | 'locationWarehouse' | 'areaWarehouse'
-type LocationPickerMode = 'location' | 'areaLocation'
-type StorageSelectorMode = WarehousePickerMode | LocationPickerMode | 'area'
-type StorageOption = WmWarehouseVO | WmWarehouseLocationVO | WmWarehouseAreaVO
 
 const props = defineProps<{
   planId?: number
   readonly?: boolean
 }>()
 
+const dialog = useDialog()
 const toast = useToast()
-const loading = ref(false) // 列表加载状态
-const list = ref<StockTakingPlanParamVO[]>([]) // 盘点参数列表
+const list = ref<StockTakingPlanParam[]>([]) // 盘点参数列表
+const pagingRef = ref<ZPagingRef<StockTakingPlanParam>>() // 分页组件引用
 const total = ref(0) // 参数总数
 const formVisible = ref(false) // 表单显示状态
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单引用
 const formMode = ref<'create' | 'update'>('create') // 表单模式
-const formData = ref<StockTakingPlanParamFormData>(getDefaultFormData()) // 表单数据
-const warehouseOptions = ref<WmWarehouseVO[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocationVO[]>([]) // 库区选项
-const areaOptions = ref<WmWarehouseAreaVO[]>([]) // 库位选项
-const warehousePickerMode = ref<WarehousePickerMode>('warehouse') // 仓库选择场景
-const locationPickerMode = ref<LocationPickerMode>('location') // 库区选择场景
-const storageSelectorVisible = ref(false) // 仓储选择器显示状态
-const storageSelectorMode = ref<StorageSelectorMode>('warehouse') // 仓储选择场景
-const storageSelectorTitle = ref('选择仓库') // 仓储选择标题
-const storageOptions = ref<StorageOption[]>([]) // 仓储选择列表
+const formData = ref<StockTakingPlanParam>(getDefaultFormData()) // 表单数据
+const loadingDetail = ref(false) // 编辑回显状态
 const locationWarehouseId = ref<number>() // 库区条件所属仓库
-const locationWarehouseName = ref('') // 库区条件所属仓库名称
 const areaWarehouseId = ref<number>() // 库位条件所属仓库
-const areaWarehouseName = ref('') // 库位条件所属仓库名称
 const areaLocationId = ref<number>() // 库位条件所属库区
-const areaLocationName = ref('') // 库位条件所属库区名称
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
-const batchSelectorVisible = ref(false) // 批次选择器显示状态
-const batchLoading = ref(false) // 批次加载状态
-const batchList = ref<BatchVO[]>([]) // 批次列表
-const selectedBatch = ref<BatchVO>() // 当前选择批次
-const batchPageNo = ref(1) // 批次页码
-const batchTotal = ref(0) // 批次总数
-const batchSearchCode = ref('') // 批次号搜索
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
+const batchPickerRef = ref<InstanceType<typeof BatchPicker>>() // 批次选择器引用
 
 const formTitle = computed(() => formMode.value === 'create' ? '添加盘点条件' : '编辑盘点条件')
 const paramTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_WM_STOCK_TAKING_PLAN_PARAM_TYPE))
@@ -408,13 +262,9 @@ const formSchema = createFormSchema({
 })
 
 /** 默认表单数据 */
-function getDefaultFormData(): StockTakingPlanParamFormData {
+function getDefaultFormData(): StockTakingPlanParam {
   return {
-    type: undefined,
-    valueId: undefined,
-    valueCode: '',
-    valueName: '',
-    remark: '',
+    planId: props.planId,
   }
 }
 
@@ -423,41 +273,40 @@ function validateValue() {
   if (!formData.value.type) {
     return true
   }
+  if (formData.value.type === MesWmStockTakingParamTypeEnum.QUALITY_STATUS) {
+    return formData.value.valueCode ? true : '质量状态不能为空'
+  }
   return formData.value.valueId ? true : '条件值不能为空'
 }
 
 /** 条件值展示 */
-function getValueText(placeholder: string) {
-  return [formData.value.valueCode, formData.value.valueName].filter(Boolean).join(' / ') || placeholder
+function getValueText() {
+  return [formData.value.valueCode, formData.value.valueName].filter(Boolean).join(' / ')
 }
 
 /** 查询盘点参数 */
-async function getList() {
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.planId) {
-    list.value = []
     total.value = 0
+    pagingRef.value?.completeByTotal([], 0)
     return
   }
-  loading.value = true
   try {
     const data = await getStockTakingPlanParamPage({
-      pageNo: 1,
-      pageSize: 100,
+      pageNo,
+      pageSize,
       planId: props.planId,
     })
-    list.value = data.list
     total.value = data.total
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
-/** 加载仓库选项 */
-async function loadWarehouseOptions() {
-  if (warehouseOptions.value.length > 0) {
-    return
-  }
-  warehouseOptions.value = await getWarehouseSimpleList() || []
+/** 刷新盘点参数 */
+function reloadList() {
+  pagingRef.value?.reload()
 }
 
 /** 打开新增表单 */
@@ -470,35 +319,31 @@ function openCreateForm() {
 }
 
 /** 打开编辑表单 */
-async function openUpdateForm(item: StockTakingPlanParamVO) {
+async function openUpdateForm(item: StockTakingPlanParam) {
+  if (!item.id) {
+    return
+  }
   formMode.value = 'update'
   resetCascadeData()
   formVisible.value = true
   formLoading.value = true
+  loadingDetail.value = true
   try {
     const data = await getStockTakingPlanParam(item.id)
-    formData.value = {
-      id: data.id,
-      type: data.type,
-      valueId: data.valueId,
-      valueCode: data.valueCode || '',
-      valueName: data.valueName || '',
-      remark: data.remark || '',
-    }
+    formData.value = data
     qualityStatusValue.value = data.type === MesWmStockTakingParamTypeEnum.QUALITY_STATUS
-      ? Number(data.valueId || data.valueCode || undefined)
+      ? (data.valueCode ? Number(data.valueCode) : undefined)
       : undefined
     await loadCascadeData()
   } finally {
     formLoading.value = false
+    loadingDetail.value = false
   }
 }
 
 /** 条件类型变化 */
 function handleTypeChange() {
-  formData.value.valueId = undefined
-  formData.value.valueCode = ''
-  formData.value.valueName = ''
+  clearSelectedValue()
   qualityStatusValue.value = undefined
   resetCascadeData()
 }
@@ -506,13 +351,8 @@ function handleTypeChange() {
 /** 清理级联状态 */
 function resetCascadeData() {
   locationWarehouseId.value = undefined
-  locationWarehouseName.value = ''
   areaWarehouseId.value = undefined
-  areaWarehouseName.value = ''
   areaLocationId.value = undefined
-  areaLocationName.value = ''
-  locationOptions.value = []
-  areaOptions.value = []
 }
 
 /** 加载编辑级联数据 */
@@ -523,324 +363,168 @@ async function loadCascadeData() {
   if (formData.value.type === MesWmStockTakingParamTypeEnum.LOCATION) {
     const location = await getWarehouseLocation(formData.value.valueId)
     locationWarehouseId.value = location.warehouseId
-    locationWarehouseName.value = location.warehouseName || ''
   }
   if (formData.value.type === MesWmStockTakingParamTypeEnum.AREA) {
     const area = await getWarehouseArea(formData.value.valueId)
-    areaWarehouseId.value = area.warehouseId || undefined
-    areaWarehouseName.value = area.warehouseName || ''
+    areaWarehouseId.value = area.warehouseId
     areaLocationId.value = area.locationId
-    areaLocationName.value = area.locationName || ''
   }
 }
 
-/** 选择仓库条件 */
-async function openWarehousePicker() {
-  await loadWarehouseOptions()
-  warehousePickerMode.value = 'warehouse'
-  openStorageSelector('warehouse', '选择仓库', warehouseOptions.value)
+/** 选择库区条件所属仓库 */
+function handleLocationWarehouseChange(item?: WmWarehouse) {
+  locationWarehouseId.value = item?.id
+  clearSelectedValue()
 }
 
-/** 选择库区所属仓库 */
-async function openLocationWarehousePicker() {
-  await loadWarehouseOptions()
-  warehousePickerMode.value = 'locationWarehouse'
-  openStorageSelector('locationWarehouse', '选择仓库', warehouseOptions.value)
-}
-
-/** 选择库位所属仓库 */
-async function openAreaWarehousePicker() {
-  await loadWarehouseOptions()
-  warehousePickerMode.value = 'areaWarehouse'
-  openStorageSelector('areaWarehouse', '选择仓库', warehouseOptions.value)
-}
-
-/** 仓库选择确认 */
-async function handleWarehouseConfirm(item: WmWarehouseVO) {
-  if (warehousePickerMode.value === 'warehouse') {
-    fillSelectedValue(item)
-    return
-  }
-  if (warehousePickerMode.value === 'locationWarehouse') {
-    locationWarehouseId.value = item.id
-    locationWarehouseName.value = item.name
-    formData.value.valueId = undefined
-    formData.value.valueCode = ''
-    formData.value.valueName = ''
-    locationOptions.value = await getWarehouseLocationSimpleList(item.id) || []
-    return
-  }
-  areaWarehouseId.value = item.id
-  areaWarehouseName.value = item.name
+/** 选择库位条件所属仓库 */
+function handleAreaWarehouseChange(item?: WmWarehouse) {
+  areaWarehouseId.value = item?.id
   areaLocationId.value = undefined
-  areaLocationName.value = ''
-  formData.value.valueId = undefined
-  formData.value.valueCode = ''
-  formData.value.valueName = ''
-  locationOptions.value = await getWarehouseLocationSimpleList(item.id) || []
-  areaOptions.value = []
+  clearSelectedValue()
 }
 
-/** 打开库区选择 */
-async function openLocationPicker() {
-  if (!locationWarehouseId.value) {
-    uni.showToast({ title: '请先选择仓库', icon: 'none' })
-    return
-  }
-  if (locationOptions.value.length === 0) {
-    locationOptions.value = await getWarehouseLocationSimpleList(locationWarehouseId.value) || []
-  }
-  locationPickerMode.value = 'location'
-  openStorageSelector('location', '选择库区', locationOptions.value)
-}
-
-/** 打开库位所属库区选择 */
-async function openAreaLocationPicker() {
-  if (!areaWarehouseId.value) {
-    uni.showToast({ title: '请先选择仓库', icon: 'none' })
-    return
-  }
-  if (locationOptions.value.length === 0) {
-    locationOptions.value = await getWarehouseLocationSimpleList(areaWarehouseId.value) || []
-  }
-  locationPickerMode.value = 'areaLocation'
-  openStorageSelector('areaLocation', '选择库区', locationOptions.value)
-}
-
-/** 库区选择确认 */
-async function handleLocationConfirm(item: WmWarehouseLocationVO) {
-  if (locationPickerMode.value === 'location') {
-    fillSelectedValue(item)
-    return
-  }
-  areaLocationId.value = item.id
-  areaLocationName.value = item.name
-  formData.value.valueId = undefined
-  formData.value.valueCode = ''
-  formData.value.valueName = ''
-  areaOptions.value = await getWarehouseAreaSimpleList(item.id) || []
-}
-
-/** 打开库位选择 */
-async function openAreaPicker() {
-  if (!areaLocationId.value) {
-    uni.showToast({ title: '请先选择库区', icon: 'none' })
-    return
-  }
-  if (areaOptions.value.length === 0) {
-    areaOptions.value = await getWarehouseAreaSimpleList(areaLocationId.value) || []
-  }
-  openStorageSelector('area', '选择库位', areaOptions.value)
-}
-
-/** 库位选择确认 */
-function handleAreaConfirm(item: WmWarehouseAreaVO) {
-  fillSelectedValue(item)
-}
-
-/** 打开仓储选择器 */
-function openStorageSelector(mode: StorageSelectorMode, title: string, options: StorageOption[]) {
-  storageSelectorMode.value = mode
-  storageSelectorTitle.value = title
-  storageOptions.value = options
-  storageSelectorVisible.value = true
-}
-
-/** 仓储选择确认 */
-async function handleStorageConfirm(item: StorageOption) {
-  if (
-    storageSelectorMode.value === 'warehouse'
-    || storageSelectorMode.value === 'locationWarehouse'
-    || storageSelectorMode.value === 'areaWarehouse'
-  ) {
-    await handleWarehouseConfirm(item as WmWarehouseVO)
-  } else if (storageSelectorMode.value === 'location' || storageSelectorMode.value === 'areaLocation') {
-    await handleLocationConfirm(item as WmWarehouseLocationVO)
-  } else {
-    handleAreaConfirm(item as WmWarehouseAreaVO)
-  }
-  storageSelectorVisible.value = false
+/** 选择库位条件所属库区 */
+function handleAreaLocationChange(item?: WmWarehouseLocation) {
+  areaLocationId.value = item?.id
+  clearSelectedValue()
 }
 
 /** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
+function openItemPicker() {
+  itemPickerRef.value?.open()
 }
 
 /** 物料选择确认 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
   if (!item) {
     return
   }
   formData.value.valueId = item.id
-  formData.value.valueCode = item.code || ''
-  formData.value.valueName = item.name || ''
+  formData.value.valueCode = item.code
+  formData.value.valueName = item.name
 }
 
 /** 打开批次选择器 */
-function openBatchSelector() {
-  batchSelectorVisible.value = true
-  selectedBatch.value = undefined
-  batchSearchCode.value = ''
-  batchList.value = []
-  batchTotal.value = 0
-  batchPageNo.value = 1
-  loadBatchList()
-}
-
-/** 查询批次 */
-async function loadBatchList(append = false) {
-  if (batchLoading.value) {
-    return
-  }
-  batchLoading.value = true
-  try {
-    const data = await getBatchPage({
-      pageNo: batchPageNo.value,
-      pageSize: 20,
-      code: batchSearchCode.value || undefined,
-    })
-    if (append) {
-      batchList.value.push(...data.list)
-    } else {
-      batchList.value = data.list
-    }
-    batchTotal.value = data.total
-  } finally {
-    batchLoading.value = false
-  }
-}
-
-/** 搜索批次 */
-function handleBatchSearch() {
-  batchPageNo.value = 1
-  loadBatchList()
-}
-
-/** 重置批次搜索 */
-function handleBatchReset() {
-  batchSearchCode.value = ''
-  batchPageNo.value = 1
-  loadBatchList()
-}
-
-/** 加载更多批次 */
-async function handleBatchLoadMore() {
-  if (batchLoading.value || batchList.value.length >= batchTotal.value) {
-    return
-  }
-  batchPageNo.value += 1
-  await loadBatchList(true)
+function openBatchPicker() {
+  batchPickerRef.value?.open()
 }
 
 /** 批次选择确认 */
-function handleBatchConfirm() {
-  if (!selectedBatch.value) {
+function handleBatchConfirm(batch: Batch) {
+  if (!batch) {
     return
   }
-  formData.value.valueId = selectedBatch.value.id
-  formData.value.valueCode = selectedBatch.value.code || ''
-  formData.value.valueName = selectedBatch.value.code || ''
-  batchSelectorVisible.value = false
+  formData.value.valueId = batch.id
+  formData.value.valueCode = batch.code
+  formData.value.valueName = batch.code
 }
 
 /** 质量状态选择 */
 function handleQualityStatusChange(value?: number) {
   if (value === undefined) {
     formData.value.valueId = undefined
-    formData.value.valueCode = ''
-    formData.value.valueName = ''
+    formData.value.valueCode = undefined
+    formData.value.valueName = undefined
     return
   }
   const label = getDictLabel(DICT_TYPE.MES_WM_QUALITY_STATUS, value)
-  formData.value.valueId = value
+  formData.value.valueId = undefined
   formData.value.valueCode = String(value)
   formData.value.valueName = label
 }
 
 /** 回填通用选择值 */
-function fillSelectedValue(item: { id: number, code: string, name: string }) {
+function fillSelectedValue(item?: { id?: number, code?: string, name?: string }) {
+  if (item?.id == null) {
+    clearSelectedValue()
+    return
+  }
   formData.value.valueId = item.id
-  formData.value.valueCode = item.code || ''
-  formData.value.valueName = item.name || ''
+  formData.value.valueCode = item.code
+  formData.value.valueName = item.name
+}
+
+/** 清空条件值 */
+function clearSelectedValue() {
+  formData.value.valueId = undefined
+  formData.value.valueCode = undefined
+  formData.value.valueName = undefined
 }
 
 /** 删除参数 */
-async function handleDelete(item: StockTakingPlanParamVO) {
-  const result = await uni.showModal({
-    title: '提示',
-    content: `确定要删除盘点条件「${item.valueName || item.valueCode || item.id}」吗？`,
-    confirmText: '删除',
-    confirmColor: '#f56c6c',
-  })
-  if (!result.confirm) {
+async function handleDelete(item: StockTakingPlanParam) {
+  if (!item.id) {
+    return
+  }
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要删除盘点条件「${item.valueName || item.valueCode || item.id}」吗？`,
+      confirmButtonText: '删除',
+    })
+  } catch {
     return
   }
   await deleteStockTakingPlanParam(item.id)
   toast.success('删除成功')
-  await getList()
-}
-
-/** 构造提交数据 */
-function buildSubmitData(): StockTakingPlanParamCreateReqVO {
-  if (!props.planId) {
-    throw new Error('方案编号不能为空')
-  }
-  if (!formData.value.type) {
-    throw new Error('条件类型不能为空')
-  }
-  if (!formData.value.valueId) {
-    throw new Error('条件值不能为空')
-  }
-  return {
-    planId: props.planId,
-    type: formData.value.type,
-    valueId: formData.value.valueId,
-    valueCode: formData.value.valueCode,
-    valueName: formData.value.valueName,
-    remark: formData.value.remark || undefined,
-  }
+  reloadList()
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
+    return
+  }
+  if (!props.planId) {
     return
   }
   formLoading.value = true
   try {
-    const data = buildSubmitData()
+    formData.value.planId = props.planId
+    if (formData.value.type === MesWmStockTakingParamTypeEnum.QUALITY_STATUS) {
+      formData.value.valueId = undefined
+    }
     if (formMode.value === 'create') {
-      await createStockTakingPlanParam(data)
+      await createStockTakingPlanParam(formData.value)
       toast.success('新增成功')
     } else if (formData.value.id) {
-      await updateStockTakingPlanParam({ ...data, id: formData.value.id })
+      await updateStockTakingPlanParam(formData.value)
       toast.success('修改成功')
     }
     formVisible.value = false
-    await getList()
+    reloadList()
   } finally {
     formLoading.value = false
   }
 }
 
-onMounted(getList)
+/** 初始化 */
+onMounted(() => {
+  uni.$on('mes:wm:stocktaking:plan:reload', reloadList)
+})
 
-watch(() => props.planId, getList)
+/** 监听盘点计划编号变化 */
+watch(() => props.planId, reloadList)
 
+/** 监听参数类型变化 */
 watch(() => formData.value.type, (type, oldType) => {
-  if (oldType !== undefined && type !== oldType) {
+  if (!loadingDetail.value && oldType !== undefined && type !== oldType) {
     handleTypeChange()
   }
 })
 
+/** 监听质量状态变化 */
 watch(qualityStatusValue, (value) => {
   if (formData.value.type === MesWmStockTakingParamTypeEnum.QUALITY_STATUS) {
     handleQualityStatusChange(value)
   }
 })
 
-defineExpose({ reload: getList })
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('mes:wm:stocktaking:plan:reload', reloadList)
+})
 </script>

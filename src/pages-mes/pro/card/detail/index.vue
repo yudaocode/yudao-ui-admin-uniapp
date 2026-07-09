@@ -46,6 +46,9 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
@@ -57,7 +60,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref } from 'vue'
 import { cancelCard, deleteCard, finishCard, getCard } from '@/api/mes/pro/card'
 import { useAccess } from '@/hooks/useAccess'
-import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, DICT_TYPE, MesProCardStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -78,6 +81,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<ProCard>() // 详情数据
 const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const workOrderText = computed(() => `${formData.value?.workOrderCode || '-'} / ${formData.value?.workOrderName || '-'}`)
 const isPrepare = computed(() => formData.value?.status === MesProCardStatusEnum.PREPARE)
 const isConfirmed = computed(() => formData.value?.status === MesProCardStatusEnum.CONFIRMED)
@@ -109,13 +113,12 @@ function handleBarcode() {
   if (!formData.value?.id) {
     return
   }
-  uni.navigateTo({
-    url: buildBarcodeListUrl({
-      bizType: BarcodeBizTypeEnum.PROCARD,
-      bizId: formData.value.id,
-      bizCode: formData.value.code,
-    }),
-  })
+  barcodeDetailPopupRef.value?.openByBusiness(
+    formData.value.id,
+    BarcodeBizTypeEnum.PROCARD,
+    formData.value.code,
+    formData.value.workOrderName || formData.value.itemName,
+  )
 }
 
 /** 编辑 */

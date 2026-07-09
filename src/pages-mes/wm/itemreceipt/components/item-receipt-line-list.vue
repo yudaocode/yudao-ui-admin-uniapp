@@ -197,7 +197,10 @@
       </scroll-view>
     </view>
   </wd-popup>
+
+  <!-- 到货通知行选择弹窗 -->
   <ArrivalNoticeLinePicker ref="noticeLinePickerRef" :notice-id="noticeId" @confirm="handleNoticeLineConfirm" />
+  <!-- 物料选择弹窗 -->
   <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 
   <!-- 上架明细表单弹窗 -->

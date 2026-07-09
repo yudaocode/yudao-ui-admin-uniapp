@@ -57,6 +57,11 @@
           <view class="text-26rpx text-[#666]">
             <text class="text-[#999]">生成时间：</text>{{ formatDateTime(item.createTime) || '-' }}
           </view>
+          <view v-if="item.id" class="mt-16rpx flex justify-end">
+            <wd-button size="small" type="primary" variant="plain" @click="handleBarcode(item)">
+              条码
+            </wd-button>
+          </view>
         </view>
         <wd-button
           v-if="hasMoreDetails"
@@ -84,6 +89,9 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
@@ -95,7 +103,9 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
 import { deleteSnBatch, getSnGroupPage, getSnListByUuid } from '@/api/mes/wm/sn'
 import { useAccess } from '@/hooks/useAccess'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
+import { BarcodeBizTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -116,6 +126,7 @@ const groupData = ref<WmSnGroup>() // 批次概要
 const detailList = ref<WmSn[]>([]) // SN 明细列表
 const loading = ref(false) // 明细加载状态
 const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const initialVisibleSize = 20 // 首屏展示条数
 const visibleSize = ref(initialVisibleSize) // 当前展示条数
 const firstDetail = computed(() => detailList.value[0])
@@ -164,6 +175,19 @@ async function getDetail() {
 /** 加载更多明细 */
 function loadMoreDetails() {
   visibleSize.value = Math.min(visibleSize.value + initialVisibleSize, detailList.value.length)
+}
+
+/** 查看条码 */
+function handleBarcode(item: WmSn) {
+  if (!item.id) {
+    return
+  }
+  barcodeDetailPopupRef.value?.openByBusiness(
+    item.id,
+    BarcodeBizTypeEnum.SN,
+    item.code,
+    item.itemName,
+  )
 }
 
 /** 删除批次 */

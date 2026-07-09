@@ -10,13 +10,6 @@
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 新增入口 -->
-    <view v-if="hasAccessByCodes(['mes:wm-barcode-config:create'])" class="bg-white px-24rpx py-16rpx">
-      <wd-button block variant="plain" @click="handleAdd">
-        新增条码配置
-      </wd-button>
-    </view>
-
     <!-- 列表 -->
     <z-paging
       ref="pagingRef"
@@ -71,43 +64,26 @@
               <text class="min-w-0 flex-1 truncate">{{ item.autoGenerateFlag ? '是' : '否' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-barcode-config:update'])"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-barcode-config:update'])"
-              class="flex-1 py-18rpx text-center"
-              :class="item.autoGenerateFlag ? 'text-[#faad14]' : 'text-[#52c41a]'"
-              @click="handleAutoGenerateChange(item)"
-            >
-              {{ item.autoGenerateFlag ? '停用自动生成' : '启用自动生成' }}
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-barcode-config:delete'])"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
+
+    <!-- 新增按钮 -->
+    <wd-fab
+      v-if="hasAccessByCodes(['mes:wm-barcode-config:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
+      @click="handleAdd"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmBarcodeConfigQueryParams, WmBarcodeConfigUpdateReqVO, WmBarcodeConfigVO } from '@/api/mes/wm/barcode/config'
+import type { WmBarcodeConfig } from '@/api/mes/wm/barcode/config'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteBarcodeConfig, getBarcodeConfigPage, updateBarcodeConfig } from '@/api/mes/wm/barcode/config'
+import { onMounted, ref } from 'vue'
+import { getBarcodeConfigPage } from '@/api/mes/wm/barcode/config'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -121,14 +97,9 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmBarcodeConfigVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmBarcodeConfigVO>>() // 分页组件引用
-const queryParams = ref<WmBarcodeConfigQueryParams>({}) // 查询参数
-const hasRowActions = computed(() => {
-  return hasAccessByCodes(['mes:wm-barcode-config:update']) || hasAccessByCodes(['mes:wm-barcode-config:delete'])
-})
+const list = ref<WmBarcodeConfig[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmBarcodeConfig>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
@@ -151,7 +122,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmBarcodeConfigQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -174,60 +145,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmBarcodeConfigVO) {
+function handleDetail(item: WmBarcodeConfig) {
   uni.navigateTo({
     url: `/pages-mes/wm/barcode/config/detail/index?id=${item.id}`,
   })
-}
-
-/** 编辑 */
-function handleEdit(item: WmBarcodeConfigVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/barcode/config/form/index?id=${item.id}`,
-  })
-}
-
-/** 自动生成开关变更 */
-async function handleAutoGenerateChange(item: WmBarcodeConfigVO) {
-  const targetFlag = !item.autoGenerateFlag
-  const actionText = targetFlag ? '启用' : '停用'
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认要${actionText}自动生成吗？`,
-    })
-  } catch {
-    return
-  }
-  const data: WmBarcodeConfigUpdateReqVO = {
-    id: item.id,
-    format: item.format,
-    bizType: item.bizType,
-    contentFormat: item.contentFormat,
-    contentExample: item.contentExample || undefined,
-    autoGenerateFlag: targetFlag,
-    defaultTemplate: item.defaultTemplate || undefined,
-    status: item.status,
-    remark: item.remark || undefined,
-  }
-  await updateBarcodeConfig(data)
-  toast.success(`${actionText}成功`)
-  reload()
-}
-
-/** 删除 */
-async function handleDelete(item: WmBarcodeConfigVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.contentFormat || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteBarcodeConfig(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 初始化 */

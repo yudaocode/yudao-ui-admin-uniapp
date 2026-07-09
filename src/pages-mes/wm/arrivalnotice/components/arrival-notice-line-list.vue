@@ -123,6 +123,8 @@
       </scroll-view>
     </view>
   </wd-popup>
+
+  <!-- 物料选择弹窗 -->
   <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 

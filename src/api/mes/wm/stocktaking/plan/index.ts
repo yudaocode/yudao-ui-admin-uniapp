@@ -57,11 +57,6 @@ export function deleteStockTakingPlan(id: number) {
   return http.delete<boolean>(`/mes/wm/stocktaking-plan/delete?id=${id}`)
 }
 
-/** 导出盘点方案 */
-export function exportStockTakingPlan(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/stocktaking-plan/export-excel', params)
-}
-
 /** 获取盘点方案参数分页 */
 export function getStockTakingPlanParamPage(params: PageParam) {
   return http.get<PageResult<StockTakingPlanParam>>('/mes/wm/stocktaking-plan-param/page', params)

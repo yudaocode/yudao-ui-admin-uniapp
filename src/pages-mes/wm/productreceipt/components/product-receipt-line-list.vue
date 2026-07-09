@@ -61,11 +61,14 @@
             <text class="mr-8rpx shrink-0 text-[#999]">备注：</text>
             <text class="min-w-0 flex-1 truncate">{{ item.remark || '-' }}</text>
           </view>
-          <view v-if="!readonly" class="mt-16rpx flex justify-end gap-16rpx">
-            <wd-button size="small" type="warning" variant="plain" @click.stop="openUpdateForm(item)">
+          <view v-if="item.itemId || !readonly" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button v-if="item.itemId" size="small" type="primary" variant="plain" @click.stop="handleBarcode(item)">
+              条码
+            </wd-button>
+            <wd-button v-if="!readonly" size="small" type="warning" variant="plain" @click.stop="openUpdateForm(item)">
               编辑
             </wd-button>
-            <wd-button size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
+            <wd-button v-if="!readonly" size="small" type="danger" variant="plain" @click.stop="handleDelete(item)">
               删除
             </wd-button>
           </view>
@@ -163,7 +166,10 @@
     </view>
   </wd-popup>
 
+  <!-- 库存选择弹窗 -->
   <MaterialStockPicker ref="stockPickerRef" :multiple="false" virtual-filter="only" @confirm="handleStockConfirm" />
+  <!-- 条码详情弹窗 -->
+  <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
 
   <!-- 入库明细表单弹窗 -->
   <wd-popup
@@ -227,6 +233,8 @@ import {
   getProductReceiptLinePage,
   updateProductReceiptLine,
 } from '@/api/mes/wm/productreceipt/line'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
+import { BarcodeBizTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import MaterialStockPicker from '../../materialstock/components/material-stock-picker.vue'
 import WarehouseAreaFormPicker from '../../warehouse/area/components/warehouse-area-form-picker.vue'
@@ -249,6 +257,7 @@ const formRef = ref<FormInstance>() // 表单引用
 const formData = ref<WmProductReceiptLine>(getDefaultFormData()) // 表单数据
 const selectedStock = ref<WmMaterialStock>() // 当前选择线边库存
 const stockPickerRef = ref<InstanceType<typeof MaterialStockPicker>>() // 库存选择器引用
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const quantityMax = ref<number>() // 当前库存数量上限
 const detailListMap = ref<Record<number, WmProductReceiptDetail[]>>({}) // 入库明细列表
 const detailLoadingMap = ref<Record<number, boolean>>({}) // 入库明细加载状态
@@ -475,6 +484,19 @@ async function handleDelete(item: WmProductReceiptLine) {
   await deleteProductReceiptLine(item.id)
   toast.success('删除成功')
   reload()
+}
+
+/** 查看物料条码 */
+function handleBarcode(item: WmProductReceiptLine) {
+  if (!item.itemId) {
+    return
+  }
+  barcodeDetailPopupRef.value?.openByBusiness(
+    item.itemId,
+    BarcodeBizTypeEnum.ITEM,
+    item.itemCode,
+    item.itemName,
+  )
 }
 
 /** 打开新增入库明细表单 */

@@ -50,6 +50,8 @@
       </view>
     </z-paging>
     <wd-fab v-if="hasAccessByCodes(['mes:wm-warehouse:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
+
+    <!-- 条码详情弹窗 -->
     <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>

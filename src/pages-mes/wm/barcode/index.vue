@@ -8,7 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm ref="searchFormRef" @search="handleQuery" @reset="handleReset" />
+    <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 顶部操作 -->
     <view v-if="hasTopActions" class="bg-white px-24rpx py-16rpx">
@@ -83,22 +83,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.createTime) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-barcode:update'])"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-barcode:delete'])"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -106,25 +90,16 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmBarcodeQueryParams, WmBarcodeVO } from '@/api/mes/wm/barcode'
+import type { WmBarcode } from '@/api/mes/wm/barcode'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { deleteBarcode, getBarcodePage } from '@/api/mes/wm/barcode'
+import { getBarcodePage } from '@/api/mes/wm/barcode'
 import { useAccess } from '@/hooks/useAccess'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import BarcodePreview from './components/barcode-preview.vue'
 import SearchForm from './components/search-form.vue'
-
-const props = defineProps<{
-  bizType?: number | string
-  bizId?: number | string
-  bizCode?: string
-}>()
 
 definePage({
   style: {
@@ -134,49 +109,17 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
-const list = ref<WmBarcodeVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmBarcodeVO>>() // 分页组件引用
-const queryParams = ref<WmBarcodeQueryParams>({}) // 查询参数
-const searchFormRef = ref<InstanceType<typeof SearchForm>>() // 搜索组件引用
-const { getRouteQueryNumber, getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/barcode/index')
-const routeBizType = computed(() => getRouteQueryNumber('bizType')) // 路由业务类型
-const routeBizId = computed(() => getRouteQueryNumber('bizId')) // 路由业务编号
-const routeBizCode = computed(() => getRouteQueryValue('bizCode')) // 路由业务单号
+const list = ref<WmBarcode[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmBarcode>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 const hasTopActions = computed(() => {
   return hasAccessByCodes(['mes:wm-barcode:create'])
     || hasAccessByCodes(['mes:wm-barcode-config:query'])
 })
-const hasRowActions = computed(() => {
-  return hasAccessByCodes(['mes:wm-barcode:update']) || hasAccessByCodes(['mes:wm-barcode:delete'])
-})
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
-}
-
-/** 同步 URL 传入的业务对象筛选 */
-function syncRouteQuery() {
-  const params: WmBarcodeQueryParams = {}
-  const bizType = routeBizType.value
-  const bizId = routeBizId.value
-  const bizCode = routeBizCode.value
-  if (bizType) {
-    params.bizType = bizType
-  }
-  if (bizId) {
-    params.bizId = bizId
-  }
-  if (bizCode) {
-    params.bizCode = decodeURIComponent(String(bizCode))
-  }
-  queryParams.value = params
-  searchFormRef.value?.setFields({
-    bizType: params.bizType,
-    bizCode: params.bizCode,
-  })
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -195,16 +138,14 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmBarcodeQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  queryParams.value = {}
-  searchFormRef.value?.resetFields()
-  reload()
+  handleQuery()
 }
 
 /** 重新加载 */
@@ -220,32 +161,10 @@ function handleAdd() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmBarcodeVO) {
+function handleDetail(item: WmBarcode) {
   uni.navigateTo({
     url: `/pages-mes/wm/barcode/detail/index?id=${item.id}`,
   })
-}
-
-/** 编辑 */
-function handleEdit(item: WmBarcodeVO) {
-  uni.navigateTo({
-    url: `/pages-mes/wm/barcode/form/index?id=${item.id}`,
-  })
-}
-
-/** 删除 */
-async function handleDelete(item: WmBarcodeVO) {
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除「${item.bizCode || item.content || item.id}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteBarcode(item.id)
-  toast.success('删除成功')
-  reload()
 }
 
 /** 条码设置 */
@@ -257,17 +176,11 @@ function handleConfig() {
 
 /** 初始化 */
 onMounted(() => {
-  syncRouteQuery()
   uni.$on('mes:wm:barcode:reload', reload)
 })
 
 /** 卸载 */
 onUnload(() => {
   uni.$off('mes:wm:barcode:reload', reload)
-})
-
-watch([routeBizType, routeBizId, routeBizCode], () => {
-  syncRouteQuery()
-  reload()
 })
 </script>

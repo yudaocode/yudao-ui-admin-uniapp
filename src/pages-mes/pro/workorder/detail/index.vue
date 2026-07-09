@@ -92,6 +92,9 @@
         </wd-button>
       </view>
     </view>
+
+    <!-- 条码详情弹窗 -->
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
@@ -104,7 +107,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref } from 'vue'
 import { cancelWorkOrder, deleteWorkOrder, finishWorkOrder, getWorkOrder } from '@/api/mes/pro/workorder'
 import { useAccess } from '@/hooks/useAccess'
-import { buildBarcodeListUrl } from '@/pages-mes/wm/barcode/utils'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, DICT_TYPE, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -126,6 +129,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<ProWorkOrder>() // 详情数据
 const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 const workOrderId = computed(() => formData.value?.id)
 const tabType = ref('basic') // 当前 tab 类型
 const canEdit = computed(() =>
@@ -206,13 +210,12 @@ function handleBarcode() {
   if (!formData.value?.id) {
     return
   }
-  uni.navigateTo({
-    url: buildBarcodeListUrl({
-      bizType: BarcodeBizTypeEnum.WORKORDER,
-      bizId: formData.value.id,
-      bizCode: formData.value.code,
-    }),
-  })
+  barcodeDetailPopupRef.value?.openByBusiness(
+    formData.value.id,
+    BarcodeBizTypeEnum.WORKORDER,
+    formData.value.code,
+    formData.value.name,
+  )
 }
 
 /** 完成工单 */

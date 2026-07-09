@@ -33,27 +33,25 @@
               placeholder="请输入任务名称"
             />
           </wd-form-item>
-          <wd-form-item
-            title="盘点方案"
-            title-width="220rpx"
+          <PlanFormPicker
+            v-model="formData.planId"
             prop="planId"
-            :is-link="!isHeaderReadonly"
-            :value="planDisplayValue"
-            placeholder="请选择盘点方案"
-            @click="openPlanPicker"
+            :disabled="isHeaderReadonly"
+            @change="handlePlanChange"
           />
           <wd-form-item title="盘点类型" title-width="220rpx" prop="type">
             <dict-tag v-if="formData.type != null" :type="DICT_TYPE.MES_WM_STOCK_TAKING_TYPE" :value="formData.type" />
             <text v-else class="text-[#999]">选择方案后自动带出</text>
           </wd-form-item>
-          <wd-form-item title="盘点日期" title-width="220rpx" prop="takingDate">
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click.stop="openDatePicker('takingDate')">
-              <text :class="formatDate(formData.takingDate) ? 'text-[#333]' : 'text-[#999]'">
-                {{ formatDate(formData.takingDate) || '请选择盘点日期' }}
-              </text>
-              <wd-icon v-if="!isHeaderReadonly" name="arrow-right" size="28rpx" color="#999" />
-            </view>
-          </wd-form-item>
+          <wd-form-item
+            title="盘点日期"
+            title-width="220rpx"
+            prop="takingDate"
+            :is-link="!isHeaderReadonly"
+            placeholder="请选择盘点日期"
+            :value="formatDateTime(formData.takingDate) || ''"
+            @click="openDatePicker('takingDate')"
+          />
           <wd-datetime-picker
             v-model="formData.takingDate"
             v-model:visible="pickerVisible.takingDate"
@@ -101,82 +99,51 @@
 
       <view v-if="currentId" class="px-24rpx">
         <TaskLineMaintain :task-id="currentId" :editable="canMaintainLines" />
-        <TaskResultMaintain :task-id="currentId" :editable="isExecuteMode" />
-      </view>
-      <view v-else class="mx-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx text-26rpx text-[#8c8c8c] leading-40rpx">
-        请先保存盘点任务主表，保存后后端会按盘点方案生成盘点清单。
-      </view>
-      <view v-if="isExecuteMode" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-24rpx text-26rpx text-[#d46b08] leading-42rpx">
-        当前为执行盘点入口，可维护盘点结果；提交、删除等写动作请谨慎确认。
+        <TaskResultMaintain :task-id="currentId" :editable="canExecuteTask" />
       </view>
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions v-if="!isHeaderReadonly">
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="!isHeaderReadonly" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
+    <view v-else-if="canExecuteTask" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleExecute">
+          执行盘点
+        </wd-button>
+      </view>
+    </view>
   </view>
-
-  <!-- 盘点方案选择 -->
-  <wd-picker
-    v-model:visible="planPickerVisible"
-    :model-value="planPickerValue"
-    :columns="planOptions"
-    label-key="name"
-    value-key="id"
-    @confirm="handlePlanConfirm"
-  />
 </template>
 
 <script lang="ts" setup>
 import type { User } from '@/api/system/user'
-import { useRouteQuery } from '@/hooks/useRouteQuery'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type {
-  StockTakingTaskCreateReqVO,
-  StockTakingTaskVO,
-} from '@/api/mes/wm/stocktaking/task'
-import type { StockTakingPlanVO } from '@/api/mes/wm/stocktaking/plan'
-import { onShow } from '@dcloudio/uni-app'
+import type { StockTakingTask } from '@/api/mes/wm/stocktaking/task'
+import type { StockTakingPlan } from '@/api/mes/wm/stocktaking/plan'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getStockTakingPlanPage } from '@/api/mes/wm/stocktaking/plan'
-import { createStockTaking, getStockTaking, updateStockTaking } from '@/api/mes/wm/stocktaking/task'
+import { createStockTaking, finishStockTaking, getStockTaking, updateStockTaking } from '@/api/mes/wm/stocktaking/task'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import { navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
 import {
-  CommonStatusEnum,
   DICT_TYPE,
   MesAutoCodeRuleCode,
   MesWmStockTakingTaskStatusEnum,
 } from '@/utils/constants'
-import { formatDate, formatDateTime } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
+import { useAccess } from '@/hooks/useAccess'
+import PlanFormPicker from '../../plan/components/plan-form-picker.vue'
 import TaskLineMaintain from '../components/task-line-maintain.vue'
 import TaskResultMaintain from '../components/task-result-maintain.vue'
-
-interface StockTakingTaskFormData {
-  id?: number
-  code: string
-  name: string
-  takingDate?: string | number | Date
-  type?: number
-  userId?: number
-  userNickname?: string
-  planId?: number
-  planCode?: string
-  planName?: string
-  blindFlag: boolean
-  frozen: boolean
-  startTime?: string | number | Date
-  endTime?: string | number | Date
-  status?: number
-  remark?: string
-}
 
 const props = defineProps<{
   id?: number | string
@@ -190,10 +157,11 @@ definePage({
   },
 })
 
+const dialog = useDialog()
 const toast = useToast()
-const { getRouteQueryValue } = useRouteQuery(props, '/pages-mes/wm/stocktaking/task/form/index')
+const { hasAccessByCodes } = useAccess()
 const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
-const routeMode = computed(() => String(getRouteQueryValue('mode') || '')) // 路由模式
+const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref('') // 当前页面模式
 const isExecuteMode = computed(() => currentMode.value === 'execute')
@@ -205,11 +173,14 @@ const getTitle = computed(() => {
 })
 const formLoading = ref(false) // 表单提交状态
 const codeLoading = ref(false) // 编码生成状态
-const formData = ref<StockTakingTaskFormData>(getDefaultFormData()) // 表单数据
+const formData = ref<StockTakingTask>(getDefaultFormData()) // 表单数据
+const canExecuteTask = computed(() => { // 审批中任务可执行盘点
+  return isExecuteMode.value
+    && formData.value.status === MesWmStockTakingTaskStatusEnum.APPROVING
+    && hasAccessByCodes(['mes:wm-stock-taking-task:update'])
+})
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
-const planOptions = ref<StockTakingPlanVO[]>([]) // 盘点方案选项
-const planPickerVisible = ref(false) // 方案选择弹窗
 const canMaintainLines = computed(() => {
   return currentId.value !== undefined
     && !isExecuteMode.value
@@ -221,13 +192,6 @@ const isHeaderReadonly = computed(() => {
   }
   return currentId.value !== undefined && formData.value.status !== MesWmStockTakingTaskStatusEnum.PREPARE
 })
-const planDisplayValue = computed(() => {
-  if (formData.value.planCode && formData.value.planName) {
-    return `${formData.value.planCode} / ${formData.value.planName}`
-  }
-  return formData.value.planName || formData.value.planCode || ''
-})
-const planPickerValue = computed(() => formData.value.planId === undefined ? [] : [formData.value.planId])
 const formSchema = createFormSchema({
   code: [{ required: true, message: '任务编码不能为空' }],
   name: [{ required: true, message: '任务名称不能为空' }],
@@ -238,30 +202,12 @@ const formSchema = createFormSchema({
 })
 
 /** 默认表单数据 */
-function getDefaultFormData(): StockTakingTaskFormData {
+function getDefaultFormData(): StockTakingTask {
   return {
-    code: '',
-    name: '',
-    takingDate: undefined,
-    type: undefined,
-    userId: undefined,
-    userNickname: '',
-    planId: undefined,
-    planCode: '',
-    planName: '',
     blindFlag: false,
     frozen: false,
-    startTime: undefined,
-    endTime: undefined,
     status: MesWmStockTakingTaskStatusEnum.PREPARE,
-    remark: '',
   }
-}
-
-/** 刷新当前路由参数 */
-function refreshRouteState() {
-  currentId.value = routeId.value
-  currentMode.value = routeMode.value
 }
 
 /** 返回上一页 */
@@ -274,49 +220,11 @@ async function getDetail() {
   if (!currentId.value) {
     return
   }
-  const data: StockTakingTaskVO = await getStockTaking(currentId.value)
+  const data: StockTakingTask = await getStockTaking(currentId.value)
   formData.value = {
-    id: data.id,
-    code: data.code || '',
-    name: data.name || '',
-    takingDate: data.takingDate,
-    type: data.type,
-    userId: data.userId,
-    userNickname: data.userNickname || '',
-    planId: data.planId,
-    planCode: data.planCode || '',
-    planName: data.planName || '',
+    ...data,
     blindFlag: Boolean(data.blindFlag),
     frozen: Boolean(data.frozen),
-    startTime: data.startTime,
-    endTime: data.endTime,
-    status: data.status,
-    remark: data.remark || '',
-  }
-}
-
-/** 加载可用盘点方案 */
-async function loadPlanOptions() {
-  const data = await getStockTakingPlanPage({
-    pageNo: 1,
-    pageSize: 100,
-    status: CommonStatusEnum.ENABLE,
-  })
-  planOptions.value = data.list
-}
-
-/** 初始化页面数据 */
-async function initPage() {
-  const oldId = currentId.value
-  refreshRouteState()
-  await loadPlanOptions()
-  if (!currentId.value) {
-    formData.value = getDefaultFormData()
-    return
-  }
-  if (oldId !== currentId.value || !formData.value.id) {
-    formData.value = getDefaultFormData()
-    await getDetail()
   }
 }
 
@@ -328,18 +236,8 @@ function openDatePicker(key: string) {
   pickerVisible.value[key] = true
 }
 
-/** 打开方案选择 */
-function openPlanPicker() {
-  if (isHeaderReadonly.value) {
-    return
-  }
-  planPickerVisible.value = true
-}
-
-/** 确认方案选择 */
-function handlePlanConfirm({ value }: { value: Array<number | string> }) {
-  const planId = Number(value[0])
-  const plan = planOptions.value.find(item => item.id === planId)
+/** 选择盘点方案 */
+function handlePlanChange(plan?: StockTakingPlan) {
   if (!plan) {
     return
   }
@@ -358,7 +256,7 @@ function handlePlanConfirm({ value }: { value: Array<number | string> }) {
 
 /** 确认盘点人 */
 function handleUserConfirm(users: User[]) {
-  formData.value.userNickname = users[0]?.nickname || ''
+  formData.value.userNickname = users[0]?.nickname
 }
 
 /** 生成任务编码 */
@@ -374,41 +272,20 @@ async function handleGenerateCode() {
   }
 }
 
-/** 构造提交数据 */
-function buildSubmitData(): StockTakingTaskCreateReqVO {
-  if (!formData.value.type || !formData.value.userId || !formData.value.planId) {
-    throw new Error('盘点任务必填字段不完整')
-  }
-  return {
-    code: formData.value.code,
-    name: formData.value.name,
-    takingDate: formData.value.takingDate,
-    type: formData.value.type,
-    userId: formData.value.userId,
-    planId: formData.value.planId,
-    blindFlag: formData.value.blindFlag,
-    frozen: formData.value.frozen,
-    startTime: formData.value.startTime,
-    endTime: formData.value.endTime,
-    remark: formData.value.remark || undefined,
-  }
-}
-
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
   formLoading.value = true
   try {
-    const data = buildSubmitData()
     if (currentId.value) {
-      await updateStockTaking({ ...data, id: currentId.value })
+      await updateStockTaking(formData.value)
       toast.success('修改成功')
     } else {
-      const id = await createStockTaking(data)
+      const id = await createStockTaking(formData.value)
       currentId.value = id
       formData.value.id = id
       toast.success('新增成功')
@@ -420,17 +297,35 @@ async function handleSubmit() {
   }
 }
 
+/** 执行盘点 */
+async function handleExecute() {
+  if (!currentId.value || !canExecuteTask.value) {
+    return
+  }
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: '确认执行盘点操作？',
+      confirmButtonText: '执行',
+    })
+  } catch {
+    return
+  }
+  formLoading.value = true
+  try {
+    await finishStockTaking(currentId.value)
+    toast.success('执行盘点成功')
+    uni.$emit('mes:wm:stocktaking:task:reload')
+    delay(handleBack)
+  } finally {
+    formLoading.value = false
+  }
+}
+
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-/** 页面显示时刷新 */
-onShow(() => {
-  initPage()
-})
-
-watch([routeId, routeMode], () => {
-  initPage()
+onMounted(async () => {
+  currentId.value = routeId.value
+  currentMode.value = routeMode.value
+  await getDetail()
 })
 </script>

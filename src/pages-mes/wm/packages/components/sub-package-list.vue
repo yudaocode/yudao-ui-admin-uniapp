@@ -66,6 +66,8 @@
         </view>
       </view>
     </z-paging>
+
+    <!-- 子箱选择弹窗 -->
     <PackagePicker
       ref="packagePickerRef"
       title="选择子箱"

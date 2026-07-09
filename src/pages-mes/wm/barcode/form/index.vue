@@ -11,78 +11,85 @@
     <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item title="业务类型" title-width="220rpx" prop="bizType">
-            <wd-radio-group v-if="!currentId" v-model="formData.bizType" type="button">
-              <wd-radio v-for="dict in bizTypeOptions" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-            <view v-else class="py-8rpx text-28rpx text-[#666]">
-              {{ getDictLabel(DICT_TYPE.MES_WM_BARCODE_BIZ_TYPE, formData.bizType) || '-' }}
-            </view>
-          </wd-form-item>
-          <wd-form-item title="业务对象" title-width="220rpx" prop="bizId">
+          <yd-form-picker v-model="formData.bizType" label="业务类型" label-width="220rpx" prop="bizType" :disabled="!!currentId" :columns="bizTypeOptions" placeholder="请选择业务类型" />
+          <wd-form-item v-if="isWarehouseBizType && currentId" title="业务对象" title-width="220rpx" prop="bizId">
             <view
-              v-if="isWarehouseBizType && currentId"
               class="min-h-72rpx flex items-center rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx text-[#333]"
             >
               <text class="min-w-0 flex-1 truncate">
                 {{ selectedBizText || '-' }}
               </text>
             </view>
-            <view
-              v-else-if="isWarehouseBizType"
-              class="space-y-16rpx"
-            >
-              <view
-                class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-                :class="currentId ? 'opacity-70' : ''"
-                @click="openWarehousePicker"
-              >
-                <text class="min-w-0 flex-1 truncate" :class="warehouseDisplayText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ warehouseDisplayText || '请选择仓库' }}
-                </text>
-                <wd-icon v-if="warehouseId && !currentId" name="close" size="28rpx" @click.stop="clearWarehouseObject" />
-                <wd-icon v-else name="arrow-right" size="28rpx" />
-              </view>
-              <view
-                v-if="formData.bizType === BarcodeBizTypeEnum.LOCATION || formData.bizType === BarcodeBizTypeEnum.AREA"
-                class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-                :class="currentId ? 'opacity-70' : ''"
-                @click="openLocationPicker"
-              >
-                <text class="min-w-0 flex-1 truncate" :class="locationDisplayText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ locationDisplayText || '请选择库区' }}
-                </text>
-                <wd-icon v-if="locationId && !currentId" name="close" size="28rpx" @click.stop="clearLocationObject" />
-                <wd-icon v-else name="arrow-right" size="28rpx" />
-              </view>
-              <view
-                v-if="formData.bizType === BarcodeBizTypeEnum.AREA"
-                class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-                :class="currentId ? 'opacity-70' : ''"
-                @click="openAreaPicker"
-              >
-                <text class="min-w-0 flex-1 truncate" :class="areaDisplayText ? 'text-[#333]' : 'text-[#999]'">
-                  {{ areaDisplayText || '请选择库位' }}
-                </text>
-                <wd-icon v-if="formData.bizId && !currentId" name="close" size="28rpx" @click.stop="clearAreaObject" />
-                <wd-icon v-else name="arrow-right" size="28rpx" />
-              </view>
-            </view>
-            <view
-              v-else-if="isSupportedBizType"
-              class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-              :class="currentId ? 'opacity-70' : ''"
-              @click="openBizSelector"
-            >
-              <text class="min-w-0 flex-1 truncate" :class="selectedBizText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedBizText || '请选择业务对象' }}
-              </text>
-              <wd-icon v-if="formData.bizId && !currentId" name="close" size="28rpx" @click.stop="clearBizObject" />
-              <wd-icon v-else name="arrow-right" size="28rpx" />
-            </view>
-            <view v-else class="rounded-8rpx bg-[#fff7e6] px-20rpx py-18rpx text-26rpx text-[#8a5a00] leading-38rpx">
+          </wd-form-item>
+          <template v-else-if="isWarehouseBizType">
+            <yd-form-picker
+              v-model="warehouseId"
+              label="仓库"
+              label-width="220rpx"
+              :prop="formData.bizType === BarcodeBizTypeEnum.WAREHOUSE ? 'bizId' : ''"
+              :columns="warehouseOptions"
+              label-key="name"
+              value-key="id"
+              placeholder="请选择仓库"
+              clearable
+              :before-open="beforeOpenWarehousePicker"
+              @confirm="handleWarehouseConfirm"
+              @clear="clearWarehouseObject"
+            />
+            <yd-form-picker
+              v-if="formData.bizType === BarcodeBizTypeEnum.LOCATION || formData.bizType === BarcodeBizTypeEnum.AREA"
+              v-model="locationId"
+              label="库区"
+              label-width="220rpx"
+              :prop="formData.bizType === BarcodeBizTypeEnum.LOCATION ? 'bizId' : ''"
+              :columns="locationOptions"
+              label-key="name"
+              value-key="id"
+              placeholder="请选择库区"
+              clearable
+              :before-open="beforeOpenLocationPicker"
+              @confirm="handleLocationConfirm"
+              @clear="clearLocationObject"
+            />
+            <yd-form-picker
+              v-if="formData.bizType === BarcodeBizTypeEnum.AREA"
+              v-model="formData.bizId"
+              label="库位"
+              label-width="220rpx"
+              prop="bizId"
+              :columns="areaOptions"
+              label-key="name"
+              value-key="id"
+              placeholder="请选择库位"
+              clearable
+              :before-open="beforeOpenAreaPicker"
+              @confirm="handleAreaConfirm"
+              @clear="clearAreaObject"
+            />
+          </template>
+          <UserPicker
+            v-else-if="formData.bizType === BarcodeBizTypeEnum.USER"
+            v-model="formData.bizId"
+            label="业务对象"
+            label-width="220rpx"
+            prop="bizId"
+            type="radio"
+            placeholder="请选择业务对象"
+            :disabled="!!currentId"
+            @confirm="handleUserConfirm"
+          />
+          <wd-form-item
+            v-else-if="isSupportedBizType"
+            title="业务对象"
+            title-width="220rpx"
+            prop="bizId"
+            :is-link="!currentId"
+            :value="selectedBizText"
+            placeholder="请选择业务对象"
+            @click="openBizPicker"
+          />
+          <wd-form-item v-else title="业务对象" title-width="220rpx" prop="bizId">
+            <view class="rounded-8rpx bg-[#fff7e6] px-20rpx py-18rpx text-26rpx text-[#8a5a00] leading-38rpx">
               {{ unsupportedTip }}
             </view>
           </wd-form-item>
@@ -95,13 +102,7 @@
           <wd-form-item title="条码内容" title-width="220rpx" prop="content">
             <wd-input v-model="formData.content" placeholder="选择业务对象后自动生成，也可手动调整" clearable />
           </wd-form-item>
-          <wd-form-item title="状态" title-width="220rpx" prop="status">
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)" :key="dict.value" :value="dict.value">
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker v-model="formData.status" label="状态" label-width="220rpx" prop="status" :dict-type="DICT_TYPE.COMMON_STATUS" placeholder="请选择状态" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea
               v-model="formData.remark"
@@ -113,120 +114,81 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00] leading-40rpx">
-        当前已开放仓库、库区、库位、装箱单、库存、批次、流转卡、工单、任务、设备、工具、物料、供应商、工作站、车间、人员和客户条码；流转单待后端模块补齐后开放。
-      </view>
       <view class="h-160rpx" />
     </scroll-view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions content-class="yd-detail-footer-actions">
-      <wd-button class="flex-1" variant="plain" @click="handleConfig">
-        条码设置
-      </wd-button>
-      <wd-button class="flex-1" type="primary" :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
-
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button class="flex-1" variant="plain" @click="handleConfig">
+          条码设置
+        </wd-button>
+        <wd-button class="flex-1" type="primary" :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
     <!-- 业务对象选择器 -->
-    <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
-    <VendorSelector ref="vendorSelectorRef" @confirm="handleVendorConfirm" />
-    <ClientSelector ref="clientSelectorRef" @confirm="handleClientConfirm" />
-    <WorkOrderSelector ref="workOrderSelectorRef" :confirmed-only="false" @confirm="handleWorkOrderConfirm" />
-    <PackageSelector ref="packageSelectorRef" @confirm="handlePackageConfirm" />
-    <MaterialStockSelector ref="materialStockSelectorRef" @confirm="handleMaterialStockConfirm" />
-    <MachinerySelector ref="machinerySelectorRef" @confirm="handleMachineryConfirm" />
-    <WorkstationSelector ref="workstationSelectorRef" @confirm="handleWorkstationConfirm" />
-    <BatchSelector ref="batchSelectorRef" @confirm="handleBatchConfirm" />
-    <ToolSelector ref="toolSelectorRef" @confirm="handleToolConfirm" />
-    <CardSelector ref="cardSelectorRef" @confirm="handleCardConfirm" />
-    <TaskSelector ref="taskSelectorRef" :statuses="taskSelectorStatuses" @confirm="handleTaskConfirm" />
-    <WorkshopSelector ref="workshopSelectorRef" @confirm="handleWorkshopConfirm" />
-    <wd-picker
-      v-model:visible="warehousePickerVisible"
-      :model-value="warehousePickerValue"
-      :columns="warehouseOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="handleWarehouseConfirm"
-    />
-    <wd-picker
-      v-model:visible="locationPickerVisible"
-      :model-value="locationPickerValue"
-      :columns="locationOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="handleLocationConfirm"
-    />
-    <wd-picker
-      v-model:visible="areaPickerVisible"
-      :model-value="areaPickerValue"
-      :columns="areaOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="handleAreaConfirm"
-    />
-    <wd-select-picker
-      v-model="userPickerValue"
-      v-model:visible="userPickerVisible"
-      title="选择人员"
-      :columns="userOptions"
-      value-key="id"
-      label-key="nickname"
-      type="radio"
-      filterable
-      @confirm="handleUserPickerConfirm"
-    />
+    <ItemPicker ref="itemPickerRef" :multiple="false" @confirm="handleItemConfirm" />
+    <VendorPicker ref="vendorPickerRef" @confirm="handleVendorConfirm" />
+    <ClientPicker ref="clientPickerRef" @confirm="handleClientConfirm" />
+    <WorkOrderPicker ref="workOrderPickerRef" :confirmed-only="false" @confirm="handleWorkOrderConfirm" />
+    <PackagePicker ref="packagePickerRef" childable-only @confirm="handlePackageConfirm" />
+    <MaterialStockPicker ref="materialStockPickerRef" @confirm="handleMaterialStockConfirm" />
+    <MachineryPicker ref="machineryPickerRef" @confirm="handleMachineryConfirm" />
+    <WorkstationPicker ref="workstationPickerRef" @confirm="handleWorkstationConfirm" />
+    <BatchPicker ref="batchPickerRef" @confirm="handleBatchConfirm" />
+    <ToolPicker ref="toolPickerRef" @confirm="handleToolConfirm" />
+    <CardPicker ref="cardPickerRef" @confirm="handleCardConfirm" />
+    <TaskPicker ref="taskPickerRef" :statuses="taskPickerStatuses" @confirm="handleTaskConfirm" />
+    <WorkshopPicker ref="workshopPickerRef" @confirm="handleWorkshopConfirm" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { DvMachineryVO } from '@/api/mes/dv/machinery'
-import type { MdClientVO } from '@/api/mes/md/client'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { MdWorkstationVO } from '@/api/mes/md/workstation'
-import type { MdWorkshopVO } from '@/api/mes/md/workstation/workshop'
-import type { ProWorkOrderVO } from '@/api/mes/pro/workorder'
-import type { ProCardVO } from '@/api/mes/pro/card'
-import type { ProTaskVO } from '@/api/mes/pro/task'
-import type { WmBarcodeCreateReqVO, WmBarcodeUpdateReqVO } from '@/api/mes/wm/barcode'
-import type { BatchVO } from '@/api/mes/wm/batch'
-import type { WmMaterialStockVO } from '@/api/mes/wm/materialstock'
-import type { WmPackageVO } from '@/api/mes/wm/packages'
-import type { WmWarehouseVO } from '@/api/mes/wm/warehouse'
-import type { WmWarehouseAreaVO } from '@/api/mes/wm/warehouse/area'
-import type { WmWarehouseLocationVO } from '@/api/mes/wm/warehouse/location'
-import type { WotPickerValue } from '@/utils/wot'
-import type { TmToolVO } from '@/api/mes/tm/tool'
+import type { DvMachinery } from '@/api/mes/dv/machinery'
+import type { MdClient } from '@/api/mes/md/client'
+import type { MdItem } from '@/api/mes/md/item'
+import type { MdVendor } from '@/api/mes/md/vendor'
+import type { MdWorkstation } from '@/api/mes/md/workstation'
+import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
+import type { ProWorkOrder } from '@/api/mes/pro/workorder'
+import type { ProCard } from '@/api/mes/pro/card'
+import type { ProTask } from '@/api/mes/pro/task'
+import type { WmBarcode } from '@/api/mes/wm/barcode'
+import type { Batch } from '@/api/mes/wm/batch'
+import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
+import type { WmPackage } from '@/api/mes/wm/packages'
+import type { WmWarehouse } from '@/api/mes/wm/warehouse'
+import type { WmWarehouseArea } from '@/api/mes/wm/warehouse/area'
+import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
+import type { TmTool } from '@/api/mes/tm/tool'
 import type { User } from '@/api/system/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
-import MachinerySelector from '@/pages-mes/dv/machinery/components/machinery-selector.vue'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import ClientSelector from '@/pages-mes/md/client/components/client-selector.vue'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import VendorSelector from '@/pages-mes/md/vendor/components/vendor-selector.vue'
-import WorkOrderSelector from '@/pages-mes/pro/card/components/workorder-selector.vue'
-import WorkstationSelector from '@/pages-mes/pro/task/components/workstation-selector.vue'
-import BatchSelector from '@/pages-mes/wm/barcode/components/batch-selector.vue'
-import CardSelector from '@/pages-mes/wm/barcode/components/card-selector.vue'
-import ToolSelector from '@/pages-mes/wm/barcode/components/tool-selector.vue'
-import WorkshopSelector from '@/pages-mes/wm/barcode/components/workshop-selector.vue'
-import TaskSelector from '@/pages-mes/pro/feedback/components/task-selector.vue'
-import MaterialStockSelector from '@/pages-mes/wm/stocktaking/task/components/material-stock-selector.vue'
-import PackageSelector from '@/pages-mes/wm/packages/components/package-selector.vue'
+import MachineryPicker from '@/pages-mes/dv/machinery/components/machinery-picker.vue'
+import ClientPicker from '@/pages-mes/md/client/components/client-picker.vue'
+import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
+import VendorPicker from '@/pages-mes/md/vendor/components/vendor-picker.vue'
+import WorkOrderPicker from '@/pages-mes/pro/workorder/components/workorder-picker.vue'
+import WorkstationPicker from '@/pages-mes/md/workstation/components/workstation-picker.vue'
+import WorkshopPicker from '@/pages-mes/md/workstation/workshop/components/workshop-picker.vue'
+import CardPicker from '@/pages-mes/pro/card/components/card-picker.vue'
+import ToolPicker from '@/pages-mes/tm/tool/components/tool-picker.vue'
+import BatchPicker from '@/pages-mes/wm/batch/components/batch-picker.vue'
+import TaskPicker from '@/pages-mes/pro/task/components/task-picker.vue'
+import MaterialStockPicker from '@/pages-mes/wm/materialstock/components/material-stock-picker.vue'
+import PackagePicker from '@/pages-mes/wm/packages/components/package-picker.vue'
 import { createBarcode, generateBarcodeContent, getBarcode, updateBarcode } from '@/api/mes/wm/barcode'
-import { getSimpleUserList } from '@/api/system/user'
+import UserPicker from '@/components/system-select/user-picker.vue'
 import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
 import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
 import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string
@@ -255,31 +217,25 @@ const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当
 const formLoading = ref(false) // 表单提交状态
 const loadingDetail = ref(false) // 详情加载状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器
-const clientSelectorRef = ref<InstanceType<typeof ClientSelector>>() // 客户选择器
-const workOrderSelectorRef = ref<InstanceType<typeof WorkOrderSelector>>() // 工单选择器
-const packageSelectorRef = ref<InstanceType<typeof PackageSelector>>() // 装箱单选择器
-const materialStockSelectorRef = ref<InstanceType<typeof MaterialStockSelector>>() // 库存选择器
-const machinerySelectorRef = ref<InstanceType<typeof MachinerySelector>>() // 设备选择器
-const workstationSelectorRef = ref<InstanceType<typeof WorkstationSelector>>() // 工作站选择器
-const batchSelectorRef = ref<InstanceType<typeof BatchSelector>>() // 批次选择器
-const toolSelectorRef = ref<InstanceType<typeof ToolSelector>>() // 工具选择器
-const cardSelectorRef = ref<InstanceType<typeof CardSelector>>() // 流转卡选择器
-const taskSelectorRef = ref<InstanceType<typeof TaskSelector>>() // 生产任务选择器
-const workshopSelectorRef = ref<InstanceType<typeof WorkshopSelector>>() // 车间选择器
-const userPickerValue = ref<number | string>('') // 人员选择值
-const userPickerVisible = ref(false) // 人员选择器显示状态
-const userOptions = ref<User[]>([]) // 人员选项
-const warehouseOptions = ref<WmWarehouseVO[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocationVO[]>([]) // 库区选项
-const areaOptions = ref<WmWarehouseAreaVO[]>([]) // 库位选项
-const warehousePickerVisible = ref(false) // 仓库选择器显示状态
-const locationPickerVisible = ref(false) // 库区选择器显示状态
-const areaPickerVisible = ref(false) // 库位选择器显示状态
+const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器
+const vendorPickerRef = ref<InstanceType<typeof VendorPicker>>() // 供应商选择器
+const clientPickerRef = ref<InstanceType<typeof ClientPicker>>() // 客户选择器
+const workOrderPickerRef = ref<InstanceType<typeof WorkOrderPicker>>() // 工单选择器
+const packagePickerRef = ref<InstanceType<typeof PackagePicker>>() // 装箱单选择器
+const materialStockPickerRef = ref<InstanceType<typeof MaterialStockPicker>>() // 库存选择器
+const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器
+const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
+const batchPickerRef = ref<InstanceType<typeof BatchPicker>>() // 批次选择器
+const toolPickerRef = ref<InstanceType<typeof ToolPicker>>() // 工具选择器
+const cardPickerRef = ref<InstanceType<typeof CardPicker>>() // 流转卡选择器
+const taskPickerRef = ref<InstanceType<typeof TaskPicker>>() // 生产任务选择器
+const workshopPickerRef = ref<InstanceType<typeof WorkshopPicker>>() // 车间选择器
+const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
+const locationOptions = ref<WmWarehouseLocation[]>([]) // 库区选项
+const areaOptions = ref<WmWarehouseArea[]>([]) // 库位选项
 const warehouseId = ref<number>() // 仓库编号
 const locationId = ref<number>() // 库区编号
-const taskSelectorStatuses = [0, 1, 2, 3, 4, 5, 10] // 条码选择任务时不过滤状态
+const taskPickerStatuses = [0, 1, 2, 3, 4, 5, 10] // 条码选择任务时不过滤状态
 const formData = ref<BarcodeFormData>({
   bizType: undefined,
   bizId: undefined,
@@ -338,24 +294,6 @@ const selectedBizText = computed(() => {
   const name = formData.value.bizName
   return [code, name].filter(Boolean).join(' / ')
 })
-const warehousePickerValue = computed(() => warehouseId.value !== undefined ? [warehouseId.value] : [])
-const locationPickerValue = computed(() => locationId.value !== undefined ? [locationId.value] : [])
-const areaPickerValue = computed(() => formData.value.bizId !== undefined ? [formData.value.bizId] : [])
-const warehouseDisplayText = computed(() => getWotPickerFormValue(warehouseOptions.value, warehouseId.value, {
-  labelKey: 'name',
-  placeholder: '',
-  valueKey: 'id',
-}))
-const locationDisplayText = computed(() => getWotPickerFormValue(locationOptions.value, locationId.value, {
-  labelKey: 'name',
-  placeholder: '',
-  valueKey: 'id',
-}))
-const areaDisplayText = computed(() => getWotPickerFormValue(areaOptions.value, formData.value.bizId, {
-  labelKey: 'name',
-  placeholder: '',
-  valueKey: 'id',
-}))
 const unsupportedTip = computed(() => {
   if (!formData.value.bizType) {
     return '请先选择业务类型。'
@@ -445,120 +383,104 @@ async function loadWarehouseOptions() {
   warehouseOptions.value = await getWarehouseSimpleList() || []
 }
 
-/** 打开仓库选择 */
-async function openWarehousePicker() {
+/** 打开仓库前加载选项 */
+async function beforeOpenWarehousePicker() {
   if (currentId.value) {
     toast.warning('编辑条码时不支持切换业务对象')
-    return
+    return false
   }
   await loadWarehouseOptions()
-  warehousePickerVisible.value = true
 }
 
-/** 打开库区选择 */
-async function openLocationPicker() {
+/** 打开库区前校验仓库 */
+async function beforeOpenLocationPicker() {
   if (currentId.value) {
     toast.warning('编辑条码时不支持切换业务对象')
-    return
+    return false
   }
   if (!warehouseId.value) {
     toast.warning('请先选择仓库')
-    return
+    return false
   }
   if (locationOptions.value.length === 0) {
     locationOptions.value = await getWarehouseLocationSimpleList(warehouseId.value) || []
   }
-  locationPickerVisible.value = true
 }
 
-/** 打开库位选择 */
-async function openAreaPicker() {
+/** 打开库位前校验库区 */
+async function beforeOpenAreaPicker() {
   if (currentId.value) {
     toast.warning('编辑条码时不支持切换业务对象')
-    return
+    return false
   }
   if (!locationId.value) {
     toast.warning('请先选择库区')
-    return
+    return false
   }
   if (areaOptions.value.length === 0) {
     areaOptions.value = await getWarehouseAreaSimpleList(locationId.value) || []
   }
-  areaPickerVisible.value = true
 }
 
 /** 打开业务对象选择器 */
-function openBizSelector() {
+function openBizPicker() {
   if (currentId.value) {
     toast.warning('编辑条码时不支持切换业务对象')
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.ITEM) {
-    itemSelectorRef.value?.open()
+    itemPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.VENDOR) {
-    vendorSelectorRef.value?.open()
+    vendorPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.CLIENT) {
-    clientSelectorRef.value?.open()
+    clientPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.WORKORDER) {
-    workOrderSelectorRef.value?.open()
+    workOrderPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.PACKAGE) {
-    packageSelectorRef.value?.open()
+    packagePickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.STOCK) {
-    materialStockSelectorRef.value?.open()
+    materialStockPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.BATCH) {
-    batchSelectorRef.value?.open()
+    batchPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.MACHINERY) {
-    machinerySelectorRef.value?.open()
+    machineryPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.TOOL) {
-    toolSelectorRef.value?.open()
+    toolPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.WORKSTATION) {
-    workstationSelectorRef.value?.open()
+    workstationPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.PROCARD) {
-    cardSelectorRef.value?.open()
+    cardPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.TASK) {
-    taskSelectorRef.value?.open()
+    taskPickerRef.value?.open()
     return
   }
   if (formData.value.bizType === BarcodeBizTypeEnum.WORKSHOP) {
-    workshopSelectorRef.value?.open()
-    return
-  }
-  if (formData.value.bizType === BarcodeBizTypeEnum.USER) {
-    openUserPicker()
+    workshopPickerRef.value?.open()
     return
   }
   toast.warning(unsupportedTip.value)
-}
-
-/** 打开人员选择 */
-async function openUserPicker() {
-  userPickerValue.value = formData.value.bizId ?? ''
-  if (userOptions.value.length === 0) {
-    userOptions.value = await getSimpleUserList()
-  }
-  userPickerVisible.value = true
 }
 
 /** 回填业务对象 */
@@ -583,7 +505,7 @@ async function generateContent() {
 }
 
 /** 确认物料 */
-function handleItemConfirm(items: MdItemVO[]) {
+function handleItemConfirm(items: MdItem[]) {
   const item = items[0]
   if (!item) {
     return
@@ -592,7 +514,7 @@ function handleItemConfirm(items: MdItemVO[]) {
 }
 
 /** 确认供应商 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
+function handleVendorConfirm(vendors: MdVendor[]) {
   const vendor = vendors[0]
   if (!vendor) {
     return
@@ -601,7 +523,7 @@ function handleVendorConfirm(vendors: MdVendorVO[]) {
 }
 
 /** 确认客户 */
-function handleClientConfirm(clients: MdClientVO[]) {
+function handleClientConfirm(clients: MdClient[]) {
   const client = clients[0]
   if (!client) {
     return
@@ -610,17 +532,17 @@ function handleClientConfirm(clients: MdClientVO[]) {
 }
 
 /** 确认生产工单 */
-function handleWorkOrderConfirm(item: ProWorkOrderVO) {
+function handleWorkOrderConfirm(item: ProWorkOrder) {
   fillBizObject(item.id, item.code || '', item.name || item.code || '')
 }
 
 /** 确认装箱单 */
-function handlePackageConfirm(item: WmPackageVO) {
+function handlePackageConfirm(item: WmPackage) {
   fillBizObject(item.id, item.code || '', item.clientName || item.code || '')
 }
 
 /** 确认库存台账 */
-function handleMaterialStockConfirm(rows: WmMaterialStockVO[]) {
+function handleMaterialStockConfirm(rows: WmMaterialStock[]) {
   const stock = rows[0]
   if (!stock) {
     return
@@ -629,8 +551,8 @@ function handleMaterialStockConfirm(rows: WmMaterialStockVO[]) {
 }
 
 /** 确认仓库 */
-function handleWarehouseConfirm({ value }: { value: WotPickerValue[] }) {
-  const id = Number(value[0])
+async function handleWarehouseConfirm(value: number) {
+  const id = Number(value)
   const warehouse = warehouseOptions.value.find(item => item.id === id)
   if (!warehouse) {
     return
@@ -640,15 +562,15 @@ function handleWarehouseConfirm({ value }: { value: WotPickerValue[] }) {
   locationOptions.value = []
   areaOptions.value = []
   if (formData.value.bizType === BarcodeBizTypeEnum.WAREHOUSE) {
-    fillBizObject(warehouse.id, warehouse.code || '', warehouse.name || warehouse.code || '')
+    await fillBizObject(warehouse.id, warehouse.code || '', warehouse.name || warehouse.code || '')
     return
   }
   clearAreaObject()
 }
 
 /** 确认库区 */
-async function handleLocationConfirm({ value }: { value: WotPickerValue[] }) {
-  const id = Number(value[0])
+async function handleLocationConfirm(value: number) {
+  const id = Number(value)
   const location = locationOptions.value.find(item => item.id === id)
   if (!location) {
     return
@@ -663,47 +585,47 @@ async function handleLocationConfirm({ value }: { value: WotPickerValue[] }) {
 }
 
 /** 确认库位 */
-function handleAreaConfirm({ value }: { value: WotPickerValue[] }) {
-  const id = Number(value[0])
+async function handleAreaConfirm(value: number) {
+  const id = Number(value)
   const area = areaOptions.value.find(item => item.id === id)
   if (!area) {
     return
   }
-  fillBizObject(area.id, area.code || '', area.name || area.code || '')
+  await fillBizObject(area.id, area.code || '', area.name || area.code || '')
 }
 
 /** 确认批次 */
-function handleBatchConfirm(item: BatchVO) {
+function handleBatchConfirm(item: Batch) {
   fillBizObject(item.id, item.code || '', item.itemName || item.code || '')
 }
 
 /** 确认设备 */
-function handleMachineryConfirm(item: DvMachineryVO) {
+function handleMachineryConfirm(item: DvMachinery) {
   fillBizObject(item.id, item.code || '', item.name || item.code || '')
 }
 
 /** 确认工具 */
-function handleToolConfirm(item: TmToolVO) {
+function handleToolConfirm(item: TmTool) {
   fillBizObject(item.id, item.code || '', item.name || item.code || '')
 }
 
 /** 确认工作站 */
-function handleWorkstationConfirm(item: MdWorkstationVO) {
+function handleWorkstationConfirm(item: MdWorkstation) {
   fillBizObject(item.id, item.code || '', item.name || item.code || '')
 }
 
 /** 确认流转卡 */
-function handleCardConfirm(item: ProCardVO) {
+function handleCardConfirm(item: ProCard) {
   fillBizObject(item.id, item.code || '', item.workOrderName || item.itemName || item.code || '')
 }
 
 /** 确认生产任务 */
-function handleTaskConfirm(item: ProTaskVO) {
+function handleTaskConfirm(item: ProTask) {
   fillBizObject(item.id, item.code || item.name || String(item.id), item.name || item.itemName || item.processName || '')
 }
 
 /** 确认车间 */
-function handleWorkshopConfirm(item: MdWorkshopVO) {
+function handleWorkshopConfirm(item: MdWorkshop) {
   fillBizObject(item.id, item.code || '', item.name || item.code || '')
 }
 
@@ -714,19 +636,6 @@ function handleUserConfirm(users: User[]) {
     return
   }
   fillBizObject(user.id, user.username || String(user.id), user.nickname || user.username || '')
-}
-
-/** 确认人员 Picker */
-function handleUserPickerConfirm({ value }: { value: WotPickerValue }) {
-  if (value === '') {
-    return
-  }
-  const userId = Number(value)
-  const user = userOptions.value.find(item => item.id === userId)
-  if (!user?.id) {
-    return
-  }
-  handleUserConfirm([user])
 }
 
 /** 加载详情 */
@@ -753,8 +662,8 @@ async function getDetail() {
 }
 
 /** 构造提交数据 */
-function buildSubmitData(): WmBarcodeCreateReqVO | WmBarcodeUpdateReqVO {
-  const data: WmBarcodeCreateReqVO = {
+function buildSubmitData(): WmBarcode {
+  const data: WmBarcode = {
     bizType: Number(formData.value.bizType),
     bizId: Number(formData.value.bizId),
     bizCode: formData.value.bizCode,
@@ -764,7 +673,7 @@ function buildSubmitData(): WmBarcodeCreateReqVO | WmBarcodeUpdateReqVO {
     remark: formData.value.remark || undefined,
   }
   if (currentId.value) {
-    return { ...data, id: currentId.value }
+    data.id = currentId.value
   }
   return data
 }
@@ -775,18 +684,18 @@ async function handleSubmit() {
     toast.warning(unsupportedTip.value)
     return
   }
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
   formLoading.value = true
   try {
     const data = buildSubmitData()
     if (currentId.value) {
-      await updateBarcode(data as WmBarcodeUpdateReqVO)
+      await updateBarcode(data)
       toast.success('修改成功')
     } else {
-      await createBarcode(data as WmBarcodeCreateReqVO)
+      await createBarcode(data)
       toast.success('新增成功')
     }
     uni.$emit('mes:wm:barcode:reload')
@@ -796,6 +705,7 @@ async function handleSubmit() {
   }
 }
 
+/** 监听业务类型变化 */
 watch(
   () => formData.value.bizType,
   () => {
@@ -806,14 +716,7 @@ watch(
   },
 )
 
-watch(currentId, () => {
-  if (currentId.value) {
-    getDetail()
-    return
-  }
-  resetForm()
-})
-
+/** 初始化 */
 onMounted(() => {
   if (currentId.value) {
     getDetail()

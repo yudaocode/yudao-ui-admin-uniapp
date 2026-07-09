@@ -25,8 +25,8 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入方案名称" clearable />
       </view>
-      <yd-search-picker v-model="formData.type" label="盘点类型" :columns="stockTakingTypeOptions" all-option :all-value="undefined" />
-      <yd-search-picker v-model="formData.status" label="状态" :columns="statusOptions" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.type" label="盘点类型" :columns="stockTakingTypeOptions" all-option />
+      <yd-search-picker v-model="formData.status" label="状态" :columns="statusOptions" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -40,19 +40,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { StockTakingPlanQueryParams } from '@/api/mes/wm/stocktaking/plan'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  search: [data: Partial<StockTakingPlanQueryParams>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive<Partial<StockTakingPlanQueryParams>>({
+const formData = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
   type: undefined,
@@ -70,10 +69,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null) {
+  if (formData.type != null && formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_STOCK_TAKING_TYPE, formData.type)}`)
   }
-  if (formData.status != null) {
+  if (formData.status != null && formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索盘点方案'
@@ -82,7 +81,11 @@ const placeholder = computed(() => {
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    ...formData,
+    type: formData.type === -1 ? undefined : formData.type,
+    status: formData.status === -1 ? undefined : formData.status,
+  })
 }
 
 /** 重置按钮操作 */

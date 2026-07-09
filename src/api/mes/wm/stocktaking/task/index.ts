@@ -61,8 +61,3 @@ export function cancelStockTaking(id: number) {
 export function finishStockTaking(id: number) {
   return http.put<boolean>('/mes/wm/stocktaking-task/finish', { id })
 }
-
-/** 导出盘点任务 */
-export function exportStockTaking(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/stocktaking-task/export-excel', params)
-}

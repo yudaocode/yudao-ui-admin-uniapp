@@ -155,7 +155,9 @@
     title="请选择有效期"
     type="date"
   />
+  <!-- 工单选择弹窗 -->
   <WorkOrderPicker ref="workOrderPickerRef" @confirm="handleWorkOrderConfirm" />
+  <!-- 物料选择弹窗 -->
   <ItemPicker ref="itemPickerRef" :multiple="false" title="选择产品物料" @confirm="handleItemConfirm" />
 </template>
 
