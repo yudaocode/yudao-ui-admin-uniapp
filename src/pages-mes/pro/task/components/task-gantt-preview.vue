@@ -142,15 +142,11 @@ import type { ProTask, ProTaskGantt } from '@/api/mes/pro/task'
 import dayjs from 'dayjs'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { BarcodeBizTypeEnum } from '@/utils/constants'
-import { formatDate, formatDateTime, toTimestamp } from '@/utils/date'
+import { formatDate, toTimestamp } from '@/utils/date'
 
 type DragMode = 'move' | 'resize-start' | 'resize-end'
 
-interface DraftRange {
-  startDate: string
-  endDate: string
-  duration: number
-}
+type DraftRange = Required<Pick<ProTask, 'startTime' | 'endTime' | 'duration'>>
 
 interface GanttRow {
   id: string
@@ -302,13 +298,13 @@ function getDraft(item: ProTaskGantt) {
 /** 获取任务开始时间 */
 function getItemStart(item: ProTaskGantt) {
   const draft = getDraft(item)
-  return parseDate(draft?.startDate || item.startDate)
+  return parseDate(draft?.startTime ?? item.startDate)
 }
 
 /** 获取任务结束时间 */
 function getItemEnd(item: ProTaskGantt, start?: dayjs.Dayjs) {
   const draft = getDraft(item)
-  const end = parseDate(draft?.endDate || item.endDate)
+  const end = parseDate(draft?.endTime ?? item.endDate)
   if (end) {
     return end
   }
@@ -495,8 +491,8 @@ function getNextRange(state: DragState, deltaDays: number) {
 function setDraftRange(item: ProTaskGantt, start: dayjs.Dayjs, end: dayjs.Dayjs) {
   const next = new Map(draftRanges.value)
   next.set(String(item.id), {
-    startDate: formatDateTime(start),
-    endDate: formatDateTime(end),
+    startTime: start.valueOf(),
+    endTime: end.valueOf(),
     duration: Math.max(1, Math.ceil(end.diff(start, 'hour', true) / MIN_DURATION_HOURS)),
   })
   draftRanges.value = next
@@ -514,8 +510,8 @@ function handleDragEnd() {
     if (draft && state.row.item.originalId) {
       emit('task-update', {
         id: state.row.item.originalId,
-        startTime: draft.startDate,
-        endTime: draft.endDate,
+        startTime: draft.startTime,
+        endTime: draft.endTime,
         duration: draft.duration,
       })
     }
