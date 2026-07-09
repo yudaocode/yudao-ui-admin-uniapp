@@ -31,7 +31,7 @@
         </view>
         <wd-input v-model="formData.specification" placeholder="请输入型号规格" clearable />
       </view>
-      <yd-search-picker v-model="formData.toolTypeId" label="工具类型" :columns="typeOptions" label-key="name" value-key="id" all-option />
+      <ToolTypeSearchPicker ref="toolTypeSearchPickerRef" v-model="formData.toolTypeId" label="工具类型" />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.MES_TM_TOOL_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -46,22 +46,21 @@
 </template>
 
 <script lang="ts" setup>
-import type { TmToolType } from '@/api/mes/tm/tool/type'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { getToolTypeSimpleList } from '@/api/mes/tm/tool/type'
+import ToolTypeSearchPicker from '@/pages-mes/tm/tool/type/components/tool-type-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const typeOptions = ref<TmToolType[]>([]) // 工具类型选项
+const toolTypeSearchPickerRef = ref<InstanceType<typeof ToolTypeSearchPicker>>() // 工具类型搜索选择器
 const formData = reactive({
   code: undefined as string | undefined,
   name: undefined as string | undefined,
   brand: undefined as string | undefined,
   specification: undefined as string | undefined,
-  toolTypeId: -1,
+  toolTypeId: undefined as number | undefined,
   status: -1,
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件展示文案
@@ -78,19 +77,14 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.specification) {
     conditions.push(`规格:${formData.specification}`)
   }
-  if (formData.toolTypeId !== -1) {
-    conditions.push(`类型:${typeOptions.value.find(item => item.id === formData.toolTypeId)?.name || formData.toolTypeId}`)
+  if (formData.toolTypeId) {
+    conditions.push(`类型:${toolTypeSearchPickerRef.value?.format(formData.toolTypeId) || formData.toolTypeId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_TM_TOOL_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工具'
 })
-
-/** 加载工具类型选项 */
-async function loadOptions() {
-  typeOptions.value = await getToolTypeSimpleList() || []
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -100,7 +94,7 @@ function handleSearch() {
     name: formData.name || undefined,
     brand: formData.brand || undefined,
     specification: formData.specification || undefined,
-    toolTypeId: formData.toolTypeId === -1 ? undefined : formData.toolTypeId,
+    toolTypeId: formData.toolTypeId,
     status: formData.status === -1 ? undefined : formData.status,
   })
 }
@@ -111,14 +105,9 @@ function handleReset() {
   formData.name = undefined
   formData.brand = undefined
   formData.specification = undefined
-  formData.toolTypeId = -1
+  formData.toolTypeId = undefined
   formData.status = -1
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadOptions()
-})
 </script>

@@ -16,21 +16,17 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入工作站名称" clearable />
       </view>
-      <yd-search-picker
+      <WorkshopSearchPicker
+        ref="workshopSearchPickerRef"
         v-model="formData.workshopId"
         label="所在车间"
-        :columns="workshopOptions"
-        label-key="name"
-        value-key="id"
-        all-option
+        placeholder="请选择车间"
       />
-      <yd-search-picker
+      <ProcessSearchPicker
+        ref="processSearchPickerRef"
         v-model="formData.processId"
         label="所属工序"
-        :columns="processOptions"
-        label-key="label"
-        value-key="id"
-        all-option
+        placeholder="请选择工序"
       />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
@@ -46,26 +42,24 @@
 </template>
 
 <script lang="ts" setup>
-import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
-import type { ProProcess } from '@/api/mes/pro/process'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
+import ProcessSearchPicker from '@/pages-mes/pro/process/components/process-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import WorkshopSearchPicker from '../workshop/components/workshop-search-picker.vue'
 
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   code: undefined as string | undefined,
   name: undefined as string | undefined,
-  workshopId: -1,
-  processId: -1,
+  workshopId: undefined as number | undefined,
+  processId: undefined as number | undefined,
   status: -1,
 }) // 搜索表单数据
-const workshopOptions = ref<MdWorkshop[]>([]) // 车间选项
-const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
+const workshopSearchPickerRef = ref<InstanceType<typeof WorkshopSearchPicker>>() // 车间搜索选择器
+const processSearchPickerRef = ref<InstanceType<typeof ProcessSearchPicker>>() // 工序搜索选择器
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -76,13 +70,11 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.workshopId !== -1) {
-    const label = workshopOptions.value.find(item => item.id === formData.workshopId)?.name
-    conditions.push(`车间:${label || formData.workshopId}`)
+  if (formData.workshopId) {
+    conditions.push(`车间:${workshopSearchPickerRef.value?.format(formData.workshopId) || formData.workshopId}`)
   }
-  if (formData.processId !== -1) {
-    const label = processOptions.value.find(item => item.id === formData.processId)?.label
-    conditions.push(`工序:${label || formData.processId}`)
+  if (formData.processId) {
+    conditions.push(`工序:${processSearchPickerRef.value?.format(formData.processId) || formData.processId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
@@ -90,29 +82,14 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工作站'
 })
 
-/** 加载筛选选项 */
-async function loadOptions() {
-  const [workshops, processes] = await Promise.all([
-    getWorkshopSimpleList(),
-    getProcessSimpleList(),
-  ])
-  workshopOptions.value = workshops || []
-  processOptions.value = (processes || [])
-    .filter((process): process is ProProcess & { id: number } => process.id !== undefined)
-    .map(process => ({
-      id: process.id,
-      label: process.code ? `${process.name} (${process.code})` : process.name,
-    }))
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    workshopId: formData.workshopId === -1 ? undefined : formData.workshopId,
-    processId: formData.processId === -1 ? undefined : formData.processId,
+    workshopId: formData.workshopId,
+    processId: formData.processId,
     status: formData.status === -1 ? undefined : formData.status,
   })
 }
@@ -121,15 +98,10 @@ function handleSearch() {
 function handleReset() {
   formData.code = undefined
   formData.name = undefined
-  formData.workshopId = -1
-  formData.processId = -1
+  formData.workshopId = undefined
+  formData.processId = undefined
   formData.status = -1
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadOptions()
-})
 </script>

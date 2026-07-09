@@ -24,24 +24,18 @@
           clearable
         />
       </view>
-      <yd-search-picker
+      <WarehouseSearchPicker
+        ref="warehouseSearchPickerRef"
         v-model="formData.warehouseId"
         label="仓库"
-        :columns="warehouseOptions"
-        label-key="name"
-        value-key="id"
         placeholder="请选择仓库"
-        all-option
-        @update:model-value="handleWarehouseChange"
+        @change="handleWarehouseChange"
       />
-      <yd-search-picker
+      <WarehouseLocationSearchPicker
+        ref="locationSearchPickerRef"
         v-model="formData.locationId"
         label="库区"
-        :columns="locationOptions"
-        label-key="name"
-        value-key="id"
-        :placeholder="formData.warehouseId && formData.warehouseId !== -1 ? '请选择库区' : '请先选择仓库'"
-        all-option
+        :warehouse-id="formData.warehouseId"
       />
       <yd-search-picker v-model="formData.frozen" label="是否冻结" :columns="frozenOptions" all-option />
       <view class="yd-search-form-actions">
@@ -57,12 +51,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmWarehouse } from '@/api/mes/wm/warehouse'
-import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
-import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
+import { computed, reactive, ref } from 'vue'
 import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+import WarehouseSearchPicker from '@/pages-mes/wm/warehouse/components/warehouse-search-picker.vue'
+import WarehouseLocationSearchPicker from '@/pages-mes/wm/warehouse/location/components/warehouse-location-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 interface MaterialStockSearchFormData {
@@ -80,16 +72,14 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
-const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocation[]>([]) // 库区选项
+const warehouseSearchPickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 仓库搜索选择器
+const locationSearchPickerRef = ref<InstanceType<typeof WarehouseLocationSearchPicker>>() // 库区搜索选择器
 const formData = reactive<MaterialStockSearchFormData>({}) // 搜索表单数据
 const frozenOptions = [
   { label: '是', value: true },
   { label: '否', value: false },
 ]
 
-const warehouseDisplayValue = computed(() => warehouseOptions.value.find(item => item.id === formData.warehouseId)?.name || '')
-const locationDisplayValue = computed(() => locationOptions.value.find(item => item.id === formData.locationId)?.name || '')
 const frozenDisplayValue = computed(() => {
   if (formData.frozen === true) {
     return '是'
@@ -109,11 +99,11 @@ const placeholder = computed(() => {
   if (formData.batchCode) {
     conditions.push(`批次号:${formData.batchCode}`)
   }
-  if (warehouseDisplayValue.value) {
-    conditions.push(`仓库:${warehouseDisplayValue.value}`)
+  if (formData.warehouseId) {
+    conditions.push(`仓库:${warehouseSearchPickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
-  if (locationDisplayValue.value) {
-    conditions.push(`库区:${locationDisplayValue.value}`)
+  if (formData.locationId) {
+    conditions.push(`库区:${locationSearchPickerRef.value?.format(formData.locationId) || formData.locationId}`)
   }
   if (frozenDisplayValue.value) {
     conditions.push(`冻结:${frozenDisplayValue.value}`)
@@ -121,20 +111,9 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存台账'
 })
 
-/** 加载仓库选项 */
-async function loadWarehouseOptions() {
-  warehouseOptions.value = await getWarehouseSimpleList() || []
-}
-
 /** 选择仓库 */
-async function handleWarehouseChange(value?: number) {
-  formData.warehouseId = value
+function handleWarehouseChange() {
   formData.locationId = undefined
-  if (!value || value === -1) {
-    locationOptions.value = []
-    return
-  }
-  locationOptions.value = await getWarehouseLocationSimpleList(value) || []
 }
 
 /** 搜索按钮操作 */
@@ -142,8 +121,6 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    warehouseId: formData.warehouseId === -1 ? undefined : formData.warehouseId,
-    locationId: formData.locationId === -1 ? undefined : formData.locationId,
     frozen: formData.frozen === -1 ? undefined : formData.frozen,
   })
 }
@@ -155,13 +132,7 @@ function handleReset() {
   formData.warehouseId = undefined
   formData.locationId = undefined
   formData.frozen = undefined
-  locationOptions.value = []
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadWarehouseOptions()
-})
 </script>

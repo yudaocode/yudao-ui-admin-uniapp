@@ -1,6 +1,6 @@
 <template>
   <yd-form-picker
-    :model-value="modelValue"
+    :model-value="modelValue ?? undefined"
     :label="label"
     :label-width="labelWidth"
     :prop="prop"
@@ -24,8 +24,8 @@ import { ref, watch } from 'vue'
 import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
 
 const props = withDefaults(defineProps<{
-  modelValue?: number
-  locationId?: number
+  modelValue?: number | null
+  locationId?: number | null
   label?: string
   labelWidth?: string
   placeholder?: string

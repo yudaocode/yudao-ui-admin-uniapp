@@ -18,9 +18,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmWarehouse } from '@/api/mes/wm/warehouse'
+import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { ref, watch } from 'vue'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
+import { getToolTypeSimpleList } from '@/api/mes/tm/tool/type'
 
 const props = withDefaults(defineProps<{
   modelValue?: number | null
@@ -31,9 +31,9 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
   clearable?: boolean
 }>(), {
-  label: '仓库',
+  label: '工具类型',
   labelWidth: '220rpx',
-  placeholder: '请选择仓库',
+  placeholder: '请选择工具类型',
   prop: '',
   disabled: false,
   clearable: false,
@@ -41,17 +41,17 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: WmWarehouse | undefined]
+  'change': [item: TmToolType | undefined]
 }>()
 
-const options = ref<WmWarehouse[]>([]) // 仓库选项
+const options = ref<TmToolType[]>([]) // 工具类型选项
 
-/** 加载仓库选项 */
+/** 加载工具类型选项 */
 async function loadOptions() {
   if (options.value.length > 0) {
     return
   }
-  options.value = await getWarehouseSimpleList() || []
+  options.value = await getToolTypeSimpleList() || []
 }
 
 /** 打开前加载选项 */
@@ -59,17 +59,17 @@ async function beforeOpenPicker() {
   await loadOptions()
 }
 
-/** 更新仓库编号 */
+/** 更新工具类型编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
 }
 
-/** 选择仓库 */
+/** 选择工具类型 */
 function handleConfirm(value?: number) {
   emit('change', options.value.find(item => item.id === value))
 }
 
-/** 清空仓库 */
+/** 清空工具类型 */
 function handleClear() {
   emit('change', undefined)
 }

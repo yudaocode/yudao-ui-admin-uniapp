@@ -84,13 +84,10 @@
             <wd-form-item title="展示顺序" title-width="180rpx" prop="sort" center>
               <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
             </wd-form-item>
-            <yd-form-picker
+            <ProcessFormPicker
               v-model="formData.processId"
               label="所属工序"
               label-width="180rpx"
-              :columns="processOptions"
-              label-key="label"
-              value-key="id"
               placeholder="请选择工序"
               clearable
             />
@@ -122,7 +119,6 @@
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdProductSip } from '@/api/mes/md/item/productSip'
 import type { MdProductSop } from '@/api/mes/md/item/productSop'
-import type { ProProcess } from '@/api/mes/pro/process'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -138,8 +134,8 @@ import {
   getProductSopListByItemId,
   updateProductSop,
 } from '@/api/mes/md/item/productSop'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { useAccess } from '@/hooks/useAccess'
+import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
@@ -174,8 +170,6 @@ const loading = ref(false) // 列表加载状态
 const deletingId = ref<number>() // 正在删除的资料编号
 const title = computed(() => props.type === 'sip' ? 'SIP' : 'SOP')
 const uploadDirectory = computed(() => props.type === 'sip' ? 'mes/md/product-sip' : 'mes/md/product-sop')
-const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
-const processMap = ref<Map<number, { code: string, name: string }>>(new Map()) // 工序展示映射
 const formVisible = ref(false) // 表单弹层状态
 const formType = ref<FormType>('create') // 表单类型
 const formLoading = ref(false) // 表单提交状态
@@ -207,24 +201,12 @@ function defaultForm(): PictureFormData {
 
 /** 获取工序展示文案 */
 function getProcessLabel(item: PictureItem): string {
-  const process = item.processId == null ? undefined : processMap.value.get(item.processId)
-  const name = item.processName || process?.name || ''
-  const code = item.processCode || process?.code || ''
+  const name = item.processName || ''
+  const code = item.processCode || ''
   if (name && code) {
     return `${name} (${code})`
   }
   return name || code || '-'
-}
-
-/** 加载工序选项 */
-async function loadProcessOptions() {
-  const processList = await getProcessSimpleList()
-  const validProcesses = (processList || []).filter((process): process is ProProcess & { id: number } => process.id !== undefined)
-  processOptions.value = validProcesses.map(process => ({
-    id: process.id,
-    label: process.code ? `${process.name} (${process.code})` : process.name,
-  }))
-  processMap.value = new Map(validProcesses.map(process => [process.id, { code: process.code || '', name: process.name || '' }]))
 }
 
 /** 加载图片资料列表 */
@@ -335,9 +317,7 @@ async function handleDelete(item: PictureItem) {
 /** 监听物料编号变化 */
 watch(
   () => [props.itemId, props.type],
-  async () => {
-    await Promise.all([loadProcessOptions(), loadList()])
-  },
+  () => loadList(),
   { immediate: true },
 )
 

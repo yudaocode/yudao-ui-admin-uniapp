@@ -16,7 +16,7 @@
           <wd-form-item title="库区名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入库区名称" clearable />
           </wd-form-item>
-          <yd-form-picker v-model="formData.warehouseId" label="所属仓库" label-width="220rpx" prop="warehouseId" :columns="warehouseOptions" label-key="name" value-key="id" placeholder="请选择仓库" @confirm="handleWarehouseConfirm" />
+          <WarehouseFormPicker v-model="formData.warehouseId" label="所属仓库" label-width="220rpx" prop="warehouseId" placeholder="请选择仓库" />
           <wd-form-item title="面积(㎡)" title-width="220rpx" prop="area" center>
             <wd-input-number v-model="formData.area" allow-null :min="0" :precision="2" />
           </wd-form-item>
@@ -45,12 +45,11 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import type { WmWarehouse } from '@/api/mes/wm/warehouse'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createWarehouseLocation, getWarehouseLocation, updateWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
+import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -87,22 +86,11 @@ const formSchema = createFormSchema({
   warehouseId: [{ required: true, message: '所属仓库不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
 
 /** 返回上一页 */
 function handleBack() {
   const warehouseId = routeWarehouseId.value || formData.value.warehouseId
   navigateBackPlus(`/pages-mes/wm/warehouse/location/index${warehouseId ? `?warehouseId=${warehouseId}` : ''}`)
-}
-
-/** 加载选项 */
-async function loadOptions() {
-  warehouseOptions.value = await getWarehouseSimpleList() || []
-}
-
-/** 确认选择仓库 */
-function handleWarehouseConfirm(value: number | string) {
-  formData.value.warehouseId = Number(value)
 }
 
 /** 加载库区详情 */
@@ -159,7 +147,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  await loadOptions()
   applyRouteContext()
   await getDetail()
 })

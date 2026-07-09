@@ -177,18 +177,15 @@
                 placeholder="请选择设备"
                 @click="openMachineryPicker"
               />
-              <yd-form-picker
+              <ToolTypeFormPicker
                 v-if="resourceType === 'tool'"
                 v-model="formData.toolTypeId"
                 label="工具类型"
                 label-width="220rpx"
                 prop="toolTypeId"
-                :columns="toolTypeOptions"
-                label-key="name"
-                value-key="id"
                 placeholder="请选择工具类型"
                 :disabled="resourceAction === 'update'"
-                @confirm="handleToolTypeConfirm"
+                @change="handleToolTypeChange"
               />
               <yd-form-picker
                 v-if="resourceType === 'worker'"
@@ -226,7 +223,6 @@ import type { DvMachinery } from '@/api/mes/dv/machinery'
 import type { MdWorkstationMachine } from '@/api/mes/md/workstation/machine'
 import type { MdWorkstationTool } from '@/api/mes/md/workstation/tool'
 import type { MdWorkstationWorker } from '@/api/mes/md/workstation/worker'
-import type { TmToolType } from '@/api/mes/tm/tool/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -248,7 +244,7 @@ import {
   getWorkstationWorkerList,
   updateWorkstationWorker,
 } from '@/api/mes/md/workstation/worker'
-import { getToolTypeSimpleList } from '@/api/mes/tm/tool/type'
+import ToolTypeFormPicker from '@/pages-mes/tm/tool/type/components/tool-type-form-picker.vue'
 import { useAccess } from '@/hooks/useAccess'
 import { createFormSchema } from '@/utils/wot'
 import MachineryPicker from '../../../dv/machinery/components/machinery-picker.vue'
@@ -297,7 +293,6 @@ const resourceAction = ref<ResourceAction>('create') // 当前表单动作
 const formRef = ref<FormInstance>() // 表单组件引用
 const formData = ref<WorkstationResourceFormData>(getDefaultFormData()) // 表单数据
 const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器
-const toolTypeOptions = ref<TmToolType[]>([]) // 工具类型选项
 const postOptions = ref<Post[]>([]) // 岗位选项
 const formSchema = createFormSchema({
   machineryId: [{ required: () => resourceType.value === 'machine', message: '设备不能为空' }],
@@ -389,9 +384,6 @@ async function loadList() {
 
 /** 加载资源选择项 */
 async function loadResourceOptions(type: ResourceType) {
-  if (type === 'tool' && toolTypeOptions.value.length === 0) {
-    toolTypeOptions.value = await getToolTypeSimpleList()
-  }
   if (type === 'worker' && postOptions.value.length === 0) {
     postOptions.value = await getSimplePostList()
   }
@@ -456,15 +448,10 @@ function handleMachineryConfirm(item: DvMachinery) {
   formData.value.machineryName = item.name
 }
 
-/** 确认工具类型选择 */
-function handleToolTypeConfirm(value?: number | string) {
-  const toolTypeId = Number(value)
-  if (!Number.isFinite(toolTypeId)) {
-    return
-  }
-  const option = toolTypeOptions.value.find(item => item.id === toolTypeId)
-  formData.value.toolTypeId = toolTypeId
-  formData.value.toolTypeName = option?.name || ''
+/** 工具类型变更 */
+function handleToolTypeChange(toolType?: { id?: number, name?: string }) {
+  formData.value.toolTypeId = toolType?.id
+  formData.value.toolTypeName = toolType?.name || ''
 }
 
 /** 确认岗位选择 */

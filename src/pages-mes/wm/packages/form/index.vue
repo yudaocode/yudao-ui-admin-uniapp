@@ -71,17 +71,14 @@
             :disabled="isHeaderReadonly"
             @change="handleClientChange"
           />
-          <yd-form-picker
+          <UnitMeasureFormPicker
             v-model="formData.sizeUnitId"
             label="尺寸单位"
             label-width="220rpx"
             prop="sizeUnitId"
-            :columns="unitMeasureOptions"
-            label-key="name"
-            value-key="id"
             placeholder="请选择尺寸单位"
             :disabled="isHeaderReadonly"
-            @confirm="handleSizeUnitConfirm"
+            @change="handleSizeUnitChange"
           />
           <wd-form-item title="箱长度" title-width="220rpx" prop="length" center>
             <wd-input-number
@@ -113,17 +110,14 @@
               @update:model-value="formData.height = toFiniteNumber($event)"
             />
           </wd-form-item>
-          <yd-form-picker
+          <UnitMeasureFormPicker
             v-model="formData.weightUnitId"
             label="重量单位"
             label-width="220rpx"
             prop="weightUnitId"
-            :columns="unitMeasureOptions"
-            label-key="name"
-            value-key="id"
             placeholder="请选择重量单位"
             :disabled="isHeaderReadonly"
-            @confirm="handleWeightUnitConfirm"
+            @change="handleWeightUnitChange"
           />
           <wd-form-item title="净重" title-width="220rpx" prop="netWeight" center>
             <wd-input-number
@@ -208,10 +202,10 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
 import { createPackage, finishPackage, getPackage, updatePackage } from '@/api/mes/wm/packages'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import ClientFormPicker from '@/pages-mes/md/client/components/client-form-picker.vue'
+import UnitMeasureFormPicker from '@/pages-mes/md/unitmeasure/components/unit-measure-form-picker.vue'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmPackageStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -254,7 +248,6 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
-const unitMeasureOptions = ref<MdUnitMeasure[]>([]) // 计量单位选项
 const isPrepare = computed(() => !currentId.value || formData.value.status === MesWmPackageStatusEnum.PREPARE)
 const isFinish = computed(() => currentMode.value === 'finish' && isPrepare.value)
 const isEditable = computed(() => isPrepare.value && (!currentMode.value || currentMode.value === 'update'))
@@ -299,14 +292,14 @@ function handleClientChange(client?: MdClient) {
   formData.value.clientName = client?.name
 }
 
-/** 确认选择尺寸单位 */
-function handleSizeUnitConfirm(unitId?: number) {
-  formData.value.sizeUnitName = unitMeasureOptions.value.find(item => item.id === unitId)?.name
+/** 尺寸单位变更 */
+function handleSizeUnitChange(unit?: MdUnitMeasure) {
+  formData.value.sizeUnitName = unit?.name
 }
 
-/** 确认选择重量单位 */
-function handleWeightUnitConfirm(unitId?: number) {
-  formData.value.weightUnitName = unitMeasureOptions.value.find(item => item.id === unitId)?.name
+/** 重量单位变更 */
+function handleWeightUnitChange(unit?: MdUnitMeasure) {
+  formData.value.weightUnitName = unit?.name
 }
 
 /** 生成装箱单编号 */
@@ -379,16 +372,10 @@ async function handleFinishPackage() {
   }
 }
 
-/** 加载单位选项 */
-async function loadUnitOptions() {
-  unitMeasureOptions.value = await getUnitMeasureSimpleList()
-}
-
 /** 初始化 */
 onMounted(async () => {
   currentId.value = routeId.value
   currentMode.value = routeMode.value
-  await loadUnitOptions()
   await getDetail()
 })
 </script>

@@ -80,7 +80,7 @@ import { getProcess, getProcessPage } from '@/api/mes/pro/process'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 
 const props = withDefaults(defineProps<{
-  modelValue?: number
+  modelValue?: number | null
   disabled?: boolean
   clearable?: boolean
 }>(), {
@@ -109,7 +109,7 @@ const query = reactive<Record<string, any>>({
 const canClear = computed(() => Boolean(selected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 
 /** 打开选择器 */
-async function open(currentId?: number) {
+async function open(currentId?: number | null) {
   if (props.disabled) {
     return
   }

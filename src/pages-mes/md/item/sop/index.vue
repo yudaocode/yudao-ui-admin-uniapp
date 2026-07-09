@@ -89,13 +89,10 @@
             <wd-form-item title="展示顺序" title-width="180rpx" prop="sort" center>
               <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
             </wd-form-item>
-            <yd-form-picker
+            <ProcessFormPicker
               v-model="formData.processId"
               label="所属工序"
               label-width="180rpx"
-              :columns="processOptions"
-              label-key="label"
-              value-key="id"
               placeholder="请选择工序"
               clearable
             />
@@ -125,14 +122,13 @@
 
 <script lang="ts" setup>
 import type { MdProductSop } from '@/api/mes/md/item/productSop'
-import type { ProProcess } from '@/api/mes/pro/process'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createProductSop, deleteProductSop, getProductSopListByItemId, updateProductSop } from '@/api/mes/md/item/productSop'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
 import { useAccess } from '@/hooks/useAccess'
+import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
@@ -156,9 +152,6 @@ const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:
 const list = ref<MdProductSop[]>([]) // SOP 列表
 const loading = ref(false) // 列表加载状态
 const deletingId = ref<number>() // 正在删除的 SOP 编号
-
-const processOptions = ref<{ id: number, label: string }[]>([]) // 工序选项
-const processMap = ref<Map<number, { code: string, name: string }>>(new Map()) // 工序展示映射
 
 const formVisible = ref(false) // 表单弹层状态
 const formType = ref<'create' | 'update'>('create') // 表单类型
@@ -184,24 +177,12 @@ function handleBack() {
 
 /** 获取工序展示文案 */
 function getProcessLabel(sop: MdProductSop): string {
-  const process = sop.processId == null ? undefined : processMap.value.get(sop.processId)
-  const name = sop.processName || process?.name || ''
-  const code = sop.processCode || process?.code || ''
+  const name = sop.processName || ''
+  const code = sop.processCode || ''
   if (name && code) {
     return `${name} (${code})`
   }
   return name || code || '-'
-}
-
-/** 加载工序选项 */
-async function loadProcessOptions() {
-  const processList = await getProcessSimpleList()
-  const validProcesses = (processList || []).filter((process): process is ProProcess & { id: number } => process.id !== undefined)
-  processOptions.value = validProcesses.map(process => ({
-    id: process.id,
-    label: process.code ? `${process.name} (${process.code})` : process.name,
-  }))
-  processMap.value = new Map(validProcesses.map(process => [process.id, { code: process.code || '', name: process.name || '' }]))
 }
 
 /** 加载 SOP 列表 */
@@ -310,6 +291,6 @@ onMounted(async () => {
     delay(handleBack)
     return
   }
-  await Promise.all([loadProcessOptions(), loadList()])
+  await loadList()
 })
 </script>

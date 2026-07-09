@@ -25,7 +25,7 @@
           <wd-form-item title="型号规格" title-width="220rpx" prop="specification">
             <wd-input v-model="formData.specification" placeholder="请输入型号规格" clearable />
           </wd-form-item>
-          <yd-form-picker v-model="formData.toolTypeId" label="工具类型" label-width="220rpx" prop="toolTypeId" :columns="typeOptions" label-key="name" value-key="id" placeholder="请选择工具类型" @confirm="handleToolTypeConfirm" />
+          <ToolTypeFormPicker v-model="formData.toolTypeId" label="工具类型" label-width="220rpx" prop="toolTypeId" placeholder="请选择工具类型" @change="handleToolTypeChange" />
           <wd-form-item title="库存数量" title-width="220rpx" prop="quantity" center>
             <wd-input-number v-model="formData.quantity" :min="1" :precision="0" :disabled="selectedToolType?.codeFlag === true" @change="handleQuantityChange" />
           </wd-form-item>
@@ -63,10 +63,11 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { TmTool } from '@/api/mes/tm/tool'
 import { createTool, getTool, updateTool } from '@/api/mes/tm/tool'
 import type { TmToolType } from '@/api/mes/tm/tool/type'
-import { getToolTypeSimpleList } from '@/api/mes/tm/tool/type'
+import { getToolType } from '@/api/mes/tm/tool/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
+import ToolTypeFormPicker from '@/pages-mes/tm/tool/type/components/tool-type-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesMaintenTypeEnum, MesToolStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -108,7 +109,6 @@ const formSchema = createFormSchema({
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const typeOptions = ref<TmToolType[]>([]) // 工具类型选项
 const selectedToolType = ref<TmToolType>() // 当前选中的工具类型
 const dateVisible = reactive({
   nextMaintenDate: false,
@@ -119,18 +119,15 @@ function handleBack() {
   navigateBackPlus('/pages-mes/tm/tool/index')
 }
 
-/** 加载工具类型选项 */
-async function loadOptions() {
-  typeOptions.value = await getToolTypeSimpleList() || []
-}
-
 /** 加载工具详情 */
 async function getDetail() {
   if (!props.id) {
     return
   }
   formData.value = await getTool(Number(props.id))
-  selectedToolType.value = typeOptions.value.find(item => item.id === formData.value.toolTypeId)
+  if (formData.value.toolTypeId) {
+    selectedToolType.value = await getToolType(formData.value.toolTypeId)
+  }
 }
 
 /** 生成工具编码 */
@@ -147,10 +144,9 @@ async function handleGenerateCode() {
   }
 }
 
-/** 确认选择工具类型 */
-function handleToolTypeConfirm(value: number) {
-  const toolTypeId = Number(value)
-  selectedToolType.value = typeOptions.value.find(item => item.id === toolTypeId)
+/** 工具类型变更 */
+function handleToolTypeChange(toolType?: TmToolType) {
+  selectedToolType.value = toolType
   if (selectedToolType.value?.codeFlag === true) {
     formData.value.quantity = 1
     formData.value.availableQuantity = 1
@@ -193,8 +189,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

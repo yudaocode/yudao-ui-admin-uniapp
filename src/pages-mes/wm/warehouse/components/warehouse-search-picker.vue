@@ -1,42 +1,28 @@
 <template>
-  <yd-form-picker
-    :model-value="modelValue ?? undefined"
+  <yd-search-picker
+    :model-value="pickerValue"
     :label="label"
-    :label-width="labelWidth"
-    :prop="prop"
-    :disabled="disabled"
-    :clearable="clearable"
     :columns="options"
     label-key="name"
     value-key="id"
     :placeholder="placeholder"
-    :before-open="beforeOpenPicker"
+    all-option
     @update:model-value="handleUpdate"
-    @confirm="handleConfirm"
-    @clear="handleClear"
   />
 </template>
 
 <script lang="ts" setup>
 import type { WmWarehouse } from '@/api/mes/wm/warehouse'
-import { ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 
 const props = withDefaults(defineProps<{
-  modelValue?: number | null
+  modelValue?: number
   label?: string
-  labelWidth?: string
   placeholder?: string
-  prop?: string
-  disabled?: boolean
-  clearable?: boolean
 }>(), {
   label: '仓库',
-  labelWidth: '220rpx',
   placeholder: '请选择仓库',
-  prop: '',
-  disabled: false,
-  clearable: false,
 })
 
 const emit = defineEmits<{
@@ -45,6 +31,7 @@ const emit = defineEmits<{
 }>()
 
 const options = ref<WmWarehouse[]>([]) // 仓库选项
+const pickerValue = computed(() => props.modelValue ?? -1)
 
 /** 加载仓库选项 */
 async function loadOptions() {
@@ -54,24 +41,19 @@ async function loadOptions() {
   options.value = await getWarehouseSimpleList() || []
 }
 
-/** 打开前加载选项 */
-async function beforeOpenPicker() {
-  await loadOptions()
-}
-
 /** 更新仓库编号 */
-function handleUpdate(value?: number) {
-  emit('update:modelValue', value)
+function handleUpdate(value: number) {
+  const warehouseId = value === -1 ? undefined : value
+  emit('update:modelValue', warehouseId)
+  emit('change', options.value.find(item => item.id === warehouseId))
 }
 
-/** 选择仓库 */
-function handleConfirm(value?: number) {
-  emit('change', options.value.find(item => item.id === value))
-}
-
-/** 清空仓库 */
-function handleClear() {
-  emit('change', undefined)
+/** 格式化仓库编号 */
+function format(id?: number | string) {
+  if (id == null || id === '') {
+    return ''
+  }
+  return options.value.find(item => item.id === Number(id))?.name || String(id)
 }
 
 /** 同步外部绑定值 */
@@ -84,4 +66,11 @@ watch(
   },
   { immediate: true },
 )
+
+/** 初始化 */
+onMounted(() => {
+  loadOptions()
+})
+
+defineExpose({ format })
 </script>

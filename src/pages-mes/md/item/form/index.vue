@@ -22,14 +22,11 @@
           <wd-form-item title="规格型号" title-width="220rpx" prop="specification">
             <wd-input v-model="formData.specification" placeholder="请输入规格型号" clearable />
           </wd-form-item>
-          <yd-form-picker
+          <UnitMeasureFormPicker
             v-model="formData.unitMeasureId"
             label="计量单位"
             label-width="220rpx"
             prop="unitMeasureId"
-            :columns="unitMeasureOptions"
-            label-key="name"
-            value-key="id"
             placeholder="请选择计量单位"
           />
           <yd-tree-select
@@ -109,14 +106,13 @@
 <script lang="ts" setup>
 import type { MdItem } from '@/api/mes/md/item'
 import type { MdItemType } from '@/api/mes/md/item/type'
-import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItem, getItem, updateItem } from '@/api/mes/md/item'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { getItemTypeList } from '@/api/mes/md/item/type'
-import { getUnitMeasureSimpleList } from '@/api/mes/md/unitmeasure'
+import UnitMeasureFormPicker from '@/pages-mes/md/unitmeasure/components/unit-measure-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { handleTree } from '@/utils/tree'
@@ -162,7 +158,6 @@ const formSchema = createFormSchema({
   itemTypeId: [{ required: true, message: '物料分类不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const unitMeasureOptions = ref<MdUnitMeasure[]>([]) // 计量单位选项
 const itemTypeTree = ref<MdItemType[]>([]) // 分类树数据
 const itemTypeFlat = ref<MdItemType[]>([]) // 分类扁平列表
 
@@ -201,11 +196,7 @@ function handleBack() {
 
 /** 加载选项数据 */
 async function loadOptions() {
-  const [units, types] = await Promise.all([
-    getUnitMeasureSimpleList(),
-    getItemTypeList(),
-  ])
-  unitMeasureOptions.value = units || []
+  const types = await getItemTypeList()
   itemTypeFlat.value = types || []
   itemTypeTree.value = handleTree(types || [])
 }

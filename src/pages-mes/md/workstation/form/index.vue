@@ -16,66 +16,42 @@
           <wd-form-item title="工作站名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入工作站名称" clearable />
           </wd-form-item>
-          <yd-form-picker
+          <WorkshopFormPicker
             v-model="formData.workshopId"
             label="所在车间"
-            label-width="220rpx"
             prop="workshopId"
-            :columns="workshopOptions"
-            label-key="name"
-            value-key="id"
             placeholder="请选择车间"
           />
           <wd-form-item title="工作站地点" title-width="220rpx" prop="address">
             <wd-input v-model="formData.address" placeholder="请输入工作站地点" clearable />
           </wd-form-item>
-          <yd-form-picker
+          <ProcessFormPicker
             v-model="formData.processId"
             label="所属工序"
-            label-width="220rpx"
             prop="processId"
-            :columns="processOptions"
-            label-key="label"
-            value-key="id"
             placeholder="请选择工序"
           />
-          <yd-form-picker
+          <WarehouseFormPicker
             v-model="formData.warehouseId"
             label="线边仓库"
-            label-width="220rpx"
-            :columns="warehouseOptions"
-            label-key="name"
-            value-key="id"
             placeholder="请选择仓库"
             clearable
-            @confirm="handleWarehouseConfirm"
-            @clear="clearWarehouse"
+            @change="handleWarehouseChange"
           />
-          <yd-form-picker
+          <WarehouseLocationFormPicker
             v-model="formData.locationId"
             label="库区"
-            label-width="220rpx"
-            :columns="locationOptions"
-            label-key="name"
-            value-key="id"
+            :warehouse-id="formData.warehouseId"
             placeholder="请选择库区"
             clearable
-            :before-open="beforeOpenLocationPicker"
-            @confirm="handleLocationConfirm"
-            @clear="clearLocation"
+            @change="handleLocationChange"
           />
-          <yd-form-picker
+          <WarehouseAreaFormPicker
             v-model="formData.areaId"
             label="库位"
-            label-width="220rpx"
-            :columns="areaOptions"
-            label-key="name"
-            value-key="id"
+            :location-id="formData.locationId"
             placeholder="请选择库位"
             clearable
-            :before-open="beforeOpenAreaPicker"
-            @confirm="handleAreaConfirm"
-            @clear="formData.areaId = undefined"
           />
           <yd-form-picker
             v-model="formData.status"
@@ -106,24 +82,19 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdWorkstation } from '@/api/mes/md/workstation'
-import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
-import type { ProProcess } from '@/api/mes/pro/process'
-import type { WmWarehouse } from '@/api/mes/wm/warehouse'
-import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import type { WmWarehouseArea } from '@/api/mes/wm/warehouse/area'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createWorkstation, getWorkstation, updateWorkstation } from '@/api/mes/md/workstation'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
-import { getProcessSimpleList } from '@/api/mes/pro/process'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
-import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
-import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
+import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
+import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-form-picker.vue'
+import WarehouseAreaFormPicker from '@/pages-mes/wm/warehouse/area/components/warehouse-area-form-picker.vue'
+import WarehouseLocationFormPicker from '@/pages-mes/wm/warehouse/location/components/warehouse-location-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import WorkstationResourceList from '../components/workstation-resource-list.vue'
+import WorkshopFormPicker from '../workshop/components/workshop-form-picker.vue'
 
 const props = defineProps<{ id?: number | string }>()
 definePage({
@@ -150,11 +121,6 @@ const formSchema = createFormSchema({
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const workshopOptions = ref<MdWorkshop[]>([]) // 车间选项
-const processOptions = ref<Array<{ id: number, label: string }>>([]) // 工序选项
-const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocation[]>([]) // 库区选项
-const areaOptions = ref<WmWarehouseArea[]>([]) // 库位选项
 
 /** 返回上一页 */
 function handleBack() {
@@ -178,75 +144,15 @@ function getDefaultFormData(): WorkstationFormData {
   }
 }
 
-/** 加载选项 */
-async function loadOptions() {
-  const [workshops, processes, warehouses] = await Promise.all([
-    getWorkshopSimpleList(),
-    getProcessSimpleList(),
-    getWarehouseSimpleList(),
-  ])
-  workshopOptions.value = workshops || []
-  processOptions.value = (processes || [])
-    .filter((process): process is ProProcess & { id: number } => process.id !== undefined)
-    .map(process => ({ id: process.id, label: process.code ? `${process.name} (${process.code})` : process.name }))
-  warehouseOptions.value = warehouses || []
-}
-
-/** 确认选择仓库 */
-async function handleWarehouseConfirm(value: number | string) {
-  const warehouseId = Number(value)
-  formData.value.warehouseId = warehouseId
+/** 选择仓库 */
+function handleWarehouseChange() {
   formData.value.locationId = undefined
   formData.value.areaId = undefined
-  locationOptions.value = await getWarehouseLocationSimpleList(warehouseId) || []
-  areaOptions.value = []
 }
 
-/** 确认选择库区 */
-async function handleLocationConfirm(value: number | string) {
-  const locationId = Number(value)
-  formData.value.locationId = locationId
+/** 选择库区 */
+function handleLocationChange() {
   formData.value.areaId = undefined
-  areaOptions.value = await getWarehouseAreaSimpleList(locationId) || []
-}
-
-/** 确认选择库位 */
-function handleAreaConfirm(value: number | string) {
-  formData.value.areaId = Number(value)
-}
-
-/** 清空仓库 */
-function clearWarehouse() {
-  formData.value.warehouseId = undefined
-  formData.value.locationId = undefined
-  formData.value.areaId = undefined
-  locationOptions.value = []
-  areaOptions.value = []
-}
-
-/** 清空库区 */
-function clearLocation() {
-  formData.value.locationId = undefined
-  formData.value.areaId = undefined
-  areaOptions.value = []
-}
-
-/** 打开库区选择前校验 */
-function beforeOpenLocationPicker() {
-  if (!formData.value.warehouseId) {
-    toast.warning('请先选择仓库')
-    return false
-  }
-  return true
-}
-
-/** 打开库位选择前校验 */
-function beforeOpenAreaPicker() {
-  if (!formData.value.locationId) {
-    toast.warning('请先选择库区')
-    return false
-  }
-  return true
 }
 
 /** 加载详情 */
@@ -254,14 +160,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getWorkstation(Number(props.id))
-  if (data.warehouseId) {
-    locationOptions.value = await getWarehouseLocationSimpleList(data.warehouseId) || []
-  }
-  if (data.locationId) {
-    areaOptions.value = await getWarehouseAreaSimpleList(data.locationId) || []
-  }
-  formData.value = data
+  formData.value = await getWorkstation(Number(props.id))
 }
 
 /** 生成工作站编码 */
@@ -306,8 +205,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

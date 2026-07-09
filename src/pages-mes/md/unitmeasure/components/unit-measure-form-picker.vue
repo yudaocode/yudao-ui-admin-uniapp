@@ -9,21 +9,14 @@
     @click="handleOpen"
   />
 
-  <ProcessPicker
-    ref="pickerRef"
-    :model-value="modelValue"
-    :disabled="disabled"
-    :clearable="clearable"
-    @update:model-value="handleUpdate"
-    @change="handleChange"
-  />
+  <UnitMeasurePicker ref="pickerRef" @confirm="handleConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { ProProcess } from '@/api/mes/pro/process'
+import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import { computed, ref, watch } from 'vue'
-import { getProcess } from '@/api/mes/pro/process'
-import ProcessPicker from './process-picker.vue'
+import { getUnitMeasure } from '@/api/mes/md/unitmeasure'
+import UnitMeasurePicker from './unit-measure-picker.vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: number | null
@@ -32,26 +25,24 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   prop?: string
   disabled?: boolean
-  clearable?: boolean
 }>(), {
-  label: '工序',
+  label: '计量单位',
   labelWidth: '220rpx',
-  placeholder: '请选择工序',
+  placeholder: '请选择计量单位',
   prop: '',
   disabled: false,
-  clearable: false,
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: ProProcess | undefined]
+  'change': [item: MdUnitMeasure | undefined]
 }>()
 
-const pickerRef = ref<InstanceType<typeof ProcessPicker>>() // 工序选择器
-const selectedItem = ref<ProProcess>() // 当前工序
+const pickerRef = ref<InstanceType<typeof UnitMeasurePicker>>() // 计量单位选择器
+const selectedItem = ref<MdUnitMeasure>() // 当前计量单位
 const displayValue = computed(() => {
   if (selectedItem.value) {
-    return `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
+    return selectedItem.value.code ? `${selectedItem.value.name} (${selectedItem.value.code})` : selectedItem.value.name
   }
   return props.modelValue ? String(props.modelValue) : ''
 })
@@ -61,21 +52,17 @@ function handleOpen() {
   if (props.disabled) {
     return
   }
-  pickerRef.value?.open(props.modelValue)
+  pickerRef.value?.open(props.modelValue ?? undefined)
 }
 
-/** 更新工序编号 */
-function handleUpdate(value?: number) {
-  emit('update:modelValue', value)
-}
-
-/** 选择工序 */
-function handleChange(item?: ProProcess) {
+/** 确认计量单位 */
+function handleConfirm(item: MdUnitMeasure) {
   selectedItem.value = item
+  emit('update:modelValue', item.id)
   emit('change', item)
 }
 
-/** 加载工序回显 */
+/** 加载计量单位回显 */
 async function resolveItem(id?: number | null) {
   if (id == null) {
     selectedItem.value = undefined
@@ -85,7 +72,7 @@ async function resolveItem(id?: number | null) {
     return
   }
   try {
-    selectedItem.value = await getProcess(id)
+    selectedItem.value = await getUnitMeasure(id)
   } catch {
     selectedItem.value = undefined
   }

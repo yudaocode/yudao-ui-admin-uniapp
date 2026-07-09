@@ -1,44 +1,31 @@
 <template>
-  <yd-form-picker
-    :model-value="modelValue ?? undefined"
+  <yd-search-picker
+    :model-value="pickerValue"
     :label="label"
-    :label-width="labelWidth"
-    :prop="prop"
-    :disabled="disabled"
-    :clearable="clearable"
     :columns="options"
     label-key="name"
     value-key="id"
-    :placeholder="placeholder"
-    :before-open="beforeOpenPicker"
+    :placeholder="warehouseId ? placeholder : disabledPlaceholder"
+    all-option
     @update:model-value="handleUpdate"
-    @confirm="handleConfirm"
-    @clear="handleClear"
   />
 </template>
 
 <script lang="ts" setup>
 import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
 
 const props = withDefaults(defineProps<{
-  modelValue?: number | null
+  modelValue?: number
   warehouseId?: number | null
   label?: string
-  labelWidth?: string
   placeholder?: string
-  prop?: string
-  disabled?: boolean
-  clearable?: boolean
+  disabledPlaceholder?: string
 }>(), {
   label: '库区',
-  labelWidth: '220rpx',
   placeholder: '请选择库区',
-  prop: '',
-  disabled: false,
-  clearable: false,
+  disabledPlaceholder: '请先选择仓库',
 })
 
 const emit = defineEmits<{
@@ -46,8 +33,8 @@ const emit = defineEmits<{
   'change': [item: WmWarehouseLocation | undefined]
 }>()
 
-const toast = useToast()
 const options = ref<WmWarehouseLocation[]>([]) // 库区选项
+const pickerValue = computed(() => props.modelValue ?? -1)
 
 /** 加载库区选项 */
 async function loadOptions() {
@@ -58,28 +45,19 @@ async function loadOptions() {
   options.value = await getWarehouseLocationSimpleList(props.warehouseId) || []
 }
 
-/** 打开前校验仓库 */
-async function beforeOpenPicker() {
-  if (!props.warehouseId) {
-    toast.warning('请先选择仓库')
-    return false
-  }
-  await loadOptions()
-}
-
 /** 更新库区编号 */
-function handleUpdate(value?: number) {
-  emit('update:modelValue', value)
+function handleUpdate(value: number) {
+  const locationId = value === -1 ? undefined : value
+  emit('update:modelValue', locationId)
+  emit('change', options.value.find(item => item.id === locationId))
 }
 
-/** 选择库区 */
-function handleConfirm(value?: number) {
-  emit('change', options.value.find(item => item.id === value))
-}
-
-/** 清空库区 */
-function handleClear() {
-  emit('change', undefined)
+/** 格式化库区编号 */
+function format(id?: number | string) {
+  if (id == null || id === '') {
+    return ''
+  }
+  return options.value.find(item => item.id === Number(id))?.name || String(id)
 }
 
 /** 同步仓库变化 */
@@ -88,4 +66,16 @@ watch(
   () => loadOptions(),
   { immediate: true },
 )
+
+/** 同步外部绑定值 */
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value != null) {
+      loadOptions()
+    }
+  },
+)
+
+defineExpose({ format })
 </script>

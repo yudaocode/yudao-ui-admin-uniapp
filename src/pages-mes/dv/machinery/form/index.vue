@@ -22,8 +22,8 @@
           <wd-form-item title="规格型号" title-width="220rpx" prop="specification">
             <wd-input v-model="formData.specification" placeholder="请输入规格型号" clearable />
           </wd-form-item>
-          <yd-form-picker v-model="formData.machineryTypeId" label="设备类型" label-width="220rpx" prop="machineryTypeId" :columns="typeOptions" label-key="name" value-key="id" placeholder="请选择设备类型" />
-          <yd-form-picker v-model="formData.workshopId" label="所属车间" label-width="220rpx" prop="workshopId" :columns="workshopOptions" label-key="name" value-key="id" placeholder="请选择车间" />
+          <MachineryTypeFormPicker v-model="formData.machineryTypeId" label="设备类型" label-width="220rpx" prop="machineryTypeId" placeholder="请选择设备类型" />
+          <WorkshopFormPicker v-model="formData.workshopId" label="所属车间" label-width="220rpx" prop="workshopId" placeholder="请选择车间" />
           <yd-form-picker v-model="formData.status" label="设备状态" label-width="220rpx" prop="status" :dict-type="DICT_TYPE.MES_DV_MACHINERY_STATUS" placeholder="请选择设备状态" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
@@ -46,14 +46,12 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
-import type { DvMachineryType } from '@/api/mes/dv/machinery/type'
-import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createMachinery, getMachinery, updateMachinery } from '@/api/mes/dv/machinery'
-import { getMachineryTypeList } from '@/api/mes/dv/machinery/type'
-import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
+import MachineryTypeFormPicker from '@/pages-mes/dv/machinery/type/components/machinery-type-form-picker.vue'
+import WorkshopFormPicker from '@/pages-mes/md/workstation/workshop/components/workshop-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesDvMachineryStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -91,22 +89,10 @@ const formSchema = createFormSchema({
   status: [{ required: true, message: '设备状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const typeOptions = ref<DvMachineryType[]>([]) // 设备类型选项
-const workshopOptions = ref<MdWorkshop[]>([]) // 车间选项
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/dv/machinery/index')
-}
-
-/** 加载选项 */
-async function loadOptions() {
-  const [types, workshops] = await Promise.all([
-    getMachineryTypeList(),
-    getWorkshopSimpleList(),
-  ])
-  typeOptions.value = types || []
-  workshopOptions.value = workshops || []
 }
 
 /** 加载设备详情 */
@@ -154,8 +140,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

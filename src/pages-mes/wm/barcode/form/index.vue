@@ -22,49 +22,36 @@
             </view>
           </wd-form-item>
           <template v-else-if="isWarehouseBizType">
-            <yd-form-picker
+            <WarehouseFormPicker
               v-model="warehouseId"
               label="仓库"
               label-width="220rpx"
               :prop="formData.bizType === BarcodeBizTypeEnum.WAREHOUSE ? 'bizId' : ''"
-              :columns="warehouseOptions"
-              label-key="name"
-              value-key="id"
               placeholder="请选择仓库"
               clearable
-              :before-open="beforeOpenWarehousePicker"
-              @confirm="handleWarehouseConfirm"
-              @clear="clearWarehouseObject"
+              @change="handleWarehouseChange"
             />
-            <yd-form-picker
+            <WarehouseLocationFormPicker
               v-if="formData.bizType === BarcodeBizTypeEnum.LOCATION || formData.bizType === BarcodeBizTypeEnum.AREA"
               v-model="locationId"
               label="库区"
               label-width="220rpx"
               :prop="formData.bizType === BarcodeBizTypeEnum.LOCATION ? 'bizId' : ''"
-              :columns="locationOptions"
-              label-key="name"
-              value-key="id"
+              :warehouse-id="warehouseId"
               placeholder="请选择库区"
               clearable
-              :before-open="beforeOpenLocationPicker"
-              @confirm="handleLocationConfirm"
-              @clear="clearLocationObject"
+              @change="handleLocationChange"
             />
-            <yd-form-picker
+            <WarehouseAreaFormPicker
               v-if="formData.bizType === BarcodeBizTypeEnum.AREA"
               v-model="formData.bizId"
               label="库位"
               label-width="220rpx"
               prop="bizId"
-              :columns="areaOptions"
-              label-key="name"
-              value-key="id"
+              :location-id="locationId"
               placeholder="请选择库位"
               clearable
-              :before-open="beforeOpenAreaPicker"
-              @confirm="handleAreaConfirm"
-              @clear="clearAreaObject"
+              @change="handleAreaChange"
             />
           </template>
           <UserPicker
@@ -181,11 +168,11 @@ import BatchPicker from '@/pages-mes/wm/batch/components/batch-picker.vue'
 import TaskPicker from '@/pages-mes/pro/task/components/task-picker.vue'
 import MaterialStockPicker from '@/pages-mes/wm/materialstock/components/material-stock-picker.vue'
 import PackagePicker from '@/pages-mes/wm/packages/components/package-picker.vue'
+import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-form-picker.vue'
+import WarehouseAreaFormPicker from '@/pages-mes/wm/warehouse/area/components/warehouse-area-form-picker.vue'
+import WarehouseLocationFormPicker from '@/pages-mes/wm/warehouse/location/components/warehouse-location-form-picker.vue'
 import { createBarcode, generateBarcodeContent, getBarcode, updateBarcode } from '@/api/mes/wm/barcode'
 import UserPicker from '@/components/system-select/user-picker.vue'
-import { getWarehouseAreaSimpleList } from '@/api/mes/wm/warehouse/area'
-import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
-import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -230,9 +217,6 @@ const toolPickerRef = ref<InstanceType<typeof ToolPicker>>() // 工具选择器
 const cardPickerRef = ref<InstanceType<typeof CardPicker>>() // 流转卡选择器
 const taskPickerRef = ref<InstanceType<typeof TaskPicker>>() // 生产任务选择器
 const workshopPickerRef = ref<InstanceType<typeof WorkshopPicker>>() // 车间选择器
-const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
-const locationOptions = ref<WmWarehouseLocation[]>([]) // 库区选项
-const areaOptions = ref<WmWarehouseArea[]>([]) // 库位选项
 const warehouseId = ref<number>() // 仓库编号
 const locationId = ref<number>() // 库区编号
 const taskPickerStatuses = [0, 1, 2, 3, 4, 5, 10] // 条码选择任务时不过滤状态
@@ -338,8 +322,6 @@ function clearBizObject() {
   formData.value.content = ''
   warehouseId.value = undefined
   locationId.value = undefined
-  locationOptions.value = []
-  areaOptions.value = []
 }
 
 /** 重置表单 */
@@ -364,7 +346,6 @@ function clearLocationObject() {
   formData.value.bizCode = ''
   formData.value.bizName = ''
   formData.value.content = ''
-  areaOptions.value = []
 }
 
 /** 清空库位业务对象 */
@@ -373,53 +354,6 @@ function clearAreaObject() {
   formData.value.bizCode = ''
   formData.value.bizName = ''
   formData.value.content = ''
-}
-
-/** 加载仓库选项 */
-async function loadWarehouseOptions() {
-  if (warehouseOptions.value.length > 0) {
-    return
-  }
-  warehouseOptions.value = await getWarehouseSimpleList() || []
-}
-
-/** 打开仓库前加载选项 */
-async function beforeOpenWarehousePicker() {
-  if (currentId.value) {
-    toast.warning('编辑条码时不支持切换业务对象')
-    return false
-  }
-  await loadWarehouseOptions()
-}
-
-/** 打开库区前校验仓库 */
-async function beforeOpenLocationPicker() {
-  if (currentId.value) {
-    toast.warning('编辑条码时不支持切换业务对象')
-    return false
-  }
-  if (!warehouseId.value) {
-    toast.warning('请先选择仓库')
-    return false
-  }
-  if (locationOptions.value.length === 0) {
-    locationOptions.value = await getWarehouseLocationSimpleList(warehouseId.value) || []
-  }
-}
-
-/** 打开库位前校验库区 */
-async function beforeOpenAreaPicker() {
-  if (currentId.value) {
-    toast.warning('编辑条码时不支持切换业务对象')
-    return false
-  }
-  if (!locationId.value) {
-    toast.warning('请先选择库区')
-    return false
-  }
-  if (areaOptions.value.length === 0) {
-    areaOptions.value = await getWarehouseAreaSimpleList(locationId.value) || []
-  }
 }
 
 /** 打开业务对象选择器 */
@@ -550,17 +484,14 @@ function handleMaterialStockConfirm(rows: WmMaterialStock[]) {
   fillBizObject(stock.id, stock.itemCode || stock.batchCode || String(stock.id), stock.itemName || stock.batchCode || '')
 }
 
-/** 确认仓库 */
-async function handleWarehouseConfirm(value: number) {
-  const id = Number(value)
-  const warehouse = warehouseOptions.value.find(item => item.id === id)
-  if (!warehouse) {
+/** 仓库变更 */
+async function handleWarehouseChange(warehouse?: WmWarehouse) {
+  if (!warehouse?.id) {
+    clearWarehouseObject()
     return
   }
   warehouseId.value = warehouse.id
   locationId.value = undefined
-  locationOptions.value = []
-  areaOptions.value = []
   if (formData.value.bizType === BarcodeBizTypeEnum.WAREHOUSE) {
     await fillBizObject(warehouse.id, warehouse.code || '', warehouse.name || warehouse.code || '')
     return
@@ -568,15 +499,13 @@ async function handleWarehouseConfirm(value: number) {
   clearAreaObject()
 }
 
-/** 确认库区 */
-async function handleLocationConfirm(value: number) {
-  const id = Number(value)
-  const location = locationOptions.value.find(item => item.id === id)
-  if (!location) {
+/** 库区变更 */
+async function handleLocationChange(location?: WmWarehouseLocation) {
+  if (!location?.id) {
+    clearLocationObject()
     return
   }
   locationId.value = location.id
-  areaOptions.value = []
   if (formData.value.bizType === BarcodeBizTypeEnum.LOCATION) {
     await fillBizObject(location.id, location.code || '', location.name || location.code || '')
     return
@@ -584,11 +513,10 @@ async function handleLocationConfirm(value: number) {
   clearAreaObject()
 }
 
-/** 确认库位 */
-async function handleAreaConfirm(value: number) {
-  const id = Number(value)
-  const area = areaOptions.value.find(item => item.id === id)
-  if (!area) {
+/** 库位变更 */
+async function handleAreaChange(area?: WmWarehouseArea) {
+  if (!area?.id) {
+    clearAreaObject()
     return
   }
   await fillBizObject(area.id, area.code || '', area.name || area.code || '')
