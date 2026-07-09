@@ -33,28 +33,49 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <MesFooterActions content-class="yd-detail-footer-actions">
-      <wd-button
-        v-if="hasAccessByCodes(['mes:wm-material-stock:update'])"
-        class="flex-1"
-        :type="formData?.frozen ? 'success' : 'warning'"
-        :loading="frozenLoading"
-        @click="handleFrozenChange"
-      >
-        {{ formData?.frozen ? '解除冻结' : '冻结库存' }}
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="canOperate" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="formData?.batchId"
+          class="flex-1"
+          type="primary"
+          variant="plain"
+          @click="handleBatchDetail"
+        >
+          查看批次
+        </wd-button>
+        <wd-button
+          v-if="formData?.areaId"
+          class="flex-1"
+          type="primary"
+          variant="plain"
+          @click="handleAreaDetail"
+        >
+          查看库位
+        </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['mes:wm-material-stock:update'])"
+          class="flex-1"
+          :type="formData?.frozen ? 'success' : 'warning'"
+          :loading="frozenLoading"
+          @click="handleFrozenChange"
+        >
+          {{ formData?.frozen ? '解除冻结' : '冻结库存' }}
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmMaterialStockVO } from '@/api/mes/wm/materialstock'
+import { onShow } from '@dcloudio/uni-app'
+import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { getMaterialStock, updateMaterialStockFrozen } from '@/api/mes/wm/materialstock'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { delay, navigateBackPlus } from '@/utils'
+import { navigateBackPlus } from '@/utils'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -69,15 +90,19 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
+const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const formData = ref<WmMaterialStockVO>() // 详情数据
+const formData = ref<WmMaterialStock>() // 详情数据
 const frozenLoading = ref(false) // 冻结操作状态
 const quantityText = computed(() => {
   if (!formData.value) {
     return '-'
   }
   return `${formData.value.quantity ?? '-'} ${formData.value.unitMeasureName || ''}`.trim()
+})
+const canOperate = computed(() => {
+  return Boolean(formData.value?.batchId || formData.value?.areaId)
+    || hasAccessByCodes(['mes:wm-material-stock:update'])
 })
 
 /** 返回上一页 */
@@ -87,32 +112,35 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getMaterialStock(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getMaterialStock(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-/** 初始化页面数据 */
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 查看批次详情 */
+function handleBatchDetail() {
+  if (!formData.value?.batchId) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
+  uni.navigateTo({
+    url: `/pages-mes/wm/batch/detail/index?id=${formData.value.batchId}`,
+  })
+}
+
+/** 查看库位详情 */
+function handleAreaDetail() {
+  if (!formData.value?.areaId) {
+    return
   }
+  uni.navigateTo({
+    url: `/pages-mes/wm/warehouse/area/detail/index?id=${formData.value.areaId}`,
+  })
 }
 
 /** 冻结状态切换 */
@@ -122,11 +150,12 @@ async function handleFrozenChange() {
   }
   const targetFrozen = !formData.value.frozen
   const actionText = targetFrozen ? '冻结' : '解冻'
-  const { confirm } = await uni.showModal({
-    title: `${actionText}确认`,
-    content: `确定要${actionText}该库存记录吗？`,
-  })
-  if (!confirm) {
+  try {
+    await dialog.confirm({
+      title: `${actionText}确认`,
+      msg: `确定要${actionText}该库存记录吗？`,
+    })
+  } catch {
     return
   }
   frozenLoading.value = true
@@ -135,17 +164,14 @@ async function handleFrozenChange() {
     toast.success(`${actionText}成功`)
     formData.value.frozen = targetFrozen
     uni.$emit('mes:wm:materialstock:reload')
+    await getDetail()
   } finally {
     frozenLoading.value = false
   }
 }
 
 /** 初始化 */
-onMounted(() => {
-  initPage()
-})
-
-watch(currentId, () => {
-  initPage()
+onShow(() => {
+  getDetail()
 })
 </script>

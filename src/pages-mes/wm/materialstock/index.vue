@@ -70,14 +70,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDate(item.receiptTime) || '-' }}</text>
             </view>
           </view>
-          <view
-            v-if="hasAccessByCodes(['mes:wm-material-stock:update'])"
-            class="border-t border-t-[#f0f0f0] py-18rpx text-center text-28rpx"
-            :class="item.frozen ? 'text-[#52c41a]' : 'text-[#faad14]'"
-            @click.stop="handleFrozenChange(item)"
-          >
-            {{ item.frozen ? '解除冻结' : '冻结库存' }}
-          </view>
         </view>
       </view>
     </z-paging>
@@ -85,12 +77,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmMaterialStockQueryParams, WmMaterialStockVO } from '@/api/mes/wm/materialstock'
+import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
 import { onUnload } from '@dcloudio/uni-app'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { getMaterialStockPage, updateMaterialStockFrozen } from '@/api/mes/wm/materialstock'
-import { useAccess } from '@/hooks/useAccess'
+import { getMaterialStockPage } from '@/api/mes/wm/materialstock'
 import { navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
@@ -102,16 +92,13 @@ definePage({
   },
 })
 
-const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const list = ref<WmMaterialStockVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmMaterialStockVO>>() // 分页组件引用
-const queryParams = ref<WmMaterialStockQueryParams>({}) // 查询参数
-const frozenLoadingId = ref<number>() // 冻结操作中的库存编号
+const list = ref<WmMaterialStock[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmMaterialStock>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -130,7 +117,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmMaterialStockQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -146,44 +133,19 @@ function reload() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmMaterialStockVO) {
+function handleDetail(item: WmMaterialStock) {
   uni.navigateTo({
     url: `/pages-mes/wm/materialstock/detail/index?id=${item.id}`,
   })
 }
 
 /** 库存位置展示 */
-function stockPlaceText(item: WmMaterialStockVO) {
+function stockPlaceText(item: WmMaterialStock) {
   return [
     item.warehouseName,
     item.locationName,
     item.areaName,
   ].filter(Boolean).join(' / ') || '-'
-}
-
-/** 冻结状态切换 */
-async function handleFrozenChange(item: WmMaterialStockVO) {
-  if (frozenLoadingId.value) {
-    return
-  }
-  const targetFrozen = !item.frozen
-  const actionText = targetFrozen ? '冻结' : '解冻'
-  const { confirm } = await uni.showModal({
-    title: `${actionText}确认`,
-    content: `确定要${actionText}该库存记录吗？`,
-  })
-  if (!confirm) {
-    return
-  }
-  frozenLoadingId.value = item.id
-  try {
-    await updateMaterialStockFrozen({ id: item.id, frozen: targetFrozen })
-    toast.success(`${actionText}成功`)
-    item.frozen = targetFrozen
-    uni.$emit('mes:wm:materialstock:reload')
-  } finally {
-    frozenLoadingId.value = undefined
-  }
 }
 
 /** 初始化 */

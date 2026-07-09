@@ -29,17 +29,16 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmWarehouseQueryParams } from '@/api/mes/wm/warehouse'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{
-  search: [data: WmWarehouseQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
-const visible = ref(false)
-const formData = reactive({ code: '', name: '' })
-const placeholder = computed(() => {
+const visible = ref(false) // 搜索弹窗显隐
+const formData = reactive({ code: '', name: '' }) // 搜索表单
+const placeholder = computed(() => { // 搜索占位文案
   const conditions: string[] = []
   if (formData.code) {
     conditions.push(`编码:${formData.code}`)
@@ -50,29 +49,20 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索仓库'
 })
 
+/** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const params: WmWarehouseQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.name) {
-    params.name = formData.name
-  }
-  emit('search', params)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+  })
 }
 
+/** 重置按钮操作 */
 function handleReset() {
   formData.code = ''
   formData.name = ''
   visible.value = false
   emit('reset')
 }
-
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-}
-
-defineExpose({ resetFields })
 </script>

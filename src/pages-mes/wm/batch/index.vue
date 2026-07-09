@@ -63,13 +63,6 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDate(item.receiptDate) || '-' }}</text>
             </view>
           </view>
-          <view
-            v-if="hasAccessByCodes(['mes:wm-batch:query'])"
-            class="border-t border-t-[#f0f0f0] py-18rpx text-center text-28rpx text-[#1677ff]"
-            @click.stop="handleDetail(item)"
-          >
-            查看详情
-          </view>
         </view>
       </view>
     </z-paging>
@@ -77,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { BatchPageParam, BatchVO } from '@/api/mes/wm/batch'
+import type { Batch } from '@/api/mes/wm/batch'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getBatchPage } from '@/api/mes/wm/batch'
@@ -95,19 +88,19 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<BatchVO[]>([]) // 批次列表
-const pagingRef = ref<ZPagingRef<BatchVO>>() // 分页组件引用
-const queryParams = ref<Partial<BatchPageParam>>({}) // 查询参数
+const list = ref<Batch[]>([]) // 批次列表
+const pagingRef = ref<ZPagingRef<Batch>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询批次列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const params: BatchPageParam = {
+    const params = {
       ...queryParams.value,
       pageNo,
       pageSize,
@@ -120,7 +113,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: Partial<BatchPageParam>) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -136,7 +129,7 @@ function reload() {
 }
 
 /** 物料展示 */
-function getItemText(item: BatchVO) {
+function getItemText(item: Batch) {
   if (item.itemCode || item.itemName) {
     return `${item.itemCode || '-'} / ${item.itemName || '-'}`.trim()
   }
@@ -144,7 +137,7 @@ function getItemText(item: BatchVO) {
 }
 
 /** 规格单位展示 */
-function getSpecUnitText(item: BatchVO) {
+function getSpecUnitText(item: Batch) {
   return [
     item.itemSpecification,
     item.unitName,
@@ -152,7 +145,7 @@ function getSpecUnitText(item: BatchVO) {
 }
 
 /** 供应商展示 */
-function getVendorText(item: BatchVO) {
+function getVendorText(item: Batch) {
   return [
     item.vendorCode,
     item.vendorName,
@@ -160,7 +153,7 @@ function getVendorText(item: BatchVO) {
 }
 
 /** 客户展示 */
-function getClientText(item: BatchVO) {
+function getClientText(item: Batch) {
   return [
     item.clientCode,
     item.clientName,
@@ -168,7 +161,7 @@ function getClientText(item: BatchVO) {
 }
 
 /** 查看详情 */
-function handleDetail(item: BatchVO) {
+function handleDetail(item: Batch) {
   if (!hasAccessByCodes(['mes:wm-batch:query'])) {
     return
   }

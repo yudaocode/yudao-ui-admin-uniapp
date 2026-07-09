@@ -24,58 +24,16 @@
         </view>
         <wd-input v-model="formData.code" placeholder="请输入批次编号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          物料
-        </view>
-        <view
-          class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-          @click="openItemSelector"
-        >
-          <text class="min-w-0 flex-1 truncate" :class="selectedItemText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedItemText || '请选择物料' }}
-          </text>
-          <wd-icon v-if="formData.itemId" name="close" size="28rpx" @click.stop="clearItem" />
-          <wd-icon v-else name="arrow-right" size="28rpx" />
-        </view>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          供应商
-        </view>
-        <view
-          class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-          @click="openVendorSelector"
-        >
-          <text class="min-w-0 flex-1 truncate" :class="selectedVendorText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedVendorText || '请选择供应商' }}
-          </text>
-          <wd-icon v-if="formData.vendorId" name="close" size="28rpx" @click.stop="clearVendor" />
-          <wd-icon v-else name="arrow-right" size="28rpx" />
-        </view>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          客户
-        </view>
-        <view
-          class="min-h-72rpx flex items-center justify-between gap-16rpx rounded-8rpx bg-[#f7f8fa] px-20rpx text-28rpx"
-          @click="openClientSelector"
-        >
-          <text class="min-w-0 flex-1 truncate" :class="selectedClientText ? 'text-[#333]' : 'text-[#999]'">
-            {{ selectedClientText || '请选择客户' }}
-          </text>
-          <wd-icon v-if="formData.clientId" name="close" size="28rpx" @click.stop="clearClient" />
-          <wd-icon v-else name="arrow-right" size="28rpx" />
-        </view>
-      </view>
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="物料" placeholder="请选择物料" />
+      <VendorSearchPicker ref="vendorSearchPickerRef" v-model="formData.vendorId" label="供应商" placeholder="请选择供应商" />
+      <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           生产批号
         </view>
         <wd-input v-model="formData.lotNumber" placeholder="请输入生产批号" clearable />
       </view>
-      <yd-search-picker v-model="formData.qualityStatus" label="质量状态" :dict-type="DICT_TYPE.MES_WM_QUALITY_STATUS" all-option :all-value="undefined" />
+      <yd-search-picker v-model="formData.qualityStatus" label="质量状态" :dict-type="DICT_TYPE.MES_WM_QUALITY_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           采购订单编号
@@ -98,22 +56,14 @@
       </view>
     </view>
   </wd-popup>
-
-  <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
-  <VendorSelector ref="vendorSelectorRef" @confirm="handleVendorConfirm" />
-  <ClientSelector ref="clientSelectorRef" @confirm="handleClientConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdClientVO } from '@/api/mes/md/client'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { MdVendorVO } from '@/api/mes/md/vendor'
-import type { BatchPageParam } from '@/api/mes/wm/batch'
 import { computed, reactive, ref } from 'vue'
 import { getIntDictOptions } from '@/hooks/useDict'
-import ClientSelector from '@/pages-mes/md/client/components/client-selector.vue'
-import ItemSelector from '@/pages-mes/md/item/components/item-selector.vue'
-import VendorSelector from '@/pages-mes/md/vendor/components/vendor-selector.vue'
+import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
+import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 
@@ -129,30 +79,18 @@ interface BatchSearchFormData {
 }
 
 const emit = defineEmits<{
-  search: [data: Partial<BatchPageParam>]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器引用
-const vendorSelectorRef = ref<InstanceType<typeof VendorSelector>>() // 供应商选择器引用
-const clientSelectorRef = ref<InstanceType<typeof ClientSelector>>() // 客户选择器引用
-const selectedItem = ref<MdItemVO>() // 已选物料
-const selectedVendor = ref<MdVendorVO>() // 已选供应商
-const selectedClient = ref<MdClientVO>() // 已选客户
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
+const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
+const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
 const formData = reactive<BatchSearchFormData>({}) // 搜索表单数据
 
-const selectedItemText = computed(() => selectedItem.value
-  ? `${selectedItem.value.code || '-'} ${selectedItem.value.name || ''}`.trim()
-  : '')
-const selectedVendorText = computed(() => selectedVendor.value
-  ? `${selectedVendor.value.code || '-'} ${selectedVendor.value.name || ''}`.trim()
-  : '')
-const selectedClientText = computed(() => selectedClient.value
-  ? `${selectedClient.value.code || '-'} ${selectedClient.value.name || ''}`.trim()
-  : '')
 const qualityStatusText = computed(() => {
-  if (formData.qualityStatus === undefined) {
+  if (formData.qualityStatus === undefined || formData.qualityStatus === -1) {
     return ''
   }
   const option = getIntDictOptions(DICT_TYPE.MES_WM_QUALITY_STATUS).find(item => item.value === formData.qualityStatus)
@@ -163,14 +101,14 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`批次:${formData.code}`)
   }
-  if (selectedItemText.value) {
-    conditions.push(`物料:${selectedItemText.value}`)
+  if (formData.itemId) {
+    conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (selectedVendorText.value) {
-    conditions.push(`供应商:${selectedVendorText.value}`)
+  if (formData.vendorId) {
+    conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
-  if (selectedClientText.value) {
-    conditions.push(`客户:${selectedClientText.value}`)
+  if (formData.clientId) {
+    conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
   if (formData.lotNumber) {
     conditions.push(`生产批号:${formData.lotNumber}`)
@@ -192,73 +130,13 @@ function openSearch() {
   visible.value = true
 }
 
-/** 打开物料选择 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 打开供应商选择 */
-function openVendorSelector() {
-  vendorSelectorRef.value?.open()
-}
-
-/** 打开客户选择 */
-function openClientSelector() {
-  clientSelectorRef.value?.open()
-}
-
-/** 确认物料选择 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  if (!item) {
-    return
-  }
-  selectedItem.value = item
-  formData.itemId = item.id
-}
-
-/** 确认供应商选择 */
-function handleVendorConfirm(vendors: MdVendorVO[]) {
-  const vendor = vendors[0]
-  if (!vendor) {
-    return
-  }
-  selectedVendor.value = vendor
-  formData.vendorId = vendor.id
-}
-
-/** 确认客户选择 */
-function handleClientConfirm(clients: MdClientVO[]) {
-  const client = clients[0]
-  if (!client) {
-    return
-  }
-  selectedClient.value = client
-  formData.clientId = client.id
-}
-
-/** 清空物料 */
-function clearItem() {
-  selectedItem.value = undefined
-  formData.itemId = undefined
-}
-
-/** 清空供应商 */
-function clearVendor() {
-  selectedVendor.value = undefined
-  formData.vendorId = undefined
-}
-
-/** 清空客户 */
-function clearClient() {
-  selectedClient.value = undefined
-  formData.clientId = undefined
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    ...formData,
+    qualityStatus: formData.qualityStatus === -1 ? undefined : formData.qualityStatus,
+  })
 }
 
 /** 重置按钮操作 */
@@ -271,9 +149,6 @@ function handleReset() {
   formData.qualityStatus = undefined
   formData.purchaseOrderCode = undefined
   formData.salesOrderCode = undefined
-  selectedItem.value = undefined
-  selectedVendor.value = undefined
-  selectedClient.value = undefined
   visible.value = false
   emit('reset')
 }

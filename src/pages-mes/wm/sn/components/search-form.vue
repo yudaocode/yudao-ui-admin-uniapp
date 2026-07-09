@@ -19,18 +19,7 @@
         </view>
         <wd-input v-model="formData.code" placeholder="请输入 SN 码" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          物料
-        </view>
-        <MesSearchSelectorField
-          :model-value="selectedItemText"
-          placeholder="请选择物料"
-          clearable
-          @click="openItemSelector"
-          @clear="clearItem"
-        />
-      </view>
+      <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="物料" placeholder="请选择物料" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           批次号
@@ -52,34 +41,27 @@
       </view>
     </view>
   </wd-popup>
-
-  <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
 </template>
 
 <script lang="ts" setup>
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { WmSnQueryParams } from '@/api/mes/wm/sn'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDateRange } from '@/utils/date'
-import MesSearchSelectorField from '@/pages-mes/components/mes-search-selector-field.vue'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
+import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
 
 const emit = defineEmits<{
-  search: [data: WmSnQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器
-const selectedItem = ref<MdItemVO>() // 已选物料
+const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 const createTimeRange = ref<[number | undefined, number | undefined]>() // 创建时间范围
-const formData = reactive<Pick<WmSnQueryParams, 'code' | 'itemId' | 'batchCode'>>({
+const formData = reactive<Record<string, any>>({
   code: '',
   itemId: undefined,
   batchCode: '',
 }) // 搜索表单数据
-const selectedItemText = computed(() => selectedItem.value ? `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}` : '')
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -87,8 +69,8 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`SN 码:${formData.code}`)
   }
-  if (selectedItem.value) {
-    conditions.push(`物料:${selectedItem.value.code}`)
+  if (formData.itemId) {
+    conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
   if (formData.batchCode) {
     conditions.push(`批次号:${formData.batchCode}`)
@@ -99,50 +81,15 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索 SN 码'
 })
 
-/** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 确认选择物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  if (!item) {
-    return
-  }
-  selectedItem.value = item
-  formData.itemId = item.id
-}
-
-/** 清空物料 */
-function clearItem() {
-  selectedItem.value = undefined
-  formData.itemId = undefined
-}
-
-/** 构造搜索参数 */
-function buildParams() {
-  const params: WmSnQueryParams = {}
-  if (formData.code) {
-    params.code = formData.code
-  }
-  if (formData.itemId) {
-    params.itemId = formData.itemId
-  }
-  if (formData.batchCode) {
-    params.batchCode = formData.batchCode
-  }
-  const range = formatDateRange(createTimeRange.value)
-  if (range) {
-    params.createTime = range
-  }
-  return params
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', buildParams())
+  emit('search', {
+    code: formData.code || undefined,
+    itemId: formData.itemId,
+    batchCode: formData.batchCode || undefined,
+    createTime: formatDateRange(createTimeRange.value),
+  })
 }
 
 /** 重置按钮操作 */
@@ -150,7 +97,6 @@ function handleReset() {
   formData.code = ''
   formData.itemId = undefined
   formData.batchCode = ''
-  selectedItem.value = undefined
   createTimeRange.value = undefined
   visible.value = false
   emit('reset')

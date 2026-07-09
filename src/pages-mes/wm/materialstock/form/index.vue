@@ -34,21 +34,23 @@
     </view>
 
     <!-- 底部保存按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存冻结状态
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存冻结状态
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmMaterialStockVO } from '@/api/mes/wm/materialstock'
+import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getMaterialStock, updateMaterialStockFrozen } from '@/api/mes/wm/materialstock'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 
 const props = defineProps<{
@@ -62,10 +64,10 @@ definePage({
   },
 })
 
+const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<WmMaterialStockVO>() // 库存详情
+const formData = ref<WmMaterialStock>() // 库存详情
 const frozen = ref(false) // 冻结状态
 const quantityText = computed(() => {
   if (!formData.value) {
@@ -91,26 +93,11 @@ function handleBack() {
 
 /** 加载详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  toast.loading('加载中...')
-  try {
-    formData.value = await getMaterialStock(currentId.value)
-    frozen.value = formData.value.frozen
-  } finally {
-    toast.close()
-  }
-}
-
-/** 加载页面数据 */
-async function loadPageData() {
-  if (!currentId.value) {
-    formData.value = undefined
-    frozen.value = false
-    return
-  }
-  await getDetail()
+  formData.value = await getMaterialStock(Number(props.id))
+  frozen.value = formData.value.frozen
 }
 
 /** 提交冻结状态 */
@@ -123,11 +110,12 @@ async function handleSubmit() {
     return
   }
   const actionText = frozen.value ? '冻结' : '解冻'
-  const { confirm } = await uni.showModal({
-    title: `${actionText}确认`,
-    content: `确定要${actionText}该库存记录吗？`,
-  })
-  if (!confirm) {
+  try {
+    await dialog.confirm({
+      title: `${actionText}确认`,
+      msg: `确定要${actionText}该库存记录吗？`,
+    })
+  } catch {
     return
   }
   formLoading.value = true
@@ -135,9 +123,7 @@ async function handleSubmit() {
     await updateMaterialStockFrozen({ id: formData.value.id, frozen: frozen.value })
     toast.success(`${actionText}成功`)
     uni.$emit('mes:wm:materialstock:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     formLoading.value = false
   }
@@ -145,10 +131,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  getDetail()
 })
 </script>

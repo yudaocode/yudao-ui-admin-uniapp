@@ -13,77 +13,96 @@
       </wd-cell-group>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions v-if="hasAccessByCodes(['mes:wm-warehouse:update']) || hasAccessByCodes(['mes:wm-warehouse:delete'])" content-class="yd-detail-footer-actions">
-      <wd-button v-if="hasAccessByCodes(['mes:wm-warehouse:update'])" class="flex-1" type="warning" @click="handleEdit">
-        编辑
-      </wd-button>
-      <wd-button v-if="hasAccessByCodes(['mes:wm-warehouse:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-        删除
-      </wd-button>
-    </MesFooterActions>
+    <view v-if="formData" class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button
+          v-if="hasAccessByCodes(['mes:wm-barcode:query'])"
+          class="flex-1"
+          variant="plain"
+          @click="handleBarcode"
+        >
+          条码
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:wm-warehouse:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['mes:wm-warehouse:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmWarehouseLocationVO } from '@/api/mes/wm/warehouse/location'
-import { onUnload } from '@dcloudio/uni-app'
+import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
+import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { deleteWarehouseLocation, getWarehouseLocation } from '@/api/mes/wm/warehouse/location'
 import { useAccess } from '@/hooks/useAccess'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
 import { delay, navigateBackPlus } from '@/utils'
+import { BarcodeBizTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{ id?: number | string }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
+
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const formData = ref<WmWarehouseLocationVO>()
-const deleting = ref(false)
+const formData = ref<WmWarehouseLocation>() // 详情数据
+const deleting = ref(false) // 删除状态
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 
+/** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/wm/warehouse/location/index')
 }
 
+/** 加载详情 */
 async function getDetail() {
-  if (!currentId.value || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
     toast.loading('加载中...')
-    const detailData = await getWarehouseLocation(currentId.value)
-    if (!detailData) {
-      uni.showToast({ icon: 'none', title: '详情不存在，已返回列表' })
-      delay(handleBack)
-      return
-    }
-    formData.value = detailData
+    formData.value = await getWarehouseLocation(Number(props.id))
   } finally {
     toast.close()
   }
 }
 
-async function initPage() {
-  if (!currentId.value) {
-    formData.value = undefined
+/** 查看条码 */
+function handleBarcode() {
+  if (!formData.value?.id) {
     return
   }
-  if (!formData.value || formData.value.id !== currentId.value) {
-    await getDetail()
-  }
+  barcodeDetailPopupRef.value?.openByBusiness(
+    formData.value.id,
+    BarcodeBizTypeEnum.LOCATION,
+    formData.value.code,
+    formData.value.name,
+  )
 }
 
+/** 编辑 */
 function handleEdit() {
-  uni.navigateTo({ url: `/pages-mes/wm/warehouse/location/form/index?id=${currentId.value}` })
+  uni.navigateTo({ url: `/pages-mes/wm/warehouse/location/form/index?id=${props.id}` })
 }
 
+/** 删除 */
 async function handleDelete() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
   try {
@@ -93,29 +112,17 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    toast.loading('删除中...')
-    await deleteWarehouseLocation(currentId.value)
-    toast.close()
+    await deleteWarehouseLocation(Number(props.id))
     toast.success('删除成功')
     uni.$emit('mes:wm:warehouse-location:reload')
     delay(handleBack)
-  } catch {
-    toast.close()
   } finally {
     deleting.value = false
   }
 }
 
-onMounted(() => {
-  initPage()
-  uni.$on('mes:wm:warehouse-location:reload', getDetail)
-})
-
-watch(currentId, () => {
-  initPage()
-})
-
-onUnload(() => {
-  uni.$off('mes:wm:warehouse-location:reload', getDetail)
+/** 初始化 */
+onShow(() => {
+  getDetail()
 })
 </script>

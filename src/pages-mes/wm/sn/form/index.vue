@@ -11,19 +11,12 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item title="物料" title-width="200rpx" prop="itemId" required>
-            <view class="min-h-56rpx flex items-center justify-between rounded-8rpx px-4rpx" @click="openItemSelector">
-              <text :class="selectedItemText ? 'text-[#333]' : 'text-[#999]'">
-                {{ selectedItemText || '请选择物料' }}
-              </text>
-              <wd-icon name="arrow-right" color="#999" />
-            </view>
-          </wd-form-item>
+          <ItemFormPicker v-model="formData.itemId" label="物料" label-width="200rpx" prop="itemId" placeholder="请选择物料" />
           <wd-form-item title="批次号" title-width="200rpx" prop="batchCode">
             <wd-input v-model="formData.batchCode" clearable placeholder="请输入批次号" :maxlength="100" />
           </wd-form-item>
           <wd-form-item title="生成数量" title-width="200rpx" prop="count" required center>
-            <wd-input-number v-model="formData.count" :min="1" :max="1000" />
+            <wd-input-number v-model="formData.count" :min="1" :max="1000" :precision="0" />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -33,27 +26,25 @@
     </view>
 
     <!-- 底部生成按钮 -->
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        生成 SN 码
-      </wd-button>
-    </MesFooterActions>
-
-    <ItemSelector ref="itemSelectorRef" :multiple="false" @confirm="handleItemConfirm" />
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          生成 SN 码
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MdItemVO } from '@/api/mes/md/item'
-import type { WmSnGenerateVO } from '@/api/mes/wm/sn'
+import type { WmSnGenerate } from '@/api/mes/wm/sn'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref } from 'vue'
 import { generateSnCodes } from '@/api/mes/wm/sn'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
-import { navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
-import ItemSelector from '../../../md/item/components/item-selector.vue'
+import ItemFormPicker from '@/pages-mes/md/item/components/item-form-picker.vue'
 
 definePage({
   style: {
@@ -65,9 +56,12 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => '生成 SN 码')
 const formLoading = ref(false) // 表单提交状态
-const itemSelectorRef = ref<InstanceType<typeof ItemSelector>>() // 物料选择器
-const selectedItem = ref<MdItemVO>() // 已选物料
-const formData = ref<Partial<WmSnGenerateVO>>({
+const formData = ref<{
+  itemId?: number
+  batchCode?: string
+  workOrderId?: number
+  count?: number
+}>({
   itemId: undefined,
   batchCode: '',
   count: 100,
@@ -86,34 +80,14 @@ const formSchema = createFormSchema({
   ],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const selectedItemText = computed(() => {
-  return selectedItem.value
-    ? `${selectedItem.value.code || '-'} / ${selectedItem.value.name || '-'}`
-    : ''
-})
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mes/wm/sn/index')
 }
 
-/** 打开物料选择器 */
-function openItemSelector() {
-  itemSelectorRef.value?.open()
-}
-
-/** 确认选择物料 */
-function handleItemConfirm(items: MdItemVO[]) {
-  const item = items[0]
-  if (!item) {
-    return
-  }
-  selectedItem.value = item
-  formData.value.itemId = item.id
-}
-
 /** 组装提交参数 */
-function buildSubmitData(): WmSnGenerateVO | undefined {
+function buildSubmitData(): WmSnGenerate | undefined {
   if (!formData.value.itemId || !formData.value.count) {
     return undefined
   }
@@ -127,8 +101,8 @@ function buildSubmitData(): WmSnGenerateVO | undefined {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const result = await formRef.value?.validate()
-  if (result && !result.valid) {
+  const { valid } = await formRef.value.validate()
+  if (!valid) {
     return
   }
 
@@ -141,9 +115,7 @@ async function handleSubmit() {
     await generateSnCodes(submitData)
     toast.success('生成成功')
     uni.$emit('mes:wm:sn:reload')
-    setTimeout(() => {
-      handleBack()
-    }, 500)
+    delay(handleBack)
   } finally {
     formLoading.value = false
   }

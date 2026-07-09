@@ -29,42 +29,40 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmWarehouseLocationQueryParams } from '@/api/mes/wm/warehouse/location'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{
-  search: [data: WmWarehouseLocationQueryParams]
+  search: [data: Record<string, any>]
   reset: []
 }>()
-const visible = ref(false)
-const formData = reactive({ code: '', name: '' })
-const placeholder = computed(() => {
-  const c: string[] = []
-  if (formData.code)
-    c.push(`编码:${formData.code}`)
-  if (formData.name)
-    c.push(`名称:${formData.name}`)
-  return c.length > 0 ? c.join(' | ') : '搜索库区'
+const visible = ref(false) // 搜索弹窗显隐
+const formData = reactive({ code: '', name: '' }) // 搜索表单
+const placeholder = computed(() => { // 搜索占位文案
+  const conditions: string[] = []
+  if (formData.code) {
+    conditions.push(`编码:${formData.code}`)
+  }
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索库区'
 })
+
+/** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  const p: WmWarehouseLocationQueryParams = {}
-  if (formData.code)
-    p.code = formData.code
-  if (formData.name)
-    p.name = formData.name
-  emit('search', p)
+  emit('search', {
+    code: formData.code || undefined,
+    name: formData.name || undefined,
+  })
 }
+
+/** 重置按钮操作 */
 function handleReset() {
   formData.code = ''
   formData.name = ''
   visible.value = false
   emit('reset')
 }
-function resetFields() {
-  formData.code = ''
-  formData.name = ''
-}
-defineExpose({ resetFields })
 </script>

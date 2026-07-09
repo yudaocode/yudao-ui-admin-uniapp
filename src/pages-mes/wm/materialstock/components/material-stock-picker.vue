@@ -91,25 +91,45 @@
 </template>
 
 <script lang="ts" setup>
-import type { WmMaterialStockQueryParams, WmMaterialStockVO } from '@/api/mes/wm/materialstock'
-import type { ZPagingInstance } from 'z-paging'
+import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
 import { ref } from 'vue'
 import { getMaterialStockPage } from '@/api/mes/wm/materialstock'
 
+const props = withDefaults(defineProps<{
+  multiple?: boolean
+  itemId?: number
+  batchId?: number
+  warehouseId?: number
+  locationId?: number
+  areaId?: number
+  vendorId?: number
+  virtualFilter?: 'exclude' | 'only' | 'all'
+  positiveOnly?: boolean
+}>(), {
+  multiple: true,
+  virtualFilter: 'all',
+  positiveOnly: false,
+})
+
 const emit = defineEmits<{
-  confirm: [rows: WmMaterialStockVO[]]
+  confirm: [rows: WmMaterialStock[]]
 }>()
 
 const visible = ref(false) // 弹窗显示状态
-const list = ref<WmMaterialStockVO[]>([]) // 库存列表
-const selectedList = ref<WmMaterialStockVO[]>([]) // 已选库存
-const pagingRef = ref<ZPagingInstance<WmMaterialStockVO>>() // 分页组件引用
-const queryParams = ref<Partial<WmMaterialStockQueryParams>>({}) // 查询参数
+const list = ref<WmMaterialStock[]>([]) // 库存列表
+const selectedList = ref<WmMaterialStock[]>([]) // 已选库存
+const presetSelectedIds = ref<number[]>([]) // 打开时预选库存编号
+const pagingRef = ref<ZPagingRef<WmMaterialStock>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
+const openFilters = ref<Record<string, any>>({}) // 本次打开透传过滤条件
 
 /** 打开选择器 */
-function open() {
+function open(selectedIds: number[] = [], filters: Record<string, any> = {}) {
   visible.value = true
+  presetSelectedIds.value = selectedIds
+  openFilters.value = filters
   selectedList.value = []
+  queryParams.value = createDefaultQueryParams(filters)
   reload()
 }
 
@@ -122,7 +142,9 @@ async function queryList(pageNo: number, pageSize: number) {
       pageSize,
       frozen: false,
     })
-    pagingRef.value?.completeByTotal(data.list, data.total)
+    const rows = props.positiveOnly ? data.list.filter(item => Number(item.quantity) > 0) : data.list
+    applyPresetSelected(rows)
+    pagingRef.value?.completeByTotal(rows, data.total)
   } catch {
     pagingRef.value?.complete(false)
   }
@@ -135,12 +157,12 @@ function reload() {
 
 /** 重置搜索 */
 function handleReset() {
-  queryParams.value = {}
+  queryParams.value = createDefaultQueryParams(openFilters.value)
   reload()
 }
 
 /** 库存位置展示 */
-function getStockPlaceText(item: WmMaterialStockVO) {
+function getStockPlaceText(item: WmMaterialStock) {
   return [
     item.warehouseName,
     item.locationName,
@@ -149,14 +171,18 @@ function getStockPlaceText(item: WmMaterialStockVO) {
 }
 
 /** 是否已选择 */
-function isSelected(item: WmMaterialStockVO) {
+function isSelected(item: WmMaterialStock) {
   return selectedList.value.some(selected => selected.id === item.id)
 }
 
 /** 切换选择 */
-function toggleSelected(item: WmMaterialStockVO) {
+function toggleSelected(item: WmMaterialStock) {
   if (isSelected(item)) {
     selectedList.value = selectedList.value.filter(selected => selected.id !== item.id)
+    return
+  }
+  if (!props.multiple) {
+    selectedList.value = [item]
     return
   }
   selectedList.value = [...selectedList.value, item]
@@ -171,6 +197,28 @@ function handleCancel() {
 function handleConfirm() {
   emit('confirm', selectedList.value)
   visible.value = false
+}
+
+/** 回显预选库存 */
+function applyPresetSelected(rows: WmMaterialStock[]) {
+  if (presetSelectedIds.value.length === 0 || selectedList.value.length > 0) {
+    return
+  }
+  selectedList.value = rows.filter(item => presetSelectedIds.value.includes(item.id))
+}
+
+/** 默认查询参数 */
+function createDefaultQueryParams(filters: Record<string, any> = {}) {
+  return {
+    itemId: props.itemId,
+    batchId: props.batchId,
+    warehouseId: props.warehouseId,
+    locationId: props.locationId,
+    areaId: props.areaId,
+    vendorId: props.vendorId,
+    virtualFilter: props.virtualFilter === 'all' ? undefined : props.virtualFilter,
+    ...filters,
+  }
 }
 
 defineExpose({

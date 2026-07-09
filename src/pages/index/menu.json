@@ -1858,22 +1858,6 @@
               "iconColor": "#fa8c16",
               "url": "/pages-mes/wm/warehouse/index",
               "permission": "mes:wm-warehouse:query"
-            },
-            {
-              "key": "mesWmWarehouseArea",
-              "name": "库区管理",
-              "icon": "folder",
-              "iconColor": "#faad14",
-              "url": "/pages-mes/wm/warehouse/area/index",
-              "permission": "mes:wm-warehouse:query"
-            },
-            {
-              "key": "mesWmWarehouseLocation",
-              "name": "库位管理",
-              "icon": "location",
-              "iconColor": "#13c2c2",
-              "url": "/pages-mes/wm/warehouse/location/index",
-              "permission": "mes:wm-warehouse:query"
             }
           ]
         },

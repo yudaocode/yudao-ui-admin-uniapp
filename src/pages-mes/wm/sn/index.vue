@@ -9,18 +9,6 @@
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 顶部操作 -->
-    <view v-if="hasTopActions" class="bg-white px-24rpx py-16rpx">
-      <view class="grid grid-cols-2 gap-16rpx">
-        <wd-button
-          v-if="hasAccessByCodes(['mes:wm-sn:create'])"
-          block variant="plain" @click="handleGenerate"
-        >
-          生成 SN 码
-        </wd-button>
-      </view>
-    </view>
-
     <!-- SN 批次列表 -->
     <z-paging
       ref="pagingRef"
@@ -76,46 +64,30 @@
               <text class="min-w-0 flex-1 truncate">{{ formatDateTime(item.createTime) || '-' }}</text>
             </view>
           </view>
-          <view v-if="hasRowActions" class="flex border-t border-t-[#f0f0f0] text-28rpx" @click.stop>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-sn:query'])"
-              class="flex-1 py-18rpx text-center text-[#1677ff]"
-              @click="handleDetail(item)"
-            >
-              查看明细
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-sn:export'])"
-              class="flex-1 py-18rpx text-center text-[#52c41a]"
-              @click="handleExportDetail(item)"
-            >
-              导出明细
-            </view>
-            <view
-              v-if="hasAccessByCodes(['mes:wm-sn:delete'])"
-              class="flex-1 py-18rpx text-center text-[#f56c6c]"
-              @click="handleDelete(item)"
-            >
-              删除
-            </view>
-          </view>
         </view>
       </view>
     </z-paging>
+
+    <!-- 生成按钮 -->
+    <wd-fab
+      v-if="hasAccessByCodes(['mes:wm-sn:create'])"
+      position="right-bottom"
+      type="primary"
+      :expandable="false"
+      @click="handleGenerate"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { WmSnGroupVO, WmSnQueryParams } from '@/api/mes/wm/sn'
+import type { WmSnGroup } from '@/api/mes/wm/sn'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
-import { deleteSnBatch, getSnGroupPage } from '@/api/mes/wm/sn'
+import { onMounted, ref } from 'vue'
+import { getSnGroupPage } from '@/api/mes/wm/sn'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
-import { downloadApiFile } from '@/utils/download'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -126,23 +98,14 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
 const toast = useToast()
-const list = ref<WmSnGroupVO[]>([]) // 列表数据
-const pagingRef = ref<ZPagingRef<WmSnGroupVO>>() // 分页组件引用
-const queryParams = ref<WmSnQueryParams>({}) // 查询参数
-const hasTopActions = computed(() => {
-  return hasAccessByCodes(['mes:wm-sn:create'])
-})
-const hasRowActions = computed(() => {
-  return hasAccessByCodes(['mes:wm-sn:query'])
-    || hasAccessByCodes(['mes:wm-sn:export'])
-    || hasAccessByCodes(['mes:wm-sn:delete'])
-})
+const list = ref<WmSnGroup[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<WmSnGroup>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/home/index')
+  navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
 /** 查询列表 */
@@ -161,7 +124,7 @@ async function queryList(pageNo: number, pageSize: number) {
 }
 
 /** 搜索按钮操作 */
-function handleQuery(data?: WmSnQueryParams) {
+function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
   reload()
 }
@@ -184,7 +147,7 @@ function handleGenerate() {
 }
 
 /** 查看详情 */
-function handleDetail(item: WmSnGroupVO) {
+function handleDetail(item: WmSnGroup) {
   if (!item.uuid) {
     toast.warning('当前批次缺少 UUID，无法查看明细')
     return
@@ -192,40 +155,6 @@ function handleDetail(item: WmSnGroupVO) {
   uni.navigateTo({
     url: `/pages-mes/wm/sn/detail/index?id=${encodeURIComponent(item.uuid)}`,
   })
-}
-
-/** 删除批次 */
-async function handleDelete(item: WmSnGroupVO) {
-  if (!item.uuid) {
-    return
-  }
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确定要删除批次「${item.batchCode || item.itemCode || item.uuid}」的全部 SN 码吗？`,
-    })
-  } catch {
-    return
-  }
-  await deleteSnBatch(item.uuid)
-  toast.success('删除成功')
-  reload()
-}
-
-/** 导出批次明细 */
-async function handleExportDetail(item: WmSnGroupVO) {
-  if (!item.uuid) {
-    return
-  }
-  const { confirm } = await uni.showModal({
-    title: '导出确认',
-    content: '确定要导出该批次的 SN 码明细吗？',
-  })
-  if (!confirm) {
-    return
-  }
-  await downloadApiFile('/mes/wm/sn/export-excel', { uuid: item.uuid }, 'SN码明细.xls')
-  toast.success('导出成功')
 }
 
 /** 初始化 */

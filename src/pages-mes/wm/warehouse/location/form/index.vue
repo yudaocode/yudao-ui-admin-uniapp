@@ -7,7 +7,7 @@
           <wd-form-item title="库区编码" title-width="220rpx" prop="code">
             <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
               <template #suffix>
-                <wd-button size="small" type="primary" variant="plain" @click="handleGenerateCode">
+                <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>
               </template>
@@ -16,10 +16,9 @@
           <wd-form-item title="库区名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入库区名称" clearable />
           </wd-form-item>
-          <wd-form-item title="所属仓库" title-width="220rpx" prop="warehouseId" is-link :value="warehouseDisplayValue" placeholder="请选择仓库" @click="warehousePickerVisible = true" />
-          <wd-picker v-model:visible="warehousePickerVisible" :model-value="warehousePickerValue" :columns="warehouseOptions" label-key="name" value-key="id" @confirm="handleWarehouseConfirm" />
+          <yd-form-picker v-model="formData.warehouseId" label="所属仓库" label-width="220rpx" prop="warehouseId" :columns="warehouseOptions" label-key="name" value-key="id" placeholder="请选择仓库" @confirm="handleWarehouseConfirm" />
           <wd-form-item title="面积(㎡)" title-width="220rpx" prop="area" center>
-            <wd-input-number v-model="formData.area" :min="0" :precision="2" />
+            <wd-input-number v-model="formData.area" allow-null :min="0" :precision="2" />
           </wd-form-item>
           <wd-cell title="是否冻结" center>
             <view class="flex justify-end">
@@ -33,114 +32,122 @@
       </wd-form>
       <view class="h-160rpx" />
     </scroll-view>
-    <MesFooterActions>
-      <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
-        保存
-      </wd-button>
-    </MesFooterActions>
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button type="primary" block :loading="formLoading" @click="handleSubmit">
+          保存
+        </wd-button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { WmWarehouseLocationCreateReqVO } from '@/api/mes/wm/warehouse/location'
-import type { WmWarehouseVO } from '@/api/mes/wm/warehouse'
+import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
+import type { WmWarehouse } from '@/api/mes/wm/warehouse'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createWarehouseLocation, getWarehouseLocation, updateWarehouseLocation } from '@/api/mes/wm/warehouse/location'
 import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import MesFooterActions from '@/pages-mes/components/mes-footer-actions.vue'
 import { delay, navigateBackPlus } from '@/utils'
+import { MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
-const props = defineProps<{ id?: number | string }>()
-definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
-const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined)
-const getTitle = computed(() => currentId.value ? '编辑库区' : '新增库区')
-const formLoading = ref(false)
-interface WmWarehouseLocationFormData extends Omit<WmWarehouseLocationCreateReqVO, 'warehouseId'> {
-  id?: number
-  warehouseId?: number
-  area: number
-  remark: string
-}
-const formData = ref<WmWarehouseLocationFormData>(getDefaultFormData())
+const props = defineProps<{
+  id?: number | string
+  warehouseId?: number | string
+}>()
 
-function getDefaultFormData(): WmWarehouseLocationFormData {
-  return { code: '', name: '', warehouseId: undefined, area: 0, frozen: false, remark: '' }
-}
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
+const toast = useToast()
+const getTitle = computed(() => props.id ? '编辑库区' : '新增库区')
+const routeWarehouseId = computed(() => props.warehouseId ? Number(props.warehouseId) : undefined) // 路由仓库编号
+const formLoading = ref(false) // 表单提交状态
+const codeLoading = ref(false) // 编码生成状态
+const formData = ref<WmWarehouseLocation>({
+  id: undefined,
+  code: '',
+  name: '',
+  warehouseId: undefined,
+  area: undefined,
+  frozen: false,
+  remark: '',
+}) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '库区编码不能为空' }],
   name: [{ required: true, message: '库区名称不能为空' }],
   warehouseId: [{ required: true, message: '所属仓库不能为空' }],
 })
-const formRef = ref<FormInstance>()
-const warehouseOptions = ref<WmWarehouseVO[]>([])
-const warehousePickerVisible = ref(false)
-const warehousePickerValue = computed(() => formData.value.warehouseId === undefined ? [] : [formData.value.warehouseId])
-const warehouseDisplayValue = computed(() => {
-  if (formData.value.warehouseId === undefined)
-    return ''
-  const w = warehouseOptions.value.find(o => o.id === formData.value.warehouseId)
-  return w?.name || String(formData.value.warehouseId)
-})
+const formRef = ref<FormInstance>() // 表单组件引用
+const warehouseOptions = ref<WmWarehouse[]>([]) // 仓库选项
 
+/** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-mes/wm/warehouse/location/index')
+  const warehouseId = routeWarehouseId.value || formData.value.warehouseId
+  navigateBackPlus(`/pages-mes/wm/warehouse/location/index${warehouseId ? `?warehouseId=${warehouseId}` : ''}`)
 }
 
+/** 加载选项 */
 async function loadOptions() {
   warehouseOptions.value = await getWarehouseSimpleList() || []
 }
 
-function handleWarehouseConfirm({ value }: { value: Array<number | string> }) {
-  formData.value.warehouseId = Number(value[0])
+/** 确认选择仓库 */
+function handleWarehouseConfirm(value: number | string) {
+  formData.value.warehouseId = Number(value)
 }
 
+/** 加载库区详情 */
 async function getDetail() {
-  if (!currentId.value) {
+  if (!props.id) {
     return
   }
-  const data = await getWarehouseLocation(currentId.value)
-  formData.value = { id: data.id, code: data.code, name: data.name, warehouseId: data.warehouseId, area: Number(data.area ?? 0), frozen: data.frozen, remark: data.remark || '' }
+  formData.value = await getWarehouseLocation(Number(props.id))
 }
 
-async function loadPageData() {
-  if (currentId.value) {
-    await getDetail()
+/** 应用路由上下文 */
+function applyRouteContext() {
+  if (props.id || !routeWarehouseId.value) {
     return
   }
-  formData.value = getDefaultFormData()
+  formData.value.warehouseId = routeWarehouseId.value
 }
 
+/** 生成库区编码 */
 async function handleGenerateCode() {
+  if (codeLoading.value) {
+    return
+  }
+  codeLoading.value = true
   try {
-    toast.loading('生成中...')
-    formData.value.code = await generateAutoCode('MD_WAREHOUSE_LOCATION_CODE')
-    toast.close()
+    formData.value.code = await generateAutoCode(MesAutoCodeRuleCode.WM_LOCATION_CODE)
     toast.success('生成成功')
-  } catch {
-    toast.close()
+  } finally {
+    codeLoading.value = false
   }
 }
 
+/** 提交表单 */
 async function handleSubmit() {
-  if (!formRef.value)
-    return
-  const result = await formRef.value.validate()
-  if (!result.valid || formData.value.warehouseId === undefined) {
+  const { valid } = await formRef.value.validate()
+  if (!valid || formData.value.warehouseId === undefined) {
     return
   }
   formLoading.value = true
   try {
-    const data: WmWarehouseLocationCreateReqVO = { code: formData.value.code, name: formData.value.name, warehouseId: formData.value.warehouseId, area: formData.value.area, frozen: formData.value.frozen, remark: formData.value.remark || undefined }
-    if (currentId.value) {
-      await updateWarehouseLocation({ ...data, id: currentId.value })
+    if (props.id) {
+      await updateWarehouseLocation(formData.value)
       toast.success('修改成功')
     } else {
-      await createWarehouseLocation(data)
+      await createWarehouseLocation(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('mes:wm:warehouse-location:reload')
@@ -150,12 +157,10 @@ async function handleSubmit() {
   }
 }
 
+/** 初始化 */
 onMounted(async () => {
   await loadOptions()
-  await loadPageData()
-})
-
-watch(currentId, () => {
-  loadPageData()
+  applyRouteContext()
+  await getDetail()
 })
 </script>

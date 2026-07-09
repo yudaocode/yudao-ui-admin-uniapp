@@ -79,19 +79,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { BatchVO } from '@/api/mes/wm/batch'
+import type { Batch } from '@/api/mes/wm/batch'
 import { ref } from 'vue'
 import { getBatchPage } from '@/api/mes/wm/batch'
 import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
-  confirm: [item: BatchVO]
+  confirm: [item: Batch]
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const list = ref<BatchVO[]>([]) // 批次列表
-const selected = ref<BatchVO>() // 当前选择批次
-const pagingRef = ref<ZPagingRef<BatchVO>>() // 分页组件引用
+const list = ref<Batch[]>([]) // 批次列表
+const selected = ref<Batch>() // 当前选择批次
+const pagingRef = ref<ZPagingRef<Batch>>() // 分页组件引用
 const searchCode = ref('') // 批次编号
 const searchLotNumber = ref('') // 生产批号
 
