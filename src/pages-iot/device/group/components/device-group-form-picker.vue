@@ -13,7 +13,6 @@
   <wd-select-picker
     ref="pickerRef"
     v-model="selectedValue"
-    :visible="visible"
     :title="label"
     :columns="resolvedColumns"
     value-key="id"
@@ -21,16 +20,15 @@
     :type="type"
     filterable
     root-portal
-    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { DeviceGroup } from '@/api/iot/device/group'
 import { computed, ref, watch } from 'vue'
 import { getSimpleDeviceGroupList } from '@/api/iot/device/group'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 type PickerValue = number | string | number[]
 
@@ -57,7 +55,7 @@ const emit = defineEmits<{
 
 const groupOptions = ref<DeviceGroup[]>([]) // 设备分组选项
 const selectedValue = ref<PickerValue | ''>(props.type === 'checkbox' ? [] : '') // 当前选中值
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // 设备分组选择器
 const resolvedColumns = computed<Record<string, any>[]>(() => props.columns ?? groupOptions.value)
 const selectedLabel = computed(() => { // 当前选中展示文本
   if (Array.isArray(selectedValue.value)) {
@@ -97,7 +95,7 @@ function handleOpen() {
   if (props.disabled) {
     return
   }
-  openPicker()
+  pickerRef.value?.open()
 }
 
 /** 选择确认 */

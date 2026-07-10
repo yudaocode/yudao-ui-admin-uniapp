@@ -12,19 +12,17 @@
     </view>
     <wd-picker
       v-if="!useSelectPicker"
-      :visible="visible"
+      ref="pickerRef"
       :model-value="pickerModelValue"
       :columns="resolvedColumns"
       :label-key="labelKey"
       :value-key="valueKey"
       :root-portal="rootPortal"
-      @update:visible="handleVisibleChange"
       @confirm="handleConfirm"
     />
     <wd-select-picker
       v-else
       ref="selectPickerRef"
-      :visible="visible"
       :model-value="selectPickerModelValue"
       :title="label || placeholder"
       :columns="resolvedColumns"
@@ -34,7 +32,6 @@
       :filterable="filterable"
       :root-portal="rootPortal"
       :scroll-into-view="!rootPortal"
-      @update:visible="handleVisibleChange"
       @confirm="handleSelectConfirm"
     />
   </view>
@@ -42,14 +39,15 @@
 
 <script lang="ts" setup>
 import type { YdSearchPickerExpose } from './types'
+import type { PickerInstance } from '@wot-ui/ui/components/wd-picker/types'
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { WotPickerValue } from '@/utils/wot'
 import { computed, ref } from 'vue'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
-import { getWotPickerDisplay } from '@/utils/wot'
+import { getWotPickerFormValue, hasWotPickerBooleanValue } from '@/utils/wot'
 
 const props = withDefaults(defineProps<{
-  modelValue?: boolean | number | string | Array<boolean | number | string> // 当前选中值
+  modelValue?: string | number | boolean | Array<string | number | boolean> // String 放在 Boolean 前，避免空字符串转为 true
   label?: string // 字段标题
   dictType?: string // 字典类型；与 columns 二选一
   dictKind?: 'int' | 'str' // 字典值类型，默认 int
@@ -60,8 +58,12 @@ const props = withDefaults(defineProps<{
   placeholder?: string // 未选择时占位（无 allOption 的自定义选项用，如「请选择邮箱账号」）
   labelKey?: string // 选项展示字段名，默认 label
   valueKey?: string // 选项值字段名，默认 value
+  type?: 'radio' | 'checkbox' // 选择类型；checkbox 使用多选弹层
+  filterable?: boolean // 是否支持搜索
+  beforeOpen?: () => boolean | void // 打开前校验
   rootPortal?: boolean // 是否脱离当前层级，避免嵌套弹层 fixed 失效
 }>(), {
+  modelValue: undefined,
   label: '',
   dictKind: 'int',
   allOption: false,
@@ -77,17 +79,26 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: any): void }>()
 
-const visible = ref(false) // 选择弹层显示状态
+const pickerRef = ref<PickerInstance>() // 普通单选选择器
 const selectPickerRef = ref<SelectPickerInstance>() // 可搜索/多选选择器
 const pickerModelValue = computed(() => // Wot picker 使用数组值，业务层保持标量
   props.modelValue == null || props.modelValue === '' || Array.isArray(props.modelValue) ? [] : [props.modelValue],
 )
-
+const selectPickerModelValue = computed(() => { // Wot select-picker 按单/多选传值
+  if (props.type === 'checkbox') {
+    return Array.isArray(props.modelValue) ? props.modelValue : []
+  }
+  const value = Array.isArray(props.modelValue) ? props.modelValue[0] : props.modelValue
+  return value == null || value === '' ? (props.allOption ? props.allValue : '') : value
+})
 const resolvedColumns = computed(() => { // 选项：优先 columns，其次按字典生成；allOption 时前插「全部」
   const base = props.columns
     ?? (props.dictType ? (props.dictKind === 'str' ? getStrDictOptions(props.dictType) : getIntDictOptions(props.dictType)) : [])
   return props.allOption ? [{ [props.labelKey]: props.allLabel, [props.valueKey]: props.allValue }, ...base] : base
 })
+const useSelectPicker = computed(() => // 多选、可搜索或 boolean 单选使用 select-picker
+  props.type === 'checkbox' || props.filterable || hasWotPickerBooleanValue(resolvedColumns.value, props.valueKey),
+)
 
 const isPlaceholder = computed(() => // 未选择或选中「全部」(allValue) 时走占位灰字
   props.modelValue == null
@@ -106,23 +117,40 @@ const displayText = computed(() => // 当前选中项展示文案；未选择时
       }),
 )
 
+/** 判断是否为全部选项 */
+function isAllOptionValue(value?: null | WotPickerValue | WotPickerValue[]) {
+  return props.allOption
+    && !Array.isArray(value)
+    && value != null
+    && String(value) === String(props.allValue)
+}
+
+/** 打开选择弹层 */
+function handleOpen() {
+  if (props.beforeOpen?.() === false) {
+    return
+  }
+  if (useSelectPicker.value) {
+    selectPickerRef.value?.open()
+    return
+  }
+  pickerRef.value?.open()
+}
+
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
-  emit('update:modelValue', normalizeValue(Array.isArray(value) ? value[0] : value))
+  const next = Array.isArray(value) ? value[0] : value
+  emit('update:modelValue', next === '' ? (props.allOption ? props.allValue : undefined) : next)
 }
 
 /** 多选确认 */
 function handleSelectConfirm({ value }: { value: any }) {
-  emit('update:modelValue', props.type === 'checkbox'
-    ? (Array.isArray(value) ? value.map(normalizeValue) : [])
-    : normalizeValue(Array.isArray(value) ? value[0] : value))
-}
-
-/** 还原选项原始值类型 */
-function normalizeValue(value: any) {
-  return value == null || value === ''
-    ? value
-    : getWotPickerOptionValue(resolvedColumns.value, value, { valueKey: props.valueKey })
+  const next = props.type === 'checkbox'
+    ? (Array.isArray(value) ? value : [])
+    : (Array.isArray(value) ? value[0] : value)
+  emit('update:modelValue', props.type === 'radio' && next === ''
+    ? (props.allOption ? props.allValue : undefined)
+    : next)
 }
 
 /** 格式化选中值 */

@@ -5,28 +5,26 @@
     is-link
     :value="selectedLabel"
     placeholder="请选择岗位"
-    @click="openPicker"
+    @click="handleOpen"
   />
   <wd-select-picker
     ref="pickerRef"
     v-model="selectedIds"
-    :visible="visible"
     title="请选择岗位"
     :columns="postList"
     value-key="id"
     label-key="name"
     type="checkbox"
     filterable
-    @update:visible="handleVisibleChange"
     @update:model-value="handleChange"
   />
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Post } from '@/api/system/post'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getSimplePostList } from '@/api/system/post'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 const props = defineProps<{
   modelValue?: number[]
@@ -38,7 +36,7 @@ const emit = defineEmits<{
 
 const postList = ref<Post[]>([])
 const selectedIds = ref<number[]>([])
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // 岗位选择器
 
 const selectedLabel = computed(() => {
   if (selectedIds.value.length === 0) {
@@ -60,6 +58,11 @@ watch(
 
 async function loadPostList() {
   postList.value = await getSimplePostList()
+}
+
+/** 打开岗位选择器 */
+function handleOpen() {
+  pickerRef.value?.open()
 }
 
 function handleChange(value: Array<boolean | number | string>) {

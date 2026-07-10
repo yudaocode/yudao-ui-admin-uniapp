@@ -209,6 +209,11 @@ export function getWotPickerDisplay(
   return String(selected[labelKey] ?? selected[valueKey] ?? placeholder)
 }
 
+/** 判断一维对象选项是否包含 boolean 值 */
+export function hasWotPickerBooleanValue(columns: Record<string, any>[], valueKey = 'value') {
+  return columns.some(item => typeof item[valueKey] === 'boolean')
+}
+
 function isWotPickerObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }

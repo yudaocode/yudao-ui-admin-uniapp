@@ -13,7 +13,6 @@
     <wd-select-picker
       ref="pickerRef"
       v-model="pickerValue"
-      :visible="visible"
       :title="rule.title || '选择选项'"
       :columns="options"
       :type="isMultiple ? 'checkbox' : 'radio'"
@@ -24,7 +23,8 @@
       filterable
       label-key="label"
       value-key="value"
-      @update:visible="handleVisibleChange"
+      @open="emit('open')"
+      @close="emit('close')"
       @cancel="emit('cancel')"
       @confirm="handleConfirm"
     />
@@ -32,9 +32,9 @@
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { NormalizedFormCreateRule } from '../../../../../types/typing'
 import { computed, nextTick, ref, watch } from 'vue'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 import { getPlaceholder } from '../../core/utils'
 import { loadApiSelectOptions } from './api'
 import { formatSelectedSummary, isMultipleSelect, normalizeSelectValue } from './utils'
@@ -61,7 +61,7 @@ const emptyMessage = ref('')
 const options = ref<any[]>([])
 const loaded = ref(false)
 const pickerValue = ref<any>([])
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // API 选择器
 
 const isMultiple = computed(() => isMultipleSelect(props.rule))
 const placeholder = computed(() => getPlaceholder(props.rule, '请选择'))
@@ -83,14 +83,6 @@ watch(
   { deep: true, immediate: true },
 )
 
-watch(visible, (value) => {
-  if (value) {
-    emit('open')
-  } else {
-    emit('close')
-  }
-})
-
 async function open() {
   if (props.disabled) {
     return
@@ -108,7 +100,7 @@ async function open() {
   }
   pickerValue.value = normalizeSelectValue(props.modelValue, isMultiple.value)
   await nextTick()
-  openPicker()
+  pickerRef.value?.open()
 }
 
 function handleConfirm({ value }: { value: any }) {

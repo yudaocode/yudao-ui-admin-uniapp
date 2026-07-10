@@ -6,23 +6,21 @@
   <wd-select-picker
     ref="pickerRef"
     v-model="selectedId"
-    :visible="visible"
     :title="title"
     :columns="pickerOptions"
     value-key="id"
     label-key="name"
     type="radio"
     filterable
-    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Contact } from '@/api/crm/contact'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getSimpleContactList } from '@/api/crm/contact'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
@@ -41,7 +39,7 @@ const emit = defineEmits<{
 
 const options = ref<Contact[]>([]) // 联系人选项
 const selectedId = ref<number | string>(props.modelValue ?? '') // 当前联系人编号
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // 联系人选择器
 const pickerOptions = computed(() => { // 当前客户下的联系人
   return props.customerId
     ? options.value.filter(item => item.customerId === props.customerId)
@@ -56,7 +54,7 @@ async function loadOptions() {
 /** 打开选择器 */
 function handleOpen() {
   if (!props.disabled) {
-    openPicker()
+    pickerRef.value?.open()
   }
 }
 

@@ -13,23 +13,21 @@
   <wd-select-picker
     ref="pickerRef"
     v-model="selectedId"
-    :visible="visible"
     :title="label"
     :columns="accountList"
     value-key="id"
     label-key="name"
     type="radio"
     filterable
-    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Account } from '@/api/erp/finance/account'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getAccountSimpleList } from '@/api/erp/finance/account'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 const props = withDefaults(defineProps<{
   autoDefault?: boolean
@@ -56,7 +54,7 @@ const emit = defineEmits<{
 
 const accountList = ref<Account[]>([]) // 结算账户选项
 const selectedId = ref<number | string>('') // 当前选中账户编号
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // 结算账户选择器
 const selectedLabel = computed(() => format())
 
 /** 打开选择器 */
@@ -64,7 +62,7 @@ function handleOpen() {
   if (props.disabled) {
     return
   }
-  openPicker()
+  pickerRef.value?.open()
 }
 
 /** 加载结算账户选项 */

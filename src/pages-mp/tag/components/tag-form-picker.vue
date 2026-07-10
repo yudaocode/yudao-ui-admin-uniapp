@@ -11,7 +11,6 @@
     />
     <wd-select-picker
       ref="pickerRef"
-      :visible="visible"
       :model-value="modelValue || []"
       :title="placeholder"
       :columns="tagList"
@@ -19,17 +18,16 @@
       label-key="name"
       type="checkbox"
       filterable
-      @update:visible="handleVisibleChange"
       @update:model-value="handleChange"
     />
   </view>
 </template>
 
 <script lang="ts" setup>
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Tag } from '@/api/mp/tag'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleTagList } from '@/api/mp/tag'
-import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 const props = withDefaults(defineProps<{
   modelValue?: number[] // 选中的标签编号
@@ -44,7 +42,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: number[]): void }>()
 
-const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerRef = ref<SelectPickerInstance>() // 标签选择器
 const tagList = ref<Tag[]>([]) // 标签列表
 
 /** 选中标签名拼接展示 */
@@ -62,7 +60,7 @@ function handleChange(value: Array<boolean | number | string>) {
 
 /** 打开标签选择器 */
 function handleOpen() {
-  openPicker()
+  pickerRef.value?.open()
 }
 
 /** 加载标签列表（失败时保留已选编号） */
