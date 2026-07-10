@@ -19,6 +19,8 @@ export default uniHelper({
     'src/manifest.json',
     // 忽略自动生成文件
     'src/service/**',
+    // 忽略非项目维护的 lime-echart 组件
+    'src/pages-statistics/components/lime-echart/**',
   ],
   // https://eslint-config.antfu.me/rules
   rules: {
