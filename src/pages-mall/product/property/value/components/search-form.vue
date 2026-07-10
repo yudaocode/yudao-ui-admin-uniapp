@@ -39,7 +39,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import PropertySearchPicker from '../components/property-search-picker.vue'
+import PropertySearchPicker from '../../components/property-search-picker.vue'
 
 defineProps<{
   propertyId?: number // 限定属性时隐藏所属属性筛选

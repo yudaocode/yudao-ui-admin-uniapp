@@ -48,7 +48,7 @@ import {
 } from '@/api/mall/product/property'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
-import PropertyFormPicker from '../components/property-form-picker.vue'
+import PropertyFormPicker from '../../components/property-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
