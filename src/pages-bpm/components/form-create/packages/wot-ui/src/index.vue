@@ -12,30 +12,30 @@
         :value-align="formOption.form?.valueAlign"
       >
         <wd-cell-group :border="formOption.form?.border !== false">
-          <template v-for="rule in visibleRules" :key="rule.__fcId">
+          <template v-for="fieldRule in visibleRules" :key="fieldRule.__fcId">
             <FcSubForm
-              v-if="isSubFormType(rule)"
-              :model-value="getValue(rule)"
-              :rule="rule"
+              v-if="isSubFormType(fieldRule)"
+              :model-value="getValue(fieldRule)"
+              :rule="fieldRule"
               :api="api"
               :option="formOption"
               :title-width="titleWidth"
-              :disabled="isDisabled(rule)"
+              :disabled="isDisabled(fieldRule)"
               style=""
               @emit-event="handleSubFormEmitEvent"
               @rule-emit="handleSubFormRuleEmit"
-              @update:model-value="handleUpdate(rule, $event)"
+              @update:model-value="handleUpdate(fieldRule, $event)"
             />
 
             <FcFieldRenderer
               v-else
-              :model-value="getValue(rule)"
-              :rule="rule"
+              :model-value="getValue(fieldRule)"
+              :rule="fieldRule"
               :title-width="titleWidth"
-              :disabled="isDisabled(rule)"
+              :disabled="isDisabled(fieldRule)"
               style=""
-              @rule-event="(eventName, ...args) => handleRuleEvent(rule, eventName, ...args)"
-              @update:model-value="handleUpdate(rule, $event)"
+              @rule-event="(eventName, ...args) => handleRuleEvent(fieldRule, eventName, ...args)"
+              @update:model-value="handleUpdate(fieldRule, $event)"
             />
           </template>
 

@@ -1,13 +1,8 @@
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-
-export type CaseData = {
+export interface CaseData {
   name: string
   image: string
   description?: string
 }
-
-const data = ref<CaseData[]>([])
 
 export function useCaseData() {
   const data = [

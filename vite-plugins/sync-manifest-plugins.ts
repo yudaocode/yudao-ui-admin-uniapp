@@ -58,8 +58,7 @@ export default function syncManifestPlugin(): Plugin {
             fs.writeFileSync(distAppPath, JSON.stringify(distManifest, null, 2))
             console.log('✅ Manifest plugins 同步成功')
           }
-        }
-        catch (error) {
+        } catch (error) {
           console.error('❌ 同步 manifest plugins 失败:', error)
         }
       },

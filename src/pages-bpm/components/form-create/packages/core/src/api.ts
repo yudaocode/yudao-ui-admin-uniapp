@@ -14,7 +14,7 @@ import { getDefaultValue, isRuleDisabled, isRuleHidden } from './utils'
 export function createApi(ctx: FormCreateApiContext): FormCreateApi {
   const normalizeFields = (fields?: string | string[]) => {
     if (fields === undefined) {
-      return api.fields()
+      return ctx.rules.value.map(rule => rule.field).filter(Boolean) as string[]
     }
     return Array.isArray(fields) ? fields : [fields]
   }
@@ -32,7 +32,7 @@ export function createApi(ctx: FormCreateApiContext): FormCreateApi {
     return false
   }
 
-  const filterSubFormValue = (rule: NormalizedFormCreateRule, value: any): any => {
+  function filterSubFormValue(rule: NormalizedFormCreateRule, value: any): any {
     if (!Array.isArray(value)) {
       return value
     }
@@ -40,7 +40,7 @@ export function createApi(ctx: FormCreateApiContext): FormCreateApi {
     return value.map(row => filterSubFormRow(childRules, row || {}))
   }
 
-  const filterSubFormRow = (childRules: NormalizedFormCreateRule[], row: Record<string, any>) => {
+  function filterSubFormRow(childRules: NormalizedFormCreateRule[], row: Record<string, any>) {
     const result: Record<string, any> = {}
     const controlResult = applyControlRules(childRules, row)
     controlResult.rules.forEach((rule) => {

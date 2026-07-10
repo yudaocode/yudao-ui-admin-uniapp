@@ -1,9 +1,12 @@
 import type { FormCreateApi, FormCreateRule, FormCreateValidateRule } from '../../../types/typing'
 import { isEmptyValue } from './utils'
 
+// eslint-disable-next-line regexp/no-unused-capturing-group -- 保留上游校验正则的匹配语义
 const EMAIL_RE = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\])|(([a-z\-0-9]+\.)+[a-z]{2,}))$/i
+// eslint-disable-next-line regexp/no-unused-capturing-group -- 保留上游校验正则的匹配语义
 const IP_RE = /^(2(5[0-5]|[0-4]\d)|[01]?\d{1,2})(\.(2(5[0-5]|[0-4]\d)|[01]?\d{1,2})){3}$/
 const PHONE_RE = /^(?:(?:\+|00)86)?1[3-9]\d{9}$/
+// eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/no-unused-capturing-group, regexp/no-useless-assertions -- 保留上游校验正则的匹配语义
 const URL_RE = /^(?!mailto:)(?:http|https|ftp):\/\/(?:\S+@)?(?:(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}\.(?:\d\d?|1\d\d|2[0-4]\d|25[0-4])|(?:[a-z\u00A1-\uFFFF0-9]+-?)*[a-z\u00A1-\uFFFF0-9](?:\.(?:[a-z\u00A1-\uFFFF0-9]+-?)*[a-z\u00A1-\uFFFF0-9])*\.[a-z\u00A1-\uFFFF]{2,}|localhost)(?::\d{2,5})?(?:([/?#])\S*)?$/i
 
 export async function validateFormCreateRule(

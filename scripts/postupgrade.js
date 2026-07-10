@@ -31,8 +31,7 @@ function log(message, type = 'log') {
   if (FG_LOG_ENABLE) {
     if (type === 'error') {
       console.error(message)
-    }
-    else {
+    } else {
       console.log(message)
     }
   }
@@ -55,8 +54,7 @@ async function uninstallDependency(dep) {
     }
     log(`成功卸载依赖: ${dep}`)
     return true
-  }
-  catch (error) {
+  } catch (error) {
     // 单个依赖卸载失败不影响其他依赖
     log(`卸载依赖 ${dep} 失败: ${error.message}`, 'error')
     return false
@@ -77,8 +75,7 @@ async function uninstallAllDependencies() {
     const success = await uninstallDependency(dep)
     if (success) {
       successCount++
-    }
-    else {
+    } else {
       failedCount++
     }
 

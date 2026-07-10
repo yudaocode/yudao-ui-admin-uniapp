@@ -94,7 +94,7 @@ export default defineManifestConfig({
           xxxhdpi: 'src/static/app/icons/192x192.png',
         },
         ios: {
-            appstore: 'src/static/app/icons/1024x1024.png',
+          appstore: 'src/static/app/icons/1024x1024.png',
           ipad: {
             'app': 'src/static/app/icons/76x76.png',
             'app@2x': 'src/static/app/icons/152x152.png',

@@ -1,7 +1,7 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { sendSsePost } from '@/api/ai/utils'
 import { http } from '@/http/http'
-import { AiWriteTypeEnum } from '@/pages-ai/utils/constants'
+import type { AiWriteTypeEnum } from '@/pages-ai/utils/constants'
 
 /** AI 写作请求 */
 export interface WriteVO {

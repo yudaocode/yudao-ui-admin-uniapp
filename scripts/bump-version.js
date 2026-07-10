@@ -44,8 +44,8 @@ async function run() {
   const source = fs.readFileSync(manifestPath, 'utf8')
 
   // 支持 'versionCode': '100' 和 versionCode: '100'
-  const versionCodeRegex = /((?:['"])?versionCode(?:['"])?\s*:\s*)(['"])(\d+)\2/
-  const versionNameRegex = /((?:['"])?versionName(?:['"])?\s*:\s*)(['"])([\d.]+)\2/
+  const versionCodeRegex = /(['"]?versionCode['"]?\s*:\s*)(['"])(\d+)\2/
+  const versionNameRegex = /(['"]?versionName['"]?\s*:\s*)(['"])([\d.]+)\2/
 
   const codeMatch = source.match(versionCodeRegex)
   const nameMatch = source.match(versionNameRegex)
@@ -68,8 +68,7 @@ async function run() {
     if (!isInteractive) {
       console.log(pc.yellow('[bump-version] 非交互环境且未指定 --type，默认不修改 versionName'))
       bumpType = 'none'
-    }
-    else {
+    } else {
       console.log('')
       console.log(pc.cyan('准备发布新版本'))
       console.log(`${pc.gray('当前版本:')} ${pc.bold(currentVersionName)} ${pc.gray(`(v${currentVersionCode})`)}`)
@@ -137,8 +136,7 @@ async function run() {
 
   if (bumpType !== 'none') {
     console.log(`  ${pc.gray('versionName:')} ${pc.strikethrough(pc.gray(currentVersionName))} -> ${pc.bold(pc.green(nextVersionName))}`)
-  }
-  else {
+  } else {
     console.log(`  ${pc.gray('versionName:')} ${pc.dim(currentVersionName)} (未更改)`)
   }
 

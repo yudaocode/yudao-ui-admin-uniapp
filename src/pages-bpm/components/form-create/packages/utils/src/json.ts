@@ -94,6 +94,7 @@ export function toJson(value: unknown, space?: number) {
 }
 
 function makeFn(fn: string) {
+  // eslint-disable-next-line no-new-func -- 兼容可信表单 schema 的函数反序列化
   return (new Function(`return ${fn}`))()
 }
 

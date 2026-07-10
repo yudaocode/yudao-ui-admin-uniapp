@@ -157,8 +157,7 @@ export function copyNativeResources(options: CopyNativeResourcesOptions = {}): P
           console.log(`${logPrefix} ✅ UniApp 本地原生插件复制完成: ${sourcePath} -> ${targetPath}`)
           console.log(`${logPrefix} 已成功复制 ${sourceFiles.length} 个文件/目录到构建目录`)
         }
-      }
-      catch (error) {
+      } catch (error) {
         console.error(`${config.logPrefix} ❌ 复制 UniApp 本地原生插件失败:`, error)
         console.error(`${config.logPrefix} 错误详情:`, error instanceof Error ? error.message : String(error))
         console.error(`${config.logPrefix} 请检查源目录权限和磁盘空间`)

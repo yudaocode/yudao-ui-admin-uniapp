@@ -19,7 +19,7 @@ import {
 
 export function normalizeRules(rules: FormCreateRule[] = []): NormalizedFormCreateRule[] {
   const result: NormalizedFormCreateRule[] = []
-  const walk = (rule: FormCreateRule | undefined, indexPath: string) => {
+  function walk(rule: FormCreateRule | undefined, indexPath: string) {
     if (!rule) {
       return
     }
@@ -36,7 +36,7 @@ export function normalizeRules(rules: FormCreateRule[] = []): NormalizedFormCrea
       __originType: rule.__originType || rule.type,
     })
   }
-  const walkChildren = (children: FormCreateRule[], indexPath: string) => {
+  function walkChildren(children: FormCreateRule[], indexPath: string) {
     children.forEach((child, index) => walk(child, `${indexPath}_${index}`))
   }
   rules.forEach((rule, index) => walk(rule, String(index)))

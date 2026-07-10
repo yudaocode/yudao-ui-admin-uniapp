@@ -422,7 +422,7 @@ function interpolateData<T>(value: T, context: FormCreateProviderContext): T {
 
 function interpolateTemplate(template: string, context: FormCreateProviderContext) {
   return template
-    .replace(/\{\{\s*([^}]+)\s*\}\}/g, (_, key) => String(getProviderData(key.trim(), context, '') ?? ''))
+    .replace(/\{\{([^}]+)\}\}/g, (_, key) => String(getProviderData(key.trim(), context, '') ?? ''))
     .replace(/\$\{([^}]+)\}/g, (_, key) => String(getProviderData(key.trim(), context, '') ?? ''))
 }
 
