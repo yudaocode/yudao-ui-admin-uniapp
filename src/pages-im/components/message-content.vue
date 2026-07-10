@@ -76,11 +76,17 @@
     class="w-400rpx"
     @click="emit('merge-click', mergePayload)"
   >
-    <view class="text-28rpx text-[#333] font-medium">{{ mergePayload.title || '聊天记录' }}</view>
-    <view class="mt-8rpx text-24rpx text-[#999] leading-34rpx">
-      <view v-for="(line, i) in mergePreview" :key="i" class="truncate">{{ line }}</view>
+    <view class="text-28rpx text-[#333] font-medium">
+      {{ mergePayload.title || '聊天记录' }}
     </view>
-    <view class="mt-12rpx border-t border-t-[#f2f3f5] pt-10rpx text-22rpx text-[#999]">聊天记录</view>
+    <view class="mt-8rpx text-24rpx text-[#999] leading-34rpx">
+      <view v-for="(line, i) in mergePreview" :key="i" class="truncate">
+        {{ line }}
+      </view>
+    </view>
+    <view class="mt-12rpx border-t border-t-[#f2f3f5] pt-10rpx text-22rpx text-[#999]">
+      聊天记录
+    </view>
   </view>
   <!-- 名片 -->
   <view v-else-if="type === ImMessageType.CARD && cardPayload" class="w-380rpx">
@@ -93,13 +99,17 @@
       />
       <view
         v-else
-        class="h-80rpx w-80rpx shrink-0 flex items-center justify-center rounded-8rpx bg-[#1677ff] text-30rpx text-white"
+        class="h-80rpx w-80rpx flex shrink-0 items-center justify-center rounded-8rpx bg-[#1677ff] text-30rpx text-white"
       >
         {{ (cardPayload.name || '?').charAt(0) }}
       </view>
       <view class="min-w-0 flex-1">
-        <view class="truncate text-30rpx text-[#333]">{{ cardPayload.name }}</view>
-        <view class="mt-6rpx text-22rpx text-[#999]">{{ cardSubtitle }}</view>
+        <view class="truncate text-30rpx text-[#333]">
+          {{ cardPayload.name }}
+        </view>
+        <view class="mt-6rpx text-22rpx text-[#999]">
+          {{ cardSubtitle }}
+        </view>
       </view>
     </view>
     <view class="mt-12rpx border-t border-t-[#f2f3f5] pt-10rpx text-22rpx text-[#999]">
@@ -113,7 +123,9 @@
       :key="i"
       :class="seg.type !== 'text' ? 'text-[#576b95]' : ''"
       @tap="onSegmentTap(seg)"
-    >{{ seg.text }}</text>
+    >
+      {{ seg.text }}
+    </text>
   </text>
 </template>
 
@@ -160,7 +172,7 @@ const textSegments = computed(() => parseTextSegments(summary.value))
 /** 解析文本为段（普通 / @提及 / 链接） */
 function parseTextSegments(text: string): TextSegment[] {
   const segments: TextSegment[] = []
-  const regex = /(@\S+|https?:\/\/[^\s]+)/g
+  const regex = /(@\S+|https?:\/\/\S+)/g
   let lastIndex = 0
   let match = regex.exec(text)
   while (match) {

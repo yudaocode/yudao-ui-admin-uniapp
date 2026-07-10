@@ -5,12 +5,16 @@
         <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
           {{ payload?.title || '聊天记录' }}
         </view>
-        <wd-button size="small" variant="plain" @click="visible = false">关闭</wd-button>
+        <wd-button size="small" variant="plain" @click="visible = false">
+          关闭
+        </wd-button>
       </view>
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <view class="p-24rpx">
           <view v-for="(item, index) in messages" :key="index" class="mb-28rpx">
-            <view class="mb-8rpx text-24rpx text-[#999]">{{ item.senderNickname || '' }}</view>
+            <view class="mb-8rpx text-24rpx text-[#999]">
+              {{ item.senderNickname || '' }}
+            </view>
             <view class="inline-block rounded-12rpx bg-[#f7f8fa] px-22rpx py-16rpx text-28rpx text-[#333] leading-42rpx">
               <MessageContent :type="item.type" :content="item.content" />
             </view>

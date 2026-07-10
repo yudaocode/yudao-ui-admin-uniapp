@@ -28,9 +28,15 @@
             <ImAvatar :src="item.avatar" :name="getFriendName(item)" />
             <view class="min-w-0 flex-1" @click="handleFriendChat(item)">
               <view class="flex items-center gap-10rpx">
-                <view class="truncate text-32rpx text-[#333] font-semibold">{{ getFriendName(item) }}</view>
-                <wd-tag v-if="item.pinned" type="primary" plain>置顶</wd-tag>
-                <wd-tag v-if="item.blocked" type="danger" plain>已拉黑</wd-tag>
+                <view class="truncate text-32rpx text-[#333] font-semibold">
+                  {{ getFriendName(item) }}
+                </view>
+                <wd-tag v-if="item.pinned" type="primary" plain>
+                  置顶
+                </wd-tag>
+                <wd-tag v-if="item.blocked" type="danger" plain>
+                  已拉黑
+                </wd-tag>
               </view>
               <view class="mt-6rpx truncate text-24rpx text-[#999]">
                 昵称：{{ item.nickname || '-' }}
@@ -60,9 +66,15 @@
             <ImAvatar :src="item.avatar" :name="item.name" :round="false" />
             <view class="min-w-0 flex-1" @click="handleGroupDetail(item)">
               <view class="flex items-center gap-10rpx">
-                <view class="truncate text-32rpx text-[#333] font-semibold">{{ item.name }}</view>
-                <wd-tag v-if="item.banned" type="danger" plain>已封禁</wd-tag>
-                <wd-tag v-if="item.mutedAll" type="warning" plain>全员禁言</wd-tag>
+                <view class="truncate text-32rpx text-[#333] font-semibold">
+                  {{ item.name }}
+                </view>
+                <wd-tag v-if="item.banned" type="danger" plain>
+                  已封禁
+                </wd-tag>
+                <wd-tag v-if="item.mutedAll" type="warning" plain>
+                  全员禁言
+                </wd-tag>
               </view>
               <view class="mt-6rpx truncate text-24rpx text-[#999]">
                 {{ item.notice || '暂无群公告' }}

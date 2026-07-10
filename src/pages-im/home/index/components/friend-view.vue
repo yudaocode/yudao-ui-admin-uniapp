@@ -12,7 +12,9 @@
           <view class="h-84rpx w-84rpx flex items-center justify-center rounded-12rpx bg-[#fa8c16]">
             <wd-icon name="user-add" size="44rpx" color="#fff" />
           </view>
-          <view class="flex-1 border-b border-b-[#f2f3f5] py-10rpx text-30rpx text-[#222]">新的朋友</view>
+          <view class="flex-1 border-b border-b-[#f2f3f5] py-10rpx text-30rpx text-[#222]">
+            新的朋友
+          </view>
         </view>
 
         <!-- 群聊入口（非搜索态） -->
@@ -20,7 +22,9 @@
           <view class="h-84rpx w-84rpx flex items-center justify-center rounded-12rpx bg-[#07c160]">
             <wd-icon name="user-group" size="44rpx" color="#fff" />
           </view>
-          <view class="flex-1 border-b border-b-[#f2f3f5] py-10rpx text-30rpx text-[#222]">群聊</view>
+          <view class="flex-1 border-b border-b-[#f2f3f5] py-10rpx text-30rpx text-[#222]">
+            群聊
+          </view>
         </view>
 
         <!-- 分组好友列表 -->
@@ -40,10 +44,16 @@
             <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-16rpx">
               <view class="flex items-center gap-10rpx">
                 <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ getFriendName(item) }}</text>
-                <wd-tag v-if="item.pinned" type="primary" plain custom-class="scale-90">置顶</wd-tag>
-                <wd-tag v-if="item.blocked" type="danger" plain custom-class="scale-90">已拉黑</wd-tag>
+                <wd-tag v-if="item.pinned" type="primary" plain custom-class="scale-90">
+                  置顶
+                </wd-tag>
+                <wd-tag v-if="item.blocked" type="danger" plain custom-class="scale-90">
+                  已拉黑
+                </wd-tag>
               </view>
-              <view class="mt-4rpx line-clamp-1 text-24rpx text-[#999]">昵称：{{ item.nickname || '-' }}</view>
+              <view class="line-clamp-1 mt-4rpx text-24rpx text-[#999]">
+                昵称：{{ item.nickname || '-' }}
+              </view>
             </view>
           </view>
         </template>

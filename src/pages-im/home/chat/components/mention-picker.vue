@@ -2,8 +2,12 @@
   <wd-popup v-model="visible" position="bottom" custom-style="height: 60vh; border-radius: 24rpx 24rpx 0 0;">
     <view class="h-full flex flex-col bg-white">
       <view class="flex items-center justify-between border-b border-b-[#f2f3f5] px-24rpx py-20rpx">
-        <view class="text-32rpx text-[#333] font-semibold">@ 成员</view>
-        <wd-button size="small" variant="plain" @click="visible = false">关闭</wd-button>
+        <view class="text-32rpx text-[#333] font-semibold">
+          @ 成员
+        </view>
+        <wd-button size="small" variant="plain" @click="visible = false">
+          关闭
+        </wd-button>
       </view>
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <view v-if="canMentionAll" class="mention-member" @click="emit('select-all')">
@@ -11,8 +15,12 @@
             全
           </view>
           <view class="min-w-0 flex-1">
-            <view class="text-30rpx text-[#333]">@{{ IM_AT_ALL_NICKNAME }}</view>
-            <view class="mt-4rpx text-24rpx text-[#999]">提醒群内所有成员</view>
+            <view class="text-30rpx text-[#333]">
+              @{{ IM_AT_ALL_NICKNAME }}
+            </view>
+            <view class="mt-4rpx text-24rpx text-[#999]">
+              提醒群内所有成员
+            </view>
           </view>
         </view>
         <view
@@ -23,8 +31,12 @@
         >
           <ImAvatar :src="item.avatar" :name="getMemberName(item)" size="72rpx" />
           <view class="min-w-0 flex-1">
-            <view class="truncate text-30rpx text-[#333]">{{ getMemberName(item) }}</view>
-            <view class="mt-4rpx text-24rpx text-[#999]">用户编号：{{ item.userId }}</view>
+            <view class="truncate text-30rpx text-[#333]">
+              {{ getMemberName(item) }}
+            </view>
+            <view class="mt-4rpx text-24rpx text-[#999]">
+              用户编号：{{ item.userId }}
+            </view>
           </view>
         </view>
         <wd-empty v-if="members.length === 0 && !canMentionAll" icon="content" tip="暂无可 @ 成员" />

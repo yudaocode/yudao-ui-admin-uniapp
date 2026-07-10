@@ -5,7 +5,9 @@
         <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
           {{ detail?.title || payload?.title || '频道素材' }}
         </view>
-        <wd-button size="small" variant="plain" @click="visible = false">关闭</wd-button>
+        <wd-button size="small" variant="plain" @click="visible = false">
+          关闭
+        </wd-button>
       </view>
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <view class="p-24rpx">
@@ -27,7 +29,7 @@
               {{ detail?.summary || payload?.summary }}
             </view>
             <rich-text v-if="detail?.content" :nodes="detail.content" />
-            <view v-else-if="detail?.url || payload?.url" class="text-26rpx text-[#1677ff] break-all">
+            <view v-else-if="detail?.url || payload?.url" class="break-all text-26rpx text-[#1677ff]">
               {{ detail?.url || payload?.url }}
             </view>
             <wd-empty v-else icon="content" tip="暂无正文" />

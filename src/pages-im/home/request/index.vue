@@ -25,14 +25,24 @@
             <ImAvatar :src="getFriendRequestAvatar(item)" :name="getFriendRequestTitle(item)" />
             <view class="min-w-0 flex-1">
               <view class="flex items-center justify-between gap-12rpx">
-                <view class="truncate text-30rpx text-[#333] font-semibold">{{ getFriendRequestTitle(item) }}</view>
+                <view class="truncate text-30rpx text-[#333] font-semibold">
+                  {{ getFriendRequestTitle(item) }}
+                </view>
                 <dict-tag :type="DICT_TYPE.IM_FRIEND_REQUEST_HANDLE_RESULT" :value="item.handleResult" />
               </view>
-              <view class="mt-8rpx text-26rpx text-[#666]">{{ item.applyContent || '申请添加好友' }}</view>
-              <view class="mt-8rpx text-24rpx text-[#999]">{{ formatDateTime(item.createTime) }}</view>
+              <view class="mt-8rpx text-26rpx text-[#666]">
+                {{ item.applyContent || '申请添加好友' }}
+              </view>
+              <view class="mt-8rpx text-24rpx text-[#999]">
+                {{ formatDateTime(item.createTime) }}
+              </view>
               <view v-if="canHandleFriendRequest(item)" class="mt-20rpx flex gap-16rpx">
-                <wd-button class="flex-1" size="small" type="primary" @click="handleAgreeFriend(item)">同意</wd-button>
-                <wd-button class="flex-1" size="small" type="danger" variant="plain" @click="handleRefuseFriend(item)">拒绝</wd-button>
+                <wd-button class="flex-1" size="small" type="primary" @click="handleAgreeFriend(item)">
+                  同意
+                </wd-button>
+                <wd-button class="flex-1" size="small" type="danger" variant="plain" @click="handleRefuseFriend(item)">
+                  拒绝
+                </wd-button>
               </view>
             </view>
           </view>
@@ -53,17 +63,27 @@
             <ImAvatar :src="item.userAvatar" :name="item.userNickname || String(item.userId)" />
             <view class="min-w-0 flex-1">
               <view class="flex items-center justify-between gap-12rpx">
-                <view class="truncate text-30rpx text-[#333] font-semibold">{{ item.userNickname || `用户 ${item.userId}` }}</view>
+                <view class="truncate text-30rpx text-[#333] font-semibold">
+                  {{ item.userNickname || `用户 ${item.userId}` }}
+                </view>
                 <dict-tag :type="DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT" :value="item.handleResult" />
               </view>
               <view class="mt-8rpx text-26rpx text-[#666]">
                 申请加入：{{ item.groupName || `群 ${item.groupId}` }}
               </view>
-              <view class="mt-8rpx text-26rpx text-[#666]">{{ item.applyContent || '暂无申请理由' }}</view>
-              <view class="mt-8rpx text-24rpx text-[#999]">{{ formatDateTime(item.createTime) }}</view>
+              <view class="mt-8rpx text-26rpx text-[#666]">
+                {{ item.applyContent || '暂无申请理由' }}
+              </view>
+              <view class="mt-8rpx text-24rpx text-[#999]">
+                {{ formatDateTime(item.createTime) }}
+              </view>
               <view v-if="item.handleResult === ImGroupRequestHandleResult.UNHANDLED" class="mt-20rpx flex gap-16rpx">
-                <wd-button class="flex-1" size="small" type="primary" @click="handleAgreeGroup(item)">同意</wd-button>
-                <wd-button class="flex-1" size="small" type="danger" variant="plain" @click="handleRefuseGroup(item)">拒绝</wd-button>
+                <wd-button class="flex-1" size="small" type="primary" @click="handleAgreeGroup(item)">
+                  同意
+                </wd-button>
+                <wd-button class="flex-1" size="small" type="danger" variant="plain" @click="handleRefuseGroup(item)">
+                  拒绝
+                </wd-button>
               </view>
             </view>
           </view>

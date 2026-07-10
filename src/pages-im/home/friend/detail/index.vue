@@ -14,8 +14,12 @@
       <view class="flex items-center gap-28rpx bg-white px-32rpx py-44rpx">
         <ImAvatar :src="friend?.avatar" :name="displayName" :round="false" size="128rpx" />
         <view class="min-w-0 flex-1">
-          <view class="line-clamp-1 text-40rpx text-[#1f1f1f] font-medium">{{ displayName }}</view>
-          <view class="mt-12rpx text-26rpx text-[#999]">账号：{{ friend?.friendUserId ?? '-' }}</view>
+          <view class="line-clamp-1 text-40rpx text-[#1f1f1f] font-medium">
+            {{ displayName }}
+          </view>
+          <view class="mt-12rpx text-26rpx text-[#999]">
+            账号：{{ friend?.friendUserId ?? '-' }}
+          </view>
           <view v-if="friend?.displayName" class="mt-6rpx text-26rpx text-[#999]">
             昵称：{{ friend?.nickname || '-' }}
           </view>

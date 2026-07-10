@@ -44,8 +44,12 @@
         <wd-button v-if="isGroup" block variant="plain" @click="handleSendText({ receipt: true })">
           回执消息
         </wd-button>
-        <wd-button block variant="plain" :loading="fileSending" @click="handleSendFile">文件</wd-button>
-        <wd-button block variant="plain" :loading="videoSending" @click="handleSendVideo">视频</wd-button>
+        <wd-button block variant="plain" :loading="fileSending" @click="handleSendFile">
+          文件
+        </wd-button>
+        <wd-button block variant="plain" :loading="videoSending" @click="handleSendVideo">
+          视频
+        </wd-button>
         <wd-button block variant="plain" :loading="voiceSending" @click="handleVoiceRecord">
           {{ voiceRecording ? '停止录音' : '语音' }}
         </wd-button>

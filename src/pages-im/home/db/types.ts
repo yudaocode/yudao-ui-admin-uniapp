@@ -5,17 +5,17 @@
 export const DB_SCHEMA_VERSION = 1
 
 /** 数据表名 */
-export type DbStoreName =
-  | 'conversations'
-  | 'conversationReads'
-  | 'messages'
-  | 'friends'
-  | 'friendRequests'
-  | 'groups'
-  | 'groupMembers'
-  | 'groupRequests'
-  | 'channels'
-  | 'settings'
+export type DbStoreName
+  = | 'conversations'
+    | 'conversationReads'
+    | 'messages'
+    | 'friends'
+    | 'friendRequests'
+    | 'groups'
+    | 'groupMembers'
+    | 'groupRequests'
+    | 'channels'
+    | 'settings'
 
 /** 表索引定义（仅 IndexedDB 使用；storage 适配层用 filter 兜底） */
 export interface StoreIndex {

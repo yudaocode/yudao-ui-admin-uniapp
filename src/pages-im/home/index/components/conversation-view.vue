@@ -18,28 +18,28 @@
 
       <view
         v-for="item in filteredConversations"
-      :key="item.clientConversationId"
-      class="flex items-center gap-20rpx px-24rpx active:bg-[#f5f5f5]"
-      :class="item.top ? 'bg-[#f7f8fa]' : ''"
-      @click="openChat(item)"
-      @longpress="handleLongPress(item)"
-    >
-      <view class="relative py-20rpx">
-        <ImAvatar :src="item.avatar" :name="item.name" :round="false" size="92rpx" />
-        <view v-if="item.unreadCount > 0" class="unread-badge">
-          {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
+        :key="item.clientConversationId"
+        class="flex items-center gap-20rpx px-24rpx active:bg-[#f5f5f5]"
+        :class="item.top ? 'bg-[#f7f8fa]' : ''"
+        @click="openChat(item)"
+        @longpress="handleLongPress(item)"
+      >
+        <view class="relative py-20rpx">
+          <ImAvatar :src="item.avatar" :name="item.name" :round="false" size="92rpx" />
+          <view v-if="item.unreadCount > 0" class="unread-badge">
+            {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
+          </view>
+        </view>
+        <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-20rpx">
+          <view class="flex items-center justify-between">
+            <text class="line-clamp-1 flex-1 text-32rpx text-[#222] font-medium">{{ item.name || '未命名' }}</text>
+            <text class="ml-16rpx shrink-0 text-22rpx text-[#bbb]">{{ formatConversationTime(item.lastSendTime) }}</text>
+          </view>
+          <view class="line-clamp-1 mt-8rpx text-26rpx text-[#999]">
+            <text v-if="item.silent" class="text-[#bbb]">[免打扰] </text>{{ item.lastContent || ' ' }}
+          </view>
         </view>
       </view>
-      <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-20rpx">
-        <view class="flex items-center justify-between">
-          <text class="line-clamp-1 flex-1 text-32rpx text-[#222] font-medium">{{ item.name || '未命名' }}</text>
-          <text class="ml-16rpx shrink-0 text-22rpx text-[#bbb]">{{ formatConversationTime(item.lastSendTime) }}</text>
-        </view>
-        <view class="mt-8rpx line-clamp-1 text-26rpx text-[#999]">
-          <text v-if="item.silent" class="text-[#bbb]">[免打扰] </text>{{ item.lastContent || ' ' }}
-        </view>
-      </view>
-    </view>
     </scroll-view>
   </view>
 </template>
@@ -47,7 +47,6 @@
 <script lang="ts" setup>
 import type { ConversationDO } from '@/pages-im/home/db'
 import { computed, ref, watch } from 'vue'
-import { ImConversationType } from '@/utils/constants'
 import { useImConversations } from '../../composables/useImConversations'
 import ImAvatar from '../../components/im-avatar.vue'
 

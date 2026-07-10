@@ -2,8 +2,12 @@
   <wd-popup v-model="visible" position="bottom" custom-style="height: 50vh; border-radius: 24rpx 24rpx 0 0;">
     <view class="h-full flex flex-col bg-white">
       <view class="flex items-center justify-between border-b border-b-[#f2f3f5] px-24rpx py-20rpx">
-        <view class="text-32rpx text-[#333] font-semibold">选择表情</view>
-        <wd-button size="small" variant="plain" @click="visible = false">关闭</wd-button>
+        <view class="text-32rpx text-[#333] font-semibold">
+          选择表情
+        </view>
+        <wd-button size="small" variant="plain" @click="visible = false">
+          关闭
+        </wd-button>
       </view>
       <wd-tabs v-model="activeTab" line-theme="text">
         <wd-tab title="我的" name="user" />

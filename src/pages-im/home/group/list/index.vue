@@ -22,10 +22,16 @@
         <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-16rpx">
           <view class="flex items-center gap-10rpx">
             <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ item.name }}</text>
-            <wd-tag v-if="item.banned" type="danger" plain custom-class="scale-90">已封禁</wd-tag>
-            <wd-tag v-if="item.mutedAll" type="warning" plain custom-class="scale-90">全员禁言</wd-tag>
+            <wd-tag v-if="item.banned" type="danger" plain custom-class="scale-90">
+              已封禁
+            </wd-tag>
+            <wd-tag v-if="item.mutedAll" type="warning" plain custom-class="scale-90">
+              全员禁言
+            </wd-tag>
           </view>
-          <view class="mt-4rpx line-clamp-1 text-24rpx text-[#999]">{{ item.notice || '暂无群公告' }}</view>
+          <view class="line-clamp-1 mt-4rpx text-24rpx text-[#999]">
+            {{ item.notice || '暂无群公告' }}
+          </view>
         </view>
       </view>
 

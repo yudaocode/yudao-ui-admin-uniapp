@@ -96,7 +96,7 @@ import type { ImGroupMemberRespVO } from '@/api/im/group/member'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
 import type { ConversationDO } from '@/pages-im/home/db'
-import type { ImMaterialMessage, ImMergeMessage, ImQuoteMessage } from '@/pages-im/utils/message'
+import type { buildQuoteFromMessage, generateClientMessageId, getMessageSummary, getQuoteFromMessage, type ImFileMessage, ImMaterialMessage, ImMergeMessage, ImQuoteMessage, type ImTextMessage, parseMessage, removeQuotePayload, serializeMessage, withQuotePayload } from '@/pages-im/utils/message'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
@@ -105,32 +105,20 @@ import { getGroupMemberList } from '@/api/im/group/member'
 import {
   getGroupMessageList,
   getGroupReadUsers,
-  recallGroupMessage,
   readGroupMessages,
+  recallGroupMessage,
   sendGroupMessage,
 } from '@/api/im/message/group'
 import {
   getPrivateMaxReadMessageId,
   getPrivateMessageList,
-  recallPrivateMessage,
   readPrivateMessages,
+  recallPrivateMessage,
   sendPrivateMessage,
 } from '@/api/im/message/private'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { ImConversationType, ImMessageType } from '@/utils/constants'
-import {
-  buildQuoteFromMessage,
-  generateClientMessageId,
-  getMessageSummary,
-  getQuoteFromMessage,
-  type ImFileMessage,
-  type ImTextMessage,
-  parseMessage,
-  removeQuotePayload,
-  serializeMessage,
-  withQuotePayload,
-} from '@/pages-im/utils/message'
 import { useImConversations } from '../composables/useImConversations'
 import { connectImWebSocket } from '../composables/useImWebSocket'
 import ChatInput from './components/chat-input.vue'

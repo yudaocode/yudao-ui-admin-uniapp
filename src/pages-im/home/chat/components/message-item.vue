@@ -23,41 +23,41 @@
       </view>
       <!-- 普通消息 -->
       <view v-else class="flex items-start gap-16rpx" :class="isSelf ? 'flex-row-reverse' : ''">
-      <ImAvatar :src="senderAvatar" :name="senderName" size="80rpx" :round="false" />
-      <view class="flex max-w-[560rpx] flex-col" :class="isSelf ? 'items-end' : 'items-start'">
-        <!-- 群聊对方昵称 -->
-        <view v-if="showSenderName" class="mb-8rpx text-22rpx text-[#999]">
-          {{ senderName }}
+        <ImAvatar :src="senderAvatar" :name="senderName" size="80rpx" :round="false" />
+        <view class="max-w-[560rpx] flex flex-col" :class="isSelf ? 'items-end' : 'items-start'">
+          <!-- 群聊对方昵称 -->
+          <view v-if="showSenderName" class="mb-8rpx text-22rpx text-[#999]">
+            {{ senderName }}
+          </view>
+          <!-- 气泡 -->
+          <view
+            class="im-bubble"
+            :class="[isSelf ? 'im-bubble--self' : 'im-bubble--other', plain ? 'im-bubble--plain' : '']"
+            @longpress="onBubbleLongpress"
+          >
+            <MessageQuote
+              v-if="quoteTitle"
+              :title="quoteTitle"
+              class="mb-12rpx"
+              @click="emit('scroll-to-quote', message.content)"
+            />
+            <MessageContent
+              :type="message.type"
+              :content="message.content"
+              @material-click="emit('material-click', $event)"
+              @merge-click="emit('merge-click', $event)"
+            />
+          </view>
+          <!-- 发送状态 -->
+          <view
+            v-if="statusText"
+            class="mt-8rpx text-22rpx text-[#bbb]"
+            :class="isSelf ? 'text-right' : 'text-left'"
+            @click="onStatusClick"
+          >
+            {{ statusText }}
+          </view>
         </view>
-        <!-- 气泡 -->
-        <view
-          class="im-bubble"
-          :class="[isSelf ? 'im-bubble--self' : 'im-bubble--other', plain ? 'im-bubble--plain' : '']"
-          @longpress="onBubbleLongpress"
-        >
-          <MessageQuote
-            v-if="quoteTitle"
-            :title="quoteTitle"
-            class="mb-12rpx"
-            @click="emit('scroll-to-quote', message.content)"
-          />
-          <MessageContent
-            :type="message.type"
-            :content="message.content"
-            @material-click="emit('material-click', $event)"
-            @merge-click="emit('merge-click', $event)"
-          />
-        </view>
-        <!-- 发送状态 -->
-        <view
-          v-if="statusText"
-          class="mt-8rpx text-22rpx text-[#bbb]"
-          :class="isSelf ? 'text-right' : 'text-left'"
-          @click="onStatusClick"
-        >
-          {{ statusText }}
-        </view>
-      </view>
       </view>
     </view>
   </view>
@@ -85,9 +85,6 @@ import MessageQuote from './message-quote.vue'
 
 type ChatMessage = ImPrivateMessageRespVO | ImGroupMessageRespVO
 
-// 媒体类型不套气泡背景（图片 / 表情 / 视频，仿微信直显）
-const PLAIN_TYPES = [ImMessageType.IMAGE, ImMessageType.FACE, ImMessageType.VIDEO]
-
 const props = defineProps<{
   message: ChatMessage // 消息数据
   conversationType: number // 会话类型 ImConversationType
@@ -111,6 +108,9 @@ const emit = defineEmits<{
   'toggle-select': [message: ChatMessage] // 多选切换
   'show-readers': [message: ChatMessage] // 查看群已读成员
 }>()
+
+// 媒体类型不套气泡背景（图片 / 表情 / 视频，仿微信直显）
+const PLAIN_TYPES = [ImMessageType.IMAGE, ImMessageType.FACE, ImMessageType.VIDEO]
 
 /** 点击发送状态：群聊自己消息查看已读成员 */
 function onStatusClick() {

@@ -24,8 +24,12 @@
                 <wd-icon :name="card.icon" size="38rpx" color="#fff" />
               </view>
               <view class="min-w-0 flex-1">
-                <view class="truncate text-24rpx text-[#888]">{{ card.label }}</view>
-                <view class="mt-6rpx text-40rpx text-[#333] font-semibold leading-none">{{ card.value }}</view>
+                <view class="truncate text-24rpx text-[#888]">
+                  {{ card.label }}
+                </view>
+                <view class="mt-6rpx text-40rpx text-[#333] font-semibold leading-none">
+                  {{ card.value }}
+                </view>
               </view>
             </view>
             <view class="mt-16rpx flex items-center text-22rpx text-[#999]">

@@ -28,8 +28,12 @@
           :key="month.prop"
           class="rounded-8rpx bg-[#f8f8f8] px-12rpx py-14rpx"
         >
-          <view class="text-22rpx text-[#999]">{{ month.label }}</view>
-          <view class="mt-6rpx text-24rpx text-[#333]">{{ formatMoney(formData[month.prop]) }}</view>
+          <view class="text-22rpx text-[#999]">
+            {{ month.label }}
+          </view>
+          <view class="mt-6rpx text-24rpx text-[#333]">
+            {{ formatMoney(formData[month.prop]) }}
+          </view>
         </view>
       </view>
     </view>
