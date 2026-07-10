@@ -1,8 +1,7 @@
 import type { DefineComponent } from 'vue'
 
-// Wot UI's bundled global declarations import component Vue source files, which
-// makes vue-tsc type-check the library internals. Keep global component names
-// without pulling third-party .vue files into the app type-check.
+// Wot UI 的精确全局声明会把第三方 Vue 源码拉入类型检查；这里有意只保留组件名，
+// 不校验模板属性，避免依赖内部类型错误并降低 vue-tsc 的时间与内存开销。
 type WotComponent = DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>
 
 declare module 'vue' {

@@ -97,8 +97,8 @@
     "init-baseFiles": "node ./scripts/create-base-files.js",
     "init-json": "pnpm init-baseFiles",
     "prepare": "pnpm init-husky & pnpm init-baseFiles",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache",
+    "lint:fix": "eslint --fix --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-4070620250821001",
@@ -196,6 +196,6 @@
     "unconfig": "7.3.2"
   },
   "lint-staged": {
-    "*": "eslint --fix"
+    "*.{js,cjs,mjs,jsx,cjsx,mjsx,ts,cts,mts,tsx,ctsx,mtsx,vue,json,json5,jsonc,css,scss,less,pcss,postcss,html,htm,yaml,yml,toml}": "eslint --fix --cache --cache-strategy content --cache-location node_modules/.cache/eslint/.eslintcache"
   }
 }

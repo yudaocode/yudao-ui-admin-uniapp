@@ -31,9 +31,14 @@ private.*.key
 docs/.vitepress/dist
 docs/.vitepress/cache
 
-src/types
-# 单独把这个文件排除掉，用以解决部分电脑生成的 auto-import.d.ts 的API不完整导致类型提示报错问题
+src/types/*
+# 保留自动导入类型，避免部分电脑生成的声明不完整导致类型提示报错
 !src/types/auto-import.d.ts
+# 保留本地组件精确类型，确保干净环境的 type-check 覆盖一致
+!src/types/local-components.d.ts
+# 保留 bundle-optimizer 类型，避免 type-check 依赖先运行 Vite
+!src/types/async-component.d.ts
+!src/types/async-import.d.ts
 src/manifest.json
 src/pages.json
 

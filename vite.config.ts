@@ -30,22 +30,6 @@ import vitePluginEruda from './scripts/vite-plugin-eruda'
 import { createCopyNativeResourcesPlugin } from './vite-plugins/copy-native-resources'
 import syncManifestPlugin from './vite-plugins/sync-manifest-plugins'
 
-/** 标准的 wot-ui 组件的解析器 */
-function WotResolver(): ComponentResolver {
-  return {
-    type: 'component',
-    resolve: (name: string) => {
-      if (name.match(/^Wd[A-Z]/)) {
-        const compName = kebabCase(name)
-        return {
-          name,
-          from: `@wot-ui/ui/components/${compName}/${compName}.vue`,
-        }
-      }
-    },
-  }
-}
-
 /** 芋道 UI 组件解析器：本地 @/components/yudao-ui/* 的组件 */
 function YudaoUiResolver(): ComponentResolver {
   return {
@@ -56,21 +40,6 @@ function YudaoUiResolver(): ComponentResolver {
         return {
           name,
           from: `@/components/yudao-ui/${compName}/${compName}.vue`,
-        }
-      }
-    },
-  }
-}
-
-/** z-paging 分页组件解析器：H5 端由 Vite 自动导入 */
-function ZPagingResolver(): ComponentResolver {
-  return {
-    type: 'component',
-    resolve: (name: string) => {
-      if (name === 'ZPaging') {
-        return {
-          name,
-          from: 'z-paging/components/z-paging/z-paging.vue',
         }
       }
     },
@@ -121,12 +90,12 @@ export default defineConfig(({ command, mode }) => {
       UniLayouts(),
       UniPlatform(),
       UniManifest(),
-      UniComponents({
-        resolvers: [WotResolver(), YudaoUiResolver(), ZPagingResolver()],
+      UniComponents({ // 仅自动导入本地组件；Wot UI 与 z-paging 由 pages.config.ts 的 easycom 解析
+        resolvers: [YudaoUiResolver()],
         extensions: ['vue'],
         deep: true, // 是否递归扫描子目录，
         directoryAsNamespace: false, // 是否把目录名作为命名空间前缀，true 时组件名为 目录名+组件名，
-        dts: 'src/types/components.d.ts', // 自动生成的组件类型声明文件路径（用于 TypeScript 支持）
+        dts: 'src/types/local-components.d.ts', // 仅生成项目本地组件类型，避免拉入第三方 Vue 源码
       }),
       UniPages({
         exclude: ['**/components/**/**.*', '**/sections/**/**.*'],

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+    "tsBuildInfoFile": "node_modules/.cache/vue-tsc/tsconfig.tsbuildinfo",
     "lib": ["esnext", "dom"],
     "baseUrl": ".",
     "module": "esnext",
@@ -32,13 +33,10 @@
     "plugins": ["@uni-helper/uni-types/volar-plugin"]
   },
   "include": [
-    "package.json",
     "src/**/*.ts",
     "src/**/*.js",
-    "src/**/*.cjs",
     "src/**/*.d.ts",
     "src/**/*.tsx",
-    "src/**/*.jsx",
     "src/**/*.vue",
     "src/**/*.json",
     "vite.config.ts",
@@ -48,5 +46,10 @@
     "scripts/**/*.js",
     "vite-plugins/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/types/components.d.ts",
+    "src/pages-statistics/components/lime-echart/static/**"
+  ]
 }

@@ -96,7 +96,23 @@ import type { ImGroupMemberRespVO } from '@/api/im/group/member'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
 import type { ConversationDO } from '@/pages-im/home/db'
-import type { buildQuoteFromMessage, generateClientMessageId, getMessageSummary, getQuoteFromMessage, type ImFileMessage, ImMaterialMessage, ImMergeMessage, ImQuoteMessage, type ImTextMessage, parseMessage, removeQuotePayload, serializeMessage, withQuotePayload } from '@/pages-im/utils/message'
+import type {
+  ImFileMessage,
+  ImMaterialMessage,
+  ImMergeMessage,
+  ImQuoteMessage,
+  ImTextMessage,
+} from '@/pages-im/utils/message'
+import {
+  buildQuoteFromMessage,
+  generateClientMessageId,
+  getMessageSummary,
+  getQuoteFromMessage,
+  parseMessage,
+  removeQuotePayload,
+  serializeMessage,
+  withQuotePayload,
+} from '@/pages-im/utils/message'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
