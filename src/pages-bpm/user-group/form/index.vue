@@ -25,12 +25,12 @@
               placeholder="请输入描述"
             />
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userIds"
             label="成员"
             prop="userIds"
-            type="checkbox"
             placeholder="请选择成员"
+            type="checkbox"
           />
           <wd-form-item title="状态" title-width="180rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">
@@ -67,7 +67,7 @@ import type { UserGroup } from '@/api/bpm/user-group'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createUserGroup, getUserGroup, updateUserGroup } from '@/api/bpm/user-group'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'

@@ -24,15 +24,9 @@
           <wd-form-item title="产品名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入产品名称" clearable />
           </wd-form-item>
-          <yd-form-picker
+          <ProductCategoryFormPicker
             v-model="formData.categoryId"
-            label="产品分类"
             prop="categoryId"
-            :columns="categoryOptions"
-            label-key="name"
-            value-key="id"
-            placeholder="请选择产品分类"
-            label-width="220rpx"
           />
           <yd-form-picker
             v-model="formData.deviceType"
@@ -100,11 +94,9 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProductCategory } from '@/api/iot/product/category'
 import type { Product } from '@/api/iot/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { getSimpleProductCategoryList } from '@/api/iot/product/category'
 import {
   createProduct,
   DeviceTypeEnum,
@@ -113,6 +105,7 @@ import {
   SerializeTypeEnum,
   updateProduct,
 } from '@/api/iot/product/product'
+import ProductCategoryFormPicker from '@/pages-iot/product/category/components/product-category-form-picker.vue'
 import { getStrDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, ProductStatusEnum } from '@/utils/constants'
@@ -130,7 +123,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑产品' : '新增产品')
 const formLoading = ref(false) // 表单提交状态
-const categoryOptions = ref<ProductCategory[]>([]) // 产品分类选项
 const formData = ref<Product>({
   id: undefined,
   name: '',
@@ -208,7 +200,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  categoryOptions.value = await getSimpleProductCategoryList()
   await getDetail()
 })
 </script>

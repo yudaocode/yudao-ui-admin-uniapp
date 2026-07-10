@@ -11,8 +11,9 @@
   />
 
   <wd-select-picker
+    ref="pickerRef"
     v-model="selectedValue"
-    v-model:visible="visible"
+    :visible="visible"
     :title="label"
     :columns="resolvedColumns"
     value-key="id"
@@ -20,6 +21,7 @@
     :type="type"
     filterable
     root-portal
+    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
@@ -28,6 +30,7 @@
 import type { DataSink } from '@/api/iot/rule/data/sink'
 import { computed, ref, watch } from 'vue'
 import { getSimpleDataSinkList } from '@/api/iot/rule/data/sink'
+import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 type PickerValue = number | string | number[]
 
@@ -54,7 +57,7 @@ const emit = defineEmits<{
 
 const sinkOptions = ref<DataSink[]>([]) // 数据目的选项
 const selectedValue = ref<PickerValue | ''>(props.type === 'checkbox' ? [] : '') // 当前选中值
-const visible = ref(false) // 选择器显示状态
+const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
 const resolvedColumns = computed<Record<string, any>[]>(() => props.columns ?? sinkOptions.value)
 const selectedLabel = computed(() => { // 当前选中展示文本
   if (Array.isArray(selectedValue.value)) {
@@ -94,7 +97,7 @@ function handleOpen() {
   if (props.disabled) {
     return
   }
-  visible.value = true
+  openPicker()
 }
 
 /** 选择确认 */

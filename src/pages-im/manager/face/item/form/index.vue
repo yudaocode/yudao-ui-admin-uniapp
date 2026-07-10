@@ -11,20 +11,14 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="表情包"
-            title-width="180rpx"
+          <yd-form-picker
+            v-model="formData.packId"
+            label="表情包"
+            label-width="180rpx"
             prop="packId"
-            :is-link="!props.packId"
-            :value="getWotPickerFormValue(packOptions, formData.packId)"
-            placeholder="请选择表情包"
-            @click="handleOpenPackPicker"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.pack"
-            :model-value="formData.packId"
             :columns="packOptions"
-            @confirm="({ value }) => formData.packId = Number(value[0])"
+            placeholder="请选择表情包"
+            :disabled="Boolean(props.packId)"
           />
           <wd-form-item title="表情图" title-width="180rpx" prop="url">
             <yd-upload-img
@@ -93,7 +87,7 @@ import { getManagerFacePackPage } from '@/api/im/manager/face/pack'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string
@@ -110,7 +104,6 @@ definePage({
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
-const pickerVisible = ref<Record<string, boolean>>({}) // 选择器状态
 const packOptions = ref<{ label: string, value: number }[]>([]) // 表情包选项
 const formData = ref<ImManagerFacePackItemVO>({
   id: undefined,
@@ -152,14 +145,6 @@ function validateSize(value: unknown, label: string) {
     return `${label}需在 1 - 2048 像素之间`
   }
   return true
-}
-
-/** 打开表情包选择 */
-function handleOpenPackPicker() {
-  if (props.packId) {
-    return
-  }
-  pickerVisible.value.pack = true
 }
 
 /** 自动探测图片尺寸 */

@@ -13,22 +13,18 @@
         <view class="mb-24rpx rounded-12rpx bg-white p-8rpx shadow-sm">
           <wd-form-item title="选择年份" title-width="160rpx" is-link :value="formatDate(filters.year, 'YYYY')" placeholder="请选择年份" @click="yearVisible = true" />
           <wd-datetime-picker v-model="filters.year" v-model:visible="yearVisible" title="请选择年份" type="year" @confirm="loadData" />
-          <wd-form-item title="目标类型" title-width="160rpx" is-link :value="bizTypeLabel" placeholder="请选择目标类型" @click="bizTypeVisible = true" />
-          <wd-picker v-model:visible="bizTypeVisible" :model-value="filters.bizType" title="请选择目标类型" :columns="bizTypeColumns" @confirm="handleBizTypeConfirm" />
-          <yd-tree-select
+          <yd-form-picker v-model="filters.bizType" label="目标类型" label-width="160rpx" :columns="bizTypeColumns" placeholder="请选择目标类型" @confirm="handleBizTypeConfirm" />
+          <DeptFormPicker
+            ref="deptPickerRef"
             v-model="filters.deptId"
             label="归属部门"
             label-width="160rpx"
-            filterable
-            :data="deptTree"
-            :props="{ value: 'id', label: 'name', children: 'children' }"
             placeholder="请选择归属部门"
             @change="handleDeptChange"
           />
-          <UserPicker
+          <UserFormPicker
             ref="userPickerRef"
             v-model="filters.userId"
-            type="radio"
             label="员工"
             label-width="160rpx"
             placeholder="请选择员工"
@@ -54,20 +50,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { Dept } from '@/api/system/dept'
 import type { StatisticsSection } from '@/pages-statistics/utils/statistics'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { BizTypeEnum } from '@/api/crm/permission'
 import { getPerformanceTargetSummary } from '@/api/crm/statistics/performance-target'
-import { getSimpleDeptList } from '@/api/system/dept'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import { DeptFormPicker } from '@/components/system-select'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
-import { handleTree } from '@/utils/tree'
 import {
   getDefaultDeptId,
-  getFirstDeptId,
   normalizeRows,
 } from '@/pages-statistics/utils/statistics'
 import StatisticsCard from '@/pages-statistics/components/card/statistics-card.vue'
@@ -88,17 +81,15 @@ const filters = reactive({
   userId: undefined as number | undefined,
 }) // 筛选条件
 const loading = ref(false) // 加载状态
-const deptTree = ref<Dept[]>([]) // 部门树形结构
+const deptPickerRef = ref<InstanceType<typeof DeptFormPicker>>() // 部门选择器引用
 const rows = ref<Record<string, any>[]>([]) // 列表数据
 const yearVisible = ref(false) // 年份选择器显隐
-const bizTypeVisible = ref(false) // 目标类型选择器显隐
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 员工选择器引用
+const userPickerRef = ref<InstanceType<typeof UserFormPicker>>() // 员工选择器引用
 
 const bizTypeColumns = [
   { label: '销售目标', value: BizTypeEnum.CRM_CONTRACT },
   { label: '回款目标', value: BizTypeEnum.CRM_RECEIVABLE },
 ] // 目标类型选项
-const bizTypeLabel = computed(() => bizTypeColumns.find(item => item.value === filters.bizType)?.label || '销售目标')
 const selectedYear = computed(() => filters.year ? new Date(filters.year).getFullYear() : now.getFullYear())
 const yearText = computed(() => `${selectedYear.value} 年`)
 const queryParams = computed(() => ({
@@ -147,8 +138,7 @@ async function loadData() {
 }
 
 /** 目标类型确认 */
-function handleBizTypeConfirm({ value }: { value: (number | string)[] }) {
-  filters.bizType = Number(value[0])
+function handleBizTypeConfirm() {
   loadData()
 }
 
@@ -160,9 +150,8 @@ function handleDeptChange() {
 
 /** 初始化 */
 onMounted(async () => {
-  deptTree.value = handleTree(await getSimpleDeptList())
   if (!filters.deptId) {
-    filters.deptId = getFirstDeptId(deptTree.value)
+    filters.deptId = await deptPickerRef.value?.getFirstDeptId()
   }
   await loadData()
 })

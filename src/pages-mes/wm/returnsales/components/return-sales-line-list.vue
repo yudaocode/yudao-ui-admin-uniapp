@@ -204,8 +204,8 @@
               <text>{{ detailSelectedItemText || '-' }}</text>
             </wd-form-item>
             <WarehouseFormPicker v-model="detailFormData.warehouseId" label="入库仓库" prop="warehouseId" @change="handleWarehouseChange" />
-            <WarehouseLocationFormPicker v-model="detailFormData.locationId" :warehouse-id="detailFormData.warehouseId" prop="locationId" @change="handleLocationChange" />
-            <WarehouseAreaFormPicker v-model="detailFormData.areaId" :location-id="detailFormData.locationId" prop="areaId" />
+            <WarehouseLocationFormPicker v-model="detailFormData.locationId" prop="locationId" :warehouse-id="detailFormData.warehouseId" @change="handleLocationChange" />
+            <WarehouseAreaFormPicker v-model="detailFormData.areaId" prop="areaId" :location-id="detailFormData.locationId" />
             <wd-form-item title="批次号" title-width="220rpx" prop="batchCode">
               <wd-input v-model="detailFormData.batchCode" placeholder="请输入批次号" clearable />
             </wd-form-item>

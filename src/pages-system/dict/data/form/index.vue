@@ -11,21 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="字典类型"
-            title-width="200rpx"
-            prop="dictType"
-            :is-link="!formData.id"
-            :value="getWotPickerFormValue(dictTypeOptions, formData.dictType)"
-            placeholder="请选择字典类型"
-            @click="!formData.id && (pickerVisible.dictType = true)"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.dictType"
-            :model-value="formData.dictType"
-            :columns="dictTypeOptions"
-            @confirm="({ value }) => formData.dictType = value[0]"
-          />
+          <DictTypeFormPicker v-model="formData.dictType" prop="dictType" :disabled="Boolean(formData.id)" />
           <wd-form-item title="数据标签" title-width="200rpx" prop="label">
             <wd-input
               v-model="formData.label"
@@ -103,11 +89,11 @@ import type { DictData } from '@/api/system/dict/data'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createDictData, getDictData, updateDictData } from '@/api/system/dict/data'
-import { getSimpleDictTypeList } from '@/api/system/dict/type'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
+import DictTypeFormPicker from '../../type/components/dict-type-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -143,23 +129,10 @@ const formSchema = createFormSchema({
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const pickerVisible = ref<Record<string, boolean>>({})
-
-/** 字典类型选项 */
-const dictTypeOptions = ref<{ label: string, value: string }[]>([])
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/dict/index')
-}
-
-/** 加载字典类型列表 */
-async function loadDictTypeList() {
-  const list = await getSimpleDictTypeList()
-  dictTypeOptions.value = list.map(item => ({
-    label: item.name,
-    value: item.type,
-  }))
 }
 
 /** 加载详情 */
@@ -194,8 +167,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadDictTypeList()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

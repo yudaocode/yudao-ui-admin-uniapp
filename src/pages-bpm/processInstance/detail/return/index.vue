@@ -12,21 +12,14 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <!-- 退回节点选择 -->
-          <wd-form-item
-            title="退回节点："
+          <yd-form-picker
+            v-model="formData.targetActivityId"
+            label="退回节点："
             prop="targetActivityId"
-            is-link
-            :value="getWotPickerFormValue(activityOptions, formData.targetActivityId, { valueKey: 'taskDefinitionKey', labelKey: 'name' })"
-            placeholder="请选择退回节点"
-            @click="pickerVisible.targetActivityId = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.targetActivityId"
-            :model-value="formData.targetActivityId"
             :columns="activityOptions"
             label-key="name"
             value-key="taskDefinitionKey"
-            @confirm="({ value }) => formData.targetActivityId = value[0]"
+            placeholder="请选择退回节点"
           />
           <!-- 退回原因 -->
           <wd-form-item prop="reason" title="退回原因：" title-width="180rpx">
@@ -62,7 +55,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getTaskListByReturn, returnTask } from '@/api/bpm/task'
 import { delay, navigateBackPlus } from '@/utils'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   processInstanceId: string
@@ -89,7 +82,6 @@ const formSchema = createFormSchema({
   reason: [{ required: true, message: '退回原因不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const pickerVisible = ref<Record<string, boolean>>({})
 const activityOptions = ref<any[]>([])
 
 /** 返回上一页 */

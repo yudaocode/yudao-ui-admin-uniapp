@@ -33,11 +33,11 @@
               placeholder="请输入用户昵称"
             />
           </wd-form-item>
-          <DeptPicker
+          <DeptFormPicker
             v-model="formData.deptId"
             label="归属部门"
           />
-          <PostPicker v-model="formData.postIds" />
+          <PostFormPicker v-model="formData.postIds" />
           <wd-form-item title="邮箱" title-width="180rpx" prop="email">
             <wd-input
               v-model="formData.email"
@@ -100,8 +100,8 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createUser, getUser, updateUser } from '@/api/system/user'
 import { getIntDictOptions } from '@/hooks/useDict'
-import DeptPicker from '@/pages-system/dept/form/components/dept-picker.vue'
-import PostPicker from '@/pages-system/post/form/components/post-picker.vue'
+import { DeptFormPicker } from '@/components/system-select'
+import PostFormPicker from '@/pages-system/post/form/components/post-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

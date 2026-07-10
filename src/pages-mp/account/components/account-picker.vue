@@ -4,17 +4,19 @@
     :title="label"
     is-link
     :value="selectedLabel || placeholder"
-    @click="visible = true"
+    @click="handleOpen"
   />
   <wd-select-picker
+    ref="pickerRef"
     v-model="selectedId"
-    v-model:visible="visible"
+    :visible="visible"
     :title="label"
     :columns="accountList"
     value-key="id"
     label-key="name"
     type="radio"
     filterable
+    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
@@ -24,6 +26,7 @@ import type { AccountSimple } from '@/api/mp/account'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getSimpleAccountList } from '@/api/mp/account'
+import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 const props = withDefaults(defineProps<{
   modelValue?: number | string
@@ -42,7 +45,7 @@ const emit = defineEmits<{
 const toast = useToast()
 const accountList = ref<AccountSimple[]>([]) // 公众号列表
 const selectedId = ref<number | string>('')
-const visible = ref(false) // 选择弹窗状态
+const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
 
 const selectedLabel = computed(() => {
   const id = Number(selectedId.value)
@@ -84,6 +87,11 @@ function handleConfirm({ value }: { value: number | string }) {
   selectedId.value = id
   emit('update:modelValue', id)
   emit('change', id, account?.name || '')
+}
+
+/** 打开公众号选择器 */
+function handleOpen() {
+  openPicker()
 }
 
 /** 初始化 */

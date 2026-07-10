@@ -30,10 +30,8 @@
             <yd-upload-file v-model="formData.fileUrls" directory="crm/followup" :limit="9" />
           </wd-form-item>
           <template v-if="canSelectRelated">
-            <wd-form-item title="关联联系人" title-width="200rpx" is-link :value="contactSelectedLabel" placeholder="请选择关联联系人" @click="contactPickerVisible = true" />
-            <wd-select-picker v-model="formData.contactIds" v-model:visible="contactPickerVisible" title="关联联系人" :columns="contactOptions" value-key="id" label-key="name" type="checkbox" filterable />
-            <wd-form-item title="关联商机" title-width="200rpx" is-link :value="businessSelectedLabel" placeholder="请选择关联商机" @click="businessPickerVisible = true" />
-            <wd-select-picker v-model="formData.businessIds" v-model:visible="businessPickerVisible" title="关联商机" :columns="businessOptions" value-key="id" label-key="name" type="checkbox" filterable />
+            <yd-form-picker v-model="formData.contactIds" label="关联联系人" label-width="200rpx" :columns="contactOptions" label-key="name" value-key="id" type="checkbox" filterable placeholder="请选择关联联系人" />
+            <yd-form-picker v-model="formData.businessIds" label="关联商机" label-width="200rpx" :columns="businessOptions" label-key="name" value-key="id" type="checkbox" filterable placeholder="请选择关联商机" />
           </template>
         </wd-cell-group>
       </wd-form>
@@ -79,8 +77,6 @@ const bizType = computed(() => Number(props.bizType))
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
 const nextTimeVisible = ref(false) // 时间选择器显示状态
-const contactPickerVisible = ref(false) // 关联联系人选择器
-const businessPickerVisible = ref(false) // 关联商机选择器
 const contactOptions = ref<Contact[]>([]) // 关联联系人选项
 const businessOptions = ref<Business[]>([]) // 关联商机选项
 const formData = ref<FollowUpRecord>({
@@ -100,8 +96,6 @@ const formSchema = createFormSchema({
   nextTime: [{ required: true, message: '下次联系时间不能为空' }],
 })
 const canSelectRelated = computed(() => bizType.value === BizTypeEnum.CRM_CUSTOMER)
-const contactSelectedLabel = computed(() => formatSelectedLabel(formData.value.contactIds || [], contactOptions.value))
-const businessSelectedLabel = computed(() => formatSelectedLabel(formData.value.businessIds || [], businessOptions.value))
 
 /** 返回上一页 */
 function handleBack() {
@@ -144,14 +138,6 @@ async function loadRelatedOptions() {
   ])
   contactOptions.value = contactList
   businessOptions.value = businessList
-}
-
-/** 格式化已选关联数据 */
-function formatSelectedLabel(ids: number[], options: { id?: number, name?: string }[]) {
-  if (!ids.length) {
-    return ''
-  }
-  return ids.map(id => options.find(item => item.id === id)?.name || `${id}`).join('、')
 }
 
 /** 初始化 */

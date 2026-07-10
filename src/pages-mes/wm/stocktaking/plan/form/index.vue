@@ -27,7 +27,14 @@
           <wd-form-item title="方案名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入方案名称" />
           </wd-form-item>
-          <yd-form-picker v-model="formData.type" label="盘点类型" label-width="220rpx" prop="type" :columns="stockTakingTypeOptions" placeholder="请选择盘点类型" />
+          <yd-form-picker
+            v-model="formData.type"
+            label="盘点类型"
+            label-width="220rpx"
+            prop="type"
+            :dict-type="DICT_TYPE.MES_WM_STOCK_TAKING_TYPE"
+            placeholder="请选择盘点类型"
+          />
           <wd-form-item
             v-if="isDynamicType"
             title="开始时间"
@@ -106,7 +113,6 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createStockTakingPlan, getStockTakingPlan, updateStockTakingPlan } from '@/api/mes/wm/stocktaking/plan'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE, MesAutoCodeRuleCode, MesWmStockTakingTypeEnum } from '@/utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
@@ -133,7 +139,6 @@ const codeLoading = ref(false) // 编码生成状态
 const formData = ref<StockTakingPlan>(getDefaultFormData()) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态
-const stockTakingTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_WM_STOCK_TAKING_TYPE))
 const isDynamicType = computed(() => formData.value.type === MesWmStockTakingTypeEnum.DYNAMIC)
 const canMaintainParams = computed(() => {
   return currentId.value !== undefined && formData.value.status === CommonStatusEnum.DISABLE

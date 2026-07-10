@@ -13,17 +13,7 @@
           <wd-form-item title="固件描述" title-width="220rpx" prop="description">
             <wd-textarea v-model="formData.description" placeholder="请输入固件描述" :maxlength="500" show-word-limit />
           </wd-form-item>
-          <yd-form-picker
-            v-if="!editId"
-            v-model="formData.productId"
-            label="所属产品"
-            prop="productId"
-            :columns="productOptions"
-            label-key="name"
-            value-key="id"
-            placeholder="请选择产品"
-            label-width="220rpx"
-          />
+          <ProductFormPicker v-if="!editId" v-model="formData.productId" label="所属产品" label-width="220rpx" prop="productId" />
           <wd-cell v-else title="所属产品" :value="formData.productName || String(formData.productId || '-')" />
           <wd-form-item v-if="!editId" title="版本号" title-width="220rpx" prop="version">
             <wd-input v-model="formData.version" placeholder="请输入版本号" clearable />
@@ -55,13 +45,12 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { OtaFirmware } from '@/api/iot/ota/firmware'
-import type { Product } from '@/api/iot/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createOtaFirmware, getOtaFirmware, updateOtaFirmware } from '@/api/iot/ota/firmware'
-import { getSimpleProductList } from '@/api/iot/product/product'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 
@@ -76,7 +65,6 @@ const toast = useToast()
 const editId = computed(() => props.id ? Number(props.id) : undefined)
 const getTitle = computed(() => editId.value ? '编辑固件' : '新增固件')
 const formLoading = ref(false) // 表单提交状态
-const productOptions = ref<Product[]>([]) // 产品选项
 const formData = ref<OtaFirmware>({
   id: undefined,
   name: '',
@@ -140,8 +128,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

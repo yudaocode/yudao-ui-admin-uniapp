@@ -19,7 +19,7 @@
         </view>
         <wd-input v-model="formData.title" placeholder="请输入文章标题" clearable />
       </view>
-      <yd-search-picker v-model="formData.categoryId" label="文章分类" :columns="categoryOptions" placeholder="请选择文章分类" />
+      <ArticleCategorySearchPicker ref="categoryPickerRef" v-model="formData.categoryId" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           状态
@@ -51,12 +51,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimplePromotionArticleCategoryList } from '@/api/mall/promotion/article-category'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import ArticleCategorySearchPicker from '../category/components/article-category-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -64,21 +64,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const categoryOptions = ref<{ label: string, value: number }[]>([]) // 文章分类选项
+const categoryPickerRef = ref<InstanceType<typeof ArticleCategorySearchPicker>>() // 文章分类选择器
 const formData = reactive({
   title: undefined as string | undefined,
   categoryId: undefined as number | undefined,
   status: -1,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
-
-/** 文章分类选中文本 */
-const getCategoryText = computed(() => {
-  if (formData.categoryId == null) {
-    return ''
-  }
-  return categoryOptions.value.find(item => item.value === formData.categoryId)?.label || String(formData.categoryId)
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -87,7 +79,7 @@ const placeholder = computed(() => {
     conditions.push(`标题:${formData.title}`)
   }
   if (formData.categoryId != null) {
-    conditions.push(`分类:${getCategoryText.value}`)
+    conditions.push(`分类:${categoryPickerRef.value?.format(formData.categoryId) || formData.categoryId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
@@ -97,12 +89,6 @@ const placeholder = computed(() => {
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索文章'
 })
-
-/** 加载文章分类选项 */
-async function loadCategoryOptions() {
-  const categories = await getSimplePromotionArticleCategoryList()
-  categoryOptions.value = categories.map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -124,9 +110,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadCategoryOptions()
-})
 </script>

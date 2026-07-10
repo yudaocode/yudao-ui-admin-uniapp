@@ -71,18 +71,12 @@
       <view v-if="shouldShowCustomUserSelect(activity)" class="mb-16rpx">
         <view class="flex flex-wrap items-center">
           <!-- 添加用户按钮 -->
-          <UserPicker
-            :model-value="getSelectedUserIds(activity.id)"
-            type="checkbox"
-            use-default-slot
-            @confirm="(users) => handleCustomUserSelectConfirm(activity.id, users)"
+          <view
+            class="mb-8rpx mr-16rpx h-48rpx w-48rpx flex items-center justify-center border-indigo-500 rounded-lg border-solid"
+            @click="openCustomUserPicker(activity.id)"
           >
-            <view
-              class="mb-8rpx mr-16rpx h-48rpx w-48rpx flex items-center justify-center border-indigo-500 rounded-lg border-solid"
-            >
-              <wd-icon name="user-add" size="32rpx" color="blue" />
-            </view>
-          </UserPicker>
+            <wd-icon name="user-add" size="32rpx" color="blue" />
+          </view>
           <!-- 已选择的用户 -->
           <view
             v-for="(user, userIndex) in customApproveUsers[activity.id]"
@@ -261,12 +255,22 @@
       </view>
     </view>
   </view>
+
+  <!-- 自定义审批人选择 -->
+  <UserPicker
+    ref="userPickerRef"
+    v-model="selectedUserIds"
+    title="选择用户"
+    type="checkbox"
+    @confirm="handleCustomUserConfirm"
+  />
 </template>
 
 <script lang="ts" setup>
 import type { ApprovalNodeInfo, ApprovalTaskInfo, User } from '@/api/bpm/processInstance'
-import { ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import type { User as SystemUser } from '@/api/system/user'
+import { nextTick, ref } from 'vue'
+import { UserPicker } from '@/components/system-select'
 import { BpmCandidateStrategyEnum, BpmNodeTypeEnum, BpmTaskStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { getFileNameFromUrl, isImageFile, openAttachment } from '@/utils/download'
@@ -331,6 +335,9 @@ const statusIconNodeTypes = [
 // 响应式数据
 const customApproveUsers = ref<Record<string, any[]>>({})
 const failedAvatarKeys = ref<Set<string>>(new Set())
+const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 用户选择器
+const selectedUserIds = ref<number[]>([]) // 当前选择的用户编号
+const currentActivityId = ref<string>() // 当前审批节点编号
 
 /** 获取审批节点类型图标 */
 function getApprovalNodeTypeIcon(nodeType: number) {
@@ -469,8 +476,24 @@ function getStatusText(status: number) {
   return textMap[status] || '未知'
 }
 
-/** 用户选择确认 */
-function handleCustomUserSelectConfirm(activityId: string, users: any[]) {
+/** 打开自定义审批人选择 */
+async function openCustomUserPicker(activityId: string) {
+  currentActivityId.value = activityId
+  selectedUserIds.value = getSelectedUserIds(activityId)
+  await nextTick()
+  userPickerRef.value?.open()
+}
+
+/** 确认自定义审批人 */
+function handleCustomUserConfirm(users: SystemUser[]) {
+  if (!currentActivityId.value) {
+    return
+  }
+  handleCustomUserSelectConfirm(currentActivityId.value, users)
+}
+
+/** 同步自定义审批人 */
+function handleCustomUserSelectConfirm(activityId: string, users: SystemUser[]) {
   // 同步本地展示，并通知审批页提交下一节点审批人
   customApproveUsers.value[activityId] = users || []
   emit('selectUserConfirm', activityId, users)

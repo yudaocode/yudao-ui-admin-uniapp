@@ -14,8 +14,8 @@
           <wd-form-item title="联系人姓名" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入联系人姓名" clearable />
           </wd-form-item>
-          <CrmPicker v-model="formData.customerId" source="customer" label="客户名称" prop="customerId" placeholder="请选择客户名称" />
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
+          <CustomerFormPicker v-model="formData.customerId" prop="customerId" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="手机" title-width="200rpx" prop="mobile">
             <wd-input v-model="formData.mobile" placeholder="请输入手机" clearable />
           </wd-form-item>
@@ -38,7 +38,7 @@
             <wd-switch v-model="formData.master" />
           </wd-form-item>
           <yd-form-picker v-model="formData.sex" label="性别" prop="sex" :dict-type="DICT_TYPE.SYSTEM_USER_SEX" placeholder="请选择性别" />
-          <CrmPicker v-model="formData.parentId" source="contact" label="直属上级" prop="parentId" placeholder="请选择直属上级" :option-filter="parentFilter" />
+          <ContactFormPicker v-model="formData.parentId" label="直属上级" prop="parentId" placeholder="请选择直属上级" :option-filter="parentFilter" />
           <yd-tree-select v-model="formData.areaId" :data="areaTree" label="地区" prop="areaId" label-width="200rpx" placeholder="请选择地区" />
           <wd-form-item title="详细地址" title-width="200rpx" prop="detailAddress">
             <wd-input v-model="formData.detailAddress" placeholder="请输入详细地址" clearable />
@@ -68,13 +68,14 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createContact, getContact, updateContact } from '@/api/crm/contact'
 import { getAreaTree } from '@/api/system/area'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import ContactFormPicker from '@/pages-crm/contact/components/contact-form-picker.vue'
+import CustomerFormPicker from '@/pages-crm/customer/components/customer-form-picker.vue'
 
 const props = defineProps<{ id?: number | any, customerId?: number | any, ownerUserId?: number | any, parentId?: number | any, businessId?: number | any }>()
 definePage({

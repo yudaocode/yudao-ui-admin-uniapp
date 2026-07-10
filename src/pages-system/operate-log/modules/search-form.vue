@@ -13,17 +13,12 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          操作人
-        </view>
-        <UserPicker
-          ref="userPickerRef"
-          v-model="formData.userId"
-          type="radio"
-          placeholder="请选择操作人员"
-        />
-      </view>
+      <UserSearchPicker
+        ref="userPickerRef"
+        v-model="formData.userId"
+        label="操作人"
+        placeholder="请选择操作人员"
+      />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           操作模块
@@ -79,7 +74,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
 
@@ -89,7 +84,7 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const userPickerRef = ref<InstanceType<typeof UserPicker>>()
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>()
 const formData = reactive({
   userId: undefined as number | undefined,
   type: undefined as string | undefined,
@@ -103,7 +98,7 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.userId !== undefined) {
-    const nickname = userPickerRef.value?.getUserNickname(formData.userId)
+    const nickname = userPickerRef.value?.format(formData.userId)
     conditions.push(`操作人:${nickname || formData.userId}`)
   }
   if (formData.type) {

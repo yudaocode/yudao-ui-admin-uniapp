@@ -22,20 +22,16 @@
       <yd-search-picker v-model="formData.type" label="报工类型" :dict-type="DICT_TYPE.MES_PRO_FEEDBACK_TYPE" all-option />
       <WorkOrderSearchPicker ref="workOrderSearchPickerRef" v-model="formData.workOrderId" label="生产工单" placeholder="请选择工单" />
       <ItemSearchPicker ref="itemSearchPickerRef" v-model="formData.itemId" label="产品物料" placeholder="请选择产品物料" item-or-product="PRODUCT" title="选择产品物料" />
-      <UserPicker
-        ref="feedbackUserPickerRef"
+      <UserSearchPicker
+        ref="feedbackUserSearchPickerRef"
         v-model="formData.feedbackUserId"
         label="报工人"
-        label-width="180rpx"
-        type="radio"
         placeholder="请选择报工人"
       />
-      <UserPicker
+      <UserSearchPicker
         ref="creatorPickerRef"
         v-model="formData.creator"
         label="记录人"
-        label-width="180rpx"
-        type="radio"
         placeholder="请选择记录人"
       />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.MES_PRO_FEEDBACK_STATUS" all-option />
@@ -54,7 +50,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -83,8 +79,8 @@ const formData = reactive<Record<string, any>>({
 }) // 搜索表单数据
 const workOrderSearchPickerRef = ref<InstanceType<typeof WorkOrderSearchPicker>>() // 工单搜索选择器
 const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
-const feedbackUserPickerRef = ref<InstanceType<typeof UserPicker>>() // 报工人选择器引用
-const creatorPickerRef = ref<InstanceType<typeof UserPicker>>() // 记录人选择器引用
+const feedbackUserSearchPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 报工人选择器引用
+const creatorPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 记录人选择器引用
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -102,11 +98,11 @@ const placeholder = computed(() => {
     conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
   if (formData.feedbackUserId) {
-    const nickname = feedbackUserPickerRef.value?.getUserNickname(formData.feedbackUserId)
+    const nickname = feedbackUserSearchPickerRef.value?.format(formData.feedbackUserId)
     conditions.push(`报工人:${nickname || formData.feedbackUserId}`)
   }
   if (formData.creator) {
-    const nickname = creatorPickerRef.value?.getUserNickname(formData.creator)
+    const nickname = creatorPickerRef.value?.format(formData.creator)
     conditions.push(`记录人:${nickname || formData.creator}`)
   }
   if (formData.status != null && formData.status !== -1) {

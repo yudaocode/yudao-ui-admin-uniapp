@@ -54,11 +54,10 @@
         </view>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <UserPicker
+            <UserFormPicker
               v-model="formData.userId"
               label="用户"
               prop="userId"
-              type="radio"
               placeholder="请选择用户"
             />
             <wd-form-item title="备注" title-width="180rpx" prop="remark">
@@ -89,7 +88,7 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { createTeamMember, deleteTeamMember, getTeamMemberListByTeam } from '@/api/mes/cal/team/member'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { createFormSchema } from '@/utils/wot'
 
 const props = withDefaults(defineProps<{

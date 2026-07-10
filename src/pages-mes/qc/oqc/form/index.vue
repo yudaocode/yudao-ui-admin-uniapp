@@ -64,7 +64,7 @@
           <wd-form-item title="不合格数量" title-width="220rpx" prop="unqualifiedQuantity" center>
             <wd-input-number v-model="formData.unqualifiedQuantity" :min="0" :precision="2" />
           </wd-form-item>
-          <UserPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" type="radio" placeholder="请选择检测人员" />
+          <UserFormPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" placeholder="请选择检测人员" />
           <wd-form-item title="出货日期" title-width="220rpx" prop="outDate" is-link :value="formatDateTime(formData.outDate) || ''" placeholder="请选择出货日期" @click="dateVisible.outDate = true" />
           <wd-datetime-picker v-model="formData.outDate" v-model:visible="dateVisible.outDate" title="请选择出货日期" type="date" />
           <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate" is-link :value="formatDateTime(formData.inspectDate) || ''" placeholder="请选择检测日期" @click="dateVisible.inspectDate = true" />
@@ -101,7 +101,7 @@ import type { MdItem } from '@/api/mes/md/item'
 import type { QcOqc } from '@/api/mes/qc/oqc'
 import ClientFormPicker from '@/pages-mes/md/client/components/client-form-picker.vue'
 import ItemFormPicker from '@/pages-mes/md/item/components/item-form-picker.vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'

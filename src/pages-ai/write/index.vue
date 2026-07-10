@@ -50,58 +50,10 @@
                     clearable
                   />
                 </wd-form-item>
-                <wd-form-item
-                  title="长度"
-                  title-width="160rpx"
-                  is-link
-                  :value="getWotPickerFormValue(lengthOptions, formData.length)"
-                  @click="pickerVisible.length = true"
-                />
-                <wd-picker
-                  v-model:visible="pickerVisible.length"
-                  :model-value="[formData.length]"
-                  :columns="lengthOptions"
-                  @confirm="({ value }) => formData.length = Number(value[0])"
-                />
-                <wd-form-item
-                  title="格式"
-                  title-width="160rpx"
-                  is-link
-                  :value="getWotPickerFormValue(formatOptions, formData.format)"
-                  @click="pickerVisible.format = true"
-                />
-                <wd-picker
-                  v-model:visible="pickerVisible.format"
-                  :model-value="[formData.format]"
-                  :columns="formatOptions"
-                  @confirm="({ value }) => formData.format = Number(value[0])"
-                />
-                <wd-form-item
-                  title="语气"
-                  title-width="160rpx"
-                  is-link
-                  :value="getWotPickerFormValue(toneOptions, formData.tone)"
-                  @click="pickerVisible.tone = true"
-                />
-                <wd-picker
-                  v-model:visible="pickerVisible.tone"
-                  :model-value="[formData.tone]"
-                  :columns="toneOptions"
-                  @confirm="({ value }) => formData.tone = Number(value[0])"
-                />
-                <wd-form-item
-                  title="语言"
-                  title-width="160rpx"
-                  is-link
-                  :value="getWotPickerFormValue(languageOptions, formData.language)"
-                  @click="pickerVisible.language = true"
-                />
-                <wd-picker
-                  v-model:visible="pickerVisible.language"
-                  :model-value="[formData.language]"
-                  :columns="languageOptions"
-                  @confirm="({ value }) => formData.language = Number(value[0])"
-                />
+                <yd-form-picker v-model="formData.length" label="长度" label-width="160rpx" :dict-type="DICT_TYPE.AI_WRITE_LENGTH" />
+                <yd-form-picker v-model="formData.format" label="格式" label-width="160rpx" :dict-type="DICT_TYPE.AI_WRITE_FORMAT" />
+                <yd-form-picker v-model="formData.tone" label="语气" label-width="160rpx" :dict-type="DICT_TYPE.AI_WRITE_TONE" />
+                <yd-form-picker v-model="formData.language" label="语言" label-width="160rpx" :dict-type="DICT_TYPE.AI_WRITE_LANGUAGE" />
               </wd-cell-group>
             </wd-form>
             <view class="mt-24rpx flex gap-16rpx">
@@ -175,13 +127,12 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AiWriteRespVO } from '@/api/ai/write'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onUnmounted, reactive, ref } from 'vue'
+import { onUnmounted, reactive, ref } from 'vue'
 import { deleteWrite, getWritePage, writeStream } from '@/api/ai/write'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 import { AiWriteDefaultOptions, AiWriteTypeEnum } from '@/pages-ai/utils/constants'
 
 definePage({
@@ -200,22 +151,12 @@ const historyList = ref<AiWriteRespVO[]>([]) // 历史列表
 const writeResult = ref('') // 写作结果
 const isWriting = ref(false) // 写作生成状态
 const streamController = ref<AbortController>() // 流式请求控制器
-const pickerVisible = reactive({
-  length: false,
-  format: false,
-  tone: false,
-  language: false,
-}) // 选择弹窗显示状态
 const formData = reactive({
   type: AiWriteTypeEnum.WRITING,
   prompt: '',
   originalContent: '',
   ...AiWriteDefaultOptions,
 }) // 写作表单数据
-const lengthOptions = computed(() => getIntDictOptions(DICT_TYPE.AI_WRITE_LENGTH))
-const formatOptions = computed(() => getIntDictOptions(DICT_TYPE.AI_WRITE_FORMAT))
-const toneOptions = computed(() => getIntDictOptions(DICT_TYPE.AI_WRITE_TONE))
-const languageOptions = computed(() => getIntDictOptions(DICT_TYPE.AI_WRITE_LANGUAGE))
 const formSchema = createFormSchema({
   type: [{ required: true, message: '请选择写作类型' }],
   prompt: [{ required: true, message: '请输入写作要求' }],

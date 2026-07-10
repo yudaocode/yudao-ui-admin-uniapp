@@ -11,24 +11,20 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="商品"
-            title-width="220rpx"
+          <ProductSpuFormPicker
+            v-model="formData.spuId"
             prop="spuId"
-            is-link
-            :value="getOptionText(spuOptions, formData.spuId)"
-            placeholder="请选择商品"
-            @click="spuPickerVisible = true"
+            @change="handleSpuConfirm"
           />
-          <wd-form-item
+          <yd-form-picker
             v-if="formData.spuId"
-            title="商品规格"
-            title-width="220rpx"
+            v-model="formData.skuId"
+            label="商品规格"
+            label-width="220rpx"
             prop="skuId"
-            is-link
-            :value="selectedSkuName"
+            :columns="skuOptions"
             placeholder="请选择商品规格"
-            @click="handleOpenSku"
+            :before-open="handleOpenSku"
           />
           <wd-form-item title="用户头像" title-width="220rpx" prop="userAvatar">
             <yd-upload-img v-model="formData.userAvatar" />
@@ -52,22 +48,6 @@
       </wd-form>
     </view>
 
-    <!-- 商品选择器 -->
-    <wd-picker
-      v-model:visible="spuPickerVisible"
-      :model-value="formData.spuId"
-      :columns="spuOptions"
-      @confirm="handleSpuConfirm"
-    />
-
-    <!-- 商品规格选择器 -->
-    <wd-picker
-      v-model:visible="skuPickerVisible"
-      :model-value="formData.skuId"
-      :columns="skuOptions"
-      @confirm="({ value }) => formData.skuId = Number(value[0])"
-    />
-
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
@@ -84,11 +64,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ProductSku } from '@/api/mall/product/spu'
+import type { ProductSku, ProductSpu } from '@/api/mall/product/spu'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { createProductComment } from '@/api/mall/product/comment'
-import { getProductSpu, getSimpleProductSpuList } from '@/api/mall/product/spu'
+import { getProductSpu } from '@/api/mall/product/spu'
+import ProductSpuFormPicker from '@/pages-mall/product/spu/components/product-spu-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 
@@ -101,9 +82,6 @@ definePage({
 
 const toast = useToast()
 const formLoading = ref(false) // 表单提交状态
-const spuPickerVisible = ref(false) // 商品选择器状态
-const skuPickerVisible = ref(false) // 规格选择器状态
-const spuOptions = ref<{ label: string, value: number }[]>([]) // 商品选项
 const skuList = ref<ProductSku[]>([]) // 当前商品下的 SKU 列表
 const formData = ref({
   spuId: undefined as number | undefined, // 仅用于筛选 SKU，后端创建接口不接收 spuId
@@ -132,42 +110,21 @@ const skuOptions = computed(() => skuList.value.map(sku => ({
   value: Number(sku.id),
 })))
 
-/** 已选 SKU 的展示文本 */
-const selectedSkuName = computed(() => {
-  if (formData.value.skuId == null) {
-    return ''
-  }
-  return skuOptions.value.find(item => item.value === Number(formData.value.skuId))?.label || ''
-})
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mall/product/comment/index')
 }
 
-/** 获取选项文本 */
-function getOptionText(options: { label: string, value: number }[], value?: number) {
-  if (value == null) {
-    return ''
-  }
-  return options.find(item => Number(item.value) === Number(value))?.label || String(value)
-}
-
-/** 加载 SPU 精简列表 */
-async function loadSpuOptions() {
-  const list = await getSimpleProductSpuList()
-  spuOptions.value = list.map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
-}
-
 /** 选择商品后加载其 SKU 列表，并重置已选规格 */
-async function handleSpuConfirm({ value }: { value: any[] }) {
-  const spuId = Number(value[0])
-  formData.value.spuId = spuId
+async function handleSpuConfirm(spu?: ProductSpu) {
   formData.value.skuId = undefined
   skuList.value = []
+  if (!spu?.id) {
+    return
+  }
   try {
     toast.loading('加载规格...')
-    const detail = await getProductSpu(spuId)
+    const detail = await getProductSpu(Number(spu.id))
     skuList.value = detail.skus || []
   } finally {
     toast.close()
@@ -178,9 +135,9 @@ async function handleSpuConfirm({ value }: { value: any[] }) {
 function handleOpenSku() {
   if (!skuOptions.value.length) {
     toast.warning('该商品暂无规格')
-    return
+    return false
   }
-  skuPickerVisible.value = true
+  return true
 }
 
 /** 提交表单 */
@@ -209,9 +166,4 @@ async function handleSubmit() {
     formLoading.value = false
   }
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadSpuOptions()
-})
 </script>

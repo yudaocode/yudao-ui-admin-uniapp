@@ -54,7 +54,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <yd-search-picker v-model="formData.pickUpStoreId" label="自提门店" :columns="storeOptions" all-option />
+      <PickUpStoreSearchPicker v-model="formData.pickUpStoreId" />
       <yd-search-date-range v-model="formData.createTime" label="下单时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -69,12 +69,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleDeliveryPickUpStoreList } from '@/api/mall/trade/delivery/pick-up-store'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import PickUpStoreSearchPicker from '../../pick-up-store/components/pick-up-store-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -82,7 +82,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const storeOptions = ref<{ label: string, value: number }[]>([]) // 自提门店选项
 const formData = reactive({
   no: undefined as string | undefined,
   userId: undefined as string | undefined,
@@ -114,14 +113,6 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索核销订单'
 })
 
-/** 加载自提门店选项 */
-async function loadStoreOptions() {
-  const storeList = await getSimpleDeliveryPickUpStoreList()
-  storeOptions.value = storeList
-    .filter(item => item.id != null)
-    .map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
@@ -148,9 +139,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadStoreOptions()
-})
 </script>

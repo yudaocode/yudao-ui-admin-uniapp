@@ -14,7 +14,7 @@
           <wd-form-item title="盘库单号" title-width="180rpx" prop="no">
             <wd-input v-model="formData.no" :maxlength="64" clearable placeholder="请输入盘库单号" />
           </wd-form-item>
-          <WarehousePicker
+          <WarehouseFormPicker
             v-model="formData.warehouseId"
             prop="warehouseId"
             :disabled="!!props.id"
@@ -125,7 +125,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { getInventoryList } from '@/api/wms/inventory'
 import { createCheckOrder, getCheckOrder, updateCheckOrder } from '@/api/wms/order/check'
 import ItemSkuPicker from '@/pages-wms/md/item/components/item-sku-picker.vue'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import WarehouseFormPicker from '@/pages-wms/md/warehouse/components/warehouse-form-picker.vue'
 import {
   dividePrice,
   formatPrice,

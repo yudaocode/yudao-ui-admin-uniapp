@@ -12,25 +12,10 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group title="模板信息" value="固定参数" border>
           <wd-cell title="模板标题" :value="templateTitle || '-'" />
-          <wd-form-item
-            title="用户"
-            title-width="220rpx"
-            prop="userId"
-            is-link
-            :value="selectedUserLabel"
-            placeholder="请选择用户"
-            @click="userPickerVisible = true"
-          />
-          <wd-select-picker
+          <MpUserFormPicker
             v-model="formData.userId"
-            v-model:visible="userPickerVisible"
-            title="请选择用户"
-            :columns="userList"
-            value-key="id"
-            label-key="nickname"
-            type="radio"
-            filterable
-            @confirm="handleUserConfirm"
+            :account-id="accountId"
+            prop="userId"
           />
           <wd-cell v-if="templateContent" title="模板内容" layout="vertical" value-align="left">
             <view class="mt-12rpx whitespace-pre-wrap break-all text-26rpx text-[#666] leading-40rpx">
@@ -77,11 +62,10 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MsgTemplate, MsgTemplateSend } from '@/api/mp/messageTemplate'
-import type { MpUser } from '@/api/mp/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getMessageTemplate, sendMessageTemplate } from '@/api/mp/messageTemplate'
-import { getUserPage } from '@/api/mp/user'
+import MpUserFormPicker from '@/pages-mp/user/components/form-picker.vue'
 import { delay, navigateBackPlus, normalizeEscapedNewlines } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 
@@ -105,8 +89,6 @@ const paramValues = reactive<Record<string, string>>({}) // 各参数填写值
 const templateContent = computed(() => normalizeEscapedNewlines(template.value?.content || '')) // 模板内容展示文案
 const templateTitle = computed(() => template.value?.title || '') // 模板标题展示文案
 const loading = ref(false) // 发送状态
-const userPickerVisible = ref(false) // 用户选择弹窗
-const userList = ref<MpUser[]>([]) // 用户列表
 const formData = ref<MsgTemplateSend>({
   id: props.id ? Number(props.id) : undefined,
   userId: undefined!,
@@ -119,11 +101,6 @@ const formSchema = createFormSchema({
   userId: [{ required: true, message: '用户不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-
-const selectedUserLabel = computed(() => { // 用户选择展示文案
-  const user = userList.value.find(item => item.id === formData.value.userId)
-  return user?.nickname || user?.openid || ''
-})
 
 /** 返回上一页 */
 function handleBack() {
@@ -148,31 +125,6 @@ async function loadTemplate() {
   params.forEach((param) => {
     paramValues[param] = paramValues[param] || ''
   })
-}
-
-/** 加载用户列表 */
-async function loadUserList() {
-  if (!accountId.value) {
-    return
-  }
-  try {
-    const data = await getUserPage({
-      pageNo: 1,
-      pageSize: 50,
-      accountId: accountId.value,
-    })
-    userList.value = data.list.map(item => ({
-      ...item,
-      nickname: item.nickname || item.openid,
-    }))
-  } catch {
-    userList.value = []
-  }
-}
-
-/** 用户选择 */
-function handleUserConfirm({ value }: { value: number | string }) {
-  formData.value.userId = Number(value)
 }
 
 /** 提交表单 */
@@ -210,6 +162,5 @@ async function handleSubmit() {
 onMounted(() => {
   formData.value.id = props.id ? Number(props.id) : undefined
   loadTemplate()
-  loadUserList()
 })
 </script>

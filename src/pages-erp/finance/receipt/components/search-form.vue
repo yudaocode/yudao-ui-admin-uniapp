@@ -17,10 +17,10 @@
         <wd-input v-model="formData.no" placeholder="请输入收款单号" clearable />
       </view>
       <yd-search-date-range v-model="formData.receiptTime" label="收款时间" />
-      <yd-search-picker v-model="formData.customerId" label="客户" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
-      <yd-search-picker v-model="formData.financeUserId" label="财务人员" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择财务人员" />
-      <yd-search-picker v-model="formData.accountId" label="收款账户" :columns="accountOptions" label-key="name" value-key="id" placeholder="请选择收款账户" />
+      <CustomerSearchPicker ref="customerPickerRef" v-model="formData.customerId" />
+      <UserSearchPicker v-model="formData.creator" label="创建人" />
+      <UserSearchPicker v-model="formData.financeUserId" label="财务人员" />
+      <AccountSearchPicker ref="accountPickerRef" v-model="formData.accountId" label="收款账户" placeholder="请选择收款账户" />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -47,24 +47,22 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getAccountSimpleList } from '@/api/erp/finance/account'
-import { getCustomerSimpleList } from '@/api/erp/sale/customer'
-import { getSimpleUserList } from '@/api/system/user'
+import { UserSearchPicker } from '@/components/system-select'
+import AccountSearchPicker from '@/pages-erp/finance/account/components/account-search-picker.vue'
+import CustomerSearchPicker from '@/pages-erp/sale/customer/components/customer-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false)
-const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
-const userOptions = ref<Record<string, any>[]>([]) // 用户选项
-const accountOptions = ref<Record<string, any>[]>([]) // 账户选项
+const customerPickerRef = ref<InstanceType<typeof CustomerSearchPicker>>() // 客户选择器
+const accountPickerRef = ref<InstanceType<typeof AccountSearchPicker>>() // 结算账户选择器
 const formData = reactive({
   no: undefined as string | undefined,
   receiptTime: [undefined, undefined] as [any, any],
@@ -87,10 +85,10 @@ const placeholder = computed(() => {
     conditions.push(`收款时间:${formatDate(formData.receiptTime[0])}~${formatDate(formData.receiptTime[1])}`)
   }
   if (formData.customerId) {
-    conditions.push(`客户:${getErpOptionLabel(customerOptions.value, formData.customerId)}`)
+    conditions.push(`客户:${customerPickerRef.value?.format(formData.customerId) || formData.customerId}`)
   }
   if (formData.accountId) {
-    conditions.push(`账户:${getErpOptionLabel(accountOptions.value, formData.accountId)}`)
+    conditions.push(`账户:${accountPickerRef.value?.format(formData.accountId) || formData.accountId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
@@ -128,17 +126,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [customers, users, accounts] = await Promise.all([
-    getCustomerSimpleList(),
-    getSimpleUserList(),
-    getAccountSimpleList(),
-  ])
-
-  customerOptions.value = customers
-  userOptions.value = users
-  accountOptions.value = accounts
-})
 </script>

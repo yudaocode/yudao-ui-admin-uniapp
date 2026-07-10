@@ -11,33 +11,25 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="平台"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.platform"
+            label="平台"
+            label-width="200rpx"
             prop="platform"
-            is-link
-            :value="getWotPickerFormValue(platformOptions, formData.platform)"
+            :dict-type="DICT_TYPE.AI_PLATFORM"
+            dict-kind="str"
             placeholder="请选择平台"
-            @click="platformPickerVisible = true"
           />
-          <wd-form-item
-            title="模型类型"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.type"
+            label="模型类型"
+            label-width="200rpx"
             prop="type"
-            :is-link="!props.id"
-            :value="getWotPickerFormValue(modelTypeOptions, formData.type)"
+            :dict-type="DICT_TYPE.AI_MODEL_TYPE"
             placeholder="请选择模型类型"
-            @click="!props.id && (typePickerVisible = true)"
+            :disabled="!!props.id"
           />
-          <wd-form-item
-            title="API 密钥"
-            title-width="200rpx"
-            prop="keyId"
-            is-link
-            :value="getWotPickerFormValue(apiKeyOptions, formData.keyId, { labelKey: 'name', valueKey: 'id' })"
-            placeholder="请选择 API 密钥"
-            @click="apiKeyPickerVisible = true"
-          />
+          <ApiKeyFormPicker v-model="formData.keyId" prop="keyId" />
           <wd-form-item title="模型名字" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入模型名字" />
           </wd-form-item>
@@ -74,32 +66,6 @@
       </wd-form>
     </view>
 
-    <!-- 平台选择器 -->
-    <wd-picker
-      v-model:visible="platformPickerVisible"
-      :model-value="[formData.platform]"
-      :columns="platformOptions"
-      @confirm="({ value }) => formData.platform = value[0]"
-    />
-
-    <!-- 模型类型选择器 -->
-    <wd-picker
-      v-model:visible="typePickerVisible"
-      :model-value="[formData.type]"
-      :columns="modelTypeOptions"
-      @confirm="({ value }) => formData.type = Number(value[0])"
-    />
-
-    <!-- API 密钥选择器 -->
-    <wd-picker
-      v-model:visible="apiKeyPickerVisible"
-      :model-value="[formData.keyId]"
-      :columns="apiKeyOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => formData.keyId = Number(value[0])"
-    />
-
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
@@ -119,13 +85,13 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ModelVO } from '@/api/ai/model/model'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { getApiKeySimpleList } from '@/api/ai/model/apiKey'
 import { createModel, getModel, updateModel } from '@/api/ai/model/model'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
+import ApiKeyFormPicker from '../../apiKey/components/api-key-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -141,12 +107,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑模型' : '新增模型')
 const formLoading = ref(false) // 表单提交状态
-const platformPickerVisible = ref(false) // 平台选择器状态
-const typePickerVisible = ref(false) // 模型类型选择器状态
-const apiKeyPickerVisible = ref(false) // API 密钥选择器状态
-const platformOptions = computed(() => getStrDictOptions(DICT_TYPE.AI_PLATFORM)) // 平台选项
-const modelTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.AI_MODEL_TYPE)) // 模型类型选项
-const apiKeyOptions = ref<any[]>([]) // API 密钥选项
 const formData = ref<ModelVO>({
   keyId: undefined,
   name: '',
@@ -213,8 +173,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  apiKeyOptions.value = await getApiKeySimpleList()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

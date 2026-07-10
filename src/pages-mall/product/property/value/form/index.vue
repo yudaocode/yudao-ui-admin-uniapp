@@ -11,16 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <yd-form-picker
-            v-model="formData.propertyId"
-            label="所属属性"
-            label-width="220rpx"
-            prop="propertyId"
-            :columns="propertyOptions"
-            label-key="name"
-            value-key="id"
-            :disabled="propertyLocked"
-          />
+          <PropertyFormPicker v-model="formData.propertyId" prop="propertyId" :disabled="propertyLocked" />
           <wd-form-item title="属性值" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入属性值" />
           </wd-form-item>
@@ -53,11 +44,11 @@ import { computed, onMounted, ref } from 'vue'
 import {
   createProductPropertyValue,
   getProductPropertyValue,
-  getSimpleProductPropertyList,
   updateProductPropertyValue,
 } from '@/api/mall/product/property'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
+import PropertyFormPicker from '../components/property-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -74,7 +65,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑属性值' : '新增属性值')
 const formLoading = ref(false) // 表单提交状态
-const propertyOptions = ref<{ id?: number, name: string }[]>([]) // 属性选项
 const lockedPropertyId = props.propertyId != null && props.propertyId !== '' ? Number(props.propertyId) : undefined // 从属性列表新增进入时，经路由透传并锁定，不允许自由选择
 const propertyLocked = computed(() => !props.id && lockedPropertyId != null)
 const formData = ref<ProductPropertyValue>({
@@ -92,11 +82,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-mall/product/property/value/index')
-}
-
-/** 加载属性选项 */
-async function loadOptions() {
-  propertyOptions.value = await getSimpleProductPropertyList()
 }
 
 /** 加载详情 */
@@ -132,8 +117,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

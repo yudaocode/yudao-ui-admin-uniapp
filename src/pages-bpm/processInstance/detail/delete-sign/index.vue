@@ -12,21 +12,14 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <!-- 减签人员选择 -->
-          <wd-form-item
-            title="减签人员："
-            title-width="180rpx"
+          <yd-form-picker
+            v-model="formData.deleteSignTaskId"
+            label="减签人员："
+            label-width="180rpx"
             prop="deleteSignTaskId"
-            is-link
-            :value="getWotPickerFormValue(taskOptions, formData.deleteSignTaskId, { valueKey: 'id' })"
-            placeholder="请选择减签人员"
-            @click="pickerVisible.deleteSignTaskId = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.deleteSignTaskId"
-            :model-value="formData.deleteSignTaskId"
             :columns="taskOptions"
             value-key="id"
-            @confirm="({ value }) => formData.deleteSignTaskId = value[0]"
+            placeholder="请选择减签人员"
           />
           <!-- 审批意见 -->
           <wd-form-item prop="reason" title="审批意见：" title-width="180rpx">
@@ -62,7 +55,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { signDeleteTask } from '@/api/bpm/task'
 import { delay, navigateBackPlus } from '@/utils'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   processInstanceId: string
@@ -90,7 +83,6 @@ const formSchema = createFormSchema({
   reason: [{ required: true, message: '审批意见不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const pickerVisible = ref<Record<string, boolean>>({})
 const taskOptions = ref<any[]>([])
 
 /** 返回上一页 */

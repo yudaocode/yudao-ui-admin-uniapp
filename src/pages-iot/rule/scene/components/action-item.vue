@@ -17,20 +17,20 @@
       />
       <!-- 设备控制 -->
       <template v-if="isDeviceControl">
-        <ProductPicker
+        <ProductFormPicker
           v-model="actionData.productId"
           label="产品"
-          :columns="productOptions"
-          placeholder="请选择产品"
           label-width="200rpx"
+          placeholder="请选择产品"
+          :columns="productOptions"
           @update:model-value="onProductChange"
         />
-        <DevicePicker
+        <DeviceFormPicker
           v-model="actionData.deviceId"
           label="设备"
-          :columns="deviceOptions"
-          placeholder="请选择设备"
           label-width="200rpx"
+          placeholder="请选择设备"
+          :columns="deviceOptions"
         />
         <ThingModelPicker
           v-if="isServiceInvoke"
@@ -54,13 +54,13 @@
       <!-- 触发告警 -->
       <wd-cell v-else-if="actionData.type === IotRuleSceneActionTypeEnum.ALERT_TRIGGER" title="触发告警" value="自动执行" />
       <!-- 恢复告警 -->
-      <AlertConfigPicker
+      <AlertConfigFormPicker
         v-else
         v-model="actionData.alertConfigId"
         label="告警配置"
-        :columns="alertConfigOptions"
-        placeholder="请选择告警配置"
         label-width="200rpx"
+        placeholder="请选择告警配置"
+        :columns="alertConfigOptions"
       />
     </wd-cell-group>
 
@@ -108,9 +108,9 @@ import type { ThingModelParam, ThingModelProperty, ThingModelService } from '@/a
 import { computed, ref, watch } from 'vue'
 import { getDeviceListByProductId } from '@/api/iot/device/device'
 import { getThingModelTSLByProductId } from '@/api/iot/thingmodel'
-import AlertConfigPicker from '@/pages-iot/alert/config/components/alert-config-picker.vue'
-import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
-import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
+import AlertConfigFormPicker from '@/pages-iot/alert/config/components/alert-config-form-picker.vue'
+import DeviceFormPicker from '@/pages-iot/device/device/components/device-form-picker.vue'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
 import { actionTypeOptions, IOT_ALL_DEVICE_OPTION, IoTDataSpecsDataTypeEnum, IotRuleSceneActionTypeEnum, IoTThingModelAccessModeEnum } from '@/utils/constants'
 import { formatJson } from '@/utils/format'

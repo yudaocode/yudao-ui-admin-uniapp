@@ -1,5 +1,5 @@
 <template>
-  <!-- 表单选择字段：wd-form-item 触发 + wd-picker 弹层，对标 UserPicker / YdTreeSelect -->
+  <!-- 表单选择字段：wd-form-item 触发 + wd-picker 弹层 -->
   <wd-form-item
     v-if="!clearable"
     :title="label"
@@ -27,34 +27,40 @@
     </view>
   </wd-form-item>
 
-  <!-- 选择弹层：单选使用 wd-picker，多选使用 wd-select-picker -->
+  <!-- 选择弹层：普通单选使用 wd-picker，可搜索或多选使用 wd-select-picker -->
   <wd-picker
-    v-if="type !== 'checkbox'"
-    v-model:visible="visible"
+    v-if="!useSelectPicker"
+    :visible="visible"
     :model-value="pickerModelValue"
     :columns="resolvedColumns"
     :label-key="labelKey"
     :value-key="valueKey"
     :root-portal="rootPortal"
+    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
   <wd-select-picker
     v-else
-    v-model:visible="visible"
+    ref="selectPickerRef"
+    :visible="visible"
     :model-value="selectPickerModelValue"
     :title="label || placeholder"
     :columns="resolvedColumns"
     :label-key="labelKey"
     :value-key="valueKey"
-    type="checkbox"
+    :type="type"
     :filterable="filterable"
     :root-portal="rootPortal"
     :scroll-into-view="!rootPortal"
+    @update:visible="handleVisibleChange"
     @confirm="handleSelectConfirm"
   />
 </template>
 
 <script lang="ts" setup>
+import type { YdFormPickerExpose } from './types'
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
+import type { WotPickerValue } from '@/utils/wot'
 import { computed, ref } from 'vue'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { isEmptyValue } from '@/utils/is'
@@ -75,7 +81,7 @@ const props = withDefaults(defineProps<{
   type?: 'radio' | 'checkbox' // 选择类型；checkbox 使用多选弹层
   filterable?: boolean // 是否支持搜索
   clearable?: boolean // 是否展示清空按钮
-  beforeOpen?: () => boolean | void | Promise<boolean | void> // 打开前校验
+  beforeOpen?: () => boolean | void // 打开前校验
   rootPortal?: boolean // 是否脱离当前层级，避免弹层 fixed 失效
 }>(), {
   label: '',
@@ -99,8 +105,9 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 选择弹层显示状态
+const selectPickerRef = ref<SelectPickerInstance>() // 可搜索/多选选择器
 const pickerModelValue = computed(() => // Wot picker 使用数组值，业务层保持标量
-  props.modelValue == null || props.modelValue === '' ? [] : [props.modelValue],
+  props.modelValue == null || props.modelValue === '' || Array.isArray(props.modelValue) ? [] : [props.modelValue],
 )
 const selectPickerModelValue = computed(() => // Wot select-picker 多选使用数组值
   Array.isArray(props.modelValue) ? props.modelValue : [],
@@ -123,13 +130,18 @@ const displayValue = computed(() => // 选中项展示文案；未选中返回�
   }),
 )
 
+/** 同步弹层显示状态 */
+function handleVisibleChange(nextVisible: boolean) {
+  visible.value = nextVisible
+}
+
 /** 打开选择弹层 */
-async function handleOpen() {
-  if (props.disabled) {
+function handleOpen() {
+  if (props.disabled || props.beforeOpen?.() === false) {
     return
   }
-  const result = await props.beforeOpen?.()
-  if (result === false) {
+  if (useSelectPicker.value) {
+    selectPickerRef.value?.open()
     return
   }
   visible.value = true
@@ -143,15 +155,36 @@ function handleClear() {
 
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
-  const next = Array.isArray(value) ? value[0] : value
+  const next = normalizeValue(Array.isArray(value) ? value[0] : value)
   emit('update:modelValue', next)
   emit('confirm', next)
 }
 
 /** 多选确认 */
 function handleSelectConfirm({ value }: { value: any }) {
-  const next = Array.isArray(value) ? value : []
+  const next = props.type === 'checkbox'
+    ? (Array.isArray(value) ? value.map(normalizeValue) : [])
+    : normalizeValue(Array.isArray(value) ? value[0] : value)
   emit('update:modelValue', next)
   emit('confirm', next)
 }
+
+/** 还原选项原始值类型 */
+function normalizeValue(value: any) {
+  return value == null || value === ''
+    ? value
+    : getWotPickerOptionValue(resolvedColumns.value, value, { valueKey: props.valueKey })
+}
+
+/** 格式化选中值 */
+function format(value?: null | WotPickerValue | WotPickerValue[]) {
+  const currentValue = arguments.length > 0 ? value : props.modelValue
+  return getWotPickerFormValue(resolvedColumns.value, currentValue, {
+    labelKey: props.labelKey,
+    placeholder: '',
+    valueKey: props.valueKey,
+  })
+}
+
+defineExpose<YdFormPickerExpose>({ format })
 </script>

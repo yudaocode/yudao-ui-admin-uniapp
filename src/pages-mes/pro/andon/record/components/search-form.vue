@@ -33,18 +33,8 @@
           />
         </view>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发起人
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择发起人" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          处置人
-        </view>
-        <UserPicker ref="handlerUserPickerRef" v-model="formData.handlerUserId" type="radio" placeholder="请选择处置人" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="发起人" placeholder="请选择发起人" />
+      <UserSearchPicker ref="handlerUserSearchPickerRef" v-model="formData.handlerUserId" label="处置人" placeholder="请选择处置人" />
       <yd-search-picker v-model="formData.status" label="处置状态" :dict-type="DICT_TYPE.MES_PRO_ANDON_STATUS" all-option />
       <yd-search-date-range v-model="createTimeRange" label="发起时间" />
       <view class="yd-search-form-actions">
@@ -65,7 +55,7 @@
 import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
@@ -79,8 +69,8 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const createTimeRange = ref<[number | undefined, number | undefined]>() // 发起时间范围
 const workstationPickerRef = ref<InstanceType<typeof WorkstationPicker>>() // 工作站选择器
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 发起人选择器
-const handlerUserPickerRef = ref<InstanceType<typeof UserPicker>>() // 处置人选择器
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 发起人选择器
+const handlerUserSearchPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 处置人选择器
 const selectedWorkstation = ref<MdWorkstation>() // 已选工作站
 const formData = reactive({
   workstationId: undefined,
@@ -100,11 +90,11 @@ const placeholder = computed(() => {
   if (selectedWorkstation.value) {
     conditions.push(`工作站:${selectedWorkstation.value.code || selectedWorkstation.value.name}`)
   }
-  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  const userName = userPickerRef.value?.format(formData.userId)
   if (userName) {
     conditions.push(`发起人:${userName}`)
   }
-  const handlerName = handlerUserPickerRef.value?.getUserNickname(formData.handlerUserId)
+  const handlerName = handlerUserSearchPickerRef.value?.format(formData.handlerUserId)
   if (handlerName) {
     conditions.push(`处置人:${handlerName}`)
   }

@@ -19,11 +19,11 @@
         </view>
         <wd-input v-model="formData.no" placeholder="请输入入库单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" />
       <yd-search-date-range v-model="formData.inTime" label="入库时间" />
-      <yd-search-picker v-model="formData.supplierId" label="供应商" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
-      <yd-search-picker v-model="formData.warehouseId" label="仓库" :columns="warehouseOptions" label-key="name" value-key="id" placeholder="请选择仓库" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
+      <SupplierSearchPicker ref="supplierPickerRef" v-model="formData.supplierId" />
+      <WarehouseSearchPicker ref="warehousePickerRef" v-model="formData.warehouseId" />
+      <UserSearchPicker v-model="formData.creator" label="创建人" />
       <yd-search-picker v-model="formData.status" label="审核状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -44,26 +44,24 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getProductSimpleList } from '@/api/erp/product/product'
-import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
-import { getSimpleUserList } from '@/api/system/user'
-import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
+import { UserSearchPicker } from '@/components/system-select'
+import ProductSearchPicker from '@/pages-erp/product/product/components/product-search-picker.vue'
+import SupplierSearchPicker from '@/pages-erp/purchase/supplier/components/supplier-search-picker.vue'
+import WarehouseSearchPicker from '@/pages-erp/stock/warehouse/components/warehouse-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
-const supplierOptions = ref<Record<string, any>[]>([]) // 供应商选项
-const warehouseOptions = ref<Record<string, any>[]>([]) // 仓库选项
-const userOptions = ref<Record<string, any>[]>([]) // 创建人选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
+const supplierPickerRef = ref<InstanceType<typeof SupplierSearchPicker>>() // 供应商选择器
+const warehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 仓库选择器
 const formData = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -82,16 +80,16 @@ const placeholder = computed(() => {
     conditions.push(`单号:${formData.no}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.inTime[0] && formData.inTime[1]) {
     conditions.push(`入库时间:${formatDate(formData.inTime[0])}~${formatDate(formData.inTime[1])}`)
   }
   if (formData.supplierId) {
-    conditions.push(`供应商:${getErpOptionLabel(supplierOptions.value, formData.supplierId)}`)
+    conditions.push(`供应商:${supplierPickerRef.value?.format(formData.supplierId) || formData.supplierId}`)
   }
   if (formData.warehouseId) {
-    conditions.push(`仓库:${getErpOptionLabel(warehouseOptions.value, formData.warehouseId)}`)
+    conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
@@ -127,19 +125,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [products, suppliers, warehouses, users] = await Promise.all([
-    getProductSimpleList(),
-    getSupplierSimpleList(),
-    getWarehouseSimpleList(),
-    getSimpleUserList(),
-  ])
-
-  productOptions.value = products
-  supplierOptions.value = suppliers
-  warehouseOptions.value = warehouses
-  userOptions.value = users
-})
 </script>

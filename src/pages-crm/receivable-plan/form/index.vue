@@ -11,21 +11,15 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <CrmPicker
+          <CustomerFormPicker
             v-model="formData.customerId"
-            source="customer"
-            label="客户名称"
             prop="customerId"
-            placeholder="请选择客户名称"
-            @confirm="handleCustomerConfirm"
+            @change="handleCustomerChange"
           />
-          <CrmPicker
+          <ContractFormPicker
             v-model="formData.contractId"
-            source="contract"
-            label="合同名称"
             prop="contractId"
-            :params="{ customerId: formData.customerId }"
-            placeholder="请选择合同名称"
+            :customer-id="formData.customerId"
           />
           <wd-form-item v-if="props.id" title="期数" title-width="200rpx" :value="formData.period !== undefined && formData.period !== null ? String(formData.period) : '-'" />
           <wd-form-item title="计划回款金额" title-width="200rpx" prop="price">
@@ -37,7 +31,7 @@
             <wd-input v-model.number="formData.remindDays" type="number" placeholder="请输入提前提醒天数" clearable />
           </wd-form-item>
           <yd-form-picker v-model="formData.returnType" label="回款方式" prop="returnType" :dict-type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" placeholder="请选择回款方式" />
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="备注" title-width="200rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -60,13 +54,14 @@ import type { ReceivablePlan } from '@/api/crm/receivable/plan'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createReceivablePlan, getReceivablePlan, updateReceivablePlan } from '@/api/crm/receivable/plan'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import ContractFormPicker from '@/pages-crm/contract/components/contract-form-picker.vue'
+import CustomerFormPicker from '@/pages-crm/customer/components/customer-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({
@@ -102,8 +97,8 @@ const formSchema = createFormSchema({
   ownerUserId: [{ required: true, message: '负责人不能为空' }],
 })
 
-/** 选择客户后清空合同 */
-function handleCustomerConfirm() {
+/** 客户变更后清空合同 */
+function handleCustomerChange() {
   formData.value.contractId = undefined
 }
 

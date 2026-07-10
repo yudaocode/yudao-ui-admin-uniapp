@@ -64,7 +64,7 @@
           </wd-form-item>
           <wd-form-item title="来料日期" title-width="220rpx" prop="receiveDate" is-link :value="formatDateTime(formData.receiveDate) || ''" placeholder="请选择来料日期" @click="dateVisible.receiveDate = true" />
           <wd-datetime-picker v-model="formData.receiveDate" v-model:visible="dateVisible.receiveDate" title="请选择来料日期" type="date" />
-          <UserPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" type="radio" placeholder="请选择检测人员" />
+          <UserFormPicker v-model="formData.inspectorUserId" label="检测人员" label-width="220rpx" prop="inspectorUserId" placeholder="请选择检测人员" />
           <wd-form-item title="检测日期" title-width="220rpx" prop="inspectDate" is-link :value="formatDateTime(formData.inspectDate) || ''" placeholder="请选择检测日期" @click="dateVisible.inspectDate = true" />
           <wd-datetime-picker v-model="formData.inspectDate" v-model:visible="dateVisible.inspectDate" title="请选择检测日期" type="date" />
           <yd-form-picker v-model="formData.checkResult" label="检测结果" label-width="220rpx" prop="checkResult" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" placeholder="请选择检测结果" />
@@ -99,7 +99,7 @@ import type { MdVendor } from '@/api/mes/md/vendor'
 import type { QcIqc } from '@/api/mes/qc/iqc'
 import ItemFormPicker from '@/pages-mes/md/item/components/item-form-picker.vue'
 import VendorFormPicker from '@/pages-mes/md/vendor/components/vendor-form-picker.vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'

@@ -16,12 +16,11 @@
           <wd-form-item title="仓库名称" title-width="220rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入仓库名称" clearable />
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.chargeUserId"
             label="负责人"
             label-width="220rpx"
             prop="chargeUserId"
-            type="radio"
             placeholder="请选择负责人"
           />
           <wd-form-item title="仓库地址" title-width="220rpx" prop="address">
@@ -59,7 +58,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createWarehouse, getWarehouse, updateWarehouse } from '@/api/mes/wm/warehouse'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { MesAutoCodeRuleCode } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

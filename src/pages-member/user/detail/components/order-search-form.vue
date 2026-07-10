@@ -19,76 +19,11 @@
         </view>
         <wd-input v-model="formData.no" placeholder="请输入订单号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          订单状态
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.status = true">
-          {{ getWotPickerDisplay(statusOptions, formData.status, { placeholder: '请选择订单状态' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.status"
-          :model-value="[formData.status]"
-          :columns="statusOptions"
-          @confirm="({ value }) => formData.status = value[0]"
-        />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          支付方式
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.payChannelCode = true">
-          {{ getWotPickerDisplay(payChannelCodeOptions, formData.payChannelCode, { placeholder: '请选择支付方式' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.payChannelCode"
-          :model-value="[formData.payChannelCode]"
-          :columns="payChannelCodeOptions"
-          @confirm="({ value }) => formData.payChannelCode = value[0]"
-        />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          订单来源
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.terminal = true">
-          {{ getWotPickerDisplay(terminalOptions, formData.terminal, { placeholder: '请选择订单来源' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.terminal"
-          :model-value="[formData.terminal]"
-          :columns="terminalOptions"
-          @confirm="({ value }) => formData.terminal = value[0]"
-        />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          订单类型
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.type = true">
-          {{ getWotPickerDisplay(typeOptions, formData.type, { placeholder: '请选择订单类型' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.type"
-          :model-value="[formData.type]"
-          :columns="typeOptions"
-          @confirm="({ value }) => formData.type = value[0]"
-        />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          配送方式
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.deliveryType = true">
-          {{ getWotPickerDisplay(deliveryTypeOptions, formData.deliveryType, { placeholder: '请选择配送方式' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.deliveryType"
-          :model-value="[formData.deliveryType]"
-          :columns="deliveryTypeOptions"
-          @confirm="({ value }) => formData.deliveryType = value[0]"
-        />
-      </view>
+      <yd-search-picker v-model="formData.status" label="订单状态" :dict-type="DICT_TYPE.TRADE_ORDER_STATUS" all-option />
+      <yd-search-picker v-model="formData.payChannelCode" label="支付方式" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
+      <yd-search-picker v-model="formData.terminal" label="订单来源" :dict-type="DICT_TYPE.TERMINAL" all-option />
+      <yd-search-picker v-model="formData.type" label="订单类型" :dict-type="DICT_TYPE.TRADE_ORDER_TYPE" all-option />
+      <yd-search-picker v-model="formData.deliveryType" label="配送方式" :dict-type="DICT_TYPE.TRADE_DELIVERY_TYPE" all-option />
       <yd-search-date-range v-model="formData.createTime" label="下单时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -104,11 +39,10 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel, getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -116,27 +50,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const pickerVisible = ref<Record<string, boolean>>({})
-const statusOptions = computed(() => [
-  { label: '全部', value: -1 },
-  ...getIntDictOptions(DICT_TYPE.TRADE_ORDER_STATUS),
-])
-const typeOptions = computed(() => [
-  { label: '全部', value: -1 },
-  ...getIntDictOptions(DICT_TYPE.TRADE_ORDER_TYPE),
-])
-const deliveryTypeOptions = computed(() => [
-  { label: '全部', value: -1 },
-  ...getIntDictOptions(DICT_TYPE.TRADE_DELIVERY_TYPE),
-])
-const payChannelCodeOptions = computed(() => [
-  { label: '全部', value: '' },
-  ...getStrDictOptions(DICT_TYPE.PAY_CHANNEL_CODE),
-])
-const terminalOptions = computed(() => [
-  { label: '全部', value: -1 },
-  ...getIntDictOptions(DICT_TYPE.TERMINAL),
-])
 const formData = reactive({
   no: undefined as string | undefined,
   status: -1,

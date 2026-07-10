@@ -37,8 +37,8 @@
               label="库区"
               label-width="220rpx"
               :prop="formData.bizType === BarcodeBizTypeEnum.LOCATION ? 'bizId' : ''"
-              :warehouse-id="warehouseId"
               placeholder="请选择库区"
+              :warehouse-id="warehouseId"
               clearable
               @change="handleLocationChange"
             />
@@ -48,19 +48,18 @@
               label="库位"
               label-width="220rpx"
               prop="bizId"
-              :location-id="locationId"
               placeholder="请选择库位"
+              :location-id="locationId"
               clearable
               @change="handleAreaChange"
             />
           </template>
-          <UserPicker
+          <UserFormPicker
             v-else-if="formData.bizType === BarcodeBizTypeEnum.USER"
             v-model="formData.bizId"
             label="业务对象"
             label-width="220rpx"
             prop="bizId"
-            type="radio"
             placeholder="请选择业务对象"
             :disabled="!!currentId"
             @confirm="handleUserConfirm"
@@ -172,7 +171,7 @@ import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-f
 import WarehouseAreaFormPicker from '@/pages-mes/wm/warehouse/area/components/warehouse-area-form-picker.vue'
 import WarehouseLocationFormPicker from '@/pages-mes/wm/warehouse/location/components/warehouse-location-form-picker.vue'
 import { createBarcode, generateBarcodeContent, getBarcode, updateBarcode } from '@/api/mes/wm/barcode'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

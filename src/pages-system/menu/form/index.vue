@@ -11,7 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <MenuPicker v-model="formData.parentId" />
+          <MenuFormPicker v-model="formData.parentId" />
           <wd-form-item title="菜单类型" title-width="180rpx" prop="type">
             <wd-radio-group v-model="formData.type" type="button" @change="handleTypeChange">
               <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.SYSTEM_MENU_TYPE)" :key="dict.value" :value="dict.value">
@@ -123,7 +123,7 @@ import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE, SystemMenuTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import MenuPicker from './components/menu-picker.vue'
+import MenuFormPicker from './components/menu-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any

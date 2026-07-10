@@ -13,18 +13,8 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发送人
-        </view>
-        <UserPicker ref="senderPickerRef" v-model="formData.senderId" type="radio" placeholder="请选择发送人" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          接收人
-        </view>
-        <UserPicker ref="receiverPickerRef" v-model="formData.receiverId" type="radio" placeholder="请选择接收人" />
-      </view>
+      <UserSearchPicker ref="senderPickerRef" v-model="formData.senderId" label="发送人" placeholder="请选择发送人" />
+      <UserSearchPicker ref="receiverPickerRef" v-model="formData.receiverId" label="接收人" placeholder="请选择接收人" />
       <yd-search-picker v-model="formData.type" label="消息类型" :dict-type="DICT_TYPE.IM_CONTENT_TYPE" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -47,7 +37,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -75,10 +65,10 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.senderId) {
-    conditions.push(`发送人:${senderPickerRef.value?.getUserNickname(formData.senderId) || formData.senderId}`)
+    conditions.push(`发送人:${senderPickerRef.value?.format(formData.senderId) || formData.senderId}`)
   }
   if (formData.receiverId) {
-    conditions.push(`接收人:${receiverPickerRef.value?.getUserNickname(formData.receiverId) || formData.receiverId}`)
+    conditions.push(`接收人:${receiverPickerRef.value?.format(formData.receiverId) || formData.receiverId}`)
   }
   if (formData.type !== -1) {
     conditions.push(`类型:${getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '' })}`)

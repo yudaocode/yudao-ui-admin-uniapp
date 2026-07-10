@@ -53,12 +53,7 @@
           />
         </view>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          点检人
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择点检人" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="点检人" placeholder="请选择点检人" />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.MES_DV_CHECK_RECORD_STATUS" all-option />
       <yd-search-date-range v-model="checkTimeRange" label="点检时间" />
       <view class="yd-search-form-actions">
@@ -81,7 +76,7 @@ import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
@@ -96,7 +91,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const planPickerRef = ref<InstanceType<typeof CheckPlanPicker>>() // 点检方案选择器
 const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 点检人选择器
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 点检人选择器
 const selectedPlan = ref<DvCheckPlan>() // 已选方案
 const selectedMachinery = ref<DvMachinery>() // 已选设备
 const checkTimeRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 点检时间范围
@@ -126,7 +121,7 @@ const placeholder = computed(() => {
   if (selectedMachinery.value) {
     conditions.push(`设备:${selectedMachinery.value.code || selectedMachinery.value.name}`)
   }
-  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  const userName = userPickerRef.value?.format(formData.userId)
   if (userName) {
     conditions.push(`点检人:${userName}`)
   }

@@ -10,8 +10,8 @@
           <wd-cell title="付款单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="付款时间" title-width="220rpx" prop="paymentTime" is-link :value="formatDate(formData.paymentTime) || ''" placeholder="请选择付款时间" @click="dateVisible.paymentTime = true" />
           <wd-datetime-picker v-model="formData.paymentTime" v-model:visible="dateVisible.paymentTime" title="请选择付款时间" type="date" />
-          <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
-          <yd-form-picker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择财务人员" />
+          <SupplierFormPicker v-model="formData.supplierId" prop="supplierId" />
+          <UserFormPicker v-model="formData.financeUserId" label="财务人员" label-width="220rpx" placeholder="请选择财务人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -41,7 +41,7 @@
           <text class="text-28rpx text-[#333] font-semibold">付款信息</text>
         </view>
         <wd-cell-group border>
-          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="付款账户" label-width="220rpx" prop="accountId" placeholder="请选择付款账户" />
+          <AccountFormPicker v-model="formData.accountId" label="付款账户" label-width="220rpx" prop="accountId" placeholder="请选择付款账户" :auto-default="!props.id" />
           <wd-cell title="合计付款" :value="formatMoney(formData.totalPrice)" />
           <wd-form-item title="优惠金额" title-width="220rpx" prop="discountPrice" center>
             <wd-input-number v-model="formData.discountPrice" :min="0" :precision="2" />
@@ -72,12 +72,12 @@ import { createFinancePayment, getFinancePayment, updateFinancePayment } from '@
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
+import { UserFormPicker } from '@/components/system-select'
+import AccountFormPicker from '@/pages-erp/finance/account/components/account-form-picker.vue'
+import SupplierFormPicker from '@/pages-erp/purchase/supplier/components/supplier-form-picker.vue'
 import PaymentItemForm from '../components/payment-item-form.vue'
 import { roundPrice } from '@/pages-erp/utils/format'
 import { formatMoney, toNumber } from '@/utils/format'
-import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
-import { getSimpleUserList } from '@/api/system/user'
 
 const props = defineProps<{ id?: number }>()
 
@@ -107,8 +107,6 @@ const formData = ref<FinancePayment>({
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof PaymentItemForm>>() // 明细组件引用
-const supplierOptions = ref<Record<string, any>[]>([]) // 供应商选项
-const userOptions = ref<Record<string, any>[]>([]) // 用户选项
 const dateVisible = reactive({
   paymentTime: false,
 }) // 日期选择器状态
@@ -129,16 +127,6 @@ function refreshAmount() {
   const totalPrice = items.reduce((sum, item) => sum + toNumber(item.paymentPrice), 0)
   formData.value.totalPrice = roundPrice(totalPrice)
   formData.value.paymentPrice = roundPrice(totalPrice - toNumber(formData.value.discountPrice))
-}
-
-/** 加载基础选项 */
-async function loadOptions() {
-  const [suppliers, users] = await Promise.all([
-    getSupplierSimpleList(),
-    getSimpleUserList(),
-  ])
-  supplierOptions.value = suppliers || []
-  userOptions.value = users || []
 }
 
 /** 加载详情 */
@@ -183,8 +171,7 @@ async function handleSubmit() {
 watch(() => [formData.value.items, formData.value.discountPrice], refreshAmount, { deep: true })
 
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

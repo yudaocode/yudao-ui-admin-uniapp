@@ -11,15 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="绑定模型"
-            title-width="210rpx"
-            prop="modelId"
-            is-link
-            :value="getWotPickerFormValue(chatModelOptions, formData.modelId, { labelKey: 'name', valueKey: 'id' })"
-            placeholder="请选择模型"
-            @click="pickerVisible.chatModel = true"
-          />
+          <ModelFormPicker v-model="formData.modelId" label="绑定模型" label-width="210rpx" prop="modelId" placeholder="请选择模型" :model-type="AiModelTypeEnum.CHAT" />
           <wd-form-item title="角色名称" title-width="210rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入角色名称" />
           </wd-form-item>
@@ -35,29 +27,17 @@
           <wd-form-item title="角色设定" title-width="210rpx" prop="systemMessage">
             <wd-textarea v-model="formData.systemMessage" placeholder="请输入角色设定" clearable />
           </wd-form-item>
-          <wd-form-item
-            title="引用知识库"
-            title-width="210rpx"
-            is-link
-            :value="getSelectedNames(knowledgeOptions, formData.knowledgeIds, { labelKey: 'name', valueKey: 'id' })"
-            placeholder="请选择知识库"
-            @click="pickerVisible.knowledge = true"
-          />
-          <wd-form-item
-            title="引用工具"
-            title-width="210rpx"
-            is-link
-            :value="getSelectedNames(toolOptions, formData.toolIds, { labelKey: 'name', valueKey: 'id' })"
-            placeholder="请选择工具"
-            @click="pickerVisible.tool = true"
-          />
-          <wd-form-item
-            title="引用 MCP"
-            title-width="210rpx"
-            is-link
-            :value="getSelectedNames(mcpOptions, formData.mcpClientNames)"
+          <KnowledgeFormPicker v-model="formData.knowledgeIds" label="引用知识库" label-width="210rpx" type="checkbox" filterable />
+          <ToolFormPicker v-model="formData.toolIds" label="引用工具" label-width="210rpx" type="checkbox" filterable />
+          <yd-form-picker
+            v-model="formData.mcpClientNames"
+            label="引用 MCP"
+            label-width="210rpx"
+            :dict-type="DICT_TYPE.AI_MCP_CLIENT_NAME"
+            dict-kind="str"
+            type="checkbox"
+            filterable
             placeholder="请选择 MCP"
-            @click="pickerVisible.mcp = true"
           />
           <wd-form-item title="是否公开" title-width="210rpx" center>
             <wd-switch v-model="formData.publicStatus" />
@@ -80,52 +60,6 @@
       </wd-form>
     </view>
 
-    <!-- 绑定模型选择器 -->
-    <wd-picker
-      v-model:visible="pickerVisible.chatModel"
-      :model-value="[formData.modelId]"
-      :columns="chatModelOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => formData.modelId = Number(value[0])"
-    />
-
-    <!-- 引用知识库选择器 -->
-    <wd-select-picker
-      v-model="formData.knowledgeIds"
-      v-model:visible="pickerVisible.knowledge"
-      title="请选择知识库"
-      :columns="knowledgeOptions"
-      value-key="id"
-      label-key="name"
-      type="checkbox"
-      filterable
-      @update:model-value="value => formData.knowledgeIds = value.map(Number)"
-    />
-
-    <!-- 引用工具选择器 -->
-    <wd-select-picker
-      v-model="formData.toolIds"
-      v-model:visible="pickerVisible.tool"
-      title="请选择工具"
-      :columns="toolOptions"
-      value-key="id"
-      label-key="name"
-      type="checkbox"
-      filterable
-      @update:model-value="value => formData.toolIds = value.map(Number)"
-    />
-
-    <!-- 引用 MCP 选择器 -->
-    <wd-select-picker
-      v-model="formData.mcpClientNames"
-      v-model:visible="pickerVisible.mcp"
-      title="请选择 MCP"
-      :columns="mcpOptions"
-      type="checkbox"
-      filterable
-    />
-
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
@@ -144,16 +78,16 @@
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ChatRoleVO } from '@/api/ai/model/chatRole'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleKnowledgeList } from '@/api/ai/knowledge/knowledge'
+import { computed, onMounted, ref } from 'vue'
 import { createChatRole, getChatRole, updateChatRole } from '@/api/ai/model/chatRole'
-import { getModelSimpleList } from '@/api/ai/model/model'
-import { getToolSimpleList } from '@/api/ai/model/tool'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
+import KnowledgeFormPicker from '@/pages-ai/knowledge/components/knowledge-form-picker.vue'
+import ModelFormPicker from '../../model/components/model-form-picker.vue'
+import ToolFormPicker from '../../tool/components/tool-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -169,16 +103,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑聊天角色' : '新增聊天角色')
 const formLoading = ref(false) // 表单提交状态
-const chatModelOptions = ref<any[]>([]) // 聊天模型选项
-const knowledgeOptions = ref<any[]>([]) // 知识库选项
-const toolOptions = ref<any[]>([]) // 工具选项
-const mcpOptions = computed(() => getStrDictOptions(DICT_TYPE.AI_MCP_CLIENT_NAME)) // MCP 选项
-const pickerVisible = reactive({
-  chatModel: false,
-  knowledge: false,
-  tool: false,
-  mcp: false,
-}) // 选择弹窗显示状态
 const formData = ref<ChatRoleVO>({
   modelId: undefined,
   name: '',
@@ -203,18 +127,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-ai/model/chatRole/index')
-}
-
-/** 加载下拉选项 */
-async function loadOptions() {
-  const [models, knowledgeList, toolList] = await Promise.all([
-    getModelSimpleList(AiModelTypeEnum.CHAT).catch(() => []),
-    getSimpleKnowledgeList().catch(() => []),
-    getToolSimpleList().catch(() => []),
-  ])
-  chatModelOptions.value = models
-  knowledgeOptions.value = knowledgeList
-  toolOptions.value = toolList
 }
 
 /** 加载详情 */
@@ -249,25 +161,8 @@ async function handleSubmit() {
   }
 }
 
-/** 获取多选展示文案 */
-function getSelectedNames(
-  options: Record<string, any>[],
-  values?: Array<number | string>,
-  keys: { labelKey?: string, valueKey?: string } = {},
-) {
-  if (!values || values.length === 0) {
-    return ''
-  }
-  const { labelKey = 'label', valueKey = 'value' } = keys
-  return values
-    .map(value => options.find(item => String(item[valueKey]) === String(value))?.[labelKey])
-    .filter(Boolean)
-    .join('、')
-}
-
 /** 初始化 */
-onMounted(async () => {
-  await loadOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

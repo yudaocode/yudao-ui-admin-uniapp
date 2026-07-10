@@ -22,7 +22,7 @@
       <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
         <wd-input v-model="queryParams.no" placeholder="请输入订单单号" clearable />
-        <yd-form-picker v-model="queryParams.productId" class="mt-12rpx" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+        <ProductFormPicker v-model="queryParams.productId" label="" placeholder="请选择产品" class="mt-12rpx" />
         <yd-search-date-range v-model="queryParams.orderTime" class="mt-12rpx" label="订单时间" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -91,7 +91,7 @@ import { reactive, ref } from 'vue'
 import { getSaleOrder, getSaleOrderPage } from '@/api/erp/sale/order'
 import { formatCount } from '@/pages-erp/utils/format'
 import { formatDateRange, formatDateTime } from '@/utils/date'
-import { getProductSimpleList } from '@/api/erp/product/product'
+import ProductFormPicker from '@/pages-erp/product/product/components/product-form-picker.vue'
 
 const emit = defineEmits<{
   success: [order: SaleOrder]
@@ -106,7 +106,7 @@ const pageSize = 10
 const total = ref(0) // 总条数
 const list = ref<SaleOrder[]>([]) // 可退货订单列表
 const currentOrder = ref<SaleOrder>() // 当前选中订单
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
+let requestId = 0 // 最新查询标识
 const queryParams = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -115,7 +115,7 @@ const queryParams = reactive({
 
 /** 查询可退货订单 */
 async function queryList(reset = false) {
-  if (loading.value) {
+  if (!reset && (loading.value || finished.value)) {
     return
   }
   if (reset) {
@@ -124,39 +124,35 @@ async function queryList(reset = false) {
     finished.value = false
     currentOrder.value = undefined
   }
-  if (finished.value) {
-    return
-  }
+  const currentRequestId = ++requestId
+  const currentPageNo = pageNo.value
   loading.value = true
   try {
     const data = await getSaleOrderPage({
-      pageNo: pageNo.value,
+      pageNo: currentPageNo,
       pageSize,
       no: queryParams.no || undefined,
       productId: queryParams.productId,
       orderTime: formatDateRange(queryParams.orderTime),
       returnEnable: true,
     })
+    if (currentRequestId !== requestId) {
+      return
+    }
     list.value = reset ? data.list : list.value.concat(data.list)
     total.value = data.total
     finished.value = list.value.length >= total.value
-    pageNo.value += 1
+    pageNo.value = currentPageNo + 1
   } finally {
-    loading.value = false
-  }
-}
-
-/** 加载基础选项 */
-async function loadOptions() {
-  if (productOptions.value.length === 0) {
-    productOptions.value = await getProductSimpleList()
+    if (currentRequestId === requestId) {
+      loading.value = false
+    }
   }
 }
 
 /** 打开选择器 */
 async function open() {
   visible.value = true
-  await loadOptions()
   await queryList(true)
 }
 

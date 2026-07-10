@@ -11,7 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <ItemCategoryPicker
+          <ItemCategoryFormPicker
             v-model="formData.parentId"
             label="上级分类"
             prop="parentId"
@@ -62,7 +62,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItemCategory, getItemCategory, updateItemCategory } from '@/api/wms/md/item/category'
 import { getIntDictOptions } from '@/hooks/useDict'
-import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
+import ItemCategoryFormPicker from '@/pages-wms/md/item/category/components/item-category-form-picker.vue'
 import { generateWmsCode } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'

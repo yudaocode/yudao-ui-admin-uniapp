@@ -11,35 +11,15 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="所属频道"
-            title-width="180rpx"
-            prop="channelId"
-            is-link
-            :value="getWotPickerFormValue(channelOptions, formData.channelId)"
-            placeholder="请选择频道"
-            @click="pickerVisible.channel = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.channel"
-            :model-value="formData.channelId"
-            :columns="channelOptions"
-            @confirm="handleChannelConfirm"
-          />
-          <wd-form-item
-            title="素材"
-            title-width="180rpx"
+          <ChannelFormPicker v-model="formData.channelId" prop="channelId" @change="handleChannelChange" />
+          <yd-form-picker
+            v-model="formData.materialId"
+            label="素材"
+            label-width="180rpx"
             prop="materialId"
-            is-link
-            :value="getWotPickerFormValue(materialOptions, formData.materialId)"
-            placeholder="请选择素材"
-            @click="handleOpenMaterialPicker"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.material"
-            :model-value="formData.materialId"
             :columns="materialOptions"
-            @confirm="({ value }) => formData.materialId = Number(value[0])"
+            placeholder="请选择素材"
+            :before-open="handleOpenMaterialPicker"
           />
           <wd-form-item title="受众" title-width="180rpx" prop="receiverUserType" center>
             <wd-radio-group v-model="formData.receiverUserType" type="button">
@@ -51,13 +31,13 @@
               </wd-radio>
             </wd-radio-group>
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-if="formData.receiverUserType === 'users'"
             v-model="formData.receiverUserIds"
             label="接收用户"
             prop="receiverUserIds"
-            type="checkbox"
             placeholder="请选择接收用户"
+            type="checkbox"
           />
         </wd-cell-group>
       </wd-form>
@@ -79,14 +59,15 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { ImManagerChannelVO } from '@/api/im/manager/channel'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
-import { getSimpleChannelList } from '@/api/im/manager/channel'
+import { ref } from 'vue'
 import { getSimpleManagerChannelMaterialList } from '@/api/im/manager/channel/material'
 import { sendManagerChannelMessage } from '@/api/im/manager/channel/message'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
+import ChannelFormPicker from '@/pages-im/manager/channel/components/channel-form-picker.vue'
 
 definePage({
   style: {
@@ -98,8 +79,6 @@ definePage({
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
-const pickerVisible = ref<Record<string, boolean>>({}) // 选择器状态
-const channelOptions = ref<{ label: string, value: number }[]>([]) // 频道选项
 const materialOptions = ref<{ label: string, value: number }[]>([]) // 素材选项
 const formData = ref({
   channelId: undefined as number | undefined,
@@ -121,15 +100,6 @@ function handleBack() {
   navigateBackPlus('/pages-im/manager/channel/message/index')
 }
 
-/** 加载频道选项 */
-async function loadChannelOptions() {
-  const list = await getSimpleChannelList()
-  channelOptions.value = list.map(item => ({
-    label: item.name,
-    value: item.id,
-  }))
-}
-
 /** 加载素材选项 */
 async function loadMaterialOptions(channelId: number) {
   const list = await getSimpleManagerChannelMaterialList(channelId)
@@ -140,26 +110,21 @@ async function loadMaterialOptions(channelId: number) {
 }
 
 /** 选择频道 */
-async function handleChannelConfirm({ value }: { value: Array<number | string> }) {
-  const channelId = Number(value[0])
-  formData.value.channelId = channelId
+async function handleChannelChange(channel?: ImManagerChannelVO) {
   formData.value.materialId = undefined
   materialOptions.value = []
-  if (channelId) {
-    await loadMaterialOptions(channelId)
+  if (channel?.id) {
+    await loadMaterialOptions(channel.id)
   }
 }
 
 /** 打开素材选择器 */
-async function handleOpenMaterialPicker() {
+function handleOpenMaterialPicker() {
   if (!formData.value.channelId) {
     toast.show('请先选择频道')
-    return
+    return false
   }
-  if (materialOptions.value.length === 0) {
-    await loadMaterialOptions(formData.value.channelId)
-  }
-  pickerVisible.value.material = true
+  return true
 }
 
 /** 提交表单 */
@@ -183,9 +148,4 @@ async function handleSubmit() {
     formLoading.value = false
   }
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadChannelOptions()
-})
 </script>

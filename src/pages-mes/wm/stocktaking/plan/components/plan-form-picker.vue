@@ -10,7 +10,6 @@
     label-key="name"
     value-key="id"
     :placeholder="placeholder"
-    :before-open="beforeOpenPicker"
     @update:model-value="handleUpdate"
     @confirm="handleConfirm"
     @clear="handleClear"
@@ -19,7 +18,7 @@
 
 <script lang="ts" setup>
 import type { StockTakingPlan } from '@/api/mes/wm/stocktaking/plan'
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { getStockTakingPlan, getStockTakingPlanPage } from '@/api/mes/wm/stocktaking/plan'
 import { CommonStatusEnum } from '@/utils/constants'
 
@@ -81,14 +80,6 @@ async function loadSelectedOption(value?: number) {
   mergeOptions([await getStockTakingPlan(value), ...options.value])
 }
 
-/** 打开前加载选项 */
-async function beforeOpenPicker() {
-  await Promise.all([
-    loadSelectedOption(props.modelValue),
-    loadOptions(),
-  ])
-}
-
 /** 更新盘点方案编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
@@ -114,4 +105,9 @@ watch(
   },
   { immediate: true },
 )
+
+/** 初始化 */
+onMounted(() => {
+  loadOptions()
+})
 </script>

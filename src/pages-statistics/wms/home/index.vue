@@ -25,7 +25,7 @@
             </wd-button>
           </view>
           <wd-cell-group border>
-            <WarehousePicker
+            <WarehouseFormPicker
               v-model="queryParams.warehouseId"
               label="仓库筛选"
               placeholder="全部仓库"
@@ -234,7 +234,7 @@ import type { WmsHomeInventorySummaryResp, WmsHomeOrderSummaryResp, WmsHomeOrder
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getWmsHomeInventorySummary, getWmsHomeOrderSummary, getWmsHomeOrderTrend } from '@/api/wms/home'
 import { getDictLabel } from '@/hooks/useDict'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import WarehouseFormPicker from '@/pages-wms/md/warehouse/components/warehouse-form-picker.vue'
 import { formatQuantity } from '@/pages-wms/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, WmsOrderStatusEnum, WmsOrderTypeEnum } from '@/utils/constants'

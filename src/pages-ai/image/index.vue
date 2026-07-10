@@ -27,35 +27,38 @@
             </wd-radio-group>
           </wd-form-item>
 
-          <wd-form-item
+          <ModelFormPicker
             v-if="isCommonMode"
-            title="模型"
-            title-width="170rpx"
+            v-model="formData.modelId"
+            label="模型"
+            label-width="170rpx"
             prop="modelId"
-            is-link
-            :value="getWotPickerFormValue(modelOptions, formData.modelId, { labelKey: 'name', valueKey: 'id' })"
             placeholder="请选择模型"
-            @click="pickerVisible.model = true"
+            :options="models"
+            :exclude-platforms="imageSpecialPlatforms"
           />
-          <wd-form-item
+          <yd-form-picker
             v-else-if="isDall3Mode"
-            title="模型"
-            title-width="170rpx"
+            v-model="formData.modelKey"
+            label="模型"
+            label-width="170rpx"
             prop="modelKey"
-            is-link
-            :value="getWotPickerFormValue(Dall3Models, formData.modelKey, { labelKey: 'name', valueKey: 'key' })"
+            :columns="Dall3Models"
+            label-key="name"
+            value-key="key"
             placeholder="请选择模型"
-            @click="pickerVisible.dallModel = true"
           />
-          <wd-form-item
+          <yd-form-picker
             v-else-if="isMidjourneyMode"
-            title="模型"
-            title-width="170rpx"
+            :model-value="formData.modelKey"
+            label="模型"
+            label-width="170rpx"
             prop="modelKey"
-            is-link
-            :value="getWotPickerFormValue(MidjourneyModels, formData.modelKey, { labelKey: 'name', valueKey: 'key' })"
+            :columns="MidjourneyModels"
+            label-key="name"
+            value-key="key"
             placeholder="请选择模型"
-            @click="pickerVisible.mjModel = true"
+            @confirm="handleMjModelConfirm"
           />
 
           <wd-form-item title="提示词" title-width="170rpx" prop="prompt">
@@ -69,88 +72,29 @@
           </wd-form-item>
 
           <template v-if="isCommonMode">
-            <wd-form-item
-              title="尺寸"
-              title-width="170rpx"
-              prop="size"
-              is-link
-              :value="selectedSizeLabel"
-              placeholder="请选择尺寸"
-              @click="pickerVisible.size = true"
-            />
+            <yd-form-picker v-model="formData.size" label="尺寸" label-width="170rpx" prop="size" :columns="sizeOptions" placeholder="请选择尺寸" />
             <wd-form-item title="风格" title-width="170rpx">
               <wd-input v-model="formData.style" clearable placeholder="可选，如 anime、cinematic" />
             </wd-form-item>
           </template>
 
           <template v-else-if="isDall3Mode">
-            <wd-form-item
-              title="风格"
-              title-width="170rpx"
-              is-link
-              :value="getWotPickerFormValue(Dall3StyleList, formData.style, { labelKey: 'name', valueKey: 'key' })"
-              placeholder="请选择风格"
-              @click="pickerVisible.dallStyle = true"
-            />
-            <wd-form-item
-              title="尺寸"
-              title-width="170rpx"
-              prop="size"
-              is-link
-              :value="selectedDallSizeLabel"
-              placeholder="请选择尺寸"
-              @click="pickerVisible.dallSize = true"
-            />
+            <yd-form-picker v-model="formData.style" label="风格" label-width="170rpx" :columns="Dall3StyleList" label-key="name" value-key="key" placeholder="请选择风格" />
+            <yd-form-picker v-model="formData.size" label="尺寸" label-width="170rpx" prop="size" :columns="dallSizeOptions" placeholder="请选择尺寸" />
           </template>
 
           <template v-else-if="isMidjourneyMode">
-            <wd-form-item
-              title="比例"
-              title-width="170rpx"
-              prop="size"
-              is-link
-              :value="selectedMjSizeLabel"
-              placeholder="请选择比例"
-              @click="pickerVisible.mjSize = true"
-            />
-            <wd-form-item
-              title="版本"
-              title-width="170rpx"
-              is-link
-              :value="getWotPickerFormValue(versionOptions, formData.version)"
-              placeholder="请选择版本"
-              @click="pickerVisible.version = true"
-            />
+            <yd-form-picker v-model="formData.size" label="比例" label-width="170rpx" prop="size" :columns="mjSizeOptions" placeholder="请选择比例" />
+            <yd-form-picker v-model="formData.version" label="版本" label-width="170rpx" :columns="versionOptions" placeholder="请选择版本" />
             <wd-form-item title="参考图 URL" title-width="170rpx">
               <wd-input v-model="formData.referImageUrl" clearable placeholder="可选，输入参考图地址" />
             </wd-form-item>
           </template>
 
           <template v-else>
-            <wd-form-item
-              title="采样方法"
-              title-width="170rpx"
-              is-link
-              :value="getWotPickerFormValue(StableDiffusionSamplers, formData.sampler, { labelKey: 'name', valueKey: 'key' })"
-              placeholder="请选择采样方法"
-              @click="pickerVisible.sampler = true"
-            />
-            <wd-form-item
-              title="CLIP"
-              title-width="170rpx"
-              is-link
-              :value="getWotPickerFormValue(StableDiffusionClipGuidancePresets, formData.clipGuidancePreset, { labelKey: 'name', valueKey: 'key' })"
-              placeholder="请选择 CLIP"
-              @click="pickerVisible.clip = true"
-            />
-            <wd-form-item
-              title="风格"
-              title-width="170rpx"
-              is-link
-              :value="getWotPickerFormValue(StableDiffusionStylePresets, formData.stylePreset, { labelKey: 'name', valueKey: 'key' })"
-              placeholder="请选择风格"
-              @click="pickerVisible.sdStyle = true"
-            />
+            <yd-form-picker v-model="formData.sampler" label="采样方法" label-width="170rpx" :columns="StableDiffusionSamplers" label-key="name" value-key="key" placeholder="请选择采样方法" />
+            <yd-form-picker v-model="formData.clipGuidancePreset" label="CLIP" label-width="170rpx" :columns="StableDiffusionClipGuidancePresets" label-key="name" value-key="key" placeholder="请选择 CLIP" />
+            <yd-form-picker v-model="formData.stylePreset" label="风格" label-width="170rpx" :columns="StableDiffusionStylePresets" label-key="name" value-key="key" placeholder="请选择风格" />
             <wd-form-item title="宽度" title-width="170rpx">
               <wd-input-number v-model="formData.width" :min="64" :max="2048" />
             </wd-form-item>
@@ -250,87 +194,6 @@
         </view>
       </view>
     </z-paging>
-
-    <wd-picker
-      v-model:visible="pickerVisible.model"
-      :model-value="[formData.modelId]"
-      :columns="modelOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => formData.modelId = Number(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.size"
-      :model-value="[formData.size]"
-      :columns="sizeOptions"
-      @confirm="({ value }) => formData.size = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.dallModel"
-      :model-value="[formData.modelKey]"
-      :columns="Dall3Models"
-      label-key="name"
-      value-key="key"
-      @confirm="({ value }) => formData.modelKey = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.dallStyle"
-      :model-value="[formData.style]"
-      :columns="Dall3StyleList"
-      label-key="name"
-      value-key="key"
-      @confirm="({ value }) => formData.style = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.dallSize"
-      :model-value="[formData.size]"
-      :columns="dallSizeOptions"
-      @confirm="({ value }) => formData.size = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.mjModel"
-      :model-value="[formData.modelKey]"
-      :columns="MidjourneyModels"
-      label-key="name"
-      value-key="key"
-      @confirm="handleMjModelConfirm"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.mjSize"
-      :model-value="[formData.size]"
-      :columns="mjSizeOptions"
-      @confirm="({ value }) => formData.size = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.version"
-      :model-value="[formData.version]"
-      :columns="versionOptions"
-      @confirm="({ value }) => formData.version = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.sampler"
-      :model-value="[formData.sampler]"
-      :columns="StableDiffusionSamplers"
-      label-key="name"
-      value-key="key"
-      @confirm="({ value }) => formData.sampler = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.clip"
-      :model-value="[formData.clipGuidancePreset]"
-      :columns="StableDiffusionClipGuidancePresets"
-      label-key="name"
-      value-key="key"
-      @confirm="({ value }) => formData.clipGuidancePreset = String(value[0])"
-    />
-    <wd-picker
-      v-model:visible="pickerVisible.sdStyle"
-      :model-value="[formData.stylePreset]"
-      :columns="StableDiffusionStylePresets"
-      label-key="name"
-      value-key="key"
-      @confirm="({ value }) => formData.stylePreset = String(value[0])"
-    />
   </view>
 </template>
 
@@ -346,7 +209,8 @@ import { getModelSimpleList } from '@/api/ai/model/model'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
+import ModelFormPicker from '@/pages-ai/model/model/components/model-form-picker.vue'
 import {
   AiModelTypeEnum,
   AiPlatformEnum,
@@ -359,7 +223,6 @@ import {
   MidjourneySizeList,
   MidjourneyVersions,
   NijiVersionList,
-  OtherPlatformList,
   StableDiffusionClipGuidancePresets,
   StableDiffusionSamplers,
   StableDiffusionStylePresets,
@@ -383,19 +246,6 @@ const pagingRef = ref<any>() // 分页组件引用
 const formRef = ref<FormInstance>() // 表单组件引用
 const drawing = ref(false) // 图片生成状态
 const actionLoadingId = ref('') // MJ 操作加载标识
-const pickerVisible = reactive({
-  model: false,
-  size: false,
-  dallModel: false,
-  dallStyle: false,
-  dallSize: false,
-  mjModel: false,
-  mjSize: false,
-  version: false,
-  sampler: false,
-  clip: false,
-  sdStyle: false,
-}) // 选择弹窗显示状态
 const formData = reactive({
   platformMode: 'common' as ImagePlatformMode,
   modelId: undefined as number | undefined,
@@ -432,19 +282,13 @@ const mjSizeOptions = MidjourneySizeList.map(item => ({ label: item.key, value: 
 const isCommonMode = computed(() => formData.platformMode === 'common')
 const isDall3Mode = computed(() => formData.platformMode === 'dall3')
 const isMidjourneyMode = computed(() => formData.platformMode === 'midjourney')
-const commonModelOptions = computed(() => {
-  const commonPlatforms = OtherPlatformList.map(platform => platform.key)
-  const options = models.value.filter(item => ![AiPlatformEnum.OPENAI, AiPlatformEnum.MIDJOURNEY, AiPlatformEnum.STABLE_DIFFUSION].includes(item.platform as any)
-    || commonPlatforms.includes(item.platform || ''),
-  )
-  return options.length > 0 ? options : models.value
-})
-const modelOptions = computed(() => isCommonMode.value ? commonModelOptions.value : models.value)
+const imageSpecialPlatforms: string[] = [ // 专用绘图平台
+  AiPlatformEnum.OPENAI,
+  AiPlatformEnum.MIDJOURNEY,
+  AiPlatformEnum.STABLE_DIFFUSION,
+]
 const hotWords = computed(() => formData.platformMode === 'stableDiffusion' ? ImageHotEnglishWords : ImageHotWords)
 const versionOptions = computed(() => formData.modelKey === 'niji' ? NijiVersionList : MidjourneyVersions)
-const selectedSizeLabel = computed(() => sizeOptions.find(item => item.value === formData.size)?.label || formData.size)
-const selectedDallSizeLabel = computed(() => dallSizeOptions.find(item => item.value === formData.size)?.label || formData.size)
-const selectedMjSizeLabel = computed(() => mjSizeOptions.find(item => item.value === formData.size)?.label || formData.size)
 const formSchema = createFormSchema(() => ({
   modelId: [{ required: () => isCommonMode.value, message: '请选择模型' }],
   modelKey: [{ required: () => isDall3Mode.value || isMidjourneyMode.value, message: '请选择模型' }],
@@ -480,7 +324,7 @@ function handlePlatformChange() {
     formData.size = '512x512'
     formData.style = ''
     formData.modelKey = ''
-    formData.modelId = modelOptions.value[0]?.id
+    formData.modelId = models.value.find(item => !imageSpecialPlatforms.includes(item.platform || ''))?.id
   } else if (isDall3Mode.value) {
     formData.modelKey = 'dall-e-3'
     formData.size = '1024x1024'
@@ -500,8 +344,8 @@ function handlePlatformChange() {
 }
 
 /** 选择 MJ 模型 */
-function handleMjModelConfirm({ value }: { value: Array<number | string> }) {
-  formData.modelKey = String(value[0])
+function handleMjModelConfirm(value: string) {
+  formData.modelKey = value
   formData.version = versionOptions.value[0]?.value || ''
 }
 
@@ -677,9 +521,7 @@ async function handleDelete(item: ImageVO) {
 onMounted(async () => {
   try {
     models.value = await getModelSimpleList(AiModelTypeEnum.IMAGE)
-    if (modelOptions.value.length > 0) {
-      formData.modelId = modelOptions.value[0].id
-    }
+    formData.modelId = models.value.find(item => !imageSpecialPlatforms.includes(item.platform || ''))?.id
   } catch {
     models.value = []
   }

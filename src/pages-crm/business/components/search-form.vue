@@ -13,17 +13,7 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入商机名称" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          客户名称
-        </view>
-        <CrmPicker
-          v-model="formData.customerId"
-          source="customer"
-          placeholder="请选择客户名称"
-          @confirm="handleCustomerConfirm"
-        />
-      </view>
+      <CustomerSearchPicker ref="customerPickerRef" v-model="formData.customerId" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -38,7 +28,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import CustomerSearchPicker from '@/pages-crm/customer/components/customer-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
@@ -48,22 +38,17 @@ const formData = reactive<Record<string, any>>({
   name: undefined,
   customerId: undefined,
 }) // 搜索表单数据
-const customerLabel = ref('') // 已选客户名称（占位回显用）
+const customerPickerRef = ref<InstanceType<typeof CustomerSearchPicker>>() // 客户选择器
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
   if (formData.customerId) {
-    conditions.push(`客户:${customerLabel.value || '已选'}`)
+    conditions.push(`客户:${customerPickerRef.value?.format(formData.customerId) || formData.customerId}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索商机'
 }) // 搜索框占位：回显已选条件
-
-/** 选中客户后记录名称用于回显 */
-function handleCustomerConfirm(option?: { name?: string }) {
-  customerLabel.value = option?.name || ''
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -78,7 +63,6 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.customerId = undefined
-  customerLabel.value = ''
   visible.value = false
   emit('reset')
 }

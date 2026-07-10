@@ -1,4 +1,3 @@
-import type { Dept } from '@/api/system/dept'
 import { getDictLabel } from '@/hooks/useDict'
 import { formatMoney, toNumber } from '@/utils/format'
 import { isEmptyValue } from '@/utils/is'
@@ -266,18 +265,4 @@ export function buildFunnelOption(items: StatisticsFunnelItem[], name = '转化�
 export function getDefaultDeptId(userInfo: Record<string, any> | undefined) {
   const deptId = Number(userInfo?.deptId)
   return deptId > 0 ? deptId : undefined
-}
-
-/** 获取第一个可用部门编号 */
-export function getFirstDeptId(list: Dept[]): number | undefined {
-  for (const item of list) {
-    if (item.id) {
-      return item.id
-    }
-    const childId = getFirstDeptId(item.children || [])
-    if (childId) {
-      return childId
-    }
-  }
-  return undefined
 }

@@ -70,13 +70,12 @@
         </view>
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
-            <UserPicker
+            <UserFormPicker
               v-if="formMode === 'create'"
               v-model="formData.userId"
-              type="radio"
               label="选择人员"
-              prop="userId"
               label-width="220rpx"
+              prop="userId"
               placeholder="请选择人员"
             />
             <wd-form-item title="权限级别" title-width="220rpx" prop="level" center>
@@ -140,7 +139,7 @@ import {
   PermissionLevelEnum,
   updatePermission,
 } from '@/api/crm/permission'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { useUserStore } from '@/store/user'
 import { DICT_TYPE } from '@/utils/constants'

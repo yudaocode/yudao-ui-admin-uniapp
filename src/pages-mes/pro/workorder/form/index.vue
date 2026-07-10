@@ -25,7 +25,7 @@
             <wd-input v-model="formData.orderSourceCode" placeholder="请输入来源单据编号" clearable />
           </wd-form-item>
           <yd-form-picker v-model="formData.type" label="工单类型" label-width="220rpx" prop="type" :dict-type="DICT_TYPE.MES_PRO_WORK_ORDER_TYPE" placeholder="请选择工单类型" />
-          <ItemFormPicker v-model="formData.productId" label="产品" label-width="220rpx" prop="productId" item-or-product="PRODUCT" title="选择产品" placeholder="请选择产品" @change="handleProductChange" />
+          <ItemFormPicker v-model="formData.productId" label="产品" label-width="220rpx" prop="productId" placeholder="请选择产品" item-or-product="PRODUCT" title="选择产品" @change="handleProductChange" />
           <wd-form-item title="工单数量" title-width="220rpx" prop="quantity" center>
             <wd-input-number v-model="formData.quantity" :min="1" :precision="2" />
           </wd-form-item>

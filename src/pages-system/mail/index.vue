@@ -25,9 +25,9 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import { navigateBackPlus } from '@/utils'
-import AccountList from './components/account-list.vue'
-import LogList from './components/log-list.vue'
-import TemplateList from './components/template-list.vue'
+import AccountList from './account/components/list.vue'
+import LogList from './log/components/list.vue'
+import TemplateList from './template/components/list.vue'
 
 definePage({
   style: {

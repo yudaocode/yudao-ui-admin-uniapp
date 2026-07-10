@@ -87,8 +87,8 @@
             placeholder="请选择所在地"
             title="请选择所在地"
           />
-          <TagPicker v-model="formData.tagIds" label="用户标签" prop="tagIds" />
-          <GroupPicker v-model="formData.groupId" label="用户分组" prop="groupId" />
+          <TagFormPicker v-model="formData.tagIds" label="用户标签" prop="tagIds" />
+          <GroupFormPicker v-model="formData.groupId" label="用户分组" prop="groupId" />
           <wd-form-item title="会员备注" title-width="180rpx" prop="mark">
             <wd-textarea
               v-model="formData.mark"
@@ -125,8 +125,8 @@ import { onMounted, ref } from 'vue'
 import { getMemberUser, updateMemberUser } from '@/api/member/user'
 import { getAreaTree } from '@/api/system/area'
 import { getIntDictOptions } from '@/hooks/useDict'
-import GroupPicker from '@/pages-member/group/components/group-picker.vue'
-import TagPicker from '@/pages-member/tag/components/tag-picker.vue'
+import GroupFormPicker from '@/pages-member/group/components/group-form-picker.vue'
+import TagFormPicker from '@/pages-member/tag/components/tag-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'

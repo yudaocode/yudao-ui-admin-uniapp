@@ -74,11 +74,11 @@
           添加子设备（{{ bindTotal }}）
         </view>
         <view class="mb-24rpx">
-          <ProductPicker
+          <ProductFormPicker
             v-model="bindProductId"
             label="产品"
-            :device-type="DeviceTypeEnum.GATEWAY_SUB"
             placeholder="请选择产品"
+            :device-type="DeviceTypeEnum.GATEWAY_SUB"
           />
         </view>
         <view class="mb-24rpx flex gap-16rpx">
@@ -144,7 +144,7 @@ import { nextTick, onMounted, ref } from 'vue'
 import { bindDeviceGateway, getSubDeviceList, getUnboundSubDevicePage, unbindDeviceGateway } from '@/api/iot/device/device'
 import { DeviceTypeEnum } from '@/api/iot/product/product'
 import { useAccess } from '@/hooks/useAccess'
-import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

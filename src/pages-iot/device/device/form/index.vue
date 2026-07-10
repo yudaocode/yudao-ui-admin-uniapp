@@ -7,17 +7,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <yd-form-picker
-            v-model="formData.productId"
-            label="所属产品"
-            prop="productId"
-            :columns="productOptions"
-            label-key="name"
-            value-key="id"
-            placeholder="请选择产品"
-            label-width="220rpx"
-            :disabled="!!props.id"
-          />
+          <ProductFormPicker v-model="formData.productId" label="所属产品" label-width="220rpx" prop="productId" :disabled="!!props.id" @change="handleProductChange" />
           <wd-form-item title="DeviceName" title-width="220rpx" prop="deviceName">
             <wd-input v-model="formData.deviceName" placeholder="请输入 DeviceName" :disabled="!!props.id" clearable />
           </wd-form-item>
@@ -27,7 +17,7 @@
           <wd-form-item title="设备图片" title-width="220rpx" prop="picUrl">
             <yd-upload-img v-model="formData.picUrl" directory="iot/device" />
           </wd-form-item>
-          <DeviceGroupPicker
+          <DeviceGroupFormPicker
             v-model="formData.groupIds"
             label-width="220rpx"
           />
@@ -74,10 +64,10 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Device } from '@/api/iot/device/device'
 import type { Product } from '@/api/iot/product/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { createDevice, getDevice, updateDevice } from '@/api/iot/device/device'
-import { getSimpleProductList } from '@/api/iot/product/product'
-import DeviceGroupPicker from '@/pages-iot/device/group/components/device-group-picker.vue'
+import DeviceGroupFormPicker from '@/pages-iot/device/group/components/device-group-form-picker.vue'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { toFiniteNumber } from '@/utils/format'
 import { isEmptyValue } from '@/utils/is'
@@ -99,7 +89,6 @@ type DeviceFormData = Omit<Device, 'longitude' | 'latitude'> & {
   latitude?: number | string
 }
 const formLoading = ref(false) // 表单提交状态
-const productOptions = ref<Product[]>([]) // 产品选项
 const formData = ref<DeviceFormData>({
   id: undefined,
   productId: undefined,
@@ -133,15 +122,13 @@ const latitudeModel = computed({
   set: value => formData.value.latitude = value ?? '',
 }) // 纬度输入模型
 
-watch(
-  () => formData.value.productId,
-  (productId) => {
-    const product = productOptions.value.find(item => String(item.id) === String(productId))
-    if (product?.deviceType !== undefined) {
-      formData.value.deviceType = product.deviceType
-    }
-  },
-)
+/** 选择产品 */
+function handleProductChange(products: Product[]) {
+  const product = products[0]
+  if (product?.deviceType !== undefined) {
+    formData.value.deviceType = product.deviceType
+  }
+}
 
 /** 返回上一页 */
 function handleBack() {
@@ -224,8 +211,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

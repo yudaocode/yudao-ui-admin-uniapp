@@ -218,13 +218,10 @@
                   clearable
                 />
               </wd-form-item>
-              <wd-form-item
-                title="模型"
-                title-width="220rpx"
-                is-link
-                :value="getWotPickerFormValue(chatModelOptions, settingsForm.modelId, { labelKey: 'name', valueKey: 'id' })"
-                placeholder="请选择模型"
-                @click="pickerVisible.chatModel = true"
+              <ModelFormPicker
+                v-model="settingsForm.modelId"
+                label-width="220rpx"
+                :model-type="AiModelTypeEnum.CHAT"
               />
               <wd-form-item title="温度参数" title-width="220rpx">
                 <wd-input-number v-model="settingsForm.temperature" :min="0" :max="2" :step="0.1" />
@@ -250,22 +247,12 @@
         </view>
       </view>
     </wd-popup>
-
-    <wd-picker
-      v-model:visible="pickerVisible.chatModel"
-      :model-value="[settingsForm.modelId]"
-      :columns="chatModelOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => settingsForm.modelId = Number(value[0])"
-    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { ChatConversationVO } from '@/api/ai/chat/conversation'
 import type { ChatMessageVO } from '@/api/ai/chat/message'
-import type { ModelVO } from '@/api/ai/model/model'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
@@ -282,10 +269,9 @@ import {
   getChatMessageListByConversationId,
   sendChatMessageStream,
 } from '@/api/ai/chat/message'
-import { getModelSimpleList } from '@/api/ai/model/model'
+import ModelFormPicker from '@/pages-ai/model/model/components/model-form-picker.vue'
 import { navigateBackPlus } from '@/utils'
 import { formatDateTime } from '@/utils/date'
-import { getWotPickerFormValue } from '@/utils/wot'
 import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
 
 definePage({
@@ -309,10 +295,6 @@ const enableContext = ref(true) // 是否启用上下文
 const enableWebSearch = ref(false) // 是否启用联网搜索
 const streamController = ref<AbortController>() // 流式请求控制器
 const scrollIntoView = ref('bottom-anchor') // 滚动锚点
-const chatModels = ref<ModelVO[]>([]) // 聊天模型列表
-const pickerVisible = reactive({
-  chatModel: false,
-}) // 选择弹窗显示状态
 const settingsForm = reactive({
   id: undefined as number | undefined,
   systemMessage: '',
@@ -321,7 +303,6 @@ const settingsForm = reactive({
   maxTokens: 4096,
   maxContexts: 10,
 }) // 对话设置表单
-const chatModelOptions = computed(() => chatModels.value)
 const displayMessageList = computed(() => {
   if (messageList.value.length > 0) {
     return messageList.value
@@ -452,11 +433,7 @@ async function openConversationSettings() {
   settingsVisible.value = true
   settingsLoading.value = true
   try {
-    const [conversation, models] = await Promise.all([
-      getConversationDetail(activeConversation.value.id, activeConversation.value),
-      getModelSimpleList(AiModelTypeEnum.CHAT),
-    ])
-    chatModels.value = models
+    const conversation = await getConversationDetail(activeConversation.value.id, activeConversation.value)
     Object.assign(settingsForm, {
       id: conversation.id,
       systemMessage: conversation.systemMessage || '',

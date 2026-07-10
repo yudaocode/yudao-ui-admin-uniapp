@@ -9,13 +9,13 @@
 
     <!-- 搜索组件 -->
     <SearchForm
-      :dept-tree="deptTree"
       :dept-id="filters.deptId"
       :initial-start-time="defaultStartTime"
       :initial-end-time="defaultEndTime"
       :default-dept-id="defaultDeptId"
       @search="handleQuery"
       @reset="handleReset"
+      @ready="handleSearchReady"
     />
 
     <!-- 排行分类 -->
@@ -43,9 +43,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { Dept } from '@/api/system/dept'
 import type { StatisticsColumn, StatisticsSection } from '@/pages-statistics/utils/statistics'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import {
   getContactsCountRank,
   getContractCountRank,
@@ -56,15 +55,12 @@ import {
   getProductSalesRank,
   getReceivablePriceRank,
 } from '@/api/crm/statistics/rank'
-import { getSimpleDeptList } from '@/api/system/dept'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { handleTree } from '@/utils/tree'
 import SearchForm from '../components/search-form.vue'
 import {
   getDefaultDeptId,
-  getFirstDeptId,
   normalizeRows,
 } from '@/pages-statistics/utils/statistics'
 import StatisticsCard from '@/pages-statistics/components/card/statistics-card.vue'
@@ -86,7 +82,6 @@ const filters = reactive({
   endTime: defaultEndTime,
   deptId: defaultDeptId.value,
 }) // 筛选条件
-const deptTree = ref<Dept[]>([]) // 部门树形结构
 const loadingMap = ref<Record<string, boolean>>({}) // 各分类加载状态（每个 tab 自己的 loading）
 const sectionData = ref<Record<string, any[]>>({}) // 各分类数据缓存（每个 tab 自己的 rows）
 const tabIndex = ref(0) // 当前排行分类下标
@@ -153,11 +148,22 @@ function handleQuery(data: Record<string, any>) {
   loadData()
 }
 
+/** 搜索组件初始化完成 */
+function handleSearchReady(data: { deptId?: number, endTime: number, startTime: number }) {
+  filters.startTime = data.startTime
+  filters.endTime = data.endTime
+  filters.deptId = data.deptId
+  if (!defaultDeptId.value) {
+    defaultDeptId.value = data.deptId
+  }
+  loadData()
+}
+
 /** 重置按钮操作 */
 function handleReset() {
   filters.startTime = defaultStartTime
   filters.endTime = defaultEndTime
-  filters.deptId = defaultDeptId.value || getFirstDeptId(deptTree.value)
+  filters.deptId = defaultDeptId.value
   loadData()
 }
 
@@ -178,14 +184,4 @@ function rankChart(money = false): StatisticsSection['chart'] {
     series: [{ name: '数值', prop: 'count' }],
   }
 }
-
-/** 初始化 */
-onMounted(async () => {
-  deptTree.value = handleTree(await getSimpleDeptList())
-  if (!filters.deptId) {
-    filters.deptId = getFirstDeptId(deptTree.value)
-    defaultDeptId.value = filters.deptId
-  }
-  await loadData()
-})
 </script>

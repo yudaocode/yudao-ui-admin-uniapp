@@ -1,139 +1,103 @@
 <template>
-  <view v-if="useDefaultSlot" @click="handleOpen">
-    <slot />
+  <view v-if="$slots.default" @click="open">
+    <slot :value="displayValue" :users="selectedUsers" />
   </view>
-  <wd-form-item
-    v-else-if="label || prop"
-    :title="label"
-    :title-width="labelWidth"
-    :prop="prop || undefined"
-    :is-link="!disabled"
-    :value="selectedLabel"
-    :placeholder="placeholder"
-    @click="handleOpen"
-  />
-  <wd-cell
-    v-else
-    :is-link="!disabled"
-    :value="selectedLabel"
-    :placeholder="placeholder"
-    @click="handleOpen"
-  />
 
   <wd-select-picker
-    v-model="selectedId"
-    v-model:visible="visible"
-    :title="label || placeholder"
+    ref="pickerRef"
+    :visible="visible"
+    :model-value="pickerValue"
+    :title="title"
     :columns="userList"
     value-key="id"
     label-key="nickname"
     :type="type"
-    filterable
+    :filterable="filterable"
+    root-portal
+    :scroll-into-view="false"
+    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
 
 <script lang="ts" setup>
 import type { User } from '@/api/system/user'
-import { computed, onMounted, ref, watch } from 'vue'
-import { getSimpleUserList } from '@/api/system/user'
+import { computed, onMounted, ref } from 'vue'
+import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
+import { getUserOptions } from './user-options'
 
 const props = withDefaults(defineProps<{
-  labelWidth?: string
   modelValue?: number | number[]
   type?: 'radio' | 'checkbox'
-  label?: string
-  placeholder?: string
-  prop?: string
+  title?: string
   disabled?: boolean
-  useDefaultSlot?: boolean
+  filterable?: boolean
 }>(), {
-  labelWidth: '180rpx',
-  type: 'checkbox',
-  label: '',
-  placeholder: '请选择',
-  prop: '',
+  type: 'radio',
+  title: '选择用户',
   disabled: false,
-  useDefaultSlot: false,
+  filterable: true,
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: number | number[] | undefined): void
-  (e: 'confirm', users: User[]): void
+  'update:modelValue': [value: number | number[] | undefined]
+  'confirm': [users: User[]]
 }>()
 
-const userList = ref<User[]>([])
-const selectedId = ref<number | string | number[]>(props.type === 'radio' ? '' : [])
-const visible = ref(false)
-
-const selectedLabel = computed(() => {
-  if (Array.isArray(selectedId.value)) {
-    if (selectedId.value.length === 0) {
-      return ''
-    }
-    return selectedId.value.map(id => getUserNickname(Number(id))).filter(Boolean).join('、')
+const userList = ref<User[]>([]) // 用户选项
+const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
+const pickerValue = computed(() => {
+  if (props.type === 'checkbox') {
+    return Array.isArray(props.modelValue) ? props.modelValue : []
   }
-  return getUserNickname(Number(selectedId.value))
+  return Array.isArray(props.modelValue) ? props.modelValue[0] ?? '' : props.modelValue ?? ''
 })
+const selectedUsers = computed(() => getSelectedUsers(props.modelValue)) // 已选择用户
+const displayValue = computed(() => selectedUsers.value.map(user => user.nickname).filter(Boolean).join('、'))
 
-/** 打开选择弹窗 */
-function handleOpen() {
+/** 打开用户选择器 */
+function open() {
   if (props.disabled) {
     return
   }
-  visible.value = true
+  openPicker()
+  loadUserOptions()
 }
 
-/** 根据用户 ID 获取昵称 */
-function getUserNickname(userId: number | undefined): string {
-  if (!userId) {
-    return ''
-  }
-  const user = userList.value.find(u => u.id === userId)
-  return user?.nickname || ''
-}
-
-defineExpose({
-  getUserNickname,
-})
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (props.type === 'radio') {
-      // 单选时，如果值为 undefined，使用空字符串避免警告
-      selectedId.value = val !== undefined ? val : ''
-    } else {
-      // 多选时，确保是数组
-      selectedId.value = Array.isArray(val) ? val : []
-    }
-  },
-  { immediate: true },
-)
-
-/** 加载用户列表 */
-async function loadUserList() {
-  userList.value = await getSimpleUserList()
-}
-
-/** 选择确认 */
+/** 确认用户选择 */
 function handleConfirm({ value }: { value: any }) {
-  emit('update:modelValue', value)
+  const nextValue = props.type === 'checkbox'
+    ? (Array.isArray(value) ? value : []).map(Number)
+    : value == null || value === '' ? undefined : Number(Array.isArray(value) ? value[0] : value)
+  emit('update:modelValue', nextValue)
+  emit('confirm', getSelectedUsers(nextValue))
+}
 
-  // 发出包含完整用户对象的 confirm 事件
-  if (Array.isArray(value)) {
-    const selectedUsers = userList.value.filter(user => value.includes(user.id))
-    emit('confirm', selectedUsers)
-  } else if (value) {
-    const selectedUser = userList.value.find(user => user.id === value)
-    emit('confirm', selectedUser ? [selectedUser] : [])
-  } else {
-    emit('confirm', [])
+/** 获取已选择用户 */
+function getSelectedUsers(value?: number | number[]) {
+  const userIds = Array.isArray(value) ? value : value == null ? [] : [value]
+  return userList.value.filter(user => user.id != null && userIds.includes(Number(user.id)))
+}
+
+/** 格式化用户编号 */
+function format(value?: number | number[]) {
+  const currentValue = arguments.length > 0 ? value : props.modelValue
+  return getSelectedUsers(currentValue).map(user => user.nickname).filter(Boolean).join('、')
+}
+
+/** 加载用户选项 */
+async function loadUserOptions() {
+  try {
+    userList.value = await getUserOptions()
+  } catch {
+    // 请求层负责提示；保留空选项以便下次打开重试。
   }
 }
+
+defineExpose({ open, format })
 
 /** 初始化 */
 onMounted(() => {
-  loadUserList()
+  loadUserOptions()
 })
 </script>

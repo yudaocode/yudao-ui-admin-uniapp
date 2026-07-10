@@ -1,5 +1,7 @@
+export type { YdFormPickerExpose } from './yd-form-picker/types'
 export { default as YdFormPicker } from './yd-form-picker/yd-form-picker.vue'
 export { default as YdSearchDateRange } from './yd-search-date-range/yd-search-date-range.vue'
+export type { YdSearchPickerExpose } from './yd-search-picker/types'
 export { default as YdSearchPicker } from './yd-search-picker/yd-search-picker.vue'
 export { default as YdTreeSelect } from './yd-tree-select/yd-tree-select.vue'
 export { default as YdUploadFile } from './yd-upload-file/yd-upload-file.vue'

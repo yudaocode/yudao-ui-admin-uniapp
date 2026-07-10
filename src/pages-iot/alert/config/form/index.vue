@@ -35,7 +35,7 @@
             </wd-radio-group>
           </wd-form-item>
           <SceneRulePicker v-model="formData.sceneRuleIds" prop="sceneRuleIds" :columns="sceneRuleOptions" label-width="220rpx" />
-          <UserPicker v-model="formData.receiveUserIds" label="接收用户" prop="receiveUserIds" label-width="220rpx" />
+          <UserFormPicker v-model="formData.receiveUserIds" label="接收用户" label-width="220rpx" prop="receiveUserIds" type="checkbox" />
           <yd-form-picker
             v-model="formData.receiveTypes"
             label="接收类型"
@@ -46,38 +46,20 @@
             placeholder="请选择接收类型"
             label-width="220rpx"
           />
-          <yd-form-picker
+          <SmsTemplateFormPicker
             v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.SMS)"
             v-model="formData.smsTemplateCode"
-            label="短信模板"
             prop="smsTemplateCode"
-            :columns="smsTemplateOptions"
-            label-key="name"
-            value-key="code"
-            placeholder="请选择短信模板"
-            label-width="220rpx"
           />
-          <yd-form-picker
+          <MailTemplateFormPicker
             v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.MAIL)"
             v-model="formData.mailTemplateCode"
-            label="邮件模板"
             prop="mailTemplateCode"
-            :columns="mailTemplateOptions"
-            label-key="name"
-            value-key="code"
-            placeholder="请选择邮件模板"
-            label-width="220rpx"
           />
-          <yd-form-picker
+          <NotifyTemplateFormPicker
             v-if="formData.receiveTypes?.includes(IotAlertReceiveTypeEnum.NOTIFY)"
             v-model="formData.notifyTemplateCode"
-            label="站内信模板"
             prop="notifyTemplateCode"
-            :columns="notifyTemplateOptions"
-            label-key="name"
-            value-key="code"
-            placeholder="请选择站内信模板"
-            label-width="220rpx"
           />
           <wd-form-item title="配置描述" title-width="220rpx" prop="description">
             <wd-textarea v-model="formData.description" placeholder="请输入配置描述" :maxlength="300" show-word-limit />
@@ -99,19 +81,16 @@
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AlertConfig } from '@/api/iot/alert/config'
 import type { IotSceneRule } from '@/api/iot/rule/scene'
-import type { MailTemplate } from '@/api/system/mail/template'
-import type { NotifyTemplate } from '@/api/system/notify/template'
-import type { SmsTemplate } from '@/api/system/sms/template'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
 import { createAlertConfig, getAlertConfig, updateAlertConfig } from '@/api/iot/alert/config'
 import { getSimpleRuleSceneList } from '@/api/iot/rule/scene'
-import { getSimpleMailTemplateList } from '@/api/system/mail/template'
-import { getSimpleNotifyTemplateList } from '@/api/system/notify/template'
-import { getSimpleSmsTemplateList } from '@/api/system/sms/template'
 import { getIntDictOptions } from '@/hooks/useDict'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import SceneRulePicker from '@/pages-iot/rule/scene/components/scene-rule-picker.vue'
+import MailTemplateFormPicker from '@/pages-system/mail/template/components/form-picker.vue'
+import NotifyTemplateFormPicker from '@/pages-system/notify/template/components/form-picker.vue'
+import SmsTemplateFormPicker from '@/pages-system/sms/template/components/form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE, IotAlertReceiveTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -129,9 +108,6 @@ const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑告警配置' : '新增告警配置')
 const formLoading = ref(false) // 表单提交状态
 const sceneRuleOptions = ref<IotSceneRule[]>([]) // 场景规则选项
-const smsTemplateOptions = ref<SmsTemplate[]>([]) // 短信模板选项
-const mailTemplateOptions = ref<MailTemplate[]>([]) // 邮件模板选项
-const notifyTemplateOptions = ref<NotifyTemplate[]>([]) // 站内信模板选项
 const formData = ref<AlertConfig>({
   id: undefined,
   name: '',
@@ -180,16 +156,7 @@ async function getDetail() {
 
 /** 加载表单选项 */
 async function loadOptions() {
-  const [sceneRules, smsTemplates, mailTemplates, notifyTemplates] = await Promise.all([
-    getSimpleRuleSceneList(),
-    getSimpleSmsTemplateList(),
-    getSimpleMailTemplateList(),
-    getSimpleNotifyTemplateList(),
-  ])
-  sceneRuleOptions.value = sceneRules
-  smsTemplateOptions.value = smsTemplates
-  mailTemplateOptions.value = mailTemplates
-  notifyTemplateOptions.value = notifyTemplates
+  sceneRuleOptions.value = await getSimpleRuleSceneList()
 }
 
 /** 提交表单 */

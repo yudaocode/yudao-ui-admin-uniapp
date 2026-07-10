@@ -19,13 +19,13 @@
         </view>
         <wd-input v-model="formData.no" placeholder="请输入订单单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" />
       <yd-search-date-range v-model="formData.orderTime" label="订单时间" />
-      <yd-search-picker v-model="formData.customerId" label="客户" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
-      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
-      <yd-search-picker v-model="formData.outStatus" label="出库数量" :columns="getProgressStatusColumns('出库')" all-option />
-      <yd-search-picker v-model="formData.returnStatus" label="退货数量" :columns="getProgressStatusColumns('退货')" all-option />
+      <CustomerSearchPicker ref="customerPickerRef" v-model="formData.customerId" />
+      <UserSearchPicker ref="creatorPickerRef" v-model="formData.creator" label="创建人" />
+      <yd-search-picker ref="statusPickerRef" v-model="formData.status" label="状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
+      <yd-search-picker ref="outStatusPickerRef" v-model="formData.outStatus" label="出库数量" :columns="getProgressStatusColumns('出库')" all-option />
+      <yd-search-picker ref="returnStatusPickerRef" v-model="formData.returnStatus" label="退货数量" :columns="getProgressStatusColumns('退货')" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           备注
@@ -45,24 +45,26 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
+import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getCustomerSimpleList } from '@/api/erp/sale/customer'
-import { getProductSimpleList } from '@/api/erp/product/product'
-import { getSimpleUserList } from '@/api/system/user'
+import { UserSearchPicker } from '@/components/system-select'
+import ProductSearchPicker from '@/pages-erp/product/product/components/product-search-picker.vue'
+import CustomerSearchPicker from '@/pages-erp/sale/customer/components/customer-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
-const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
-const userOptions = ref<Record<string, any>[]>([]) // 创建人选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
+const customerPickerRef = ref<InstanceType<typeof CustomerSearchPicker>>() // 客户选择器
+const creatorPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 创建人选择器
+const statusPickerRef = ref<YdSearchPickerExpose>() // 审核状态选择器
+const outStatusPickerRef = ref<YdSearchPickerExpose>() // 出库状态选择器
+const returnStatusPickerRef = ref<YdSearchPickerExpose>() // 退货状态选择器
 const formData = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -91,39 +93,31 @@ const placeholder = computed(() => {
     conditions.push(`单号:${formData.no}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.orderTime[0] && formData.orderTime[1]) {
     conditions.push(`订单时间:${formatDate(formData.orderTime[0])}~${formatDate(formData.orderTime[1])}`)
   }
   if (formData.customerId) {
-    conditions.push(`客户:${getErpOptionLabel(customerOptions.value, formData.customerId)}`)
+    conditions.push(`客户:${customerPickerRef.value?.format(formData.customerId) || formData.customerId}`)
+  }
+  if (formData.creator) {
+    conditions.push(`创建人:${creatorPickerRef.value?.format(formData.creator) || formData.creator}`)
   }
   if (formData.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
+    conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.outStatus !== -1) {
-    conditions.push(`出库:${getProgressStatusLabel(formData.outStatus, '出库')}`)
+    conditions.push(`出库:${outStatusPickerRef.value?.format(formData.outStatus) || formData.outStatus}`)
   }
   if (formData.returnStatus !== -1) {
-    conditions.push(`退货:${getProgressStatusLabel(formData.returnStatus, '退货')}`)
+    conditions.push(`退货:${returnStatusPickerRef.value?.format(formData.returnStatus) || formData.returnStatus}`)
+  }
+  if (formData.remark) {
+    conditions.push(`备注:${formData.remark}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索销售订单'
 })
-
-/** 获取进度状态文本 */
-function getProgressStatusLabel(status: number, label: string) {
-  if (status === 0) {
-    return `未${label}`
-  }
-  if (status === 1) {
-    return `部分${label}`
-  }
-  if (status === 2) {
-    return `全部${label}`
-  }
-  return '全部'
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -155,17 +149,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [products, customers, users] = await Promise.all([
-    getProductSimpleList(),
-    getCustomerSimpleList(),
-    getSimpleUserList(),
-  ])
-
-  productOptions.value = products
-  customerOptions.value = customers
-  userOptions.value = users
-})
 </script>

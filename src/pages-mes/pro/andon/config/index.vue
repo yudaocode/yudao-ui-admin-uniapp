@@ -94,23 +94,25 @@
                   clearable
                 />
               </wd-form-item>
-              <yd-form-picker v-model="formData.level" label="级别" label-width="220rpx" prop="level" :columns="levelOptions" placeholder="请选择级别" />
               <yd-form-picker
-                v-model="formData.handlerRoleId"
-                label="处置角色"
+                v-model="formData.level"
+                label="级别"
                 label-width="220rpx"
-                prop="handlerRoleId"
-                :columns="roleOptions"
-                label-key="name"
-                value-key="id"
-                placeholder="请选择处置角色"
+                prop="level"
+                :dict-type="DICT_TYPE.MES_PRO_ANDON_LEVEL"
+                placeholder="请选择级别"
               />
-              <UserPicker
+              <RoleFormPicker
+                v-model="formData.handlerRoleId"
+                prop="handlerRoleId"
+                label="处置角色"
+                @change="handleRoleChange"
+              />
+              <UserFormPicker
                 v-model="formData.handlerUserId"
                 label="处置人"
                 label-width="220rpx"
                 prop="handlerUserId"
-                type="radio"
                 placeholder="请选择处置人"
                 @confirm="handleUserConfirm"
               />
@@ -135,19 +137,18 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
 import type { Role } from '@/api/system/role'
 import type { User } from '@/api/system/user'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { createAndonConfig, deleteAndonConfig, getAndonConfigPage, updateAndonConfig } from '@/api/mes/pro/andon/config'
-import { getSimpleRoleList } from '@/api/system/role'
 import { useAccess } from '@/hooks/useAccess'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { MesProAndonLevelEnum } from '@/utils/constants/biz-mes-enum'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
+import RoleFormPicker from '@/pages-system/role/components/role-form-picker.vue'
 
 interface ZPagingRef<T> {
   reload: () => void
@@ -172,10 +173,8 @@ const pagingRef = ref<ZPagingRef<ProAndonConfig>>() // 分页组件引用
 const formRef = ref<FormInstance>() // 表单组件引用
 const formVisible = ref(false) // 表单弹层
 const formLoading = ref(false) // 表单提交状态
-const roleOptions = ref<Role[]>([]) // 角色列表
 const selectedUser = ref<User>() // 当前选择用户
 const formData = ref<AndonConfigFormData>(getDefaultFormData()) // 表单数据
-const levelOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_PRO_ANDON_LEVEL))
 const formSchema = createFormSchema({
   reason: [{ required: true, message: '呼叫原因不能为空' }],
   level: [{ required: true, message: '级别不能为空' }],
@@ -238,6 +237,11 @@ function handleCancelForm() {
   formVisible.value = false
 }
 
+/** 选择处置角色 */
+function handleRoleChange(role?: Role) {
+  formData.value.handlerRoleName = role?.name
+}
+
 /** 选择处置人 */
 function handleUserConfirm(users: User[]) {
   selectedUser.value = users[0]
@@ -286,14 +290,4 @@ async function handleDelete(item: ProAndonConfig) {
   toast.success('删除成功')
   pagingRef.value?.reload()
 }
-
-/** 初始化角色 */
-async function loadRoleOptions() {
-  roleOptions.value = await getSimpleRoleList()
-}
-
-/** 初始化 */
-onMounted(() => {
-  loadRoleOptions()
-})
 </script>

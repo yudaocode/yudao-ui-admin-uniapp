@@ -27,8 +27,8 @@
             title="请选择订单时间"
             type="date"
           />
-          <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
-          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择销售人员" />
+          <CustomerFormPicker v-model="formData.customerId" prop="customerId" />
+          <UserFormPicker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -62,7 +62,7 @@
           </wd-form-item>
           <wd-cell title="收款优惠" :value="formatMoney(formData.discountPrice)" />
           <wd-cell title="优惠后金额" :value="formatMoney(formData.totalPrice)" />
-          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" />
+          <AccountFormPicker v-model="formData.accountId" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" :auto-default="!props.id" />
           <wd-form-item title="收取订金" title-width="220rpx" prop="depositPrice" center>
             <wd-input-number v-model="formData.depositPrice" :min="0" :precision="2" />
           </wd-form-item>
@@ -93,12 +93,12 @@ import { createSaleOrder, getSaleOrder, updateSaleOrder } from '@/api/erp/sale/o
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
+import { UserFormPicker } from '@/components/system-select'
+import AccountFormPicker from '@/pages-erp/finance/account/components/account-form-picker.vue'
+import CustomerFormPicker from '@/pages-erp/sale/customer/components/customer-form-picker.vue'
 import OrderItemForm from '../components/order-item-form.vue'
 import { roundPrice } from '@/pages-erp/utils/format'
 import { formatMoney, toNumber } from '@/utils/format'
-import { getCustomerSimpleList } from '@/api/erp/sale/customer'
-import { getSimpleUserList } from '@/api/system/user'
 
 const props = defineProps<{ id?: number }>()
 definePage({
@@ -129,8 +129,6 @@ const formData = ref<SaleOrder>({
 const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof OrderItemForm>>() // 明细组件引用
 const productOptions = ref<Product[]>([]) // 产品选项
-const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
-const userOptions = ref<Record<string, any>[]>([]) // 用户选项
 const dateVisible = reactive({
   orderTime: false,
 }) // 日期选择器状态
@@ -157,14 +155,8 @@ function refreshOrderAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [products, customers, users] = await Promise.all([
-    getProductSimpleList(),
-    getCustomerSimpleList(),
-    getSimpleUserList(),
-  ])
+  const products = await getProductSimpleList()
   productOptions.value = products || []
-  customerOptions.value = customers || []
-  userOptions.value = users || []
 }
 
 /** 加载销售订单详情 */

@@ -214,8 +214,8 @@
               <text>{{ detailQuantityMax ?? '-' }}</text>
             </wd-form-item>
             <WarehouseFormPicker v-model="detailFormData.toWarehouseId" label="移入仓库" prop="toWarehouseId" :disabled="!props.stockMode" @change="handleWarehouseChange" />
-            <WarehouseLocationFormPicker v-model="detailFormData.toLocationId" label="移入库区" :warehouse-id="detailFormData.toWarehouseId" prop="toLocationId" :disabled="!props.stockMode" @change="handleLocationChange" />
-            <WarehouseAreaFormPicker v-model="detailFormData.toAreaId" label="移入库位" :location-id="detailFormData.toLocationId" prop="toAreaId" :disabled="!props.stockMode" />
+            <WarehouseLocationFormPicker v-model="detailFormData.toLocationId" label="移入库区" prop="toLocationId" :warehouse-id="detailFormData.toWarehouseId" :disabled="!props.stockMode" @change="handleLocationChange" />
+            <WarehouseAreaFormPicker v-model="detailFormData.toAreaId" label="移入库位" prop="toAreaId" :location-id="detailFormData.toLocationId" :disabled="!props.stockMode" />
             <wd-form-item title="备注" title-width="220rpx" prop="remark">
               <wd-textarea v-model="detailFormData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
             </wd-form-item>

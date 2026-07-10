@@ -11,9 +11,7 @@
           <wd-form-item title="退货时间" title-width="220rpx" prop="returnTime" is-link :value="formatDate(formData.returnTime) || ''" placeholder="请选择退货时间" @click="dateVisible.returnTime = true" />
           <wd-datetime-picker v-model="formData.returnTime" v-model:visible="dateVisible.returnTime" title="请选择退货时间" type="date" />
           <wd-cell title="关联订单" :value="formData.orderNo || '请选择可退货采购订单'" is-link @click="openOrderSelector" />
-          <wd-form-item title="供应商" title-width="220rpx" prop="supplierId">
-            <wd-input :model-value="supplierDisplayValue" placeholder="选择采购订单后回填" disabled />
-          </wd-form-item>
+          <SupplierFormPicker v-model="formData.supplierId" prop="supplierId" placeholder="选择采购订单后回填" disabled />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -43,7 +41,7 @@
           <wd-form-item title="其它费用" title-width="220rpx" prop="otherPrice" center>
             <wd-input-number v-model="formData.otherPrice" :min="0" :precision="2" />
           </wd-form-item>
-          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" />
+          <AccountFormPicker v-model="formData.accountId" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" :auto-default="!props.id" />
           <wd-cell title="应退金额" :value="formatMoney(formData.totalPrice)" />
         </wd-cell-group>
       </wd-form>
@@ -66,17 +64,16 @@
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { PurchaseOrder } from '@/api/erp/purchase/order'
 import type { PurchaseReturn } from '@/api/erp/purchase/return'
-import type { Supplier } from '@/api/erp/purchase/supplier'
 import type { Warehouse } from '@/api/erp/stock/warehouse'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
 import { createPurchaseReturn, getPurchaseReturn, updatePurchaseReturn } from '@/api/erp/purchase/return'
 import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
+import { createFormSchema } from '@/utils/wot'
+import AccountFormPicker from '@/pages-erp/finance/account/components/account-form-picker.vue'
+import SupplierFormPicker from '@/pages-erp/purchase/supplier/components/supplier-form-picker.vue'
 import PurchaseOrderReturnPicker from '../components/purchase-order-return-picker.vue'
 import ReturnItemForm from '../components/return-item-form.vue'
 import { roundPrice } from '@/pages-erp/utils/format'
@@ -111,14 +108,12 @@ const formData = ref<PurchaseReturn>({
 const formRef = ref<FormInstance>()
 const itemEditorRef = ref<InstanceType<typeof ReturnItemForm>>()
 const orderSelectorRef = ref<InstanceType<typeof PurchaseOrderReturnPicker>>()
-const supplierOptions = ref<Supplier[]>([])
 const warehouseOptions = ref<Warehouse[]>([])
 const dateVisible = reactive({ returnTime: false })
 const formSchema = createFormSchema({
   supplierId: [{ required: true, message: '供应商不能为空，请先选择采购订单' }],
   returnTime: [{ required: true, message: '退货时间不能为空' }],
 })
-const supplierDisplayValue = computed(() => getWotPickerFormValue(supplierOptions.value, formData.value.supplierId, { valueKey: 'id', labelKey: 'name' }))
 const preOtherPrice = computed(() => Number(formData.value.totalPrice || 0) - Number(formData.value.otherPrice || 0))
 
 /** 返回上一页 */
@@ -139,11 +134,7 @@ function refreshAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [suppliers, warehouses] = await Promise.all([
-    getSupplierSimpleList(),
-    getWarehouseSimpleList(),
-  ])
-  supplierOptions.value = suppliers || []
+  const warehouses = await getWarehouseSimpleList()
   warehouseOptions.value = warehouses || []
 }
 

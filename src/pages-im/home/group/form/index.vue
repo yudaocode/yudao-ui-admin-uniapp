@@ -33,13 +33,13 @@
           <wd-form-item title="进群审批" title-width="180rpx" prop="joinApproval" center>
             <wd-switch v-model="formData.joinApproval" />
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-if="!props.id"
             v-model="formData.memberUserIds"
             label="群成员"
             prop="memberUserIds"
-            type="checkbox"
             placeholder="请选择初始成员"
+            type="checkbox"
           />
         </wd-cell-group>
       </wd-form>
@@ -64,7 +64,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createGroup, getGroup, updateGroup } from '@/api/im/group'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 

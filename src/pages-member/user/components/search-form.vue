@@ -43,24 +43,9 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户标签
-        </view>
-        <TagPicker ref="tagPickerRef" v-model="formData.tagIds" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户等级
-        </view>
-        <LevelPicker ref="levelPickerRef" v-model="formData.levelId" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户分组
-        </view>
-        <GroupPicker ref="groupPickerRef" v-model="formData.groupId" />
-      </view>
+      <TagSearchPicker ref="tagPickerRef" v-model="formData.tagIds" />
+      <LevelSearchPicker ref="levelPickerRef" v-model="formData.levelId" />
+      <GroupSearchPicker ref="groupPickerRef" v-model="formData.groupId" />
       <yd-search-date-range v-model="formData.createTime" label="注册时间" />
       <yd-search-date-range v-model="formData.loginDate" label="登录时间" />
       <view class="yd-search-form-actions">
@@ -79,9 +64,9 @@
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
-import GroupPicker from '@/pages-member/group/components/group-picker.vue'
-import LevelPicker from '@/pages-member/level/components/level-picker.vue'
-import TagPicker from '@/pages-member/tag/components/tag-picker.vue'
+import GroupSearchPicker from '@/pages-member/group/components/group-search-picker.vue'
+import LevelSearchPicker from '@/pages-member/level/components/level-search-picker.vue'
+import TagSearchPicker from '@/pages-member/tag/components/tag-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -89,9 +74,9 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const tagPickerRef = ref<InstanceType<typeof TagPicker>>()
-const levelPickerRef = ref<InstanceType<typeof LevelPicker>>()
-const groupPickerRef = ref<InstanceType<typeof GroupPicker>>()
+const tagPickerRef = ref<InstanceType<typeof TagSearchPicker>>()
+const levelPickerRef = ref<InstanceType<typeof LevelSearchPicker>>()
+const groupPickerRef = ref<InstanceType<typeof GroupSearchPicker>>()
 const formData = reactive({
   nickname: undefined as string | undefined,
   mobile: undefined as string | undefined,
@@ -116,14 +101,13 @@ const placeholder = computed(() => {
     conditions.push(`邮箱:${formData.email}`)
   }
   if (formData.tagIds.length > 0) {
-    const tagNames = formData.tagIds.map(id => tagPickerRef.value?.getTagName(id)).filter(Boolean).join('、')
-    conditions.push(`标签:${tagNames || `${formData.tagIds.length}个`}`)
+    conditions.push(`标签:${tagPickerRef.value?.format(formData.tagIds) || `${formData.tagIds.length}个`}`)
   }
   if (formData.levelId) {
-    conditions.push(`等级:${levelPickerRef.value?.getLevelName(formData.levelId) || formData.levelId}`)
+    conditions.push(`等级:${levelPickerRef.value?.format(formData.levelId) || formData.levelId}`)
   }
   if (formData.groupId) {
-    conditions.push(`分组:${groupPickerRef.value?.getGroupName(formData.groupId) || formData.groupId}`)
+    conditions.push(`分组:${groupPickerRef.value?.format(formData.groupId) || formData.groupId}`)
   }
   if (formData.createTime[0] && formData.createTime[1]) {
     conditions.push(`注册:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)

@@ -10,7 +10,7 @@
           <wd-cell title="订单单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="订单时间" title-width="220rpx" prop="orderTime" is-link :value="formatDate(formData.orderTime) || ''" placeholder="请选择订单时间" @click="dateVisible.orderTime = true" />
           <wd-datetime-picker v-model="formData.orderTime" v-model:visible="dateVisible.orderTime" title="请选择订单时间" type="date" />
-          <yd-form-picker v-model="formData.supplierId" label="供应商" label-width="220rpx" prop="supplierId" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
+          <SupplierFormPicker v-model="formData.supplierId" prop="supplierId" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -40,7 +40,7 @@
           </wd-form-item>
           <wd-cell title="付款优惠" :value="formatMoney(formData.discountPrice)" />
           <wd-cell title="优惠后金额" :value="formatMoney(formData.totalPrice)" />
-          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" />
+          <AccountFormPicker v-model="formData.accountId" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" :auto-default="!props.id" />
           <wd-form-item title="支付订金" title-width="220rpx" prop="depositPrice" center>
             <wd-input-number v-model="formData.depositPrice" :min="0" :precision="2" />
           </wd-form-item>
@@ -71,11 +71,11 @@ import { createPurchaseOrder, getPurchaseOrder, updatePurchaseOrder } from '@/ap
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
+import AccountFormPicker from '@/pages-erp/finance/account/components/account-form-picker.vue'
+import SupplierFormPicker from '@/pages-erp/purchase/supplier/components/supplier-form-picker.vue'
 import OrderItemForm from '../components/order-item-form.vue'
 import { roundPrice } from '@/pages-erp/utils/format'
 import { formatMoney, toNumber } from '@/utils/format'
-import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
 
 const props = defineProps<{ id?: number }>()
 definePage({
@@ -105,7 +105,6 @@ const formData = ref<PurchaseOrder>({
 const formRef = ref<FormInstance>()
 const itemEditorRef = ref<InstanceType<typeof OrderItemForm>>()
 const productOptions = ref<Product[]>([])
-const supplierOptions = ref<Record<string, any>[]>([])
 const dateVisible = reactive({
   orderTime: false,
 })
@@ -132,12 +131,8 @@ function refreshOrderAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [products, suppliers] = await Promise.all([
-    getProductSimpleList(),
-    getSupplierSimpleList(),
-  ])
+  const products = await getProductSimpleList()
   productOptions.value = products || []
-  supplierOptions.value = suppliers || []
 }
 
 /** 加载详情 */

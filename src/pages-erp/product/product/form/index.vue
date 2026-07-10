@@ -25,15 +25,9 @@
             label-width="220rpx"
             placeholder="请选择分类"
           />
-          <yd-form-picker
+          <ProductUnitFormPicker
             v-model="formData.unitId"
-            label="单位"
-            label-width="220rpx"
             prop="unitId"
-            :columns="unitOptions"
-            label-key="name"
-            value-key="id"
-            placeholder="请选择单位"
           />
           <wd-form-item title="状态" title-width="220rpx" prop="status" center>
             <wd-switch
@@ -128,7 +122,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getProductCategorySimpleList } from '@/api/erp/product/category'
 import { createProduct, getProduct, updateProduct } from '@/api/erp/product/product'
-import { getProductUnitSimpleList } from '@/api/erp/product/unit'
+import ProductUnitFormPicker from '@/pages-erp/product/unit/components/product-unit-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { toOptionalNumber } from '@/utils/format'
@@ -164,7 +158,6 @@ const formData = ref<Product>({
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const categoryTree = ref<ProductCategory[]>([]) // 产品分类树
-const unitOptions = ref<Record<string, any>[]>([]) // 单位选项
 const formSchema = createFormSchema({
   name: [{ required: true, message: '产品名称不能为空' }],
   barCode: [{ required: true, message: '产品条码不能为空' }],
@@ -180,12 +173,7 @@ function handleBack() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [categoryList, units] = await Promise.all([
-    getProductCategorySimpleList(),
-    getProductUnitSimpleList(),
-  ])
-  categoryTree.value = handleTree(categoryList)
-  unitOptions.value = units || []
+  categoryTree.value = handleTree(await getProductCategorySimpleList())
 }
 
 /** 加载产品详情 */

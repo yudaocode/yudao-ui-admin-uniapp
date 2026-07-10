@@ -35,15 +35,15 @@
               </wd-radio>
             </wd-radio-group>
           </wd-form-item>
-          <DevicePicker
+          <DeviceFormPicker
             v-if="formData.deviceScope === IoTOtaTaskDeviceScopeEnum.SELECT.value"
             v-model="formData.deviceIds"
             label="指定设备"
+            label-width="220rpx"
             prop="deviceIds"
+            placeholder="请选择设备"
             :columns="deviceOptions"
             type="checkbox"
-            placeholder="请选择设备"
-            label-width="220rpx"
           />
           <wd-form-item title="任务描述" title-width="220rpx" prop="description">
             <wd-textarea
@@ -136,7 +136,7 @@ import { getDeviceListByProductId } from '@/api/iot/device/device'
 import { getOtaFirmware, getOtaFirmwarePage } from '@/api/iot/ota/firmware'
 import { createOtaTask } from '@/api/iot/ota/task'
 import { getIntDictOptions } from '@/hooks/useDict'
-import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
+import DeviceFormPicker from '@/pages-iot/device/device/components/device-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, IoTOtaTaskDeviceScopeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

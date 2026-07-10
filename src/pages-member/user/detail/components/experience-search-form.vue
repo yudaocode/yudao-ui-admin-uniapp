@@ -13,20 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          业务类型
-        </view>
-        <view class="yd-search-form-date-range-picker" @click="pickerVisible.bizType = true">
-          {{ getWotPickerDisplay(bizTypeOptions, formData.bizType, { placeholder: '请选择业务类型' }) }}
-        </view>
-        <wd-picker
-          v-model:visible="pickerVisible.bizType"
-          :model-value="[formData.bizType]"
-          :columns="bizTypeOptions"
-          @confirm="({ value }) => formData.bizType = value[0]"
-        />
-      </view>
+      <yd-search-picker v-model="formData.bizType" label="业务类型" :dict-type="DICT_TYPE.MEMBER_EXPERIENCE_BIZ_TYPE" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           标题
@@ -48,11 +35,10 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -60,11 +46,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const pickerVisible = ref<Record<string, boolean>>({})
-const bizTypeOptions = computed(() => [
-  { label: '全部', value: -1 },
-  ...getIntDictOptions(DICT_TYPE.MEMBER_EXPERIENCE_BIZ_TYPE),
-])
 const formData = reactive({
   bizType: -1,
   title: undefined as string | undefined,

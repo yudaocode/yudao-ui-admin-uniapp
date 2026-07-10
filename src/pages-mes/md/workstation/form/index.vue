@@ -41,16 +41,16 @@
           <WarehouseLocationFormPicker
             v-model="formData.locationId"
             label="库区"
-            :warehouse-id="formData.warehouseId"
             placeholder="请选择库区"
+            :warehouse-id="formData.warehouseId"
             clearable
             @change="handleLocationChange"
           />
           <WarehouseAreaFormPicker
             v-model="formData.areaId"
             label="库位"
-            :location-id="formData.locationId"
             placeholder="请选择库位"
+            :location-id="formData.locationId"
             clearable
           />
           <yd-form-picker

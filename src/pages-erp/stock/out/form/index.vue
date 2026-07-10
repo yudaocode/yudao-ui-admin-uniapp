@@ -10,7 +10,7 @@
           <wd-cell title="出库单号" :value="formData.no || '保存时自动生成'" />
           <wd-form-item title="出库时间" title-width="220rpx" prop="outTime" is-link :value="formatDate(formData.outTime) || ''" placeholder="请选择出库时间" @click="dateVisible.outTime = true" />
           <wd-datetime-picker v-model="formData.outTime" v-model:visible="dateVisible.outTime" title="请选择出库时间" type="date" />
-          <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" />
+          <CustomerFormPicker v-model="formData.customerId" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -66,10 +66,10 @@ import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
+import CustomerFormPicker from '@/pages-erp/sale/customer/components/customer-form-picker.vue'
 import OutItemForm from '../components/out-item-form.vue'
 import { formatCount, roundPrice } from '@/pages-erp/utils/format'
 import { formatMoney, toNumber } from '@/utils/format'
-import { getCustomerSimpleList } from '@/api/erp/sale/customer'
 
 const props = defineProps<{ id?: number }>()
 definePage({
@@ -97,7 +97,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof OutItemForm>>() // 明细组件引用
 const productOptions = ref<Product[]>([]) // 产品选项
 const warehouseOptions = ref<Warehouse[]>([]) // 仓库选项
-const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
 const dateVisible = reactive({
   outTime: false,
 }) // 日期选择器状态
@@ -121,14 +120,12 @@ function refreshAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [products, warehouses, customers] = await Promise.all([
+  const [products, warehouses] = await Promise.all([
     getProductSimpleList(),
     getWarehouseSimpleList(),
-    getCustomerSimpleList(),
   ])
   productOptions.value = products || []
   warehouseOptions.value = warehouses || []
-  customerOptions.value = customers || []
 }
 
 /** 加载其它出库详情 */

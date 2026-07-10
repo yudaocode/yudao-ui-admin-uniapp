@@ -12,7 +12,7 @@
         <wd-form-item title="用户昵称" title-width="180rpx" prop="nickname">
           <wd-input v-model="formData.nickname" disabled />
         </wd-form-item>
-        <LevelPicker v-model="formData.levelId" label="用户等级" prop="levelId" clearable />
+        <LevelFormPicker v-model="formData.levelId" label="用户等级" prop="levelId" clearable />
         <wd-form-item title="修改原因" title-width="180rpx" prop="reason">
           <wd-textarea
             v-model="formData.reason"
@@ -35,7 +35,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
 import { getMemberUser, updateMemberUserLevel } from '@/api/member/user'
-import LevelPicker from '@/pages-member/level/components/level-picker.vue'
+import LevelFormPicker from '@/pages-member/level/components/level-form-picker.vue'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{

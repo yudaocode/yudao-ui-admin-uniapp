@@ -13,12 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择用户" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <WorkstationSearchPicker ref="workstationSearchPickerRef" v-model="formData.workstationId" label="工作站" placeholder="请选择工作站" />
       <yd-search-picker v-model="formData.type" label="操作类型" :dict-type="DICT_TYPE.MES_PRO_WORK_RECORD_TYPE" all-option />
       <yd-search-date-range v-model="createTimeRange" label="操作时间" />
@@ -37,7 +32,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -51,7 +46,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const createTimeRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 操作时间范围
 const workstationSearchPickerRef = ref<InstanceType<typeof WorkstationSearchPicker>>() // 工作站搜索选择器
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 用户选择器
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 用户选择器
 const formData = reactive({
   userId: undefined,
   workstationId: undefined,
@@ -61,7 +56,7 @@ const formData = reactive({
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  const userName = userPickerRef.value?.format(formData.userId)
   if (userName) {
     conditions.push(`用户:${userName}`)
   }

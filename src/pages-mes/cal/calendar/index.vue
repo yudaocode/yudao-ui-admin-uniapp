@@ -34,21 +34,19 @@
         </scroll-view>
 
         <view v-else-if="activeTab === 'team'">
-          <wd-cell
-            title="班组"
-            :value="selectedTeamName || '请选择班组'"
-            is-link
-            @click="teamPickerVisible = true"
+          <TeamFormPicker
+            ref="teamPickerRef"
+            v-model="selectedTeamId"
+            label="班组"
+            placeholder="请选择班组"
+            empty-text="暂无班组数据，请先维护班组后查看排班日历。"
+            @change="handleTeamChange"
           />
-          <view v-if="teamOptions.length === 0" class="mt-16rpx text-24rpx text-[#999]">
-            暂无班组数据，请先维护班组后查看排班日历。
-          </view>
         </view>
 
-        <UserPicker
+        <UserFormPicker
           v-else
           v-model="selectedUserId"
-          type="radio"
           label="人员"
           placeholder="请选择人员"
           @confirm="handleUserConfirm"
@@ -150,36 +148,23 @@
         </view>
       </view>
     </scroll-view>
-
-    <!-- 班组选择 -->
-    <wd-picker
-      v-model:visible="teamPickerVisible"
-      :model-value="teamPickerValue"
-      title="选择班组"
-      :columns="teamOptions"
-      label-key="label"
-      value-key="value"
-      @cancel="teamPickerVisible = false"
-      @confirm="handleTeamConfirm"
-    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { CalCalendarDay, CalCalendarTeamShiftItem } from '@/api/mes/cal/calendar'
 import type { CalHoliday } from '@/api/mes/cal/holiday'
-import type { CalTeam } from '@/api/mes/cal/team'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { getCalendarList } from '@/api/mes/cal/calendar'
 import { getHolidayList } from '@/api/mes/cal/holiday'
-import { getTeamList } from '@/api/mes/cal/team'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesCalHolidayTypeEnum, MesCalShiftTypeEnum } from '@/utils/constants'
 import { formatDateEndTime, formatDateOnly, formatDateStartTime } from '@/utils/date'
+import TeamFormPicker from '../team/components/team-form-picker.vue'
 
 interface CalendarDay {
   date: string
@@ -209,25 +194,14 @@ const currentMonth = ref(dayjs().startOf('month')) // 当前查看月份
 const calendarDayMap = ref<Record<string, CalCalendarDay>>({}) // 日期维度排班
 const holidayMap = ref<Record<string, CalHoliday>>({}) // 日期维度假期
 const loading = ref(false) // 排班加载状态
-const teamList = ref<CalTeam[]>([]) // 班组列表
 const selectedCalendarType = ref<number>() // 当前班组类型
 const selectedTeamId = ref<number>() // 当前班组
 const selectedUserId = ref<number>() // 当前人员
-const teamPickerVisible = ref(false) // 班组选择显示状态
-const teamPickerValue = ref<number[]>([]) // 班组选择器值
+const teamPickerRef = ref<InstanceType<typeof TeamFormPicker>>() // 班组选择器
 
 const weekLabels = ['一', '二', '三', '四', '五', '六', '日'] // 周标题
 const currentMonthText = computed(() => currentMonth.value.format('YYYY年MM月'))
 const calendarTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_CAL_CALENDAR_TYPE))
-const teamOptions = computed(() =>
-  teamList.value
-    .filter(item => item.id != null)
-    .map(item => ({
-      label: item.name,
-      value: Number(item.id),
-    })),
-)
-const selectedTeamName = computed(() => teamList.value.find(item => item.id === selectedTeamId.value)?.name || '')
 const calendarDays = computed<CalendarDay[]>(() => {
   const startOfMonth = currentMonth.value.startOf('month')
   const endOfMonth = currentMonth.value.endOf('month')
@@ -371,7 +345,7 @@ async function changeMonth(step: number) {
 /** 切换视图 */
 async function handleTabChange(key: 'type' | 'team' | 'user') {
   activeTab.value = key
-  teamPickerVisible.value = false
+  await nextTick()
   await ensureDefaultSelection()
   await refreshCalendar()
 }
@@ -382,12 +356,8 @@ async function selectCalendarType(value: number) {
   await refreshCalendar()
 }
 
-/** 选择班组 */
-async function handleTeamConfirm({ value }: { value: number[] }) {
-  const id = Number(value?.[0])
-  selectedTeamId.value = Number.isFinite(id) ? id : undefined
-  teamPickerValue.value = selectedTeamId.value ? [selectedTeamId.value] : []
-  teamPickerVisible.value = false
+/** 班组变更 */
+async function handleTeamChange() {
   await refreshCalendar()
 }
 
@@ -408,10 +378,8 @@ async function ensureDefaultSelection() {
     selectedCalendarType.value = calendarTypeOptions.value[0]?.value
   }
   if (activeTab.value === 'team') {
-    teamList.value = await getTeamList()
-    if (!selectedTeamId.value && teamOptions.value.length > 0) {
-      selectedTeamId.value = teamOptions.value[0].value
-      teamPickerValue.value = [selectedTeamId.value]
+    if (!selectedTeamId.value) {
+      selectedTeamId.value = await teamPickerRef.value?.getFirstId()
     }
   }
   if (activeTab.value === 'user' && !selectedUserId.value) {

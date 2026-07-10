@@ -27,14 +27,7 @@
               </wd-radio>
             </wd-radio-group>
           </wd-form-item>
-          <wd-form-item
-            title="模型"
-            title-width="170rpx"
-            is-link
-            :value="getWotPickerFormValue(modelOptions, formData.model)"
-            placeholder="请选择模型"
-            @click="pickerVisible.model = true"
-          />
+          <yd-form-picker v-model="formData.model" label="模型" label-width="170rpx" :columns="modelOptions" placeholder="请选择模型" />
 
           <template v-if="formData.generateMode === MusicGenerateModeEnum.DESCRIPTION">
             <wd-form-item title="音乐说明" title-width="170rpx">
@@ -171,13 +164,6 @@
         </view>
       </view>
     </z-paging>
-
-    <wd-picker
-      v-model:visible="pickerVisible.model"
-      :model-value="[formData.model]"
-      :columns="modelOptions"
-      @confirm="handleModelConfirm"
-    />
   </view>
 </template>
 
@@ -190,7 +176,6 @@ import { deleteMusicMy, generateMusic, getMusicMyPage } from '@/api/ai/music'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getWotPickerFormValue } from '@/utils/wot'
 import { AiPlatformEnum } from '@/pages-ai/utils/constants'
 
 const MusicGenerateModeEnum = {
@@ -213,9 +198,6 @@ const list = ref<MusicVO[]>([]) // 音乐列表
 const pagingRef = ref<any>() // 分页组件引用
 const generating = ref(false) // 音乐生成状态
 const customTag = ref('') // 自定义风格
-const pickerVisible = reactive({
-  model: false,
-}) // 选择弹窗显示状态
 const formData = reactive({
   generateMode: MusicGenerateModeEnum.LYRIC as MusicGenerateMode,
   model: 'chirp-v3.5',
@@ -254,11 +236,6 @@ async function queryList(pageNo: number, pageSize: number) {
   } catch {
     pagingRef.value?.complete(false)
   }
-}
-
-/** 确认模型选择 */
-function handleModelConfirm({ value }: { value: Array<number | string> }) {
-  formData.model = String(value[0])
 }
 
 /** 切换音乐风格 */

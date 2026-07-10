@@ -121,7 +121,7 @@
         </view>
         <wd-form ref="distributeFormRef" :model="distributeFormData" :schema="distributeFormSchema">
           <wd-cell-group border>
-            <UserPicker v-model="distributeFormData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" label-width="220rpx" placeholder="请选择负责人" />
+            <UserFormPicker v-model="distributeFormData.ownerUserId" label="负责人" label-width="220rpx" prop="ownerUserId" placeholder="请选择负责人" />
           </wd-cell-group>
         </wd-form>
         <view class="p-24rpx">
@@ -142,7 +142,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { deleteCustomer, distributeCustomer, getCustomer, lockCustomer, putCustomerPool, receiveCustomer, updateCustomerDealStatus } from '@/api/crm/customer'
 import { BizTypeEnum } from '@/api/crm/permission'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

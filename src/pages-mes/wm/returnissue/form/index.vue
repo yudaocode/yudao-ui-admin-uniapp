@@ -33,7 +33,7 @@
             label="退料类型"
             label-width="200rpx"
             prop="type"
-            :columns="typeOptions"
+            :dict-type="DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE"
             placeholder="请选择退料类型"
             :disabled="isHeaderReadonly"
           />
@@ -160,7 +160,6 @@ import {
   submitReturnIssue,
   updateReturnIssue,
 } from '@/api/mes/wm/returnissue'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesWmReturnIssueStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -201,7 +200,6 @@ const submitLoading = ref(false) // 提交状态
 const stockLoading = ref(false) // 上架状态
 const finishLoading = ref(false) // 执行状态
 const codeLoading = ref(false) // 编码生成状态
-const typeOptions = getIntDictOptions(DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE) // 退料类型选项
 const formData = ref<WmReturnIssue>(getDefaultFormData()) // 表单数据
 const formSchema = createFormSchema({
   code: [{ required: true, message: '退料单编号不能为空' }],

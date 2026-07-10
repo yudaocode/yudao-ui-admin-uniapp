@@ -29,12 +29,11 @@
             placeholder="请选择点检方案"
             @click="openPlanPicker"
           />
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userId"
             label="点检人"
             label-width="200rpx"
             prop="userId"
-            type="radio"
             placeholder="请选择点检人"
           />
           <wd-form-item
@@ -106,7 +105,7 @@ import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesDvCheckRecordStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import CheckPlanPicker from '../../checkplan/components/check-plan-picker.vue'
 import MachineryPicker from '../../machinery/components/machinery-picker.vue'
 import CheckRecordLineList from '../components/check-record-line-list.vue'

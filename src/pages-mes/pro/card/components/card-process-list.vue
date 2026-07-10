@@ -117,7 +117,7 @@
                 />
               </wd-form-item>
               <WorkstationFormPicker v-model="formData.workstationId" label="工位" label-width="220rpx" prop="workstationId" placeholder="请选择工位" />
-              <UserPicker v-model="formData.userId" label="操作人" label-width="220rpx" prop="userId" type="radio" placeholder="请选择操作人" />
+              <UserFormPicker v-model="formData.userId" label="操作人" label-width="220rpx" prop="userId" placeholder="请选择操作人" />
               <wd-form-item title="备注" title-width="220rpx" prop="remark">
                 <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable />
               </wd-form-item>
@@ -133,7 +133,7 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProCardProcess } from '@/api/mes/pro/card/process'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'

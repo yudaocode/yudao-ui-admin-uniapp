@@ -12,14 +12,7 @@
         <!-- 表单区域 -->
         <view class="rounded-12rpx bg-white p-24rpx shadow-sm">
           <wd-cell-group border>
-            <wd-form-item
-              title="知识库"
-              title-width="210rpx"
-              is-link
-              :value="getWotPickerFormValue(knowledgeOptions, retrievalForm.knowledgeId, { labelKey: 'name', valueKey: 'id' })"
-              placeholder="请选择知识库"
-              @click="knowledgePickerVisible = true"
-            />
+            <KnowledgeFormPicker v-model="retrievalForm.knowledgeId" label-width="210rpx" />
             <wd-cell title="查询文本">
               <wd-textarea
                 v-model="retrievalForm.content"
@@ -70,16 +63,6 @@
         </view>
       </view>
     </scroll-view>
-
-    <!-- 知识库选择器 -->
-    <wd-picker
-      v-model:visible="knowledgePickerVisible"
-      :model-value="[retrievalForm.knowledgeId]"
-      :columns="knowledgeOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => retrievalForm.knowledgeId = Number(value[0])"
-    />
   </view>
 </template>
 
@@ -87,10 +70,9 @@
 import type { KnowledgeSegmentVO } from '@/api/ai/knowledge/segment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, reactive, ref } from 'vue'
-import { getSimpleKnowledgeList } from '@/api/ai/knowledge/knowledge'
 import { searchKnowledgeSegment } from '@/api/ai/knowledge/segment'
 import { navigateBackPlus } from '@/utils'
-import { getWotPickerFormValue } from '@/utils/wot'
+import KnowledgeFormPicker from '../components/knowledge-form-picker.vue'
 
 const props = defineProps<{
   knowledgeId?: number | any
@@ -105,8 +87,6 @@ definePage({
 })
 
 const toast = useToast()
-const knowledgePickerVisible = ref(false) // 知识库选择器状态
-const knowledgeOptions = ref<any[]>([]) // 知识库选项
 const retrievalLoading = ref(false) // 召回测试状态
 const retrievalSegments = ref<(KnowledgeSegmentVO & { score?: number })[]>([]) // 召回结果（含相似度 score）
 const retrievalForm = reactive({
@@ -146,8 +126,7 @@ async function handleRetrieval() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  knowledgeOptions.value = await getSimpleKnowledgeList()
+onMounted(() => {
   // 知识库编号通过 query 注入时预填，便于从知识库列表直接进入召回测试
   if (props.knowledgeId) {
     retrievalForm.knowledgeId = Number(props.knowledgeId)

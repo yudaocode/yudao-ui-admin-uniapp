@@ -19,14 +19,11 @@
           删除
         </wd-button>
       </view>
-      <CrmPicker
+      <ProductFormPicker
         v-model="row.productId"
-        source="product"
-        label="产品名称"
         label-width="220rpx"
         :prop="`products.${index}.productId`"
-        placeholder="请选择产品"
-        @confirm="option => handleProductConfirm(row, option)"
+        @change="product => handleProductChange(row, product)"
       />
       <wd-cell title="产品编码" title-width="220rpx" :value="row.productNo || '-'" />
       <wd-cell title="产品单位" title-width="220rpx" :value="getDictLabel(DICT_TYPE.CRM_PRODUCT_UNIT, row.productUnit) || '-'" />
@@ -68,11 +65,12 @@
 </template>
 
 <script lang="ts" setup>
+import type { Product } from '@/api/crm/product'
 import { computed, watch } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
+import ProductFormPicker from '@/pages-crm/product/components/product-form-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatMoney } from '@/utils/format'
-import CrmPicker from './crm-picker.vue'
 
 interface ProductLine {
   [key: string]: any
@@ -83,12 +81,6 @@ interface ProductLine {
   productPrice?: number
   productUnit?: number
   totalPrice?: number
-}
-
-interface PickerOption {
-  id: number | string
-  name: string
-  raw?: Record<string, any>
 }
 
 const props = withDefaults(defineProps<{
@@ -171,13 +163,12 @@ function handleDelete(index: number) {
   products.value.splice(index, 1)
 }
 
-/** 选择产品 */
-function handleProductConfirm(row: ProductLine, option?: PickerOption) {
-  const product = option?.raw
-  if (!product) {
+/** 产品变更 */
+function handleProductChange(row: ProductLine, product?: Product) {
+  if (!product?.id) {
     return
   }
-  row.productId = Number(product.id)
+  row.productId = product.id
   row.productName = product.name
   row.productNo = product.no
   row.productUnit = product.unit

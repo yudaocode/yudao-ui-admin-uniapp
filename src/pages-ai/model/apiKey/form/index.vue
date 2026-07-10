@@ -11,14 +11,14 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="平台"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.platform"
+            label="平台"
+            label-width="200rpx"
             prop="platform"
-            is-link
-            :value="getWotPickerFormValue(platformOptions, formData.platform)"
+            :dict-type="DICT_TYPE.AI_PLATFORM"
+            dict-kind="str"
             placeholder="请选择平台"
-            @click="pickerVisible = true"
           />
           <wd-form-item title="名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入名称" />
@@ -44,14 +44,6 @@
       </wd-form>
     </view>
 
-    <!-- 平台选择器 -->
-    <wd-picker
-      v-model:visible="pickerVisible"
-      :model-value="[formData.platform]"
-      :columns="platformOptions"
-      @confirm="({ value }) => formData.platform = value[0]"
-    />
-
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
@@ -72,10 +64,10 @@ import type { ApiKeyVO } from '@/api/ai/model/apiKey'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createApiKey, getApiKey, updateApiKey } from '@/api/ai/model/apiKey'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
@@ -91,8 +83,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑 API 密钥' : '新增 API 密钥')
 const formLoading = ref(false) // 表单提交状态
-const pickerVisible = ref(false) // 平台选择器状态
-const platformOptions = computed(() => getStrDictOptions(DICT_TYPE.AI_PLATFORM)) // 平台选项
 const formData = ref<ApiKeyVO>({
   id: undefined,
   name: '',

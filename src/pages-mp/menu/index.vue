@@ -122,19 +122,12 @@
                 <wd-form-item title="菜单标识" title-width="220rpx">
                   <wd-input v-model="activeMenu.menuKey" clearable placeholder="请输入菜单 KEY" />
                 </wd-form-item>
-                <wd-form-item
-                  title="菜单内容"
-                  title-width="220rpx"
-                  is-link
-                  :value="getMenuTypeLabel(activeMenu.type)"
-                  placeholder="请选择菜单内容"
-                  @click="pickerVisible.type = true"
-                />
-                <wd-picker
-                  v-model:visible="pickerVisible.type"
-                  :model-value="menuTypePickerValue"
+                <yd-form-picker
+                  v-model="activeMenu.type"
+                  label="菜单内容"
+                  label-width="220rpx"
                   :columns="menuTypeOptions"
-                  @confirm="handleTypeConfirm"
+                  placeholder="请选择菜单内容"
                 />
                 <wd-form-item v-if="activeMenu.type === 'view'" title="跳转链接" title-width="220rpx">
                   <wd-input v-model="activeMenu.url" clearable placeholder="请输入链接" />
@@ -165,18 +158,12 @@
                   </view>
                 </template>
                 <template v-if="activeMenu.type === 'click' || activeMenu.type === 'scancode_waitmsg'">
-                  <wd-form-item
-                    title="回复类型"
-                    title-width="220rpx"
-                    is-link
-                    :value="getReplyTypeLabel(activeMenu.reply?.type)"
-                    placeholder="请选择回复类型"
-                    @click="pickerVisible.replyType = true"
-                  />
-                  <wd-picker
-                    v-model:visible="pickerVisible.replyType"
-                    :model-value="replyTypePickerValue"
+                  <yd-form-picker
+                    :model-value="activeMenu.reply?.type"
+                    label="回复类型"
+                    label-width="220rpx"
                     :columns="replyTypeOptions"
+                    placeholder="请选择回复类型"
                     @confirm="handleReplyTypeConfirm"
                   />
                   <!-- 文本：直接输入回复内容 -->
@@ -309,6 +296,12 @@ const replyTypeOptions = [
   { value: 'news', label: '图文' },
   { value: 'music', label: '音乐' },
 ]
+
+/** 获取菜单类型文案 */
+function getMenuTypeLabel(type?: string) {
+  return menuTypeOptions.find(item => item.value === type)?.label || type || ''
+}
+
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
@@ -323,10 +316,6 @@ const activePosition = reactive({
   parentIndex: -1,
   childIndex: -1,
 }) // 当前菜单位置
-const pickerVisible = reactive({
-  type: false,
-  replyType: false,
-}) // 选择器状态
 const materialPickerVisible = ref(false) // 素材选择弹窗
 const { uploading, chooseAndUpload } = useMaterialUpload() // 回复素材本地上传
 let replyCache: Record<string, MenuReply> = {} // 当前菜单编辑期内按回复类型缓存已填内容，切换类型时保留
@@ -335,8 +324,6 @@ let replyCacheMenu: MpMenu | null = null // replyCache 所属的菜单，切换�
 const isLeafMenu = computed(() => !(activeMenu.value.children && activeMenu.value.children.length > 0))
 const canPickReplyMaterial = computed(() => ['image', 'voice', 'video', 'news', 'music'].includes(String(activeMenu.value.reply?.type)))
 const canUploadReplyMaterial = computed(() => ['image', 'voice', 'video'].includes(String(activeMenu.value.reply?.type)))
-const menuTypePickerValue = computed(() => activeMenu.value.type ? [activeMenu.value.type] : []) // 菜单类型选择器值
-const replyTypePickerValue = computed(() => activeMenu.value.reply?.type ? [activeMenu.value.reply.type] : []) // 回复类型选择器值
 const replyMaterialPicked = computed(() => {
   const reply = activeMenu.value.reply
   if (reply?.type === 'news') {
@@ -363,16 +350,6 @@ const materialPickerType = computed(() => {
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
-}
-
-/** 获取菜单类型标签 */
-function getMenuTypeLabel(type?: string) {
-  return menuTypeOptions.find(item => item.value === type)?.label || ''
-}
-
-/** 获取回复类型标签 */
-function getReplyTypeLabel(type?: string) {
-  return replyTypeOptions.find(item => item.value === type)?.label || ''
 }
 
 /** 公众号切换 */
@@ -607,18 +584,8 @@ function ensureMenu(menu: MpMenu) {
   return menu
 }
 
-/** 菜单内容选择 */
-function handleTypeConfirm({ value }: { value: string[] }) {
-  const nextType = value[0]
-  if (!nextType) {
-    return
-  }
-  activeMenu.value.type = nextType
-}
-
 /** 回复类型选择 */
-function handleReplyTypeConfirm({ value }: { value: string[] }) {
-  const nextType = value[0]
+function handleReplyTypeConfirm(nextType: string) {
   if (!nextType) {
     return
   }

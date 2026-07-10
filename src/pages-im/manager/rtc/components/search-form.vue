@@ -13,12 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发起人
-        </view>
-        <UserPicker ref="inviterPickerRef" v-model="formData.inviterUserId" type="radio" placeholder="请选择发起人" />
-      </view>
+      <UserSearchPicker ref="inviterPickerRef" v-model="formData.inviterUserId" label="发起人" placeholder="请选择发起人" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           会话类型
@@ -102,7 +97,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -128,7 +123,7 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.inviterUserId) {
-    conditions.push(`发起人:${inviterPickerRef.value?.getUserNickname(formData.inviterUserId) || formData.inviterUserId}`)
+    conditions.push(`发起人:${inviterPickerRef.value?.format(formData.inviterUserId) || formData.inviterUserId}`)
   }
   if (formData.conversationType !== -1) {
     conditions.push(`会话:${getDictLabel(DICT_TYPE.IM_RTC_CALL_CONVERSATION_TYPE, formData.conversationType)}`)

@@ -37,7 +37,13 @@
         label="库区"
         :warehouse-id="formData.warehouseId"
       />
-      <yd-search-picker v-model="formData.frozen" label="是否冻结" :columns="frozenOptions" all-option />
+      <yd-search-picker
+        ref="frozenSearchPickerRef"
+        v-model="formData.frozen"
+        label="是否冻结"
+        :columns="frozenOptions"
+        all-option
+      />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -51,6 +57,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
 import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
 import WarehouseSearchPicker from '@/pages-mes/wm/warehouse/components/warehouse-search-picker.vue'
@@ -74,21 +81,12 @@ const visible = ref(false) // 搜索弹窗显示状态
 const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 const warehouseSearchPickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 仓库搜索选择器
 const locationSearchPickerRef = ref<InstanceType<typeof WarehouseLocationSearchPicker>>() // 库区搜索选择器
+const frozenSearchPickerRef = ref<YdSearchPickerExpose>() // 冻结状态搜索选择器
 const formData = reactive<MaterialStockSearchFormData>({}) // 搜索表单数据
 const frozenOptions = [
   { label: '是', value: true },
   { label: '否', value: false },
 ]
-
-const frozenDisplayValue = computed(() => {
-  if (formData.frozen === true) {
-    return '是'
-  }
-  if (formData.frozen === false) {
-    return '否'
-  }
-  return ''
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -105,8 +103,8 @@ const placeholder = computed(() => {
   if (formData.locationId) {
     conditions.push(`库区:${locationSearchPickerRef.value?.format(formData.locationId) || formData.locationId}`)
   }
-  if (frozenDisplayValue.value) {
-    conditions.push(`冻结:${frozenDisplayValue.value}`)
+  if (formData.frozen !== undefined && formData.frozen !== -1) {
+    conditions.push(`冻结:${frozenSearchPickerRef.value?.format(formData.frozen) || formData.frozen}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存台账'
 })

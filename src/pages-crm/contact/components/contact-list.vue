@@ -3,16 +3,14 @@
   <view class="min-h-0 flex flex-1 flex-col">
     <!-- 关联联系人 -->
     <view v-if="props.businessId && canAddBusinessContact" class="flex justify-end bg-white px-24rpx py-16rpx">
-      <CrmPicker
-        source="contact"
-        :params="{ customerId: props.customerId }"
-        use-default-slot
+      <ContactPicker
+        :customer-id="props.customerId"
         @confirm="handleAddBusinessContact"
       >
         <wd-button size="small" type="primary">
           关联联系人
         </wd-button>
-      </CrmPicker>
+      </ContactPicker>
     </view>
 
     <z-paging
@@ -65,13 +63,8 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createContactBusinessList2, deleteContactBusinessList2, getContactPageByBusiness, getContactPageByCustomer } from '@/api/crm/contact'
 import { useAccess } from '@/hooks/useAccess'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
-
-interface PickerOption {
-  id: number | string
-  name: string
-  raw?: Record<string, any>
-}
+import ContactPicker from '@/pages-crm/contact/components/contact-picker.vue'
+import type { Contact } from '@/api/crm/contact'
 
 const props = defineProps<{ customerId?: number, businessId?: number }>()
 const { hasAccessByCodes } = useAccess()
@@ -128,9 +121,9 @@ function openAdd() {
 }
 
 /** 关联既有联系人 */
-async function handleAddBusinessContact(option?: PickerOption) {
+async function handleAddBusinessContact(contact?: Contact) {
   const businessId = props.businessId
-  const contactId = Number(option?.id)
+  const contactId = Number(contact?.id)
   if (!businessId || !contactId) {
     return
   }

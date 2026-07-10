@@ -33,7 +33,13 @@
         <wd-input v-model="formData.salesOrderCode" placeholder="请输入销售订单号" clearable />
       </view>
       <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
-      <yd-search-picker v-model="formData.status" label="单据状态" :columns="statusOptions" all-option />
+      <yd-search-picker
+        ref="statusSearchPickerRef"
+        v-model="formData.status"
+        label="单据状态"
+        :dict-type="DICT_TYPE.MES_WM_RETURN_SALES_STATUS"
+        all-option
+      />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -47,8 +53,8 @@
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
@@ -60,6 +66,7 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
+const statusSearchPickerRef = ref<YdSearchPickerExpose>() // 状态搜索选择器
 const formData = reactive<Record<string, any>>({
   code: undefined,
   name: undefined,
@@ -67,13 +74,6 @@ const formData = reactive<Record<string, any>>({
   clientId: undefined,
   status: undefined,
 }) // 搜索表单数据
-const statusOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_WM_RETURN_SALES_STATUS)) // 状态选项
-const selectedStatusText = computed(() => {
-  if (formData.status === undefined || formData.status === -1) {
-    return ''
-  }
-  return statusOptions.value.find(item => item.value === formData.status)?.label || ''
-})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -90,8 +90,8 @@ const placeholder = computed(() => {
   if (formData.clientId != null) {
     conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
-  if (selectedStatusText.value) {
-    conditions.push(`状态:${selectedStatusText.value}`)
+  if (formData.status != null && formData.status !== -1) {
+    conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索销售退货'
 })

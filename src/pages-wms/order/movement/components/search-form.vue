@@ -20,8 +20,8 @@
         <wd-input v-model="formData.no" placeholder="请输入移库单号" clearable />
       </view>
       <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.WMS_ORDER_STATUS" all-option />
-      <WarehousePicker v-model="formData.sourceWarehouseId" label="来源仓库" placeholder="请选择来源仓库" />
-      <WarehousePicker v-model="formData.targetWarehouseId" label="目标仓库" placeholder="请选择目标仓库" />
+      <WarehouseSearchPicker ref="sourceWarehousePickerRef" v-model="formData.sourceWarehouseId" label="来源仓库" placeholder="请选择来源仓库" />
+      <WarehouseSearchPicker ref="targetWarehousePickerRef" v-model="formData.targetWarehouseId" label="目标仓库" placeholder="请选择目标仓库" />
       <yd-search-date-range v-model="formData.orderTime" label="单据日期" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -39,7 +39,7 @@
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import WarehouseSearchPicker from '@/pages-wms/md/warehouse/components/warehouse-search-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
 
@@ -49,6 +49,8 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const sourceWarehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>()
+const targetWarehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>()
 const formData = reactive({
   no: undefined as string | undefined,
   status: undefined as number | undefined,
@@ -67,10 +69,10 @@ const placeholder = computed(() => {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.WMS_ORDER_STATUS, formData.status)}`)
   }
   if (formData.sourceWarehouseId) {
-    conditions.push('已选来源仓库')
+    conditions.push(`来源:${sourceWarehousePickerRef.value?.format(formData.sourceWarehouseId) || formData.sourceWarehouseId}`)
   }
   if (formData.targetWarehouseId) {
-    conditions.push('已选目标仓库')
+    conditions.push(`目标:${targetWarehousePickerRef.value?.format(formData.targetWarehouseId) || formData.targetWarehouseId}`)
   }
   if (formData.orderTime?.[0] && formData.orderTime?.[1]) {
     conditions.push(`日期:${formatDate(formData.orderTime[0])}~${formatDate(formData.orderTime[1])}`)

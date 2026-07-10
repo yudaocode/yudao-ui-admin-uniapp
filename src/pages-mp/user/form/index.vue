@@ -17,7 +17,7 @@
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-input v-model="formData.remark" clearable placeholder="请输入备注" />
           </wd-form-item>
-          <TagPicker v-model="formData.tagIds" />
+          <TagFormPicker v-model="formData.tagIds" />
         </wd-cell-group>
       </wd-form>
     </view>
@@ -38,7 +38,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getUser, updateUser } from '@/api/mp/user'
 import { delay, navigateBackPlus } from '@/utils'
-import TagPicker from '@/pages-mp/tag/components/tag-picker.vue'
+import TagFormPicker from '@/pages-mp/tag/components/tag-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any

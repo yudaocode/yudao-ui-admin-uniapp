@@ -17,7 +17,7 @@
             <wd-input v-model="formData.name" placeholder="请输入库位名称" clearable />
           </wd-form-item>
           <WarehouseFormPicker v-model="formData.warehouseId" label="所属仓库" label-width="220rpx" prop="warehouseId" placeholder="请选择仓库" @change="handleWarehouseChange" />
-          <WarehouseLocationFormPicker v-model="formData.locationId" label="所属库区" label-width="220rpx" prop="locationId" :warehouse-id="formData.warehouseId" placeholder="请选择库区" />
+          <WarehouseLocationFormPicker v-model="formData.locationId" label="所属库区" label-width="220rpx" prop="locationId" placeholder="请选择库区" :warehouse-id="formData.warehouseId" />
           <wd-form-item title="面积(㎡)" title-width="220rpx" prop="area" center>
             <wd-input-number v-model="formData.area" allow-null :min="0" :precision="2" />
           </wd-form-item>

@@ -7,17 +7,7 @@
     <view class="pb-180rpx">
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <yd-form-picker
-            v-model="formData.productId"
-            label="所属产品"
-            prop="productId"
-            :columns="productOptions"
-            label-key="name"
-            value-key="id"
-            placeholder="请选择产品"
-            label-width="220rpx"
-            :disabled="!!props.id || !!props.productId"
-          />
+          <ProductFormPicker v-model="formData.productId" label="所属产品" label-width="220rpx" prop="productId" :disabled="!!props.id || !!props.productId" @change="handleProductChange" />
           <wd-form-item title="功能类型" title-width="220rpx" center prop="type">
             <wd-radio-group v-model="formData.type" type="button" :disabled="!!props.id">
               <wd-radio
@@ -129,9 +119,10 @@ import type { Product } from '@/api/iot/product/product'
 import type { ThingModelData, ThingModelParam } from '@/api/iot/thingmodel'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleProductList } from '@/api/iot/product/product'
+import { getProduct } from '@/api/iot/product/product'
 import { createThingModel, getThingModel, updateThingModel } from '@/api/iot/thingmodel'
 import { getIntDictOptions } from '@/hooks/useDict'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, getDataTypeOptions, IoTDataSpecsDataTypeEnum, IoTThingModelAccessModeEnum, IoTThingModelEventTypeEnum, IoTThingModelServiceCallTypeEnum, IoTThingModelTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -152,7 +143,7 @@ const RESERVED_IDENTIFIERS = ['set', 'get', 'post', 'property', 'event', 'time',
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑物模型' : '新增物模型')
 const formLoading = ref(false) // 表单提交状态
-const productOptions = ref<Product[]>([]) // 产品选项
+const selectedProduct = ref<Product>() // 当前产品
 const dataTypeOptions = getDataTypeOptions() // 数据类型选项
 const accessModeOptions = Object.values(IoTThingModelAccessModeEnum) // 读写类型选项
 const callTypeOptions = Object.values(IoTThingModelServiceCallTypeEnum) // 调用方式选项
@@ -234,12 +225,22 @@ async function getDetail() {
   }
 }
 
+/** 加载所属产品 */
+async function loadSelectedProduct(productId?: number) {
+  if (!productId) {
+    selectedProduct.value = undefined
+    formData.value.productKey = undefined
+    return
+  }
+  selectedProduct.value = await getProduct(productId)
+  formData.value.productKey = selectedProduct.value.productKey
+}
+
 /** 构建提交数据 */
 function buildSubmitData() {
-  const product = productOptions.value.find(item => String(item.id) === String(formData.value.productId))
   const base: any = {
     ...formData.value,
-    productKey: formData.value.productKey || product?.productKey,
+    productKey: formData.value.productKey,
     property: undefined,
     service: undefined,
     event: undefined,
@@ -279,6 +280,12 @@ function buildSubmitData() {
     }
   }
   return base
+}
+
+/** 选择产品 */
+function handleProductChange(products: Product[]) {
+  selectedProduct.value = products[0]
+  formData.value.productKey = selectedProduct.value?.productKey
 }
 
 /** 清理空的数据定义 */
@@ -321,6 +328,10 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+  if (!formData.value.productKey) {
+    toast.warning('产品信息加载中，请稍后重试')
+    return
+  }
   const error = validateBusinessData()
   if (error) {
     toast.warning(error)
@@ -346,7 +357,7 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
   await getDetail()
+  await loadSelectedProduct(formData.value.productId)
 })
 </script>

@@ -13,8 +13,8 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
-      <yd-search-picker v-model="formData.warehouseId" label="仓库" :columns="warehouseOptions" label-key="name" value-key="id" placeholder="请选择仓库" />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" />
+      <WarehouseSearchPicker ref="warehousePickerRef" v-model="formData.warehouseId" />
       <yd-search-picker v-model="formData.bizType" label="业务类型" :dict-type="DICT_TYPE.ERP_STOCK_RECORD_BIZ_TYPE" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -36,22 +36,21 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getProductSimpleList } from '@/api/erp/product/product'
-import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
+import ProductSearchPicker from '@/pages-erp/product/product/components/product-search-picker.vue'
+import WarehouseSearchPicker from '@/pages-erp/stock/warehouse/components/warehouse-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
-const warehouseOptions = ref<Record<string, any>[]>([]) // 仓库选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
+const warehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 仓库选择器
 const formData = reactive({
   productId: undefined as number | undefined,
   warehouseId: undefined as number | undefined,
@@ -64,10 +63,10 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.productId) {
-    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.warehouseId) {
-    conditions.push(`仓库:${getErpOptionLabel(warehouseOptions.value, formData.warehouseId)}`)
+    conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
   if (formData.bizType !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.ERP_STOCK_RECORD_BIZ_TYPE, formData.bizType)}`)
@@ -103,15 +102,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [products, warehouses] = await Promise.all([
-    getProductSimpleList(),
-    getWarehouseSimpleList(),
-  ])
-
-  productOptions.value = products
-  warehouseOptions.value = warehouses
-})
 </script>

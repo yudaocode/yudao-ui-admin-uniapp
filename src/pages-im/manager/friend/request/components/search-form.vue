@@ -13,18 +13,8 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发起人
-        </view>
-        <UserPicker ref="fromPickerRef" v-model="formData.fromUserId" type="radio" placeholder="请选择发起人" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          接收人
-        </view>
-        <UserPicker ref="toPickerRef" v-model="formData.toUserId" type="radio" placeholder="请选择接收人" />
-      </view>
+      <UserSearchPicker ref="fromPickerRef" v-model="formData.fromUserId" label="发起人" placeholder="请选择发起人" />
+      <UserSearchPicker ref="toPickerRef" v-model="formData.toUserId" label="接收人" placeholder="请选择接收人" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           处理结果
@@ -74,7 +64,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -100,10 +90,10 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.fromUserId) {
-    conditions.push(`发起人:${fromPickerRef.value?.getUserNickname(formData.fromUserId) || formData.fromUserId}`)
+    conditions.push(`发起人:${fromPickerRef.value?.format(formData.fromUserId) || formData.fromUserId}`)
   }
   if (formData.toUserId) {
-    conditions.push(`接收人:${toPickerRef.value?.getUserNickname(formData.toUserId) || formData.toUserId}`)
+    conditions.push(`接收人:${toPickerRef.value?.format(formData.toUserId) || formData.toUserId}`)
   }
   if (formData.handleResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.IM_FRIEND_REQUEST_HANDLE_RESULT, formData.handleResult)}`)

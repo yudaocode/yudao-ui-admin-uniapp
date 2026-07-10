@@ -14,13 +14,13 @@
           <wd-form-item title="移库单号" title-width="180rpx" prop="no">
             <wd-input v-model="formData.no" :maxlength="64" clearable placeholder="请输入移库单号" />
           </wd-form-item>
-          <WarehousePicker
+          <WarehouseFormPicker
             v-model="formData.sourceWarehouseId"
             label="来源仓库"
             prop="sourceWarehouseId"
             @change="handleSourceWarehouseChange"
           />
-          <WarehousePicker
+          <WarehouseFormPicker
             v-model="formData.targetWarehouseId"
             label="目标仓库"
             prop="targetWarehouseId"
@@ -112,7 +112,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { createMovementOrder, getMovementOrder, updateMovementOrder } from '@/api/wms/order/movement'
 import InventoryPicker from '@/pages-wms/inventory/components/inventory-picker.vue'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import WarehouseFormPicker from '@/pages-wms/md/warehouse/components/warehouse-form-picker.vue'
 import { dividePrice, formatQuantity, multiplyPrice, PRICE_PRECISION, QUANTITY_PRECISION, toOptionalNumber } from '@/pages-wms/utils/format'
 import { generateOrderNo } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'

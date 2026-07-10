@@ -15,38 +15,31 @@
           <wd-form-item title="合同名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入合同名称" clearable />
           </wd-form-item>
-          <CrmPicker
+          <CustomerFormPicker
             v-model="formData.customerId"
-            source="customer"
-            label="客户名称"
             prop="customerId"
-            placeholder="请选择客户名称"
-            @confirm="handleCustomerConfirm"
+            @change="handleCustomerChange"
           />
-          <CrmPicker
+          <BusinessFormPicker
             v-model="formData.businessId"
-            source="business"
-            label="商机名称"
             prop="businessId"
-            :params="{ customerId: formData.customerId }"
-            placeholder="请选择商机名称"
-            @confirm="handleBusinessConfirm"
+            :customer-id="formData.customerId"
+            @change="handleBusinessChange"
           />
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="下单日期" title-width="200rpx" prop="orderDate" is-link placeholder="请选择下单日期" :value="formatDate(formData.orderDate)" @click="pickerVisible.orderDate = true" />
           <wd-datetime-picker v-model="formData.orderDate" v-model:visible="pickerVisible.orderDate" title="请选择下单日期" type="date" />
           <wd-form-item title="开始时间" title-width="200rpx" prop="startTime" is-link placeholder="请选择开始时间" :value="formatDate(formData.startTime)" @click="pickerVisible.startTime = true" />
           <wd-datetime-picker v-model="formData.startTime" v-model:visible="pickerVisible.startTime" title="请选择开始时间" type="date" />
           <wd-form-item title="结束时间" title-width="200rpx" prop="endTime" is-link placeholder="请选择结束时间" :value="formatDate(formData.endTime)" @click="pickerVisible.endTime = true" />
           <wd-datetime-picker v-model="formData.endTime" v-model:visible="pickerVisible.endTime" title="请选择结束时间" type="date" />
-          <UserPicker v-model="formData.signUserId" type="radio" label="公司签约人" prop="signUserId" placeholder="请选择公司签约人" />
-          <CrmPicker
+          <UserFormPicker v-model="formData.signUserId" label="公司签约人" prop="signUserId" placeholder="请选择公司签约人" />
+          <ContactFormPicker
             v-model="formData.signContactId"
-            source="contact"
             label="客户签约人"
             prop="signContactId"
-            :params="{ customerId: formData.customerId }"
             placeholder="请选择客户签约人"
+            :customer-id="formData.customerId"
           />
           <wd-form-item title="整单折扣(%)" title-width="200rpx" prop="discountPercent">
             <wd-input-number v-model="formData.discountPercent" :min="0" :max="100" :precision="2" input-type="number" placeholder="请输入整单折扣(%)" />
@@ -79,19 +72,22 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { Business } from '@/api/crm/business'
 import type { Contract } from '@/api/crm/contract'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getBusiness } from '@/api/crm/business'
 import { createContract, getContract, updateContract } from '@/api/crm/contract'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { formatMoney } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import BusinessFormPicker from '@/pages-crm/business/components/business-form-picker.vue'
 import CrmProductLines from '@/pages-crm/components/crm-product-lines.vue'
+import ContactFormPicker from '@/pages-crm/contact/components/contact-form-picker.vue'
+import CustomerFormPicker from '@/pages-crm/customer/components/customer-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({
@@ -139,21 +135,20 @@ function handleBack() {
   navigateBackPlus('/pages-crm/contract/index')
 }
 
-/** 选择客户后清空商机、客户签约人 */
-function handleCustomerConfirm() {
+/** 客户变更后清空商机、客户签约人 */
+function handleCustomerChange() {
   formData.value.businessId = undefined
   formData.value.signContactId = undefined
 }
 
-/** 选择商机后回填产品清单（商机产品的「商机价」即合同的「合同价」） */
-async function handleBusinessConfirm(option?: { raw?: Record<string, any> }) {
-  const raw = option?.raw
-  if (!raw?.id) {
+/** 商机变更后回填产品清单（商机产品的「商机价」即合同的「合同价」） */
+async function handleBusinessChange(business?: Business) {
+  if (!business?.id) {
     return
   }
-  const business = await getBusiness(Number(raw.id))
-  formData.value.businessName = business?.name
-  const products = Array.isArray(business?.products) ? business.products : []
+  const detail = await getBusiness(business.id)
+  formData.value.businessName = detail.name
+  const products = Array.isArray(detail.products) ? detail.products : []
   formData.value.products = products.map((item: Record<string, any>) => ({ ...item, id: undefined, contractPrice: item.businessPrice }))
 }
 

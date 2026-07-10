@@ -18,23 +18,7 @@
               placeholder="请输入租户名称"
             />
           </wd-form-item>
-          <wd-form-item
-            title="租户套餐"
-            title-width="200rpx"
-            prop="packageId"
-            is-link
-            :value="getWotPickerFormValue(packageOptions, formData.packageId, { valueKey: 'id', labelKey: 'name' })"
-            placeholder="请选择租户套餐"
-            @click="pickerVisible.packageId = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.packageId"
-            :model-value="formData.packageId"
-            :columns="packageOptions"
-            label-key="name"
-            value-key="id"
-            @confirm="({ value }) => formData.packageId = value[0]"
-          />
+          <TenantPackageFormPicker v-model="formData.packageId" prop="packageId" />
           <wd-form-item title="联系人" title-width="200rpx" prop="contactName">
             <wd-input
               v-model="formData.contactName"
@@ -127,16 +111,15 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Tenant } from '@/api/system/tenant'
-import type { TenantPackage } from '@/api/system/tenant/package'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createTenant, getTenant, updateTenant } from '@/api/system/tenant'
-import { getTenantPackageList } from '@/api/system/tenant/package'
+import TenantPackageFormPicker from '@/pages-system/tenant/package/components/tenant-package-form-picker.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { arrayToLines, delay, linesToArray, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
@@ -176,17 +159,11 @@ const formSchema = createFormSchema({
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({})
-const packageOptions = ref<TenantPackage[]>([])
 const websitesText = ref('') // 绑定域名文本（换行分隔）
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/tenant/index')
-}
-
-/** 加载租户套餐列表 */
-async function loadPackageList() {
-  packageOptions.value = await getTenantPackageList()
 }
 
 /** 加载租户详情 */
@@ -224,7 +201,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  await loadPackageList()
   await getDetail()
 })
 </script>

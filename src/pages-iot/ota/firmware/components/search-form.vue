@@ -19,14 +19,7 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入固件名称" clearable />
       </view>
-      <yd-search-picker
-        v-model="formData.productId"
-        label="所属产品"
-        :columns="productOptions"
-        label-key="name"
-        value-key="id"
-        placeholder="请选择产品"
-      />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" label="所属产品" />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -41,11 +34,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { Product } from '@/api/iot/product/product'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleProductList } from '@/api/iot/product/product'
+import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
+import ProductSearchPicker from '@/pages-iot/product/product/components/product-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -53,7 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Product[]>([]) // 产品选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
 const formData = reactive({
   name: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -66,7 +58,7 @@ const placeholder = computed(() => { // 搜索条件文案
     conditions.push(`固件名称:${formData.name}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${findProductName(formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -92,14 +84,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 获取产品名称 */
-function findProductName(productId?: number) {
-  return productOptions.value.find(item => String(item.id) === String(productId))?.name || String(productId || '')
-}
-
-/** 初始化 */
-onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
-})
 </script>

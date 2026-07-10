@@ -13,7 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <yd-search-picker v-model="formData.dictType" label="字典类型" :columns="dictTypeOptions" placeholder="请选择字典类型" />
+      <DictTypeSearchPicker ref="dictTypePickerRef" v-model="formData.dictType" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           字典标签
@@ -54,11 +54,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { getSimpleDictTypeList } from '@/api/system/dict/type'
+import { computed, reactive, ref, watch } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import DictTypeSearchPicker from '../type/components/dict-type-search-picker.vue'
 
 const props = defineProps<{
   dictType?: string
@@ -76,24 +76,13 @@ const formData = reactive({
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
 
-/** 字典类型选项 */
-const dictTypeOptions = ref<{ label: string, value: string }[]>([])
-
-/** 加载字典类型列表 */
-async function loadDictTypeList() {
-  const list = await getSimpleDictTypeList()
-  dictTypeOptions.value = list.map(item => ({
-    label: item.name,
-    value: item.type,
-  }))
-}
+const dictTypePickerRef = ref<InstanceType<typeof DictTypeSearchPicker>>() // 字典类型选择器
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.dictType) {
-    const dictTypeItem = dictTypeOptions.value.find(item => item.value === formData.dictType)
-    conditions.push(`类型:${dictTypeItem?.label || formData.dictType}`)
+    conditions.push(`类型:${dictTypePickerRef.value?.format(formData.dictType) || formData.dictType}`)
   }
   if (formData.label) {
     conditions.push(`标签:${formData.label}`)
@@ -131,9 +120,4 @@ watch(
   },
   { immediate: true },
 )
-
-/** 初始化 */
-onMounted(() => {
-  loadDictTypeList()
-})
 </script>

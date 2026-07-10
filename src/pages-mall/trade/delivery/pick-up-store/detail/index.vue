@@ -38,16 +38,23 @@
         <wd-button v-if="hasAccessByCodes(['trade:delivery:pick-up-store:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
-        <!-- 点击即弹出用户多选（UserPicker 自管加载），选完确定即绑定 -->
+        <!-- 绑定核销员 -->
         <view v-if="hasAccessByCodes(['trade:delivery:pick-up-store:update'])" class="flex-1">
-          <UserPicker v-model="bindStaffIds" use-default-slot placeholder="请选择核销员" @confirm="handleBindStaff">
-            <wd-button class="w-full" type="primary" :loading="binding">
-              绑定核销员
-            </wd-button>
-          </UserPicker>
+          <wd-button class="w-full" type="primary" :loading="binding" @click="staffPickerRef?.open()">
+            绑定核销员
+          </wd-button>
         </view>
       </view>
     </view>
+
+    <!-- 核销员选择 -->
+    <UserPicker
+      ref="staffPickerRef"
+      v-model="bindStaffIds"
+      title="选择核销员"
+      type="checkbox"
+      @confirm="handleBindStaff"
+    />
   </view>
 </template>
 
@@ -62,6 +69,7 @@ import {
   deleteDeliveryPickUpStore,
   getDeliveryPickUpStore,
 } from '@/api/mall/trade/delivery/pick-up-store'
+import { UserPicker } from '@/components/system-select'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -83,6 +91,7 @@ const formData = ref<DeliveryPickUpStore>({} as DeliveryPickUpStore) // 详情�
 const deleting = ref(false) // 删除状态
 const bindStaffIds = ref<number[]>([]) // 绑定的核销员用户编号（与已绑定保持同步，打开选择器即回显）
 const binding = ref(false) // 绑定提交状态
+const staffPickerRef = ref<InstanceType<typeof UserPicker>>() // 核销员选择器
 
 /** 返回上一页 */
 function handleBack() {

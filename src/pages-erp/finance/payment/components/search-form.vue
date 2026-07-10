@@ -17,10 +17,10 @@
         <wd-input v-model="formData.no" placeholder="请输入付款单号" clearable />
       </view>
       <yd-search-date-range v-model="formData.paymentTime" label="付款时间" />
-      <yd-search-picker v-model="formData.supplierId" label="供应商" :columns="supplierOptions" label-key="name" value-key="id" placeholder="请选择供应商" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
-      <yd-search-picker v-model="formData.financeUserId" label="财务人员" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择财务人员" />
-      <yd-search-picker v-model="formData.accountId" label="付款账户" :columns="accountOptions" label-key="name" value-key="id" placeholder="请选择付款账户" />
+      <SupplierSearchPicker ref="supplierPickerRef" v-model="formData.supplierId" />
+      <UserSearchPicker v-model="formData.creator" label="创建人" />
+      <UserSearchPicker v-model="formData.financeUserId" label="财务人员" />
+      <AccountSearchPicker ref="accountPickerRef" v-model="formData.accountId" label="付款账户" placeholder="请选择付款账户" />
       <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -47,24 +47,22 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getAccountSimpleList } from '@/api/erp/finance/account'
-import { getSupplierSimpleList } from '@/api/erp/purchase/supplier'
-import { getSimpleUserList } from '@/api/system/user'
+import { UserSearchPicker } from '@/components/system-select'
+import AccountSearchPicker from '@/pages-erp/finance/account/components/account-search-picker.vue'
+import SupplierSearchPicker from '@/pages-erp/purchase/supplier/components/supplier-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false)
-const supplierOptions = ref<Record<string, any>[]>([]) // 供应商选项
-const userOptions = ref<Record<string, any>[]>([]) // 用户选项
-const accountOptions = ref<Record<string, any>[]>([]) // 账户选项
+const supplierPickerRef = ref<InstanceType<typeof SupplierSearchPicker>>() // 供应商选择器
+const accountPickerRef = ref<InstanceType<typeof AccountSearchPicker>>() // 结算账户选择器
 const formData = reactive({
   no: undefined as string | undefined,
   paymentTime: [undefined, undefined] as [any, any],
@@ -87,10 +85,10 @@ const placeholder = computed(() => {
     conditions.push(`付款时间:${formatDate(formData.paymentTime[0])}~${formatDate(formData.paymentTime[1])}`)
   }
   if (formData.supplierId) {
-    conditions.push(`供应商:${getErpOptionLabel(supplierOptions.value, formData.supplierId)}`)
+    conditions.push(`供应商:${supplierPickerRef.value?.format(formData.supplierId) || formData.supplierId}`)
   }
   if (formData.accountId) {
-    conditions.push(`账户:${getErpOptionLabel(accountOptions.value, formData.accountId)}`)
+    conditions.push(`账户:${accountPickerRef.value?.format(formData.accountId) || formData.accountId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
@@ -128,17 +126,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [suppliers, users, accounts] = await Promise.all([
-    getSupplierSimpleList(),
-    getSimpleUserList(),
-    getAccountSimpleList(),
-  ])
-
-  supplierOptions.value = suppliers
-  userOptions.value = users
-  accountOptions.value = accounts
-})
 </script>

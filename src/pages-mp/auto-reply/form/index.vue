@@ -12,59 +12,38 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group v-if="formData.type !== MpAutoReplyTypeEnum.FOLLOW" border title="请求配置">
           <template v-if="formData.type === MpAutoReplyTypeEnum.MESSAGE">
-            <wd-form-item
-              title="消息类型"
-              title-width="220rpx"
+            <yd-form-picker
+              v-model="formData.requestMessageType"
+              label="消息类型"
+              label-width="220rpx"
               prop="requestMessageType"
-              is-link
-              :value="getWotPickerFormValue(requestMessageOptions, formData.requestMessageType)"
-              placeholder="请选择消息类型"
-              @click="pickerVisible.requestMessageType = true"
-            />
-            <wd-picker
-              v-model:visible="pickerVisible.requestMessageType"
-              :model-value="[formData.requestMessageType]"
               :columns="requestMessageOptions"
-              @confirm="({ value }) => formData.requestMessageType = value[0]"
+              placeholder="请选择消息类型"
             />
           </template>
           <template v-if="formData.type === MpAutoReplyTypeEnum.KEYWORD">
             <wd-form-item title="关键词" title-width="220rpx" prop="requestKeyword">
               <wd-input v-model="formData.requestKeyword" clearable placeholder="请输入关键词" />
             </wd-form-item>
-            <wd-form-item
-              title="匹配类型"
-              title-width="220rpx"
+            <yd-form-picker
+              v-model="formData.requestMatch"
+              label="匹配类型"
+              label-width="220rpx"
               prop="requestMatch"
-              is-link
-              :value="getWotPickerFormValue(getIntDictOptions(DICT_TYPE.MP_AUTO_REPLY_REQUEST_MATCH), formData.requestMatch)"
+              :dict-type="DICT_TYPE.MP_AUTO_REPLY_REQUEST_MATCH"
               placeholder="请选择匹配类型"
-              @click="pickerVisible.requestMatch = true"
-            />
-            <wd-picker
-              v-model:visible="pickerVisible.requestMatch"
-              :model-value="[formData.requestMatch]"
-              :columns="getIntDictOptions(DICT_TYPE.MP_AUTO_REPLY_REQUEST_MATCH)"
-              @confirm="({ value }) => formData.requestMatch = Number(value[0])"
             />
           </template>
         </wd-cell-group>
 
         <wd-cell-group border title="回复配置">
-          <wd-form-item
-            title="回复类型"
-            title-width="220rpx"
+          <yd-form-picker
+            v-model="formData.responseMessageType"
+            label="回复类型"
+            label-width="220rpx"
             prop="responseMessageType"
-            is-link
-            :value="getWotPickerFormValue(responseMessageOptions, formData.responseMessageType)"
-            placeholder="请选择回复类型"
-            @click="pickerVisible.responseMessageType = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.responseMessageType"
-            :model-value="[formData.responseMessageType]"
             :columns="responseMessageOptions"
-            @confirm="({ value }) => formData.responseMessageType = value[0]"
+            placeholder="请选择回复类型"
           />
 
           <!-- 文本 -->
@@ -210,14 +189,14 @@ import type { MaterialUploadType } from '@/pages-mp/utils/upload'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { createAutoReply, getAutoReply, updateAutoReply } from '@/api/mp/autoReply'
-import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
+import { getStrDictOptions } from '@/hooks/useDict'
 import MediaPreview from '@/pages-mp/components/media-preview.vue'
 import NewsCard from '@/pages-mp/components/news-card.vue'
 import MaterialPicker from '@/pages-mp/material/components/material-picker.vue'
 import { useMaterialUpload } from '@/pages-mp/utils/upload'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MpAutoReplyRequestMatchEnum, MpAutoReplyTypeEnum } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
@@ -241,7 +220,6 @@ const accountId = computed(() => props.accountId ? Number(props.accountId) : und
 const replyType = computed(() => props.type ? Number(props.type) : MpAutoReplyTypeEnum.KEYWORD)
 const getTitle = computed(() => props.id ? '编辑自动回复' : '新增自动回复')
 const formLoading = ref(false) // 表单提交状态
-const pickerVisible = ref<Record<string, boolean>>({}) // 选择器显示状态
 const materialPickerVisible = ref(false) // 素材选择弹窗
 const formData = ref<AutoReply>({
   id: undefined,

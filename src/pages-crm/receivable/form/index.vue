@@ -11,33 +11,25 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <CrmPicker
+          <CustomerFormPicker
             v-model="formData.customerId"
-            source="customer"
-            label="客户名称"
             prop="customerId"
-            placeholder="请选择客户名称"
-            @confirm="handleCustomerConfirm"
+            @change="handleCustomerChange"
           />
-          <CrmPicker
+          <ContractFormPicker
             v-model="formData.contractId"
-            source="contract"
-            label="合同名称"
             prop="contractId"
-            :params="{ customerId: formData.customerId }"
+            :customer-id="formData.customerId"
             :option-filter="contractFilter"
-            placeholder="请选择合同名称"
-            @confirm="handleContractConfirm"
+            @change="handleContractChange"
           />
-          <CrmPicker
+          <ReceivablePlanFormPicker
             v-model="formData.planId"
-            source="receivablePlan"
-            label="回款期数"
             prop="planId"
-            :params="{ customerId: formData.customerId, contractId: formData.contractId }"
+            :customer-id="formData.customerId"
+            :contract-id="formData.contractId"
             :option-filter="planFilter"
-            placeholder="请选择回款期数"
-            @confirm="handlePlanConfirm"
+            @change="handlePlanChange"
           />
           <yd-form-picker v-model="formData.returnType" label="回款方式" prop="returnType" :dict-type="DICT_TYPE.CRM_RECEIVABLE_RETURN_TYPE" placeholder="请选择回款方式" />
           <wd-form-item title="回款金额" title-width="200rpx" prop="price">
@@ -45,7 +37,7 @@
           </wd-form-item>
           <wd-form-item title="回款日期" title-width="200rpx" prop="returnTime" is-link placeholder="请选择回款日期" :value="formatDate(formData.returnTime)" @click="pickerVisible.returnTime = true" />
           <wd-datetime-picker v-model="formData.returnTime" v-model:visible="pickerVisible.returnTime" title="请选择回款日期" type="date" />
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="备注" title-width="200rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
           </wd-form-item>
@@ -64,18 +56,22 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { Contract } from '@/api/crm/contract'
 import type { Receivable } from '@/api/crm/receivable'
+import type { ReceivablePlan } from '@/api/crm/receivable/plan'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { CrmAuditStatusEnum } from '@/api/crm/permission'
 import { createReceivable, getReceivable, updateReceivable } from '@/api/crm/receivable'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import ContractFormPicker from '@/pages-crm/contract/components/contract-form-picker.vue'
+import CustomerFormPicker from '@/pages-crm/customer/components/customer-form-picker.vue'
+import ReceivablePlanFormPicker from '@/pages-crm/receivable-plan/components/receivable-plan-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({
@@ -119,28 +115,26 @@ function planFilter(raw: Record<string, any>) {
   return !raw.receivableId
 }
 
-/** 选择客户后清空合同、回款期数 */
-function handleCustomerConfirm() {
+/** 客户变更后清空合同、回款期数 */
+function handleCustomerChange() {
   formData.value.contractId = undefined
   formData.value.planId = undefined
 }
 
-/** 选择合同后清空回款期数，并回填应回款金额（合同金额 - 已回款金额） */
-function handleContractConfirm(option?: { raw?: Record<string, any> }) {
+/** 合同变更后清空回款期数，并回填应回款金额（合同金额 - 已回款金额） */
+function handleContractChange(contract?: Contract) {
   formData.value.planId = undefined
-  const raw = option?.raw
-  const remaining = Number(raw?.totalPrice || 0) - Number(raw?.totalReceivablePrice || 0)
+  const remaining = Number(contract?.totalPrice || 0) - Number(contract?.totalReceivablePrice || 0)
   formData.value.price = Math.round(remaining * 100) / 100
 }
 
-/** 选择回款计划后回填金额与回款方式 */
-function handlePlanConfirm(option?: { raw?: Record<string, any> }) {
-  const raw = option?.raw
-  if (raw?.price !== undefined) {
-    formData.value.price = raw.price
+/** 回款计划变更后回填金额与回款方式 */
+function handlePlanChange(plan?: ReceivablePlan) {
+  if (plan?.price !== undefined) {
+    formData.value.price = plan.price
   }
-  if (raw?.returnType !== undefined) {
-    formData.value.returnType = raw.returnType
+  if (plan?.returnType !== undefined) {
+    formData.value.returnType = plan.returnType
   }
 }
 

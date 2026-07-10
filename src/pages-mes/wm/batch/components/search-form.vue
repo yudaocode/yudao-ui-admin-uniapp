@@ -33,7 +33,13 @@
         </view>
         <wd-input v-model="formData.lotNumber" placeholder="请输入生产批号" clearable />
       </view>
-      <yd-search-picker v-model="formData.qualityStatus" label="质量状态" :dict-type="DICT_TYPE.MES_WM_QUALITY_STATUS" all-option />
+      <yd-search-picker
+        ref="qualityStatusSearchPickerRef"
+        v-model="formData.qualityStatus"
+        label="质量状态"
+        :dict-type="DICT_TYPE.MES_WM_QUALITY_STATUS"
+        all-option
+      />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           采购订单编号
@@ -59,8 +65,8 @@
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
 import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
 import ItemSearchPicker from '@/pages-mes/md/item/components/item-search-picker.vue'
 import VendorSearchPicker from '@/pages-mes/md/vendor/components/vendor-search-picker.vue'
@@ -87,15 +93,9 @@ const visible = ref(false) // 搜索弹窗显示状态
 const itemSearchPickerRef = ref<InstanceType<typeof ItemSearchPicker>>() // 物料搜索选择器
 const vendorSearchPickerRef = ref<InstanceType<typeof VendorSearchPicker>>() // 供应商搜索选择器
 const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
+const qualityStatusSearchPickerRef = ref<YdSearchPickerExpose>() // 质量状态搜索选择器
 const formData = reactive<BatchSearchFormData>({}) // 搜索表单数据
 
-const qualityStatusText = computed(() => {
-  if (formData.qualityStatus === undefined || formData.qualityStatus === -1) {
-    return ''
-  }
-  const option = getIntDictOptions(DICT_TYPE.MES_WM_QUALITY_STATUS).find(item => item.value === formData.qualityStatus)
-  return option?.label || String(formData.qualityStatus)
-})
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.code) {
@@ -113,8 +113,8 @@ const placeholder = computed(() => {
   if (formData.lotNumber) {
     conditions.push(`生产批号:${formData.lotNumber}`)
   }
-  if (qualityStatusText.value) {
-    conditions.push(`质量:${qualityStatusText.value}`)
+  if (formData.qualityStatus !== undefined && formData.qualityStatus !== -1) {
+    conditions.push(`质量:${qualityStatusSearchPickerRef.value?.format(formData.qualityStatus) || formData.qualityStatus}`)
   }
   if (formData.purchaseOrderCode) {
     conditions.push(`采购订单:${formData.purchaseOrderCode}`)

@@ -17,20 +17,20 @@
       />
       <!-- 设备类触发 -->
       <template v-if="isDevice">
-        <ProductPicker
+        <ProductFormPicker
           v-model="triggerData.productId"
           label="产品"
-          :columns="productOptions"
-          placeholder="请选择产品"
           label-width="200rpx"
+          placeholder="请选择产品"
+          :columns="productOptions"
           @update:model-value="onProductChange"
         />
-        <DevicePicker
+        <DeviceFormPicker
           v-model="triggerData.deviceId"
           label="设备"
-          :columns="deviceOptions"
-          placeholder="请选择设备"
           label-width="200rpx"
+          placeholder="请选择设备"
+          :columns="deviceOptions"
         />
         <ThingModelPicker
           v-if="showIdentifier"
@@ -84,8 +84,8 @@ import type { Trigger } from '@/api/iot/rule/scene'
 import { computed, ref, watch } from 'vue'
 import { getDeviceListByProductId } from '@/api/iot/device/device'
 import { getThingModelList } from '@/api/iot/thingmodel'
-import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
-import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
+import DeviceFormPicker from '@/pages-iot/device/device/components/device-form-picker.vue'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
 import { deviceStatusOptions, IOT_ALL_DEVICE_OPTION, IotRuleSceneTriggerTypeEnum, IoTThingModelTypeEnum, isDeviceTrigger, operatorOptions, triggerTypeOptions } from '@/utils/constants'
 import ConditionGroupEditor from './condition-group-editor.vue'

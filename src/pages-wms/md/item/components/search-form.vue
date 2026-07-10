@@ -25,8 +25,8 @@
         </view>
         <wd-input v-model="formData.code" placeholder="请输入商品编号" clearable />
       </view>
-      <ItemCategoryPicker v-model="formData.categoryId" label="商品分类" placeholder="请选择商品分类" />
-      <ItemBrandPicker v-model="formData.brandId" label="商品品牌" placeholder="请选择商品品牌" />
+      <ItemCategorySearchPicker ref="categoryPickerRef" v-model="formData.categoryId" label="商品分类" placeholder="请选择商品分类" />
+      <ItemBrandSearchPicker ref="brandPickerRef" v-model="formData.brandId" label="商品品牌" placeholder="请选择商品品牌" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -41,8 +41,8 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import ItemBrandPicker from '@/pages-wms/md/item/brand/components/item-brand-picker.vue'
-import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
+import ItemBrandSearchPicker from '@/pages-wms/md/item/brand/components/item-brand-search-picker.vue'
+import ItemCategorySearchPicker from '@/pages-wms/md/item/category/components/item-category-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 const emit = defineEmits<{
@@ -51,6 +51,8 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const categoryPickerRef = ref<InstanceType<typeof ItemCategorySearchPicker>>()
+const brandPickerRef = ref<InstanceType<typeof ItemBrandSearchPicker>>()
 const formData = reactive({
   name: undefined as string | undefined,
   code: undefined as string | undefined,
@@ -68,10 +70,10 @@ const placeholder = computed(() => {
     conditions.push(`编号:${formData.code}`)
   }
   if (formData.categoryId) {
-    conditions.push('已选分类')
+    conditions.push(`分类:${categoryPickerRef.value?.format(formData.categoryId) || formData.categoryId}`)
   }
   if (formData.brandId) {
-    conditions.push('已选品牌')
+    conditions.push(`品牌:${brandPickerRef.value?.format(formData.brandId) || formData.brandId}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索商品'
 })

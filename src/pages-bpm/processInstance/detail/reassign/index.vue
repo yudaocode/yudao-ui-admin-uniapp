@@ -12,11 +12,10 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <!-- 用户选择 -->
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userId"
-            prop="userId"
-            type="radio"
             :label="`${isDelegate ? '接收人' : '新审批人'}：`"
+            prop="userId"
             :placeholder="`请选择${isDelegate ? '接收人' : '新审批人'}`"
           />
           <!-- 审批意见 -->
@@ -52,7 +51,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { delegateTask, transferTask } from '@/api/bpm/task'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 

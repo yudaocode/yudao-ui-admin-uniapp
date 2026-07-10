@@ -13,8 +13,8 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <AppPicker v-model="formData.appId" @change="name => formData.appName = name" />
-      <yd-search-picker v-model="formData.channelCode" label="退款渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
+      <AppSearchPicker ref="appPickerRef" v-model="formData.appId" />
+      <yd-search-picker ref="channelPickerRef" v-model="formData.channelCode" label="退款渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           商户支付单号
@@ -39,7 +39,7 @@
         </view>
         <wd-input v-model="formData.channelRefundNo" placeholder="请输入渠道退款单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.status" label="退款状态" :dict-type="DICT_TYPE.PAY_REFUND_STATUS" all-option />
+      <yd-search-picker ref="statusPickerRef" v-model="formData.status" label="退款状态" :dict-type="DICT_TYPE.PAY_REFUND_STATUS" all-option />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -54,12 +54,12 @@
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import AppPicker from '@/pages-pay/app/components/app-picker.vue'
+import AppSearchPicker from '@/pages-pay/app/components/app-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -67,9 +67,11 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const appPickerRef = ref<InstanceType<typeof AppSearchPicker>>()
+const channelPickerRef = ref<YdSearchPickerExpose>()
+const statusPickerRef = ref<YdSearchPickerExpose>()
 const formData = reactive({
   appId: 0,
-  appName: '',
   channelCode: '',
   merchantOrderId: undefined as string | undefined,
   merchantRefundId: undefined as string | undefined,
@@ -83,10 +85,10 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.appId) {
-    conditions.push(`应用:${formData.appName}`)
+    conditions.push(`应用:${appPickerRef.value?.format(formData.appId) || formData.appId}`)
   }
   if (formData.channelCode) {
-    conditions.push(`渠道:${getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, formData.channelCode)}`)
+    conditions.push(`渠道:${channelPickerRef.value?.format(formData.channelCode) || formData.channelCode}`)
   }
   if (formData.merchantOrderId) {
     conditions.push(`支付单号:${formData.merchantOrderId}`)
@@ -101,7 +103,7 @@ const placeholder = computed(() => {
     conditions.push(`渠道退款单:${formData.channelRefundNo}`)
   }
   if (formData.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.PAY_REFUND_STATUS, formData.status)}`)
+    conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -127,7 +129,6 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.appId = 0
-  formData.appName = ''
   formData.channelCode = ''
   formData.merchantOrderId = undefined
   formData.merchantRefundId = undefined

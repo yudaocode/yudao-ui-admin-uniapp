@@ -47,13 +47,12 @@
             prop="inspectorUserId"
             :value="formData.inspectorName || '-'"
           />
-          <UserPicker
+          <UserFormPicker
             v-else
             v-model="formData.inspectorUserId"
             label="检查员"
             label-width="220rpx"
             prop="inspectorUserId"
-            type="radio"
             placeholder="请选择检查员"
           />
           <wd-form-item title="销售订单编号" title-width="220rpx" prop="salesOrderCode">
@@ -203,7 +202,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createPackage, finishPackage, getPackage, updatePackage } from '@/api/mes/wm/packages'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import ClientFormPicker from '@/pages-mes/md/client/components/client-form-picker.vue'
 import UnitMeasureFormPicker from '@/pages-mes/md/unitmeasure/components/unit-measure-form-picker.vue'
 import { navigateBackPlus } from '@/utils'

@@ -14,12 +14,11 @@
       </view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.newOwnerUserId"
-            type="radio"
             label="新负责人"
-            prop="newOwnerUserId"
             label-width="220rpx"
+            prop="newOwnerUserId"
             placeholder="请选择新负责人"
           />
           <wd-form-item title="老负责人" title-width="220rpx" center>
@@ -94,7 +93,7 @@ import { transferContact } from '@/api/crm/contact'
 import { transferContract } from '@/api/crm/contract'
 import { transferCustomer } from '@/api/crm/customer'
 import { BizTypeEnum, PermissionLevelEnum } from '@/api/crm/permission'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

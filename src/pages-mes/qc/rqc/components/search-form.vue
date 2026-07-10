@@ -34,9 +34,7 @@
         <wd-input v-model="formData.batchCode" placeholder="请输入批次号" clearable />
       </view>
       <yd-search-picker v-model="formData.checkResult" label="检测结果" :dict-type="DICT_TYPE.MES_QC_CHECK_RESULT" all-option />
-      <view class="yd-search-form-item">
-        <UserPicker v-model="formData.inspectorUserId" label="检测人员" type="radio" placeholder="请选择检测人员" />
-      </view>
+      <UserSearchPicker v-model="formData.inspectorUserId" label="检测人员" placeholder="请选择检测人员" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -50,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'

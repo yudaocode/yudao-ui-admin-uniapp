@@ -11,8 +11,9 @@
     />
 
     <wd-select-picker
+      ref="pickerRef"
       v-model="pickerValue"
-      v-model:visible="visible"
+      :visible="visible"
       :title="rule.title || '选择选项'"
       :columns="options"
       :type="isMultiple ? 'checkbox' : 'radio'"
@@ -23,6 +24,7 @@
       filterable
       label-key="label"
       value-key="value"
+      @update:visible="handleVisibleChange"
       @cancel="emit('cancel')"
       @confirm="handleConfirm"
     />
@@ -31,7 +33,8 @@
 
 <script lang="ts" setup>
 import type { NormalizedFormCreateRule } from '../../../../../types/typing'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 import { getPlaceholder } from '../../core/utils'
 import { loadApiSelectOptions } from './api'
 import { formatSelectedSummary, isMultipleSelect, normalizeSelectValue } from './utils'
@@ -58,7 +61,7 @@ const emptyMessage = ref('')
 const options = ref<any[]>([])
 const loaded = ref(false)
 const pickerValue = ref<any>([])
-const visible = ref(false)
+const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
 
 const isMultiple = computed(() => isMultipleSelect(props.rule))
 const placeholder = computed(() => getPlaceholder(props.rule, '请选择'))
@@ -104,7 +107,8 @@ async function open() {
     return
   }
   pickerValue.value = normalizeSelectValue(props.modelValue, isMultiple.value)
-  visible.value = true
+  await nextTick()
+  openPicker()
 }
 
 function handleConfirm({ value }: { value: any }) {

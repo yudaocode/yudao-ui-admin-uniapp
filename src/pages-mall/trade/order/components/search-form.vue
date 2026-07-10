@@ -90,8 +90,8 @@
       </view>
       <yd-search-picker v-model="formData.payChannelCode" label="支付方式" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option />
       <yd-search-picker v-model="formData.terminal" label="订单来源" :dict-type="DICT_TYPE.TERMINAL" all-option />
-      <yd-search-picker v-model="formData.logisticsId" label="快递公司" :columns="expressOptions" all-option />
-      <yd-search-picker v-model="formData.pickUpStoreId" label="自提门店" :columns="storeOptions" all-option />
+      <ExpressSearchPicker v-model="formData.logisticsId" />
+      <PickUpStoreSearchPicker v-model="formData.pickUpStoreId" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           核销码
@@ -112,13 +112,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleDeliveryExpressList } from '@/api/mall/trade/delivery/express'
-import { getSimpleDeliveryPickUpStoreList } from '@/api/mall/trade/delivery/pick-up-store'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
+import ExpressSearchPicker from '../../delivery/express/components/express-search-picker.vue'
+import PickUpStoreSearchPicker from '../../delivery/pick-up-store/components/pick-up-store-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -126,8 +126,6 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const expressOptions = ref<{ label: string, value: number }[]>([]) // 快递公司选项
-const storeOptions = ref<{ label: string, value: number }[]>([]) // 自提门店选项
 const formData = reactive({
   no: undefined as string | undefined,
   userId: undefined as string | undefined,
@@ -177,20 +175,6 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索订单'
 })
 
-/** 加载快递公司 / 自提门店选项 */
-async function loadOptions() {
-  const [expressList, storeList] = await Promise.all([
-    getSimpleDeliveryExpressList(),
-    getSimpleDeliveryPickUpStoreList(),
-  ])
-  expressOptions.value = expressList
-    .filter(item => item.id != null)
-    .map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
-  storeOptions.value = storeList
-    .filter(item => item.id != null)
-    .map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
@@ -229,9 +213,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadOptions()
-})
 </script>

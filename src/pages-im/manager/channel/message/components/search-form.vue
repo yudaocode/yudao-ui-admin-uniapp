@@ -13,7 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <yd-search-picker v-model="formData.channelId" label="所属频道" :columns="channelColumns" :all-value="0" />
+      <ChannelSearchPicker ref="channelPickerRef" v-model="formData.channelId" />
       <yd-search-date-range v-model="formData.sendTime" label="发送时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -28,11 +28,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleChannelList } from '@/api/im/manager/channel'
+import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
+import ChannelSearchPicker from '../../components/channel-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -40,7 +39,7 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const channelColumns = ref<{ label: string, value: number }[]>([{ label: '全部', value: 0 }]) // 频道选项（0 表示全部）
+const channelPickerRef = ref<InstanceType<typeof ChannelSearchPicker>>() // 频道选择器
 const formData = reactive({
   channelId: 0, // 0 表示全部
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -50,22 +49,13 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.channelId) {
-    conditions.push(`频道:${getWotPickerDisplay(channelColumns.value, formData.channelId, { valueKey: 'value', labelKey: 'label', placeholder: '' })}`)
+    conditions.push(`频道:${channelPickerRef.value?.format(formData.channelId) || formData.channelId}`)
   }
   if (formData.sendTime?.[0] && formData.sendTime?.[1]) {
     conditions.push(`发送时间:${formatDate(formData.sendTime[0])}~${formatDate(formData.sendTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索频道消息'
 })
-
-/** 加载频道选项 */
-async function loadChannelOptions() {
-  const list = await getSimpleChannelList()
-  channelColumns.value = [
-    { label: '全部', value: 0 },
-    ...list.map(item => ({ label: item.name, value: item.id })),
-  ]
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -83,9 +73,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  loadChannelOptions()
-})
 </script>

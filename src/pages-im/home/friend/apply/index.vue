@@ -11,11 +11,10 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.toUserId"
             label="目标用户"
             prop="toUserId"
-            type="radio"
             placeholder="请选择用户"
           />
           <wd-form-item title="好友备注" title-width="180rpx" prop="displayName">
@@ -57,7 +56,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
 import { applyFriendRequest } from '@/api/im/friend/request'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
 import { ImFriendAddSource } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

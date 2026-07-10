@@ -12,13 +12,13 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <!-- 加签处理人 -->
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userIds"
-            prop="userIds"
-            type="checkbox"
             label="加签处理人："
             label-width="200rpx"
+            prop="userIds"
             placeholder="请选择加签处理人"
+            type="checkbox"
           />
           <!-- 审批意见 -->
           <wd-form-item prop="reason" title="审批意见：" title-width="200rpx">
@@ -63,7 +63,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { signCreateTask } from '@/api/bpm/task'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 

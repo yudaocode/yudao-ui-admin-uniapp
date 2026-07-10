@@ -48,23 +48,40 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const options = ref<WmWarehouseArea[]>([]) // 库位选项
+const loading = ref(false) // 库位选项加载状态
 
 /** 加载库位选项 */
 async function loadOptions() {
-  if (!props.locationId) {
+  const locationId = props.locationId
+  if (!locationId) {
     options.value = []
+    loading.value = false
     return
   }
-  options.value = await getWarehouseAreaSimpleList(props.locationId) || []
+  loading.value = true
+  try {
+    const list = await getWarehouseAreaSimpleList(locationId) || []
+    if (locationId === props.locationId) {
+      options.value = list
+    }
+  } finally {
+    if (locationId === props.locationId) {
+      loading.value = false
+    }
+  }
 }
 
 /** 打开前校验库区 */
-async function beforeOpenPicker() {
+function beforeOpenPicker() {
   if (!props.locationId) {
     toast.warning('请先选择库区')
     return false
   }
-  await loadOptions()
+  if (loading.value) {
+    toast.show('库位加载中')
+    return false
+  }
+  return true
 }
 
 /** 更新库位编号 */

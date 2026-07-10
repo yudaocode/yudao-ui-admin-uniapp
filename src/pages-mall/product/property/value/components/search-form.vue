@@ -13,14 +13,10 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <yd-search-picker
+      <PropertySearchPicker
         v-if="propertyId == null"
+        ref="propertyPickerRef"
         v-model="formData.propertyId"
-        label="所属属性"
-        :columns="propertyOptions"
-        label-key="name"
-        value-key="id"
-        placeholder="请选择所属属性"
       />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -41,9 +37,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleProductPropertyList } from '@/api/mall/product/property'
+import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import PropertySearchPicker from '../components/property-search-picker.vue'
 
 defineProps<{
   propertyId?: number // 限定属性时隐藏所属属性筛选
@@ -55,7 +51,7 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const propertyOptions = ref<{ id?: number, name: string }[]>([]) // 属性选项
+const propertyPickerRef = ref<InstanceType<typeof PropertySearchPicker>>() // 属性选择器
 const formData = reactive({
   propertyId: undefined as number | undefined,
   name: undefined as string | undefined,
@@ -65,21 +61,13 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.propertyId != null) {
-    conditions.push(`属性:${getOptionText(propertyOptions.value, formData.propertyId)}`)
+    conditions.push(`属性:${propertyPickerRef.value?.format(formData.propertyId) || formData.propertyId}`)
   }
   if (formData.name) {
     conditions.push(`属性值:${formData.name}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索属性值'
 })
-
-/** 获取选项文本 */
-function getOptionText(options: { id?: number, name: string }[], value?: number) {
-  if (value == null) {
-    return ''
-  }
-  return options.find(item => Number(item.id) === Number(value))?.name || String(value)
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -97,9 +85,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(async () => {
-  propertyOptions.value = await getSimpleProductPropertyList()
-})
 </script>

@@ -25,7 +25,7 @@
               @update:model-value="value => formData.area = toFiniteNumber(value)"
             />
           </wd-form-item>
-          <UserPicker v-model="formData.chargeUserId" label="负责人" label-width="220rpx" type="radio" placeholder="请选择负责人" />
+          <UserFormPicker v-model="formData.chargeUserId" label="负责人" label-width="220rpx" placeholder="请选择负责人" />
           <yd-form-picker
             v-model="formData.status"
             label="状态"
@@ -58,7 +58,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createWorkshop, getWorkshop, updateWorkshop } from '@/api/mes/md/workstation/workshop'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { toFiniteNumber } from '@/utils/format'

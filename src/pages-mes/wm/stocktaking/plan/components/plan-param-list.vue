@@ -92,7 +92,14 @@
         <scroll-view class="min-h-0 flex-1" scroll-y>
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
             <wd-cell-group border>
-              <yd-form-picker v-model="formData.type" label="条件类型" label-width="220rpx" prop="type" :columns="paramTypeOptions" placeholder="请选择条件类型" />
+              <yd-form-picker
+                v-model="formData.type"
+                label="条件类型"
+                label-width="220rpx"
+                prop="type"
+                :dict-type="DICT_TYPE.MES_WM_STOCK_TAKING_PLAN_PARAM_TYPE"
+                placeholder="请选择条件类型"
+              />
 
               <WarehouseFormPicker
                 v-if="formData.type === MesWmStockTakingParamTypeEnum.WAREHOUSE"
@@ -117,8 +124,8 @@
                   label="库区"
                   label-width="220rpx"
                   prop="valueId"
-                  :warehouse-id="locationWarehouseId"
                   placeholder="请选择库区"
+                  :warehouse-id="locationWarehouseId"
                   @change="fillSelectedValue"
                 />
               </template>
@@ -135,8 +142,8 @@
                   v-model="areaLocationId"
                   label="库区"
                   label-width="220rpx"
-                  :warehouse-id="areaWarehouseId"
                   placeholder="请再选择库区"
+                  :warehouse-id="areaWarehouseId"
                   @change="handleAreaLocationChange"
                 />
                 <WarehouseAreaFormPicker
@@ -144,8 +151,8 @@
                   label="库位"
                   label-width="220rpx"
                   prop="valueId"
-                  :location-id="areaLocationId"
                   placeholder="请选择库位"
+                  :location-id="areaLocationId"
                   @change="fillSelectedValue"
                 />
               </template>
@@ -178,7 +185,7 @@
                 label="质量状态"
                 label-width="220rpx"
                 prop="valueId"
-                :columns="qualityStatusOptions"
+                :dict-type="DICT_TYPE.MES_WM_QUALITY_STATUS"
                 placeholder="请选择质量状态"
               />
 
@@ -221,7 +228,7 @@ import {
 } from '@/api/mes/wm/stocktaking/plan'
 import { getWarehouseArea } from '@/api/mes/wm/warehouse/area'
 import { getWarehouseLocation } from '@/api/mes/wm/warehouse/location'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
 import BatchPicker from '@/pages-mes/wm/batch/components/batch-picker.vue'
 import WarehouseFormPicker from '@/pages-mes/wm/warehouse/components/warehouse-form-picker.vue'
@@ -253,8 +260,6 @@ const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器�
 const batchPickerRef = ref<InstanceType<typeof BatchPicker>>() // 批次选择器引用
 
 const formTitle = computed(() => formMode.value === 'create' ? '添加盘点条件' : '编辑盘点条件')
-const paramTypeOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_WM_STOCK_TAKING_PLAN_PARAM_TYPE))
-const qualityStatusOptions = computed(() => getIntDictOptions(DICT_TYPE.MES_WM_QUALITY_STATUS))
 const qualityStatusValue = ref<number>() // 质量状态临时值
 const formSchema = createFormSchema({
   type: [{ required: true, message: '条件类型不能为空' }],

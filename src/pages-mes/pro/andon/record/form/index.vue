@@ -23,13 +23,12 @@
             placeholder="请选择工作站"
             @click="openWorkstationPicker"
           />
-          <UserPicker
+          <UserFormPicker
             v-if="isCreateMode"
             v-model="formData.userId"
             label="发起人"
             label-width="220rpx"
             prop="userId"
-            type="radio"
             placeholder="请选择发起人"
           />
           <wd-cell v-else title="发起人" :value="formData.userNickname || '-'" />
@@ -78,12 +77,11 @@
           <wd-cell-group border>
             <wd-form-item title="处置时间" title-width="220rpx" prop="handleTime" is-link :value="formatDateTime(formData.handleTime) || ''" placeholder="请选择处置时间" @click="dateVisible.handleTime = true" />
             <wd-datetime-picker v-model="formData.handleTime" v-model:visible="dateVisible.handleTime" title="请选择处置时间" type="datetime" />
-            <UserPicker
+            <UserFormPicker
               v-model="formData.handlerUserId"
               label="处置人"
               label-width="220rpx"
               prop="handlerUserId"
-              type="radio"
               placeholder="请选择处置人"
             />
           </wd-cell-group>
@@ -134,7 +132,7 @@ import type { MdWorkstation } from '@/api/mes/md/workstation'
 import type { ProAndonConfig } from '@/api/mes/pro/andon/config'
 import type { ProAndonRecord } from '@/api/mes/pro/andon/record'
 import type { ProProcess } from '@/api/mes/pro/process'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'

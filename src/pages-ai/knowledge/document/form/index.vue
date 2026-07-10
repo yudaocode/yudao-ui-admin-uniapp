@@ -11,15 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="知识库"
-            title-width="230rpx"
-            prop="knowledgeId"
-            is-link
-            :value="getWotPickerFormValue(knowledgeOptions, formData.knowledgeId, { labelKey: 'name', valueKey: 'id' })"
-            placeholder="请选择知识库"
-            @click="pickerVisible = true"
-          />
+          <KnowledgeFormPicker v-model="formData.knowledgeId" label-width="230rpx" prop="knowledgeId" />
           <wd-form-item title="文档名称" title-width="230rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入文档名称" />
           </wd-form-item>
@@ -44,16 +36,6 @@
       </wd-form>
     </view>
 
-    <!-- 知识库选择器 -->
-    <wd-picker
-      v-model:visible="pickerVisible"
-      :model-value="[formData.knowledgeId]"
-      :columns="knowledgeOptions"
-      label-key="name"
-      value-key="id"
-      @confirm="({ value }) => formData.knowledgeId = Number(value[0])"
-    />
-
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
@@ -71,7 +53,6 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { KnowledgeDocumentVO } from '@/api/ai/knowledge/document'
-import type { KnowledgeVO } from '@/api/ai/knowledge/knowledge'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import {
@@ -79,11 +60,11 @@ import {
   getKnowledgeDocument,
   updateKnowledgeDocument,
 } from '@/api/ai/knowledge/document'
-import { getSimpleKnowledgeList } from '@/api/ai/knowledge/knowledge'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
+import KnowledgeFormPicker from '../../components/knowledge-form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -100,8 +81,6 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑文档' : '新增文档')
 const formLoading = ref(false) // 表单提交状态
-const pickerVisible = ref(false) // 知识库选择器状态
-const knowledgeOptions = ref<KnowledgeVO[]>([]) // 知识库选项
 const formData = ref<KnowledgeDocumentVO & { url?: string }>({
   knowledgeId: props.knowledgeId ? Number(props.knowledgeId) : undefined,
   name: '',
@@ -120,11 +99,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-ai/knowledge/document/index')
-}
-
-/** 加载知识库选项 */
-async function getKnowledgeOptions() {
-  knowledgeOptions.value = await getSimpleKnowledgeList()
 }
 
 /** 加载详情 */
@@ -160,8 +134,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await getKnowledgeOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

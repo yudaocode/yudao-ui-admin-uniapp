@@ -1,1 +1,5 @@
+export { default as DeptFormPicker } from './dept-form-picker.vue'
+export { default as DeptSearchPicker } from './dept-search-picker.vue'
+export { default as UserFormPicker } from './user-form-picker.vue'
 export { default as UserPicker } from './user-picker.vue'
+export { default as UserSearchPicker } from './user-search-picker.vue'

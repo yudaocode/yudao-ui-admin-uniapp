@@ -18,7 +18,7 @@
           <wd-form-item title="手机" title-width="200rpx" prop="mobile">
             <wd-input v-model="formData.mobile" placeholder="请输入手机" clearable />
           </wd-form-item>
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="电话" title-width="200rpx" prop="telephone">
             <wd-input v-model="formData.telephone" placeholder="请输入电话" clearable />
           </wd-form-item>
@@ -62,7 +62,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createClue, getClue, updateClue } from '@/api/crm/clue'
 import { getAreaTree } from '@/api/system/area'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

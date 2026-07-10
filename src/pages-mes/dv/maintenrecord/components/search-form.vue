@@ -53,12 +53,7 @@
           />
         </view>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          保养人
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择保养人" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="保养人" placeholder="请选择保养人" />
       <yd-search-date-range v-model="maintenTimeRange" label="保养时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -84,7 +79,7 @@
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { MesDvSubjectTypeEnum } from '@/utils/constants'
 import { formatDateRange } from '@/utils/date'
@@ -99,7 +94,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const planPickerRef = ref<InstanceType<typeof CheckPlanPicker>>() // 保养计划选择器
 const machineryPickerRef = ref<InstanceType<typeof MachineryPicker>>() // 设备选择器
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 保养人选择器
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 保养人选择器
 const selectedPlan = ref<DvCheckPlan>() // 已选计划
 const selectedMachinery = ref<DvMachinery>() // 已选设备
 const maintenTimeRange = ref<[number | undefined, number | undefined]>([undefined, undefined]) // 保养时间范围
@@ -128,7 +123,7 @@ const placeholder = computed(() => {
   if (selectedMachinery.value) {
     conditions.push(`设备:${selectedMachinery.value.code || selectedMachinery.value.name}`)
   }
-  const userName = userPickerRef.value?.getUserNickname(formData.userId)
+  const userName = userPickerRef.value?.format(formData.userId)
   if (userName) {
     conditions.push(`保养人:${userName}`)
   }

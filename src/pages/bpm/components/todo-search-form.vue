@@ -23,22 +23,8 @@
           clearable
         />
       </view>
-      <yd-search-picker
-        v-if="processDefinitionList.length > 0"
-        v-model="formData.processDefinitionKey"
-        label="所属流程"
-        :columns="processDefinitionList"
-        value-key="key"
-        label-key="name"
-      />
-      <yd-search-picker
-        v-if="categoryList.length > 0"
-        v-model="formData.category"
-        label="流程分类"
-        :columns="categoryList"
-        value-key="code"
-        label-key="name"
-      />
+      <ProcessDefinitionSearchPicker ref="processDefinitionPickerRef" v-model="formData.processDefinitionKey" />
+      <CategorySearchPicker ref="categoryPickerRef" v-model="formData.category" />
       <yd-search-date-range v-model="formData.createTime" label="发起时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -53,11 +39,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { Category } from '@/api/bpm/category'
-import type { ProcessDefinition } from '@/api/bpm/definition'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getCategorySimpleList } from '@/api/bpm/category'
-import { getProcessDefinitionList } from '@/api/bpm/definition'
+import { computed, reactive, ref } from 'vue'
+import CategorySearchPicker from '@/pages-bpm/category/components/category-search-picker.vue'
+import ProcessDefinitionSearchPicker from '@/pages-bpm/definition/components/process-definition-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
 
@@ -73,6 +57,8 @@ const formData = reactive({
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
+const processDefinitionPickerRef = ref<InstanceType<typeof ProcessDefinitionSearchPicker>>()
+const categoryPickerRef = ref<InstanceType<typeof CategorySearchPicker>>()
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -80,24 +66,17 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
+  if (formData.processDefinitionKey) {
+    conditions.push(`流程:${processDefinitionPickerRef.value?.format(formData.processDefinitionKey) || formData.processDefinitionKey}`)
+  }
+  if (formData.category) {
+    conditions.push(`分类:${categoryPickerRef.value?.format(formData.category) || formData.category}`)
+  }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索待办任务'
 })
-
-const categoryList = ref<Category[]>([]) // 流程分类选项
-const processDefinitionList = ref<ProcessDefinition[]>([]) // 流程定义选项
-
-/** 获取流程分类列表 */
-async function getCategoryList() {
-  categoryList.value = await getCategorySimpleList()
-}
-
-/** 获取流程定义列表 */
-async function getProcessDefinitions() {
-  processDefinitionList.value = await getProcessDefinitionList({ suspensionState: 1 })
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -117,10 +96,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  getCategoryList()
-  getProcessDefinitions()
-})
 </script>

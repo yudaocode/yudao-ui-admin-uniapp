@@ -17,8 +17,8 @@
           <wd-form-item title="产品编码" title-width="200rpx" prop="no">
             <wd-input v-model="formData.no" placeholder="请输入产品编码" clearable />
           </wd-form-item>
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
-          <CrmPicker v-model="formData.categoryId" source="productCategory" label="产品分类" prop="categoryId" placeholder="请选择产品分类" />
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
+          <ProductCategoryFormPicker v-model="formData.categoryId" prop="categoryId" />
           <yd-form-picker v-model="formData.unit" label="产品单位" prop="unit" :dict-type="DICT_TYPE.CRM_PRODUCT_UNIT" placeholder="请选择产品单位" />
           <wd-form-item title="价格" title-width="200rpx" prop="price">
             <wd-input-number v-model="formData.price" :min="0" :precision="2" input-type="number" allow-null placeholder="请输入价格" />
@@ -46,12 +46,12 @@ import type { Product } from '@/api/crm/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createProduct, getProduct, updateProduct } from '@/api/crm/product'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import ProductCategoryFormPicker from '@/pages-crm/product/category/components/product-category-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({

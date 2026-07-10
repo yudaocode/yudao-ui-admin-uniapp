@@ -41,18 +41,7 @@
           type="date"
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          归属部门
-        </view>
-        <yd-tree-select
-          v-model="formData.deptId"
-          filterable
-          :data="deptTree"
-          :props="{ value: 'id', label: 'name', children: 'children' }"
-          placeholder="请选择归属部门"
-        />
-      </view>
+      <DeptSearchPicker ref="deptPickerRef" v-model="formData.deptId" label="归属部门" placeholder="请选择归属部门" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -66,15 +55,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { Dept } from '@/api/system/dept'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { DeptSearchPicker } from '@/components/system-select'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate } from '@/utils/date'
 
 const props = defineProps<{
   defaultDeptId?: number
   deptId?: number
-  deptTree: Dept[]
   initialEndTime: number
   initialStartTime: number
 }>()
@@ -82,11 +70,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   search: [data: { deptId?: number, endTime: number, startTime: number }]
   reset: []
+  ready: [data: { deptId?: number, endTime: number, startTime: number }]
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
 const startVisible = ref(false) // 开始日期选择器显隐
 const endVisible = ref(false) // 结束日期选择器显隐
+const deptPickerRef = ref<InstanceType<typeof DeptSearchPicker>>() // 部门选择器引用
 const formData = reactive({
   startTime: props.initialStartTime,
   endTime: props.initialEndTime,
@@ -94,7 +84,7 @@ const formData = reactive({
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索入口展示文案
-  const deptName = getDeptName(props.deptTree, formData.deptId)
+  const deptName = deptPickerRef.value?.format(formData.deptId) || formData.deptId
   const conditions = [
     `${formatDate(formData.startTime)} 至 ${formatDate(formData.endTime)}`,
     deptName ? `部门:${deptName}` : '',
@@ -129,20 +119,11 @@ function handleReset() {
   emit('reset')
 }
 
-/** 获取部门名称 */
-function getDeptName(list: Dept[], deptId?: number): string {
-  if (!deptId) {
-    return ''
+/** 初始化 */
+onMounted(async () => {
+  if (!formData.deptId) {
+    formData.deptId = await deptPickerRef.value?.getFirstDeptId()
   }
-  for (const item of list) {
-    if (item.id === deptId) {
-      return item.name
-    }
-    const childName = getDeptName(item.children || [], deptId)
-    if (childName) {
-      return childName
-    }
-  }
-  return ''
-}
+  emit('ready', { ...formData })
+})
 </script>

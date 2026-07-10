@@ -11,13 +11,13 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userIds"
-            type="checkbox"
             label="适用人群"
-            prop="userIds"
             label-width="220rpx"
+            prop="userIds"
             placeholder="请选择适用人群"
+            type="checkbox"
           />
           <yd-tree-select
             v-model="formData.deptIds"
@@ -67,22 +67,22 @@
 </template>
 
 <script lang="ts" setup>
-import type {FormInstance} from '@wot-ui/ui/components/wd-form/types'
-import type {CustomerLimitConfig} from '@/api/crm/customer/limitConfig'
+import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import type { CustomerLimitConfig } from '@/api/crm/customer/limitConfig'
 import {
   createCustomerLimitConfig,
   getCustomerLimitConfig,
   LimitConfType,
-  updateCustomerLimitConfig
+  updateCustomerLimitConfig,
 } from '@/api/crm/customer/limitConfig'
-import type {Dept} from '@/api/system/dept'
-import {getSimpleDeptList} from '@/api/system/dept'
-import {useToast} from '@wot-ui/ui/components/wd-toast'
-import {computed, onMounted, ref} from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import {delay, navigateBackPlus} from '@/utils'
-import {handleTree} from '@/utils/tree'
-import {createFormSchema} from '@/utils/wot'
+import type { Dept } from '@/api/system/dept'
+import { getSimpleDeptList } from '@/api/system/dept'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { computed, onMounted, ref } from 'vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
+import { delay, navigateBackPlus } from '@/utils'
+import { handleTree } from '@/utils/tree'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any

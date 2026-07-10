@@ -43,15 +43,13 @@
                 />
               </wd-form-item>
               <!-- 管理员用户：选择用户 -->
-              <wd-form-item
+              <UserFormPicker
                 v-if="sendFormData.userType !== UserTypeEnum.MEMBER"
-                title="接收人"
-                title-width="180rpx"
+                v-model="adminUserId"
+                label="接收人"
+                label-width="180rpx"
                 prop="userId"
-                is-link
-                :value="getWotPickerFormValue(userOptions, sendFormData.userId)"
                 placeholder="请选择接收人"
-                @click="pickerVisible.userId = true"
               />
               <!-- 动态参数 -->
               <template v-for="param in template?.params" :key="param">
@@ -68,16 +66,6 @@
         </view>
       </scroll-view>
 
-      <!-- 接收人选择器 -->
-      <wd-picker
-        v-if="sendFormData.userType !== UserTypeEnum.MEMBER"
-        v-model:visible="pickerVisible.userId"
-        :model-value="sendFormData.userId"
-        :columns="userOptions"
-        root-portal
-        @confirm="({ value }) => sendFormData.userId = value[0]"
-      />
-
       <!-- 底部操作 -->
       <view class="border-t border-[#f0f0f0] bg-white p-24rpx">
         <wd-button type="primary" block :loading="sendLoading" @click="handleSendSubmit">
@@ -90,14 +78,13 @@
 
 <script lang="ts" setup>
 import type { NotifyTemplate } from '@/api/system/notify/template'
-import type { User } from '@/api/system/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
 import { sendNotify } from '@/api/system/notify/template'
-import { getSimpleUserList } from '@/api/system/user'
+import { UserFormPicker } from '@/components/system-select'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE, UserTypeEnum } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   modelValue: boolean
@@ -140,21 +127,12 @@ const sendFormSchema = createFormSchema(() => {
   }
 })
 const sendFormRef = ref<any>()
-const pickerVisible = ref<Record<string, boolean>>({})
-
-/** 用户列表 */
-const userList = ref<User[]>([])
-const userOptions = computed(() => {
-  return userList.value.map(item => ({
-    value: item.id,
-    label: item.nickname,
-  }))
+const adminUserId = computed<number | undefined>({
+  get: () => typeof sendFormData.value.userId === 'number' ? sendFormData.value.userId : undefined,
+  set: (value) => {
+    sendFormData.value.userId = value
+  },
 })
-
-/** 加载用户列表 */
-async function loadUserList() {
-  userList.value = await getSimpleUserList()
-}
 
 /** 初始化 */
 function initSendForm() {
@@ -176,7 +154,6 @@ watch(
   (val) => {
     if (val) {
       initSendForm()
-      loadUserList()
     }
   },
 )

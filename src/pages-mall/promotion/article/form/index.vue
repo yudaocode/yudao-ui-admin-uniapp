@@ -11,7 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <CategorySelect
+          <ArticleCategoryFormPicker
             v-model="formData.categoryId"
             label="文章分类"
             label-width="200rpx"
@@ -107,7 +107,7 @@ import {
   updatePromotionArticle,
 } from '@/api/mall/promotion/article'
 import { getIntDictOptions } from '@/hooks/useDict'
-import CategorySelect from '@/pages-mall/promotion/article/category/components/category-select.vue'
+import ArticleCategoryFormPicker from '@/pages-mall/promotion/article/category/components/article-category-form-picker.vue'
 import SpuSelect from '@/pages-mall/promotion/components/spu-select.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'

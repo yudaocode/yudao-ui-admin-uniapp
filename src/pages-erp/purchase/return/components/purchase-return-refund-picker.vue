@@ -20,7 +20,7 @@
 
       <view class="bg-white px-24rpx pb-20rpx">
         <wd-input v-model="queryParams.no" placeholder="请输入采购退货单号" clearable />
-        <yd-form-picker v-model="queryParams.productId" class="mt-12rpx" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+        <ProductFormPicker v-model="queryParams.productId" label="" placeholder="请选择产品" class="mt-12rpx" />
         <yd-search-date-range v-model="queryParams.time" class="mt-12rpx" label="退货时间" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -83,7 +83,7 @@
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
-import { getProductSimpleList } from '@/api/erp/product/product'
+import ProductFormPicker from '@/pages-erp/product/product/components/product-form-picker.vue'
 import type { PurchaseReturn } from '@/api/erp/purchase/return'
 import { getPurchaseReturnPage } from '@/api/erp/purchase/return'
 import { formatDateRange, formatDateTime } from '@/utils/date'
@@ -102,7 +102,7 @@ const total = ref(0)
 const supplierId = ref<number>()
 const list = ref<PurchaseReturn[]>([])
 const selectedRows = ref<PurchaseReturn[]>([])
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
+let requestId = 0 // 最新查询标识
 const queryParams = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
@@ -125,7 +125,7 @@ function toggleSelect(item: PurchaseReturn) {
 
 /** 查询可选单据列表 */
 async function queryList(reset = false) {
-  if (loading.value) {
+  if (!reset && (loading.value || finished.value)) {
     return
   }
   if (reset) {
@@ -134,13 +134,12 @@ async function queryList(reset = false) {
     selectedRows.value = []
     finished.value = false
   }
-  if (finished.value) {
-    return
-  }
+  const currentRequestId = ++requestId
+  const currentPageNo = pageNo.value
   loading.value = true
   try {
     const params = {
-      pageNo: pageNo.value,
+      pageNo: currentPageNo,
       pageSize,
       no: queryParams.no || undefined,
       productId: queryParams.productId,
@@ -149,19 +148,17 @@ async function queryList(reset = false) {
       refundEnable: true,
     }
     const data = await getPurchaseReturnPage(params)
+    if (currentRequestId !== requestId) {
+      return
+    }
     list.value = reset ? data.list : list.value.concat(data.list)
     total.value = data.total
     finished.value = list.value.length >= total.value
-    pageNo.value += 1
+    pageNo.value = currentPageNo + 1
   } finally {
-    loading.value = false
-  }
-}
-
-/** 加载基础选项 */
-async function loadOptions() {
-  if (productOptions.value.length === 0) {
-    productOptions.value = await getProductSimpleList()
+    if (currentRequestId === requestId) {
+      loading.value = false
+    }
   }
 }
 
@@ -169,7 +166,6 @@ async function loadOptions() {
 async function open(nextSupplierId: number) {
   supplierId.value = nextSupplierId
   visible.value = true
-  await loadOptions()
   await queryList(true)
 }
 

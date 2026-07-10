@@ -11,8 +11,9 @@
   />
 
   <wd-select-picker
+    ref="pickerRef"
     v-model="selectedValue"
-    v-model:visible="visible"
+    :visible="visible"
     :title="label"
     :columns="resolvedColumns"
     :label-key="labelKey"
@@ -20,6 +21,7 @@
     :type="type"
     filterable
     root-portal
+    @update:visible="handleVisibleChange"
     @confirm="handleConfirm"
   />
 </template>
@@ -28,6 +30,7 @@
 import type { ThingModelData } from '@/api/iot/thingmodel'
 import { computed, ref, watch } from 'vue'
 import { getThingModelList } from '@/api/iot/thingmodel'
+import { useWotSelectPicker } from '@/hooks/useWotSelectPicker'
 
 type PickerValue = number | string | number[]
 
@@ -60,7 +63,7 @@ const emit = defineEmits<{
 
 const thingModelOptions = ref<ThingModelData[]>([]) // 物模型选项
 const selectedValue = ref<PickerValue | ''>(props.type === 'checkbox' ? [] : '') // 当前选中值
-const visible = ref(false) // 选择器显示状态
+const { pickerRef, visible, openPicker, handleVisibleChange } = useWotSelectPicker()
 const resolvedColumns = computed<Record<string, any>[]>(() => {
   const columns = props.columns ?? thingModelOptions.value
   if (!props.thingModelType) {
@@ -113,7 +116,7 @@ function handleOpen() {
   if (props.disabled) {
     return
   }
-  visible.value = true
+  openPicker()
 }
 
 /** 选择确认 */

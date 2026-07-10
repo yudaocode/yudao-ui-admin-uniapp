@@ -1,4 +1,4 @@
-<!-- 商品选择器：单选，搜索商品名称，回写 spuId 给父组件（form-item 触发 + 弹层，对标 UserPicker） -->
+<!-- 商品选择器：单选，搜索商品名称，回写 spuId 给父组件 -->
 <template>
   <view>
     <wd-form-item

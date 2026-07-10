@@ -11,20 +11,12 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item
-            title="短信类型"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.type"
+            label="短信类型"
             prop="type"
-            is-link
-            :value="getWotPickerFormValue(templateTypeOptions, formData.type)"
+            :dict-type="DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE"
             placeholder="请选择短信类型"
-            @click="pickerVisible.type = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.type"
-            :model-value="formData.type"
-            :columns="templateTypeOptions"
-            @confirm="({ value }) => formData.type = value[0]"
           />
           <wd-form-item title="模板名称" title-width="200rpx" prop="name">
             <wd-input
@@ -40,7 +32,7 @@
               placeholder="请输入模板编码"
             />
           </wd-form-item>
-          <ChannelPicker v-model="formData.channelId" label="短信渠道" prop="channelId" />
+          <SmsChannelFormPicker v-model="formData.channelId" prop="channelId" />
           <wd-form-item title="开启状态" title-width="200rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">
               <wd-radio
@@ -101,8 +93,8 @@ import { createSmsTemplate, getSmsTemplate, updateSmsTemplate } from '@/api/syst
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
-import ChannelPicker from '../../components/channel-picker.vue'
+import { createFormSchema } from '@/utils/wot'
+import SmsChannelFormPicker from '../../channel/components/form-picker.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -139,16 +131,6 @@ const formSchema = createFormSchema({
   apiTemplateId: [{ required: true, message: 'API 模板编号不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const pickerVisible = ref<Record<string, boolean>>({})
-
-/** 短信类型选项 */
-const templateTypeOptions = computed(() => {
-  return getIntDictOptions(DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE).map(item => ({
-    value: item.value,
-    label: item.label,
-  }))
-})
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/sms/index')

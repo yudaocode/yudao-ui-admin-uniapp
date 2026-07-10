@@ -44,7 +44,7 @@
         <wd-input v-model="formData.orderNo" placeholder="请输入单据编号" clearable />
       </view>
       <yd-search-picker v-model="formData.orderType" label="单据类型" :dict-type="DICT_TYPE.WMS_ORDER_TYPE" all-option />
-      <WarehousePicker v-model="formData.warehouseId" label="仓库" placeholder="请选择仓库" />
+      <WarehouseSearchPicker ref="warehousePickerRef" v-model="formData.warehouseId" label="仓库" placeholder="请选择仓库" />
       <yd-search-date-range v-model="formData.createTime" label="操作时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -62,7 +62,7 @@
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import WarehouseSearchPicker from '@/pages-wms/md/warehouse/components/warehouse-search-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
 
@@ -72,6 +72,7 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const warehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>()
 const formData = reactive({
   itemName: undefined as string | undefined,
   itemCode: undefined as string | undefined,
@@ -105,7 +106,7 @@ const placeholder = computed(() => {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.WMS_ORDER_TYPE, formData.orderType)}`)
   }
   if (formData.warehouseId) {
-    conditions.push('已选仓库')
+    conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)

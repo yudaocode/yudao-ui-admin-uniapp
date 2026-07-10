@@ -22,7 +22,7 @@
             :dict-type="DICT_TYPE.WMS_RECEIPT_ORDER_TYPE"
             placeholder="请选择入库类型"
           />
-          <WarehousePicker v-model="formData.warehouseId" prop="warehouseId" />
+          <WarehouseFormPicker v-model="formData.warehouseId" prop="warehouseId" />
           <wd-form-item
             title="单据日期"
             title-width="180rpx"
@@ -38,7 +38,7 @@
             title="请选择单据日期"
             type="date"
           />
-          <MerchantPicker
+          <MerchantFormPicker
             v-model="formData.merchantId"
             label="供应商"
             prop="merchantId"
@@ -118,8 +118,8 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { createReceiptOrder, getReceiptOrder, updateReceiptOrder } from '@/api/wms/order/receipt'
 import ItemSkuPicker from '@/pages-wms/md/item/components/item-sku-picker.vue'
-import MerchantPicker from '@/pages-wms/md/merchant/components/merchant-picker.vue'
-import WarehousePicker from '@/pages-wms/md/warehouse/components/warehouse-picker.vue'
+import MerchantFormPicker from '@/pages-wms/md/merchant/components/merchant-form-picker.vue'
+import WarehouseFormPicker from '@/pages-wms/md/warehouse/components/warehouse-form-picker.vue'
 import { dividePrice, multiplyPrice, PRICE_PRECISION, QUANTITY_PRECISION, toOptionalNumber } from '@/pages-wms/utils/format'
 import { generateOrderNo } from '@/pages-wms/utils/order'
 import { delay, navigateBackPlus } from '@/utils'

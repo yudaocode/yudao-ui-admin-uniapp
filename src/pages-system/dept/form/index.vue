@@ -11,7 +11,7 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <DeptPicker
+          <DeptFormPicker
             v-model="formData.parentId"
             label="上级部门"
             prop="parentId"
@@ -30,11 +30,10 @@
               :min="0"
             />
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.leaderUserId"
             label="负责人"
             prop="leaderUserId"
-            type="radio"
           />
           <wd-form-item title="联系电话" title-width="180rpx" prop="phone">
             <wd-input
@@ -81,11 +80,10 @@ import type { Dept } from '@/api/system/dept'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createDept, getDept, updateDept } from '@/api/system/dept'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import { DeptFormPicker, UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import DeptPicker from './components/dept-picker.vue'
 
 const props = defineProps<{
   id?: number | any

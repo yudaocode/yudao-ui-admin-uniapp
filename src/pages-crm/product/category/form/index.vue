@@ -14,7 +14,7 @@
           <wd-form-item title="分类名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入分类名称" clearable />
           </wd-form-item>
-          <CrmPicker v-model="formData.parentId" source="productCategory" label="父级分类" prop="parentId" placeholder="请选择父级分类" :params="{ parentId: 0 }" />
+          <ProductCategoryFormPicker v-model="formData.parentId" label="父级分类" prop="parentId" placeholder="请选择父级分类" include-root />
         </wd-cell-group>
       </wd-form>
     </view>
@@ -36,7 +36,7 @@ import { computed, onMounted, ref } from 'vue'
 import { createProductCategory, getProductCategory, updateProductCategory } from '@/api/crm/product/category'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import ProductCategoryFormPicker from '../components/product-category-form-picker.vue'
 
 const props = defineProps<{ id?: number | any }>()
 definePage({

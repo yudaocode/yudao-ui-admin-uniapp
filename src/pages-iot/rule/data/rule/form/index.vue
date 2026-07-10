@@ -51,20 +51,20 @@
                 删除
               </wd-button>
             </view>
-            <ProductPicker
+            <ProductFormPicker
               v-model="item.productId"
               label="产品"
-              :columns="productOptions"
-              placeholder="请选择产品"
               label-width="180rpx"
+              placeholder="请选择产品"
+              :columns="productOptions"
               @update:model-value="handleSourceProductChange(item)"
             />
-            <DevicePicker
+            <DeviceFormPicker
               v-model="item.deviceId"
               label="设备"
-              :columns="getDeviceOptions(item.productId)"
-              placeholder="请选择设备"
               label-width="180rpx"
+              placeholder="请选择设备"
+              :columns="getDeviceOptions(item.productId)"
             />
             <yd-form-picker
               v-model="item.method"
@@ -115,8 +115,8 @@ import { getSimpleDataSinkList } from '@/api/iot/rule/data/sink'
 import { getSimpleProductList } from '@/api/iot/product/product'
 import { getThingModelList } from '@/api/iot/thingmodel'
 import { getIntDictOptions } from '@/hooks/useDict'
-import DevicePicker from '@/pages-iot/device/device/components/device-picker.vue'
-import ProductPicker from '@/pages-iot/product/product/components/product-picker.vue'
+import DeviceFormPicker from '@/pages-iot/device/device/components/device-form-picker.vue'
+import ProductFormPicker from '@/pages-iot/product/product/components/product-form-picker.vue'
 import DataSinkPicker from '@/pages-iot/rule/data/sink/components/data-sink-picker.vue'
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'

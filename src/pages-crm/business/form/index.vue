@@ -14,32 +14,23 @@
           <wd-form-item title="商机名称" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入商机名称" clearable />
           </wd-form-item>
-          <CrmPicker
+          <CustomerFormPicker
             v-model="formData.customerId"
-            source="customer"
-            label="客户名称"
             prop="customerId"
             :disabled="customerLocked"
-            placeholder="请选择客户名称"
           />
-          <UserPicker v-model="formData.ownerUserId" type="radio" label="负责人" prop="ownerUserId" :disabled="!!props.id" placeholder="请选择负责人" />
-          <CrmPicker
+          <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
+          <BusinessStatusTypeFormPicker
             v-model="formData.statusTypeId"
-            source="businessStatusType"
-            label="商机状态组"
             prop="statusTypeId"
             :disabled="!!props.id"
-            placeholder="请选择商机状态组"
-            @confirm="handleStatusTypeConfirm"
+            @change="handleStatusTypeChange"
           />
-          <CrmPicker
+          <BusinessStatusFormPicker
             v-if="props.id"
             v-model="formData.statusId"
-            source="businessStatus"
-            label="商机阶段"
             prop="statusId"
-            :params="{ typeId: formData.statusTypeId }"
-            placeholder="请选择商机阶段"
+            :status-type-id="formData.statusTypeId"
           />
           <wd-form-item title="预计成交日期" title-width="200rpx" prop="dealTime" is-link placeholder="请选择预计成交日期" :value="formatDate(formData.dealTime)" @click="pickerVisible.dealTime = true" />
           <wd-datetime-picker v-model="formData.dealTime" v-model:visible="pickerVisible.dealTime" title="请选择预计成交日期" type="date" />
@@ -77,9 +68,11 @@ import type { Business } from '@/api/crm/business'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createBusiness, getBusiness, updateBusiness } from '@/api/crm/business'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import CrmPicker from '@/pages-crm/components/crm-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import CrmProductLines from '@/pages-crm/components/crm-product-lines.vue'
+import CustomerFormPicker from '@/pages-crm/customer/components/customer-form-picker.vue'
+import BusinessStatusFormPicker from '@/pages-crm/business/status/components/business-status-form-picker.vue'
+import BusinessStatusTypeFormPicker from '@/pages-crm/business/status/components/business-status-type-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { currRoute, delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
@@ -124,7 +117,7 @@ const formSchema = createFormSchema({
 })
 
 /** 商机状态组变化时清空商机阶段 */
-function handleStatusTypeConfirm() {
+function handleStatusTypeChange() {
   formData.value.statusId = undefined
 }
 

@@ -11,8 +11,8 @@
           <wd-form-item title="退货时间" title-width="220rpx" prop="returnTime" is-link :value="formatDate(formData.returnTime) || ''" placeholder="请选择退货时间" @click="dateVisible.returnTime = true" />
           <wd-datetime-picker v-model="formData.returnTime" v-model:visible="dateVisible.returnTime" title="请选择退货时间" type="date" />
           <wd-form-item title="关联订单" title-width="220rpx" prop="orderId" is-link :value="formData.orderNo || ''" placeholder="请选择可退货订单" @click="openOrderSelector" />
-          <yd-form-picker v-model="formData.customerId" label="客户" label-width="220rpx" prop="customerId" :columns="customerOptions" label-key="name" value-key="id" placeholder="请选择客户" disabled />
-          <yd-form-picker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择销售人员" />
+          <CustomerFormPicker v-model="formData.customerId" prop="customerId" disabled />
+          <UserFormPicker v-model="formData.saleUserId" label="销售人员" label-width="220rpx" placeholder="请选择销售人员" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
@@ -42,7 +42,7 @@
           <wd-form-item title="其它费用" title-width="220rpx" prop="otherPrice" center>
             <wd-input-number v-model="formData.otherPrice" :min="0" :precision="2" />
           </wd-form-item>
-          <AccountPicker v-model="formData.accountId" :auto-default="!props.id" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" />
+          <AccountFormPicker v-model="formData.accountId" label="结算账户" label-width="220rpx" placeholder="请选择结算账户" :auto-default="!props.id" />
           <wd-cell title="应退金额" :value="formatMoney(formData.totalPrice)" />
         </wd-cell-group>
       </wd-form>
@@ -75,13 +75,13 @@ import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import AccountPicker from '@/pages-erp/finance/account/components/account-picker.vue'
+import { UserFormPicker } from '@/components/system-select'
+import AccountFormPicker from '@/pages-erp/finance/account/components/account-form-picker.vue'
+import CustomerFormPicker from '@/pages-erp/sale/customer/components/customer-form-picker.vue'
 import ReturnItemForm from '../components/return-item-form.vue'
 import SaleOrderReturnPicker from '../components/sale-order-return-picker.vue'
 import { roundPrice } from '@/pages-erp/utils/format'
 import { formatMoney, toNumber } from '@/utils/format'
-import { getCustomerSimpleList } from '@/api/erp/sale/customer'
-import { getSimpleUserList } from '@/api/system/user'
 
 const props = defineProps<{ id?: number }>()
 definePage({
@@ -115,8 +115,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 const itemEditorRef = ref<InstanceType<typeof ReturnItemForm>>() // 明细组件引用
 const orderSelectorRef = ref<InstanceType<typeof SaleOrderReturnPicker>>() // 可退货订单选择器引用
 const warehouseOptions = ref<Warehouse[]>([]) // 仓库选项
-const customerOptions = ref<Record<string, any>[]>([]) // 客户选项
-const userOptions = ref<Record<string, any>[]>([]) // 用户选项
 const dateVisible = reactive({ returnTime: false }) // 日期选择器状态
 const formSchema = createFormSchema({
   orderId: [{ required: true, message: '销售订单不能为空' }],
@@ -143,14 +141,8 @@ function refreshAmount() {
 
 /** 加载基础选项 */
 async function loadOptions() {
-  const [warehouses, customers, users] = await Promise.all([
-    getWarehouseSimpleList(),
-    getCustomerSimpleList(),
-    getSimpleUserList(),
-  ])
+  const warehouses = await getWarehouseSimpleList()
   warehouseOptions.value = warehouses || []
-  customerOptions.value = customers || []
-  userOptions.value = users || []
 }
 
 /** 加载销售退货详情 */

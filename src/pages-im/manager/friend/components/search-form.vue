@@ -13,18 +13,8 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择用户" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          好友
-        </view>
-        <UserPicker ref="friendPickerRef" v-model="formData.friendUserId" type="radio" placeholder="请选择好友" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
+      <UserSearchPicker ref="friendPickerRef" v-model="formData.friendUserId" label="好友" placeholder="请选择好友" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           状态
@@ -73,7 +63,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -99,10 +89,10 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.userId) {
-    conditions.push(`用户:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
+    conditions.push(`用户:${userPickerRef.value?.format(formData.userId) || formData.userId}`)
   }
   if (formData.friendUserId) {
-    conditions.push(`好友:${friendPickerRef.value?.getUserNickname(formData.friendUserId) || formData.friendUserId}`)
+    conditions.push(`好友:${friendPickerRef.value?.format(formData.friendUserId) || formData.friendUserId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_FRIEND_STATUS, formData.status)}`)

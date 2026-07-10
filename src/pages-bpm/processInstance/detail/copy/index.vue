@@ -12,13 +12,13 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <!-- 抄送人 -->
-          <UserPicker
+          <UserFormPicker
             v-model="formData.copyUserIds"
-            prop="copyUserIds"
-            type="checkbox"
             label="抄送人："
             label-width="180rpx"
+            prop="copyUserIds"
             placeholder="请选择抄送人"
+            type="checkbox"
           />
           <!-- 抄送意见 -->
           <wd-form-item prop="reason" title="抄送意见：" title-width="180rpx">
@@ -53,7 +53,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { copyTask } from '@/api/bpm/task'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 

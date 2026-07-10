@@ -36,11 +36,11 @@
             label="生产任务"
             label-width="220rpx"
             prop="taskId"
+            :placeholder="taskPlaceholder"
             :work-order-id="formData.workOrderId"
             :workstation-id="formData.workstationId"
             :statuses="[MesProTaskStatusEnum.PREPARE]"
             :disabled="headerReadonly || !formData.workOrderId"
-            :placeholder="taskPlaceholder"
             @change="handleTaskChange"
           />
           <wd-cell title="产品编码" :value="formData.itemCode || '-'" />
@@ -89,10 +89,10 @@
           人员与备注
         </view>
         <wd-cell-group border>
-          <UserPicker v-model="formData.feedbackUserId" label="报工人" label-width="220rpx" prop="feedbackUserId" type="radio" placeholder="请选择报工人" :disabled="headerReadonly" />
+          <UserFormPicker v-model="formData.feedbackUserId" label="报工人" label-width="220rpx" prop="feedbackUserId" placeholder="请选择报工人" :disabled="headerReadonly" />
           <wd-form-item title="报工时间" title-width="220rpx" prop="feedbackTime" :is-link="!headerReadonly" :value="formatDateTime(formData.feedbackTime) || ''" placeholder="请选择报工时间" @click="openFeedbackTimePicker" />
           <wd-datetime-picker v-model="formData.feedbackTime" v-model:visible="dateVisible.feedbackTime" title="请选择报工时间" type="datetime" />
-          <UserPicker v-model="formData.approveUserId" label="审核人" label-width="220rpx" prop="approveUserId" type="radio" placeholder="请选择审核人" :disabled="headerReadonly" />
+          <UserFormPicker v-model="formData.approveUserId" label="审核人" label-width="220rpx" prop="approveUserId" placeholder="请选择审核人" :disabled="headerReadonly" />
           <wd-form-item title="备注" title-width="220rpx" prop="remark">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="300" show-word-limit clearable :disabled="!isEditable" />
           </wd-form-item>
@@ -137,7 +137,7 @@ import {
   updateFeedback,
 } from '@/api/mes/pro/feedback'
 import type { ProTask } from '@/api/mes/pro/task'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'

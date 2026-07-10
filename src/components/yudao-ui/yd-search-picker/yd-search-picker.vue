@@ -4,31 +4,52 @@
     <view class="yd-search-form-label">
       {{ label }}
     </view>
-    <view class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx" @click="visible = true">
+    <view class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx" @click="handleOpen">
       <text class="text-28rpx" :class="isPlaceholder ? 'text-[#999]' : 'text-[#333]'">
         {{ displayText }}
       </text>
       <wd-icon name="arrow-right" size="32rpx" color="#666" />
     </view>
     <wd-picker
-      v-model:visible="visible"
+      v-if="!useSelectPicker"
+      :visible="visible"
       :model-value="pickerModelValue"
       :columns="resolvedColumns"
       :label-key="labelKey"
       :value-key="valueKey"
       :root-portal="rootPortal"
+      @update:visible="handleVisibleChange"
       @confirm="handleConfirm"
+    />
+    <wd-select-picker
+      v-else
+      ref="selectPickerRef"
+      :visible="visible"
+      :model-value="selectPickerModelValue"
+      :title="label || placeholder"
+      :columns="resolvedColumns"
+      :label-key="labelKey"
+      :value-key="valueKey"
+      :type="type"
+      :filterable="filterable"
+      :root-portal="rootPortal"
+      :scroll-into-view="!rootPortal"
+      @update:visible="handleVisibleChange"
+      @confirm="handleSelectConfirm"
     />
   </view>
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from './types'
+import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
+import type { WotPickerValue } from '@/utils/wot'
 import { computed, ref } from 'vue'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { getWotPickerDisplay } from '@/utils/wot'
 
 const props = withDefaults(defineProps<{
-  modelValue?: boolean | number | string // 当前选中值
+  modelValue?: boolean | number | string | Array<boolean | number | string> // 当前选中值
   label?: string // 字段标题
   dictType?: string // 字典类型；与 columns 二选一
   dictKind?: 'int' | 'str' // 字典值类型，默认 int
@@ -49,14 +70,17 @@ const props = withDefaults(defineProps<{
   placeholder: '请选择',
   labelKey: 'label',
   valueKey: 'value',
+  type: 'radio',
+  filterable: false,
   rootPortal: true,
 })
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: any): void }>()
 
 const visible = ref(false) // 选择弹层显示状态
+const selectPickerRef = ref<SelectPickerInstance>() // 可搜索/多选选择器
 const pickerModelValue = computed(() => // Wot picker 使用数组值，业务层保持标量
-  props.modelValue == null || props.modelValue === '' ? [] : [props.modelValue],
+  props.modelValue == null || props.modelValue === '' || Array.isArray(props.modelValue) ? [] : [props.modelValue],
 )
 
 const resolvedColumns = computed(() => { // 选项：优先 columns，其次按字典生成；allOption 时前插「全部」
@@ -66,15 +90,58 @@ const resolvedColumns = computed(() => { // 选项：优先 columns，其次按�
 })
 
 const isPlaceholder = computed(() => // 未选择或选中「全部」(allValue) 时走占位灰字
-  props.modelValue == null || props.modelValue === '' || props.modelValue === props.allValue,
+  props.modelValue == null
+  || props.modelValue === ''
+  || (Array.isArray(props.modelValue) && props.modelValue.length === 0)
+  || isAllOptionValue(props.modelValue),
 )
 
 const displayText = computed(() => // 当前选中项展示文案；未选择时 allOption 显示「全部」，否则 placeholder
-  getWotPickerDisplay(resolvedColumns.value, props.modelValue as any, { labelKey: props.labelKey, valueKey: props.valueKey, placeholder: props.allOption ? props.allLabel : props.placeholder }),
+  isPlaceholder.value
+    ? (props.allOption ? props.allLabel : props.placeholder)
+    : getWotPickerFormValue(resolvedColumns.value, props.modelValue as any, {
+        labelKey: props.labelKey,
+        placeholder: props.placeholder,
+        valueKey: props.valueKey,
+      }),
 )
 
 /** 选择确认 */
 function handleConfirm({ value }: { value: any }) {
-  emit('update:modelValue', Array.isArray(value) ? value[0] : value)
+  emit('update:modelValue', normalizeValue(Array.isArray(value) ? value[0] : value))
 }
+
+/** 多选确认 */
+function handleSelectConfirm({ value }: { value: any }) {
+  emit('update:modelValue', props.type === 'checkbox'
+    ? (Array.isArray(value) ? value.map(normalizeValue) : [])
+    : normalizeValue(Array.isArray(value) ? value[0] : value))
+}
+
+/** 还原选项原始值类型 */
+function normalizeValue(value: any) {
+  return value == null || value === ''
+    ? value
+    : getWotPickerOptionValue(resolvedColumns.value, value, { valueKey: props.valueKey })
+}
+
+/** 格式化选中值 */
+function format(value?: null | WotPickerValue | WotPickerValue[]) {
+  const currentValue = arguments.length > 0 ? value : props.modelValue
+  if (
+    currentValue == null
+    || currentValue === ''
+    || (Array.isArray(currentValue) && currentValue.length === 0)
+    || isAllOptionValue(currentValue)
+  ) {
+    return ''
+  }
+  return getWotPickerFormValue(resolvedColumns.value, currentValue, {
+    labelKey: props.labelKey,
+    placeholder: '',
+    valueKey: props.valueKey,
+  })
+}
+
+defineExpose<YdSearchPickerExpose>({ format })
 </script>

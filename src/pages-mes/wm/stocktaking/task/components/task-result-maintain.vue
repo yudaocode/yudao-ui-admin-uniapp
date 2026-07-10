@@ -128,8 +128,8 @@
               <wd-input-number v-model="formData.takingQuantity" allow-null :min="0" :precision="2" />
             </wd-form-item>
             <WarehouseFormPicker v-model="formData.warehouseId" label="仓库" prop="warehouseId" :disabled="isLineSelected" @change="handleWarehouseChange" />
-            <WarehouseLocationFormPicker v-model="formData.locationId" :warehouse-id="formData.warehouseId" prop="locationId" :disabled="isLineSelected" @change="handleLocationChange" />
-            <WarehouseAreaFormPicker v-model="formData.areaId" :location-id="formData.locationId" prop="areaId" :disabled="isLineSelected" />
+            <WarehouseLocationFormPicker v-model="formData.locationId" prop="locationId" :warehouse-id="formData.warehouseId" :disabled="isLineSelected" @change="handleLocationChange" />
+            <WarehouseAreaFormPicker v-model="formData.areaId" prop="areaId" :location-id="formData.locationId" :disabled="isLineSelected" />
             <wd-form-item title="备注" title-width="220rpx" prop="remark">
               <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="200" show-word-limit clearable />
             </wd-form-item>

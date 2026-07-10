@@ -92,7 +92,7 @@
           邀请成员
         </view>
         <wd-cell-group border>
-          <UserPicker v-model="inviteUserIds" label="成员" type="checkbox" placeholder="请选择用户" />
+          <UserFormPicker v-model="inviteUserIds" label="成员" placeholder="请选择用户" type="checkbox" />
         </wd-cell-group>
         <view class="grid grid-cols-2 mt-24rpx gap-16rpx">
           <wd-button block variant="plain" @click="inviteVisible = false">
@@ -132,7 +132,7 @@ import {
   removeGroupMember,
   updateGroupMember,
 } from '@/api/im/group/member'
-import { UserPicker } from '@/components/system-select'
+import { UserFormPicker } from '@/components/system-select'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
 import { ImGroupMemberRole } from '@/utils/constants'

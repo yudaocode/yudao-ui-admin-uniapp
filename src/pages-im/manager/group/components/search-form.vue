@@ -19,12 +19,7 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入群名称" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          群主
-        </view>
-        <UserPicker ref="ownerPickerRef" v-model="formData.ownerUserId" type="radio" placeholder="请选择群主" />
-      </view>
+      <UserSearchPicker ref="ownerPickerRef" v-model="formData.ownerUserId" label="群主" placeholder="请选择群主" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           群状态
@@ -73,7 +68,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -101,7 +96,7 @@ const placeholder = computed(() => {
     conditions.push(`名称:${formData.name}`)
   }
   if (formData.ownerUserId) {
-    conditions.push(`群主:${ownerPickerRef.value?.getUserNickname(formData.ownerUserId) || formData.ownerUserId}`)
+    conditions.push(`群主:${ownerPickerRef.value?.format(formData.ownerUserId) || formData.ownerUserId}`)
   }
   if (formData.status !== -1) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_GROUP_STATUS, formData.status)}`)

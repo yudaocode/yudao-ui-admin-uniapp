@@ -23,24 +23,19 @@
           <wd-datetime-picker v-model="filters.startTime" v-model:visible="startVisible" title="请选择开始日期" type="date" @confirm="loadData" />
           <wd-form-item title="结束日期" title-width="160rpx" is-link :value="formatDate(filters.endTime)" placeholder="请选择结束日期" @click="endVisible = true" />
           <wd-datetime-picker v-model="filters.endTime" v-model:visible="endVisible" title="请选择结束日期" type="date" @confirm="loadData" />
-          <wd-form-item title="时间间隔" title-width="160rpx" is-link :value="intervalLabel" placeholder="请选择时间间隔" @click="intervalVisible = true" />
-          <wd-picker v-model:visible="intervalVisible" :model-value="filters.interval" title="请选择时间间隔" :columns="intervalColumns" @confirm="handleIntervalConfirm" />
-          <wd-form-item title="商机组" title-width="160rpx" is-link :value="statusTypeLabel" placeholder="请选择商机组" @click="statusTypeVisible = true" />
-          <wd-picker v-model:visible="statusTypeVisible" :model-value="filters.statusTypeId" title="请选择商机组" :columns="statusTypeColumns" @confirm="handleStatusTypeConfirm" />
-          <yd-tree-select
+          <yd-form-picker v-model="filters.interval" label="时间间隔" label-width="160rpx" :dict-type="DICT_TYPE.DATE_INTERVAL" placeholder="请选择时间间隔" @confirm="handleIntervalConfirm" />
+          <BusinessStatusTypeFormPicker ref="statusTypePickerRef" v-model="filters.statusTypeId" label="商机组" label-width="160rpx" placeholder="全部" @change="handleStatusTypeConfirm" />
+          <DeptFormPicker
+            ref="deptPickerRef"
             v-model="filters.deptId"
             label="归属部门"
             label-width="160rpx"
-            filterable
-            :data="deptTree"
-            :props="{ value: 'id', label: 'name', children: 'children' }"
             placeholder="请选择归属部门"
             @change="handleDeptChange"
           />
-          <UserPicker
+          <UserFormPicker
             ref="userPickerRef"
             v-model="filters.userId"
-            type="radio"
             label="员工"
             label-width="160rpx"
             placeholder="请选择员工"
@@ -66,7 +61,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { Dept } from '@/api/system/dept'
 import type { StatisticsSection } from '@/pages-statistics/utils/statistics'
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
@@ -76,18 +70,15 @@ import {
   getBusinessSummaryByStatus,
   getFunnelSummary,
 } from '@/api/crm/statistics/funnel'
-import { getBusinessStatusTypeSimpleList } from '@/api/crm/business/status'
-import { getSimpleDeptList } from '@/api/system/dept'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { DeptFormPicker } from '@/components/system-select'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
+import BusinessStatusTypeFormPicker from '@/pages-crm/business/status/components/business-status-type-form-picker.vue'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { handleTree } from '@/utils/tree'
 import {
   getDefaultDeptId,
-  getFirstDeptId,
   normalizeRows,
 } from '@/pages-statistics/utils/statistics'
 import StatisticsCard from '@/pages-statistics/components/card/statistics-card.vue'
@@ -110,22 +101,14 @@ const filters = reactive({
   userId: undefined as number | undefined,
 }) // 筛选条件
 const loadingMap = ref<Record<string, boolean>>({}) // 各分类加载状态（每个 tab 自己的 loading）
-const deptTree = ref<Dept[]>([]) // 部门树形结构
+const deptPickerRef = ref<InstanceType<typeof DeptFormPicker>>() // 部门选择器引用
 const sectionData = ref<Record<string, any[]>>({}) // 各分类数据缓存（每个 tab 自己的 rows）
 const tabIndex = ref(0) // 当前分类下标
 const startVisible = ref(false) // 开始日期选择器显隐
 const endVisible = ref(false) // 结束日期选择器显隐
-const intervalVisible = ref(false) // 时间间隔选择器显隐
-const statusTypeVisible = ref(false) // 商机组选择器显隐
-const userPickerRef = ref<InstanceType<typeof UserPicker>>() // 员工选择器引用
-const statusTypeList = ref<Record<string, any>[]>([]) // 商机组列表
+const userPickerRef = ref<InstanceType<typeof UserFormPicker>>() // 员工选择器引用
+const statusTypePickerRef = ref<InstanceType<typeof BusinessStatusTypeFormPicker>>() // 商机组选择器
 
-const intervalColumns = computed(() => // 时间间隔选项
-  getIntDictOptions(DICT_TYPE.DATE_INTERVAL).map(dict => ({ value: dict.value, label: dict.label })),
-)
-const intervalLabel = computed(() => getDictLabel(DICT_TYPE.DATE_INTERVAL, filters.interval)) // 时间间隔展示文案
-const statusTypeColumns = computed(() => statusTypeList.value.map(item => ({ value: item.id, label: item.name }))) // 商机组选项
-const statusTypeLabel = computed(() => statusTypeColumns.value.find(item => item.value === filters.statusTypeId)?.label || '全部') // 商机组展示文案
 const queryParams = computed(() => ({
   deptId: filters.deptId,
   interval: filters.interval,
@@ -247,14 +230,12 @@ function handleTabChange({ index }: { index: number }) {
 }
 
 /** 时间间隔确认 */
-function handleIntervalConfirm({ value }: { value: (number | string)[] }) {
-  filters.interval = Number(value[0])
+function handleIntervalConfirm() {
   loadData()
 }
 
 /** 商机组确认 */
-function handleStatusTypeConfirm({ value }: { value: (number | string)[] }) {
-  filters.statusTypeId = value[0] ? Number(value[0]) : undefined
+function handleStatusTypeConfirm() {
   loadData()
 }
 
@@ -266,15 +247,9 @@ function handleDeptChange() {
 
 /** 初始化 */
 onMounted(async () => {
-  const [deptSimpleList, businessStatusTypeList] = await Promise.all([
-    getSimpleDeptList(),
-    getBusinessStatusTypeSimpleList(),
-  ])
-  deptTree.value = handleTree(deptSimpleList)
-  statusTypeList.value = businessStatusTypeList
-  filters.statusTypeId = statusTypeList.value[0]?.id
+  filters.statusTypeId = await statusTypePickerRef.value?.getFirstId()
   if (!filters.deptId) {
-    filters.deptId = getFirstDeptId(deptTree.value)
+    filters.deptId = await deptPickerRef.value?.getFirstDeptId()
   }
   await loadData()
 })

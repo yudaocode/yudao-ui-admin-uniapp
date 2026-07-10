@@ -19,18 +19,8 @@
         </view>
         <wd-input v-model="formData.groupId" type="number" placeholder="请输入群编号" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          申请人
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择申请人" />
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          邀请人
-        </view>
-        <UserPicker ref="inviterPickerRef" v-model="formData.inviterUserId" type="radio" placeholder="请选择邀请人" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="申请人" placeholder="请选择申请人" />
+      <UserSearchPicker ref="inviterPickerRef" v-model="formData.inviterUserId" label="邀请人" placeholder="请选择邀请人" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           处理结果
@@ -80,7 +70,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -110,10 +100,10 @@ const placeholder = computed(() => {
     conditions.push(`群:${formData.groupId}`)
   }
   if (formData.userId) {
-    conditions.push(`申请人:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
+    conditions.push(`申请人:${userPickerRef.value?.format(formData.userId) || formData.userId}`)
   }
   if (formData.inviterUserId) {
-    conditions.push(`邀请人:${inviterPickerRef.value?.getUserNickname(formData.inviterUserId) || formData.inviterUserId}`)
+    conditions.push(`邀请人:${inviterPickerRef.value?.format(formData.inviterUserId) || formData.inviterUserId}`)
   }
   if (formData.handleResult !== -1) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT, formData.handleResult)}`)

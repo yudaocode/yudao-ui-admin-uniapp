@@ -26,13 +26,14 @@
         <wd-input v-model="formData.salesOrderCode" placeholder="请输入销售订单编号" clearable />
       </view>
       <ClientSearchPicker ref="clientSearchPickerRef" v-model="formData.clientId" label="客户" placeholder="请选择客户" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          检查员
-        </view>
-        <UserPicker ref="inspectorPickerRef" v-model="formData.inspectorUserId" type="radio" placeholder="请选择检查员" />
-      </view>
-      <yd-search-picker v-model="formData.status" label="单据状态" :dict-type="DICT_TYPE.MES_WM_PACKAGE_STATUS" all-option />
+      <UserSearchPicker ref="inspectorPickerRef" v-model="formData.inspectorUserId" label="检查员" placeholder="请选择检查员" />
+      <yd-search-picker
+        ref="statusSearchPickerRef"
+        v-model="formData.status"
+        label="单据状态"
+        :dict-type="DICT_TYPE.MES_WM_PACKAGE_STATUS"
+        all-option
+      />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -46,9 +47,9 @@
 </template>
 
 <script lang="ts" setup>
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
-import { getIntDictOptions } from '@/hooks/useDict'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import ClientSearchPicker from '@/pages-mes/md/client/components/client-search-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -60,7 +61,8 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const clientSearchPickerRef = ref<InstanceType<typeof ClientSearchPicker>>() // 客户搜索选择器
-const inspectorPickerRef = ref<InstanceType<typeof UserPicker>>() // 检查员选择器
+const inspectorPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 检查员选择器
+const statusSearchPickerRef = ref<YdSearchPickerExpose>() // 状态搜索选择器
 const formData = reactive<Record<string, any>>({
   code: '',
   salesOrderCode: '',
@@ -80,13 +82,12 @@ const placeholder = computed(() => {
   if (formData.clientId != null) {
     conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
-  const inspectorName = inspectorPickerRef.value?.getUserNickname(formData.inspectorUserId)
+  const inspectorName = inspectorPickerRef.value?.format(formData.inspectorUserId)
   if (inspectorName) {
     conditions.push(`检查员:${inspectorName}`)
   }
   if (formData.status !== undefined && formData.status !== -1) {
-    const dict = getIntDictOptions(DICT_TYPE.MES_WM_PACKAGE_STATUS).find(item => item.value === formData.status)
-    conditions.push(`状态:${dict?.label || formData.status}`)
+    conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索装箱单'
 })

@@ -14,7 +14,7 @@
           <wd-form-item title="商品名称" title-width="180rpx" prop="name">
             <wd-input v-model="formData.name" :maxlength="60" clearable placeholder="请输入商品名称" />
           </wd-form-item>
-          <ItemCategoryPicker v-model="formData.categoryId" prop="categoryId" />
+          <ItemCategoryFormPicker v-model="formData.categoryId" prop="categoryId" />
           <wd-form-item title="商品编号" title-width="180rpx" prop="code">
             <view class="flex items-center gap-12rpx">
               <wd-input v-model="formData.code" class="flex-1" :maxlength="20" clearable placeholder="请输入商品编号" />
@@ -26,7 +26,7 @@
           <wd-form-item title="商品单位" title-width="180rpx" prop="unit">
             <wd-input v-model="formData.unit" :maxlength="20" clearable placeholder="请输入单位" />
           </wd-form-item>
-          <ItemBrandPicker v-model="formData.brandId" />
+          <ItemBrandFormPicker v-model="formData.brandId" />
           <wd-form-item title="备注" title-width="180rpx">
             <wd-textarea v-model="formData.remark" placeholder="请输入备注" :maxlength="255" clearable />
           </wd-form-item>
@@ -110,8 +110,8 @@ import type { InputNumberValue } from '@/pages-wms/utils/format'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createItem, getItem, updateItem } from '@/api/wms/md/item'
-import ItemBrandPicker from '@/pages-wms/md/item/brand/components/item-brand-picker.vue'
-import ItemCategoryPicker from '@/pages-wms/md/item/category/components/item-category-picker.vue'
+import ItemBrandFormPicker from '@/pages-wms/md/item/brand/components/item-brand-form-picker.vue'
+import ItemCategoryFormPicker from '@/pages-wms/md/item/category/components/item-category-form-picker.vue'
 import { generateWmsCode } from '@/pages-wms/utils/order'
 import { DIMENSION_PRECISION, PRICE_PRECISION, toOptionalNumber, WEIGHT_PRECISION } from '@/pages-wms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'

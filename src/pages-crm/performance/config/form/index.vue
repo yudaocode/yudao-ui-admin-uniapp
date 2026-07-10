@@ -13,28 +13,22 @@
         <wd-cell-group border>
           <wd-form-item title="年份" title-width="180rpx" prop="year" is-link :value="selectedYearText" placeholder="请选择年份" @click="yearVisible = true" />
           <wd-datetime-picker v-model="yearPickerValue" v-model:visible="yearVisible" title="请选择年份" type="year" />
-          <wd-form-item title="目标类型" title-width="180rpx" prop="bizType" is-link :value="bizTypeLabel" placeholder="请选择目标类型" @click="bizTypeVisible = true" />
-          <wd-picker v-model:visible="bizTypeVisible" :model-value="formData.bizType" title="请选择目标类型" :columns="bizTypeColumns" @confirm="handleBizTypeConfirm" />
-          <wd-form-item title="对象类型" title-width="180rpx" prop="objectType" is-link :value="objectTypeLabel" placeholder="请选择对象类型" @click="objectTypeVisible = true" />
-          <wd-picker v-model:visible="objectTypeVisible" :model-value="formData.objectType" title="请选择对象类型" :columns="objectTypeColumns" @confirm="handleObjectTypeConfirm" />
-          <yd-tree-select
+          <yd-form-picker v-model="formData.bizType" label="目标类型" label-width="180rpx" prop="bizType" :columns="bizTypeColumns" placeholder="请选择目标类型" />
+          <yd-form-picker v-model="formData.objectType" label="对象类型" label-width="180rpx" prop="objectType" :columns="objectTypeColumns" placeholder="请选择对象类型" @confirm="handleObjectTypeConfirm" />
+          <DeptFormPicker
             v-if="formData.objectType === PerformanceConfigObjectTypeEnum.DEPT"
             v-model="formData.objectId"
-            :data="deptTree"
-            :props="{ value: 'id', label: 'name', children: 'children' }"
-            filterable
             label="目标对象"
-            prop="objectId"
             label-width="180rpx"
+            prop="objectId"
             placeholder="请选择部门"
           />
-          <UserPicker
+          <UserFormPicker
             v-else
             v-model="formData.objectId"
-            type="radio"
             label="目标对象"
-            prop="objectId"
             label-width="180rpx"
+            prop="objectId"
             placeholder="请选择员工"
           />
         </wd-cell-group>
@@ -50,7 +44,9 @@
             <wd-input-number v-model="formData[month.prop]" :min="0" :precision="2" input-type="number" placeholder="请输入目标金额" />
           </wd-form-item>
           <wd-form-item title="年度目标" title-width="180rpx">
-            <view class="text-28rpx text-[#333]">{{ yearTargetText }}</view>
+            <view class="text-28rpx text-[#333]">
+              {{ yearTargetText }}
+            </view>
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -73,7 +69,6 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { PerformanceConfig } from '@/api/crm/performance/config'
-import type { Dept } from '@/api/system/dept'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import {
@@ -83,12 +78,10 @@ import {
   updatePerformanceConfig,
 } from '@/api/crm/performance/config'
 import { BizTypeEnum } from '@/api/crm/permission'
-import { getSimpleDeptList } from '@/api/system/dept'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import { DeptFormPicker, UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { formatMoney } from '@/utils/format'
-import { handleTree } from '@/utils/tree'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -107,10 +100,7 @@ const now = new Date()
 const getTitle = computed(() => props.id ? '编辑业绩目标' : '新增业绩目标')
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const deptTree = ref<Dept[]>([]) // 部门树
 const yearVisible = ref(false) // 年份选择器显隐
-const bizTypeVisible = ref(false) // 目标类型选择器显隐
-const objectTypeVisible = ref(false) // 对象类型选择器显隐
 const formData = ref<PerformanceConfig>({
   year: now.getFullYear(),
   bizType: BizTypeEnum.CRM_CONTRACT,
@@ -166,19 +156,12 @@ const yearPickerValue = computed({
   },
 })
 const selectedYearText = computed(() => formatDate(yearPickerValue.value, 'YYYY'))
-const bizTypeLabel = computed(() => bizTypeColumns.find(item => item.value === formData.value.bizType)?.label || '')
-const objectTypeLabel = computed(() => objectTypeColumns.find(item => item.value === formData.value.objectType)?.label || '')
 const yearTargetPrice = computed(() => monthFields.reduce((sum, month) => sum + Number(formData.value[month.prop] || 0), 0))
 const yearTargetText = computed(() => formatMoney(yearTargetPrice.value))
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
-}
-
-/** 加载部门树 */
-async function loadDeptTree() {
-  deptTree.value = handleTree(await getSimpleDeptList())
 }
 
 /** 加载详情 */
@@ -193,14 +176,8 @@ async function getDetail() {
   }
 }
 
-/** 目标类型确认 */
-function handleBizTypeConfirm({ value }: { value: (number | string)[] }) {
-  formData.value.bizType = Number(value[0])
-}
-
 /** 对象类型确认 */
-function handleObjectTypeConfirm({ value }: { value: (number | string)[] }) {
-  formData.value.objectType = Number(value[0])
+function handleObjectTypeConfirm(value: number) {
   formData.value.objectId = undefined
 }
 
@@ -229,7 +206,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  loadDeptTree()
   getDetail()
 })
 </script>

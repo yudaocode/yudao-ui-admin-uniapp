@@ -13,12 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          用户
-        </view>
-        <UserPicker ref="userPickerRef" v-model="formData.userId" type="radio" placeholder="请选择用户" />
-      </view>
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           表情名
@@ -40,7 +35,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
 
@@ -61,7 +56,7 @@ const formData = reactive({
 const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.userId) {
-    conditions.push(`用户:${userPickerRef.value?.getUserNickname(formData.userId) || formData.userId}`)
+    conditions.push(`用户:${userPickerRef.value?.format(formData.userId) || formData.userId}`)
   }
   if (formData.name) {
     conditions.push(`表情名:${formData.name}`)

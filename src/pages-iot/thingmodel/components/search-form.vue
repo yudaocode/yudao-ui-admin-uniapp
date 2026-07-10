@@ -13,14 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <yd-search-picker
-        v-model="formData.productId"
-        label="所属产品"
-        :columns="productOptions"
-        label-key="name"
-        value-key="id"
-        placeholder="请选择产品"
-      />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" label="所属产品" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           功能标识
@@ -52,12 +45,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { Product } from '@/api/iot/product/product'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleProductList } from '@/api/iot/product/product'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import ProductSearchPicker from '@/pages-iot/product/product/components/product-search-picker.vue'
 
 const props = defineProps<{ defaultProductId?: number | any }>()
 const emit = defineEmits<{
@@ -65,7 +57,7 @@ const emit = defineEmits<{
   reset: []
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Product[]>([]) // 产品选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
 const defaultProductId = props.defaultProductId ? Number(props.defaultProductId) : undefined // 入口预置产品
 const formData = reactive({
   productId: defaultProductId as number | undefined,
@@ -76,7 +68,7 @@ const formData = reactive({
 const placeholder = computed(() => { // 搜索条件文案
   const conditions: string[] = []
   if (formData.productId) {
-    conditions.push(`产品:${findProductName(formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.identifier) {
     conditions.push(`标识:${formData.identifier}`)
@@ -110,14 +102,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 产品名称 */
-function findProductName(id?: number) {
-  return productOptions.value.find(item => String(item.id) === String(id))?.name || String(id || '-')
-}
-
-/** 初始化 */
-onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
-})
 </script>

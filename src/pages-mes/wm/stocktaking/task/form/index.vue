@@ -64,12 +64,11 @@
           <wd-form-item title="动态结束时间" title-width="220rpx">
             <text>{{ formatDateTime(formData.endTime) || '-' }}</text>
           </wd-form-item>
-          <UserPicker
+          <UserFormPicker
             v-model="formData.userId"
             label="盘点人"
             label-width="220rpx"
             prop="userId"
-            type="radio"
             placeholder="请选择盘点人"
             :disabled="isHeaderReadonly"
             @confirm="handleUserConfirm"
@@ -131,7 +130,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { generateAutoCode } from '@/api/mes/md/autocode/record'
 import { createStockTaking, finishStockTaking, getStockTaking, updateStockTaking } from '@/api/mes/wm/stocktaking/task'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import {
   DICT_TYPE,

@@ -19,11 +19,11 @@
         </view>
         <wd-input v-model="formData.no" placeholder="请输入盘点单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.productId" label="产品" :columns="productOptions" label-key="name" value-key="id" placeholder="请选择产品" />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" />
       <yd-search-date-range v-model="formData.checkTime" label="盘点时间" />
-      <yd-search-picker v-model="formData.warehouseId" label="仓库" :columns="warehouseOptions" label-key="name" value-key="id" placeholder="请选择仓库" />
-      <yd-search-picker v-model="formData.creator" label="创建人" :columns="userOptions" label-key="nickname" value-key="id" placeholder="请选择创建人" />
-      <yd-search-picker v-model="formData.status" label="审核状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
+      <WarehouseSearchPicker ref="warehousePickerRef" v-model="formData.warehouseId" />
+      <UserSearchPicker v-model="formData.creator" label="创建人" />
+      <yd-search-picker ref="statusPickerRef" v-model="formData.status" label="审核状态" :dict-type="DICT_TYPE.ERP_AUDIT_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           备注
@@ -43,30 +43,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getDictLabel } from '@/hooks/useDict'
-import { getErpOptionLabel } from '@/pages-erp/utils/erp'
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
+import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getProductSimpleList } from '@/api/erp/product/product'
-import { getSimpleUserList } from '@/api/system/user'
-import { getWarehouseSimpleList } from '@/api/erp/stock/warehouse'
+import { UserSearchPicker } from '@/components/system-select'
+import ProductSearchPicker from '@/pages-erp/product/product/components/product-search-picker.vue'
+import WarehouseSearchPicker from '@/pages-erp/stock/warehouse/components/warehouse-search-picker.vue'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
   reset: []
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Record<string, any>[]>([]) // 产品选项
-const warehouseOptions = ref<Record<string, any>[]>([]) // 仓库选项
-const userOptions = ref<Record<string, any>[]>([]) // 创建人选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
+const warehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 仓库选择器
+const statusPickerRef = ref<YdSearchPickerExpose>() // 审核状态选择器
 const formData = reactive({
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
   checkTime: [undefined, undefined] as [any, any],
   warehouseId: undefined as number | undefined,
-  creator: undefined as number | string | undefined,
+  creator: undefined as number | undefined,
   status: -1,
   remark: undefined as string | undefined,
 }) // 搜索表单数据
@@ -78,16 +77,16 @@ const placeholder = computed(() => {
     conditions.push(`单号:${formData.no}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${getErpOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.checkTime[0] && formData.checkTime[1]) {
     conditions.push(`盘点时间:${formatDate(formData.checkTime[0])}~${formatDate(formData.checkTime[1])}`)
   }
   if (formData.warehouseId) {
-    conditions.push(`仓库:${getErpOptionLabel(warehouseOptions.value, formData.warehouseId)}`)
+    conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
   if (formData.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
+    conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存盘点'
 })
@@ -118,17 +117,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 加载搜索下拉选项 */
-onMounted(async () => {
-  const [products, warehouses, users] = await Promise.all([
-    getProductSimpleList(),
-    getWarehouseSimpleList(),
-    getSimpleUserList(),
-  ])
-
-  productOptions.value = products
-  warehouseOptions.value = warehouses
-  userOptions.value = users
-})
 </script>

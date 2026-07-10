@@ -13,16 +13,12 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          发起人
-        </view>
-        <UserPicker
-          v-model="formData.startUserId"
-          type="radio"
-          placeholder="请选择发起人"
-        />
-      </view>
+      <UserSearchPicker
+        ref="userPickerRef"
+        v-model="formData.startUserId"
+        label="发起人"
+        placeholder="请选择发起人"
+      />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           流程名称
@@ -33,36 +29,9 @@
           clearable
         />
       </view>
-      <yd-search-picker
-        v-if="processDefinitionList.length > 0"
-        v-model="formData.processDefinitionKey"
-        label="所属流程"
-        :columns="processDefinitionList"
-        value-key="key"
-        label-key="name"
-      />
-      <!-- 流程分类 -->
-      <yd-search-picker
-        v-if="categoryList.length > 0"
-        v-model="formData.category"
-        label="流程分类"
-        :columns="categoryList"
-        value-key="code"
-        label-key="name"
-      />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          流程状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio v-for="dict in getIntDictOptions(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS)" :key="dict.value" :value="dict.value">
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <ProcessDefinitionSearchPicker ref="processDefinitionPickerRef" v-model="formData.processDefinitionKey" />
+      <CategorySearchPicker ref="categoryPickerRef" v-model="formData.category" />
+      <yd-search-picker ref="statusPickerRef" v-model="formData.status" label="流程状态" :dict-type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" all-option />
       <yd-search-date-range v-model="formData.createTime" label="发起时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -77,13 +46,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { Category } from '@/api/bpm/category'
-import type { ProcessDefinition } from '@/api/bpm/definition'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getCategorySimpleList } from '@/api/bpm/category'
-import { getProcessDefinitionList } from '@/api/bpm/definition'
-import UserPicker from '@/components/system-select/user-picker.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import type { YdSearchPickerExpose } from '@/components/yudao-ui'
+import { computed, reactive, ref } from 'vue'
+import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
+import CategorySearchPicker from '@/pages-bpm/category/components/category-search-picker.vue'
+import ProcessDefinitionSearchPicker from '@/pages-bpm/definition/components/process-definition-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -102,34 +69,34 @@ const formData = reactive({
   createTime: [undefined, undefined] as [number | undefined, number | undefined], // 发起时间
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
+const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>()
+const processDefinitionPickerRef = ref<InstanceType<typeof ProcessDefinitionSearchPicker>>()
+const categoryPickerRef = ref<InstanceType<typeof CategorySearchPicker>>()
+const statusPickerRef = ref<YdSearchPickerExpose>()
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
+  if (formData.startUserId) {
+    conditions.push(`发起人:${userPickerRef.value?.format(formData.startUserId) || formData.startUserId}`)
+  }
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
+  if (formData.processDefinitionKey) {
+    conditions.push(`流程:${processDefinitionPickerRef.value?.format(formData.processDefinitionKey) || formData.processDefinitionKey}`)
+  }
+  if (formData.category) {
+    conditions.push(`分类:${categoryPickerRef.value?.format(formData.category) || formData.category}`)
+  }
   if (formData.status !== -1) {
-    conditions.push(`状态:${getDictLabel(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS, formData.status)}`)
+    conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索流程实例'
 })
-
-const categoryList = ref<Category[]>([]) // 流程分类选项
-const processDefinitionList = ref<ProcessDefinition[]>([]) // 流程定义选项
-
-/** 获取流程分类列表 */
-async function getCategoryList() {
-  categoryList.value = await getCategorySimpleList()
-}
-
-/** 获取流程定义列表 */
-async function getProcessDefinitions() {
-  processDefinitionList.value = await getProcessDefinitionList({ suspensionState: 1 })
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
@@ -152,10 +119,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 初始化 */
-onMounted(() => {
-  getCategoryList()
-  getProcessDefinitions()
-})
 </script>

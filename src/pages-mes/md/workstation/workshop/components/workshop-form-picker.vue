@@ -10,7 +10,6 @@
     label-key="name"
     value-key="id"
     :placeholder="placeholder"
-    :before-open="beforeOpenPicker"
     @update:model-value="handleUpdate"
     @confirm="handleConfirm"
     @clear="handleClear"
@@ -19,7 +18,7 @@
 
 <script lang="ts" setup>
 import type { MdWorkshop } from '@/api/mes/md/workstation/workshop'
-import { ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getWorkshopSimpleList } from '@/api/mes/md/workstation/workshop'
 
 const props = withDefaults(defineProps<{
@@ -54,11 +53,6 @@ async function loadOptions() {
   options.value = await getWorkshopSimpleList() || []
 }
 
-/** 打开前加载选项 */
-async function beforeOpenPicker() {
-  await loadOptions()
-}
-
 /** 更新车间编号 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
@@ -74,14 +68,8 @@ function handleClear() {
   emit('change', undefined)
 }
 
-/** 同步外部绑定值 */
-watch(
-  () => props.modelValue,
-  (value) => {
-    if (value != null) {
-      loadOptions()
-    }
-  },
-  { immediate: true },
-)
+/** 初始化 */
+onMounted(() => {
+  loadOptions()
+})
 </script>

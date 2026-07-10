@@ -10,20 +10,12 @@
       <!-- 表单内容 -->
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border title="请假信息">
-          <wd-form-item
-            title="请假类型"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.type"
+            label="请假类型"
             prop="type"
-            is-link
-            :value="getWotPickerFormValue(getIntDictOptions(DICT_TYPE.BPM_OA_LEAVE_TYPE), formData.type)"
+            :dict-type="DICT_TYPE.BPM_OA_LEAVE_TYPE"
             placeholder="请选择请假类型"
-            @click="pickerVisible.type = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.type"
-            :model-value="formData.type"
-            :columns="getIntDictOptions(DICT_TYPE.BPM_OA_LEAVE_TYPE)"
-            @confirm="({ value }) => formData.type = value[0]"
           />
           <wd-form-item
             title="开始时间"
@@ -108,12 +100,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { getProcessDefinition } from '@/api/bpm/definition'
 import { createLeave, getLeave } from '@/api/bpm/oa/leave'
 import { getApprovalDetail } from '@/api/bpm/processInstance'
-import { getIntDictOptions } from '@/hooks/useDict'
 import ProcessInstanceTimeline from '@/pages-bpm/processInstance/detail/components/time-line.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { BpmCandidateStrategyEnum, BpmNodeIdEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string

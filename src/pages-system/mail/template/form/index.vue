@@ -25,7 +25,7 @@
               placeholder="请输入模板编码"
             />
           </wd-form-item>
-          <AccountPicker v-model="formData.accountId" label="邮箱账号" prop="accountId" />
+          <MailAccountFormPicker v-model="formData.accountId" prop="accountId" />
           <wd-form-item title="发送人名称" title-width="200rpx">
             <wd-input
               v-model="formData.nickname"
@@ -94,7 +94,7 @@ import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import AccountPicker from '../../components/account-picker.vue'
+import MailAccountFormPicker from '../../account/components/form-picker.vue'
 
 const props = defineProps<{
   id?: number | any

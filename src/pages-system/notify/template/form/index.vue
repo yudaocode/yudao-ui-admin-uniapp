@@ -32,20 +32,12 @@
               placeholder="请输入发送人名称"
             />
           </wd-form-item>
-          <wd-form-item
-            title="模板类型"
-            title-width="200rpx"
+          <yd-form-picker
+            v-model="formData.type"
+            label="模板类型"
             prop="type"
-            is-link
-            :value="getWotPickerFormValue(templateTypeOptions, formData.type)"
+            :dict-type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE"
             placeholder="请选择模板类型"
-            @click="pickerVisible.type = true"
-          />
-          <wd-picker
-            v-model:visible="pickerVisible.type"
-            :model-value="formData.type"
-            :columns="templateTypeOptions"
-            @confirm="({ value }) => formData.type = value[0]"
           />
           <wd-form-item title="状态" title-width="200rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">
@@ -100,7 +92,7 @@ import { createNotifyTemplate, getNotifyTemplate, updateNotifyTemplate } from '@
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
-import { createFormSchema, getWotPickerFormValue } from '@/utils/wot'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | any
@@ -135,16 +127,6 @@ const formSchema = createFormSchema({
   content: [{ required: true, message: '模板内容不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
-const pickerVisible = ref<Record<string, boolean>>({})
-
-/** 模板类型选项 */
-const templateTypeOptions = computed(() => {
-  return getIntDictOptions(DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE).map(item => ({
-    value: item.value,
-    label: item.label,
-  }))
-})
-
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-system/notify/index')

@@ -25,14 +25,7 @@
         </view>
         <wd-input v-model="formData.nickname" placeholder="请输入备注名称" clearable />
       </view>
-      <yd-search-picker
-        v-model="formData.productId"
-        label="所属产品"
-        :columns="productOptions"
-        label-key="name"
-        value-key="id"
-        placeholder="请选择产品"
-      />
+      <ProductSearchPicker ref="productPickerRef" v-model="formData.productId" label="所属产品" />
       <yd-search-picker
         v-model="formData.deviceType"
         label="设备类型"
@@ -45,14 +38,7 @@
         :dict-type="DICT_TYPE.IOT_DEVICE_STATE"
         all-option
       />
-      <yd-search-picker
-        v-model="formData.groupId"
-        label="设备分组"
-        :columns="groupOptions"
-        label-key="name"
-        value-key="id"
-        placeholder="请选择设备分组"
-      />
+      <DeviceGroupSearchPicker ref="groupPickerRef" v-model="formData.groupId" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -66,20 +52,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { DeviceGroup } from '@/api/iot/device/group'
-import type { Product } from '@/api/iot/product/product'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { getSimpleDeviceGroupList } from '@/api/iot/device/group'
-import { getSimpleProductList } from '@/api/iot/product/product'
+import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import DeviceGroupSearchPicker from '@/pages-iot/device/group/components/device-group-search-picker.vue'
+import ProductSearchPicker from '@/pages-iot/product/product/components/product-search-picker.vue'
 
 const props = defineProps<{ defaultProductId?: number | any }>()
 const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 const visible = ref(false) // 搜索弹窗显示状态
-const productOptions = ref<Product[]>([]) // 产品选项
-const groupOptions = ref<DeviceGroup[]>([]) // 设备分组选项
+const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
+const groupPickerRef = ref<InstanceType<typeof DeviceGroupSearchPicker>>() // 设备分组选择器
 const defaultProductId = props.defaultProductId ? Number(props.defaultProductId) : undefined // 入口预置产品
 const formData = reactive({
   deviceName: undefined as string | undefined,
@@ -98,7 +82,7 @@ const placeholder = computed(() => {
     conditions.push(`备注:${formData.nickname}`)
   }
   if (formData.productId) {
-    conditions.push(`产品:${findOptionLabel(productOptions.value, formData.productId)}`)
+    conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
   if (formData.deviceType !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE, formData.deviceType)}`)
@@ -107,7 +91,7 @@ const placeholder = computed(() => {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IOT_DEVICE_STATE, formData.status)}`)
   }
   if (formData.groupId) {
-    conditions.push(`分组:${findOptionLabel(groupOptions.value, formData.groupId)}`)
+    conditions.push(`分组:${groupPickerRef.value?.format(formData.groupId) || formData.groupId}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索设备'
 })
@@ -136,15 +120,4 @@ function handleReset() {
   visible.value = false
   emit('reset')
 }
-
-/** 选项展示文案 */
-function findOptionLabel(options: { id?: number, name?: string }[], id?: number) {
-  return options.find(item => String(item.id) === String(id))?.name || String(id || '')
-}
-
-/** 初始化 */
-onMounted(async () => {
-  productOptions.value = await getSimpleProductList()
-  groupOptions.value = await getSimpleDeviceGroupList()
-})
 </script>

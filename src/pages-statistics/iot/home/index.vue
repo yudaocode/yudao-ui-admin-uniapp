@@ -136,19 +136,12 @@
               type="date"
               @confirm="reloadStatistics"
             />
-            <wd-form-item
-              title="时间间隔"
-              title-width="160rpx"
-              is-link
-              :value="intervalLabel"
+            <yd-form-picker
+              v-model="filters.interval"
+              label="时间间隔"
+              label-width="160rpx"
+              :dict-type="DICT_TYPE.DATE_INTERVAL"
               placeholder="请选择时间间隔"
-              @click="intervalVisible = true"
-            />
-            <wd-picker
-              v-model:visible="intervalVisible"
-              :model-value="[filters.interval]"
-              title="请选择时间间隔"
-              :columns="intervalColumns"
               @confirm="handleIntervalConfirm"
             />
           </view>
@@ -330,7 +323,6 @@ const mapLoading = ref(false) // 地图加载状态
 const mapLoadError = ref('') // 地图加载异常
 const startVisible = ref(false) // 开始日期选择器显隐
 const endVisible = ref(false) // 结束日期选择器显隐
-const intervalVisible = ref(false) // 时间间隔选择器显隐
 const activeTab = ref<IotHomeTab>(IOT_HOME_TAB.OVERVIEW) // 当前分组
 const loadedTabs = reactive<Record<IotHomeTab, boolean>>({ ...initialTabState }) // 已加载分组
 const loadingTabs = reactive<Record<IotHomeTab, boolean>>({ ...initialTabState }) // 加载中分组
@@ -381,10 +373,6 @@ const categoryOption = computed(() => { // 产品分类设备数饼图
     ],
   }
 })
-const intervalColumns = computed(() => // 时间间隔选项
-  getIntDictOptions(DICT_TYPE.DATE_INTERVAL).map(dict => ({ value: dict.value, label: dict.label })),
-)
-const intervalLabel = computed(() => getDictLabel(DICT_TYPE.DATE_INTERVAL, filters.interval) || String(filters.interval)) // 时间间隔文案
 const messageQuery = computed(() => ({
   interval: filters.interval,
   times: formatDateRange([filters.startTime, filters.endTime]),
@@ -689,8 +677,7 @@ async function loadDeviceLocations() {
 }
 
 /** 时间间隔确认 */
-function handleIntervalConfirm({ value }: { value: (number | string)[] }) {
-  filters.interval = Number(value[0])
+function handleIntervalConfirm() {
   reloadStatistics()
 }
 
