@@ -20,6 +20,11 @@ export function getCheckRecordLinePage(params: PageParam) {
   return http.get<PageResult<DvCheckRecordLine>>('/mes/dv/check-record-line/page', params)
 }
 
+/** 查询指定设备点检记录的明细列表 */
+export function getCheckRecordLineListByRecordId(recordId: number) {
+  return http.get<DvCheckRecordLine[]>('/mes/dv/check-record-line/list-by-record-id', { recordId })
+}
+
 /** 查询设备点检记录明细详情 */
 export function getCheckRecordLine(id: number) {
   return http.get<DvCheckRecordLine>(`/mes/dv/check-record-line/get?id=${id}`)

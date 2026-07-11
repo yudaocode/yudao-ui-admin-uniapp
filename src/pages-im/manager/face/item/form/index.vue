@@ -11,12 +11,11 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <yd-form-picker
+          <FacePackFormPicker
             v-model="formData.packId"
             label="表情包"
             label-width="180rpx"
             prop="packId"
-            :columns="packOptions"
             placeholder="请选择表情包"
             :disabled="Boolean(props.packId)"
           />
@@ -83,11 +82,11 @@ import {
   getManagerFacePackItem,
   updateManagerFacePackItem,
 } from '@/api/im/manager/face/item'
-import { getManagerFacePackPage } from '@/api/im/manager/face/pack'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
+import FacePackFormPicker from '@/pages-im/manager/face/pack/components/pack-form-picker.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -104,7 +103,6 @@ definePage({
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
-const packOptions = ref<{ label: string, value: number }[]>([]) // 表情包选项
 const formData = ref<ImManagerFacePackItemVO>({
   id: undefined,
   packId: Number(props.packId || 0),
@@ -158,15 +156,6 @@ function handleImageUploaded(url: string) {
   })
 }
 
-/** 加载表情包选项 */
-async function loadPackOptions() {
-  const data = await getManagerFacePackPage({ pageNo: 1, pageSize: 100 })
-  packOptions.value = data.list.map(item => ({
-    label: item.name,
-    value: Number(item.id),
-  }))
-}
-
 /** 加载详情 */
 async function getDetail() {
   if (!props.id) {
@@ -199,8 +188,7 @@ async function handleSubmit() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await loadPackOptions()
-  await getDetail()
+onMounted(() => {
+  getDetail()
 })
 </script>

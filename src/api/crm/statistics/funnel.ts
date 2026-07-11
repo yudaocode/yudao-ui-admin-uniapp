@@ -1,5 +1,3 @@
-import type { PageParam, PageResult } from '@/http/types'
-import type { Business } from '@/api/crm/business'
 import { http } from '@/http/http'
 
 export interface CrmStatisticFunnelResp {
@@ -52,9 +50,4 @@ export function getBusinessSummaryByDate(params: Record<string, any>) {
 /** 获取商机转化率分析，按日期 */
 export function getBusinessInversionRateSummaryByDate(params: Record<string, any>) {
   return http.get<CrmStatisticsBusinessInversionRateSummaryByDateResp[]>('/crm/statistics-funnel/get-business-inversion-rate-summary-by-date', params)
-}
-
-/** 获取商机列表，按日期 */
-export function getBusinessPageByDate(params: PageParam) {
-  return http.get<PageResult<Business>>('/crm/statistics-funnel/get-business-page-by-date', params)
 }

@@ -24,13 +24,16 @@
           <view>批次号：{{ item.batchCode || '-' }}</view>
         </view>
       </view>
+      <wd-button v-if="hasMore" block size="small" :loading="loadingMore" variant="plain" @click="loadMore">
+        加载更多
+      </wd-button>
     </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { WmProductProduceLine } from '@/api/mes/wm/productproduce/line'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getProductProduceLinePage } from '@/api/mes/wm/productproduce/line'
 import { DICT_TYPE } from '@/utils/constants'
 
@@ -42,25 +45,50 @@ const props = withDefaults(defineProps<{
 })
 
 const loading = ref(false) // 列表加载状态
+const loadingMore = ref(false) // 加载更多状态
 const list = ref<WmProductProduceLine[]>([]) // 产出行列表
+const total = ref(0) // 产出行总数
+const pageNo = ref(1) // 当前页码
+const hasMore = computed(() => list.value.length < total.value)
 
 /** 加载产出行数据 */
-async function loadList() {
+async function loadList(currentPage = 1) {
   if (!props.feedbackId) {
     list.value = []
+    total.value = 0
+    pageNo.value = 1
     return
   }
-  loading.value = true
+  const firstPage = currentPage === 1
+  if (firstPage) {
+    loading.value = true
+  } else {
+    loadingMore.value = true
+  }
   try {
     const data = await getProductProduceLinePage({
-      pageNo: 1,
+      pageNo: currentPage,
       pageSize: 20,
       feedbackId: props.feedbackId,
     })
-    list.value = data.list
+    pageNo.value = currentPage
+    total.value = data.total
+    list.value = firstPage ? data.list : [...list.value, ...data.list]
   } finally {
-    loading.value = false
+    if (firstPage) {
+      loading.value = false
+    } else {
+      loadingMore.value = false
+    }
   }
+}
+
+/** 加载更多 */
+function loadMore() {
+  if (!hasMore.value || loading.value || loadingMore.value) {
+    return
+  }
+  loadList(pageNo.value + 1)
 }
 
 /** 监听报工编号变化 */

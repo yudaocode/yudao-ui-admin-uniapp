@@ -75,18 +75,18 @@
         </view>
         <view class="mb-24rpx">
           <ProductFormPicker
-            v-model="bindProductId"
+            v-model="bindQueryParams.productId"
             label="产品"
             placeholder="请选择产品"
             :device-type="DeviceTypeEnum.GATEWAY_SUB"
           />
         </view>
         <view class="mb-24rpx flex gap-16rpx">
-          <wd-input v-model="bindKeyword" class="flex-1" placeholder="请输入 DeviceName" clearable />
-          <wd-button type="primary" @click="reloadBindableList">
+          <wd-input v-model="bindQueryParams.deviceName" class="flex-1" placeholder="请输入 DeviceName" clearable />
+          <wd-button type="primary" @click="handleQuery">
             搜索
           </wd-button>
-          <wd-button variant="plain" @click="resetBindQuery">
+          <wd-button variant="plain" @click="handleReset">
             重置
           </wd-button>
         </view>
@@ -167,8 +167,10 @@ const selectedIds = ref<number[]>([]) // 选中的子设备编号
 const unbindingId = ref<number>() // 解绑中的设备编号
 const unbindingBatch = ref(false) // 批量解绑状态
 const bindVisible = ref(false) // 绑定弹窗显示状态
-const bindProductId = ref<number>() // 绑定筛选产品
-const bindKeyword = ref('') // 绑定搜索关键字
+const bindQueryParams = ref<Record<string, any>>({ // 绑定查询参数
+  productId: undefined,
+  deviceName: '',
+})
 const bindPagingRef = ref<any>() // 绑定分页组件引用
 const bindList = ref<Device[]>([]) // 可绑定子设备
 const bindSelectedIds = ref<number[]>([]) // 绑定选中的设备编号
@@ -206,6 +208,10 @@ function handleDetail(item: Device) {
 /** 打开绑定弹窗 */
 function openBindPopup() {
   bindSelectedIds.value = []
+  bindQueryParams.value = {
+    productId: undefined,
+    deviceName: '',
+  }
   bindVisible.value = true
   nextTick(() => bindPagingRef.value?.reload())
 }
@@ -216,8 +222,8 @@ async function queryBindableList(pageNo: number, pageSize: number) {
     const data = await getUnboundSubDevicePage({
       pageNo,
       pageSize,
-      productId: bindProductId.value,
-      deviceName: bindKeyword.value || undefined,
+      productId: bindQueryParams.value.productId,
+      deviceName: bindQueryParams.value.deviceName || undefined,
     })
     bindTotal.value = data.total
     bindPagingRef.value?.completeByTotal(data.list, data.total)
@@ -226,17 +232,19 @@ async function queryBindableList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 重新加载可绑定子设备 */
-function reloadBindableList() {
+/** 搜索按钮操作 */
+function handleQuery() {
   bindSelectedIds.value = []
   bindPagingRef.value?.reload()
 }
 
-/** 重置绑定搜索条件 */
-function resetBindQuery() {
-  bindProductId.value = undefined
-  bindKeyword.value = ''
-  reloadBindableList()
+/** 重置按钮操作 */
+function handleReset() {
+  bindQueryParams.value = {
+    productId: undefined,
+    deviceName: '',
+  }
+  handleQuery()
 }
 
 /** 绑定子设备 */

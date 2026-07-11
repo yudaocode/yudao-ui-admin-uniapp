@@ -146,7 +146,7 @@ async function queryList(pageNo: number, pageSize: number) {
 function open(nextSupplierId: number) {
   supplierId.value = nextSupplierId
   visible.value = true
-  reload()
+  handleReset()
 }
 
 /** 重新加载 */

@@ -67,7 +67,7 @@
           <wd-icon name="close" size="36rpx" @click="formVisible = false" />
         </view>
         <view class="p-24rpx">
-          <wd-search v-model="teamKeyword" placeholder="搜索班组编码/名称" hide-cancel @search="loadTeamOptions" @clear="loadTeamOptions" />
+          <wd-search v-model="teamKeyword" placeholder="搜索班组编码/名称" hide-cancel />
         </view>
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <view class="px-24rpx pb-24rpx">
@@ -109,9 +109,9 @@ import type { CalTeam } from '@/api/mes/cal/team'
 import type { CalPlanTeam } from '@/api/mes/cal/plan/team'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { createPlanTeam, deletePlanTeam, getPlanTeamListByPlan } from '@/api/mes/cal/plan/team'
-import { getTeamPage } from '@/api/mes/cal/team'
+import { getTeamList } from '@/api/mes/cal/team'
 import { getTeamMemberListByTeam } from '@/api/mes/cal/team/member'
 
 const props = withDefaults(defineProps<{
@@ -136,8 +136,20 @@ const formVisible = ref(false) // 表单弹层显示状态
 const formLoading = ref(false) // 表单提交状态
 const teamLoading = ref(false) // 班组选项加载状态
 const teamKeyword = ref('') // 班组搜索关键字
-const teamOptions = ref<CalTeam[]>([]) // 可选班组
+const teamList = ref<CalTeam[]>([]) // 班组选项
 const selectedTeamIds = ref<number[]>([]) // 已选班组编号
+const teamOptions = computed(() => { // 可选班组
+  const existingTeamIds = new Set(list.value.map(item => item.teamId))
+  const keyword = teamKeyword.value.trim().toLowerCase()
+  return teamList.value.filter((team) => {
+    if (!team.id || existingTeamIds.has(team.id)) {
+      return false
+    }
+    return !keyword
+      || team.code.toLowerCase().includes(keyword)
+      || team.name.toLowerCase().includes(keyword)
+  })
+})
 
 /** 查询计划班组 */
 async function getList() {
@@ -169,14 +181,7 @@ async function openForm() {
 async function loadTeamOptions() {
   teamLoading.value = true
   try {
-    const data = await getTeamPage({
-      pageNo: 1,
-      pageSize: 50,
-      code: teamKeyword.value || undefined,
-      name: teamKeyword.value || undefined,
-    })
-    const existing = new Set(list.value.map(item => item.teamId))
-    teamOptions.value = data.list.filter(team => team.id && !existing.has(team.id))
+    teamList.value = await getTeamList()
   } finally {
     teamLoading.value = false
   }

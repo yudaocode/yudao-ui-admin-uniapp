@@ -101,9 +101,14 @@ async function resolveItem(id?: number) {
     return
   }
   try {
-    selectedItem.value = await getWorkstation(id)
+    const item = await getWorkstation(id)
+    if (props.modelValue === id) {
+      selectedItem.value = item
+    }
   } catch {
-    selectedItem.value = undefined
+    if (props.modelValue === id) {
+      selectedItem.value = undefined
+    }
   }
 }
 

@@ -20,6 +20,11 @@ export function getMaintenRecordLinePage(params: PageParam) {
   return http.get<PageResult<DvMaintenRecordLine>>('/mes/dv/mainten-record-line/page', params)
 }
 
+/** 查询指定设备保养记录的明细列表 */
+export function getMaintenRecordLineListByRecordId(recordId: number) {
+  return http.get<DvMaintenRecordLine[]>('/mes/dv/mainten-record-line/list-by-record-id', { recordId })
+}
+
 /** 查询设备保养记录明细详情 */
 export function getMaintenRecordLine(id: number) {
   return http.get<DvMaintenRecordLine>(`/mes/dv/mainten-record-line/get?id=${id}`)

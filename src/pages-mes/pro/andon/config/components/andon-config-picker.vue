@@ -8,7 +8,7 @@
     <view class="h-full flex flex-col bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <view class="flex items-center gap-12rpx">
-          <wd-button variant="plain" size="small" @click="visible = false">
+          <wd-button variant="plain" size="small" @click="handleCancel">
             取消
           </wd-button>
           <wd-button v-if="props.clearable" variant="plain" size="small" :disabled="!canClear" @click="handleClear">
@@ -18,13 +18,13 @@
         <view class="text-32rpx text-[#333] font-semibold">
           选择呼叫原因
         </view>
-        <wd-button size="small" type="primary" :disabled="!selected" @click="handleConfirm">
+        <wd-button size="small" type="primary" :disabled="!canConfirm" @click="handleConfirm">
           确定
         </wd-button>
       </view>
 
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="keyword" placeholder="搜索呼叫原因" clearable @confirm="handleSearch" />
+        <wd-input v-model="keyword" placeholder="搜索呼叫原因" clearable />
       </view>
 
       <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
@@ -34,7 +34,7 @@
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
             :class="selected?.id === item.id ? 'ring-2 ring-[#1677ff]' : ''"
-            @click="selected = item"
+            @click="handleSelect(item)"
           >
             <view class="mb-12rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1 truncate text-30rpx text-[#333] font-semibold">
@@ -96,6 +96,7 @@ const list = ref<ProAndonConfig[]>([]) // 配置列表
 const keyword = ref('') // 搜索关键字
 const selectedItem = ref<ProAndonConfig>() // 当前选中配置
 const selected = ref<ProAndonConfig>() // 当前选中
+const pendingSelectedId = ref<number>() // 待回显编号
 const canClear = computed(() => Boolean(selected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 const filteredList = computed(() => {
   const word = keyword.value.trim().toLowerCase()
@@ -103,6 +104,9 @@ const filteredList = computed(() => {
     return list.value
   }
   return list.value.filter(item => item.reason?.toLowerCase().includes(word))
+})
+const canConfirm = computed(() => { // 当前选中项是否仍在搜索结果中
+  return selected.value != null && filteredList.value.some(item => item.id === selected.value?.id)
 })
 
 /** 打开选择器 */
@@ -113,12 +117,27 @@ async function open(currentId?: number) {
   const selectedId = currentId ?? props.modelValue
   visible.value = true
   keyword.value = ''
-  selected.value = selectedItem.value
+  selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+  if (selectedId == null) {
+    selectedItem.value = undefined
+  }
+  pendingSelectedId.value = selectedId
   await loadList()
-  selected.value = list.value.find(item => item.id === selectedId)
-  if (selectedId && !selected.value) {
-    await resolveItemById(selectedId)
-    selected.value = selectedItem.value
+  if (selectedId == null || pendingSelectedId.value !== selectedId) {
+    return
+  }
+  const listItem = list.value.find(item => item.id === selectedId)
+  if (listItem) {
+    selectedItem.value = listItem
+    selected.value = listItem
+    pendingSelectedId.value = undefined
+    return
+  }
+  const item = await resolveItemById(selectedId)
+  if (item && pendingSelectedId.value === selectedId && !selected.value) {
+    selectedItem.value = item
+    selected.value = item
+    pendingSelectedId.value = undefined
   }
 }
 
@@ -135,28 +154,35 @@ async function loadList() {
 /** 根据编号加载配置回显 */
 async function resolveItemById(id?: number) {
   if (id == null) {
-    selectedItem.value = undefined
-    return
+    return undefined
   }
   if (selectedItem.value?.id === id) {
-    return
+    return selectedItem.value
   }
   try {
-    selectedItem.value = await getAndonConfig(id)
+    return await getAndonConfig(id)
   } catch {
-    selectedItem.value = undefined
+    return undefined
   }
 }
 
-/** 搜索 */
-function handleSearch() {
-  selected.value = undefined
+/** 选择配置 */
+function handleSelect(item: ProAndonConfig) {
+  selected.value = item
+  pendingSelectedId.value = undefined
+}
+
+/** 取消选择 */
+function handleCancel() {
+  pendingSelectedId.value = undefined
+  visible.value = false
 }
 
 /** 清空选择 */
 function handleClear() {
   selected.value = undefined
   selectedItem.value = undefined
+  pendingSelectedId.value = undefined
   emit('update:modelValue', undefined)
   emit('change', undefined)
   emit('clear')
@@ -165,13 +191,14 @@ function handleClear() {
 
 /** 确认选择 */
 function handleConfirm() {
-  if (!selected.value) {
+  if (!canConfirm.value || !selected.value) {
     return
   }
   selectedItem.value = selected.value
   emit('update:modelValue', selected.value.id)
   emit('change', selected.value)
   emit('confirm', selected.value)
+  pendingSelectedId.value = undefined
   visible.value = false
 }
 
@@ -184,8 +211,11 @@ function handleConfigManage() {
 /** 同步外部绑定值 */
 watch(
   () => props.modelValue,
-  (value) => {
-    resolveItemById(value)
+  async (value) => {
+    const item = await resolveItemById(value)
+    if (props.modelValue === value) {
+      selectedItem.value = item
+    }
   },
   { immediate: true },
 )

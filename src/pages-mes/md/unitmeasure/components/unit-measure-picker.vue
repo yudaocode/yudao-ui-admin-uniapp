@@ -14,7 +14,7 @@
         <view class="text-32rpx text-[#333] font-semibold">
           选择计量单位
         </view>
-        <wd-button size="small" type="primary" :disabled="!selected" @click="handleConfirm">
+        <wd-button size="small" type="primary" :disabled="!canConfirm" @click="handleConfirm">
           确定
         </wd-button>
       </view>
@@ -86,6 +86,9 @@ const filteredList = computed(() => { // 搜索后的计量单位
     item.name.toLowerCase().includes(value) || item.code.toLowerCase().includes(value),
   )
 })
+const canConfirm = computed(() => { // 当前选中项是否仍在搜索结果中
+  return selected.value != null && filteredList.value.some(item => item.id === selected.value?.id)
+})
 
 /** 打开选择器 */
 function open(currentId?: number) {
@@ -112,7 +115,7 @@ async function loadList() {
 
 /** 确认选择 */
 function handleConfirm() {
-  if (!selected.value) {
+  if (!canConfirm.value || !selected.value) {
     return
   }
   emit('confirm', selected.value)

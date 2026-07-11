@@ -58,7 +58,7 @@
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
             :class="tempSelected?.id === item.id ? 'ring-2 ring-[#1677ff]' : ''"
-            @click="tempSelected = item"
+            @click="handleSelect(item)"
           >
             <view class="mb-12rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1">
@@ -142,8 +142,12 @@ async function open(selectedId?: number) {
   pendingSelectedId.value = currentId
   reload()
   if (currentId != null && !tempSelected.value) {
-    await resolveItemById(currentId)
-    tempSelected.value = selectedItem.value?.id === currentId ? selectedItem.value : undefined
+    const item = await resolveItemById(currentId)
+    if (item && pendingSelectedId.value === currentId && !tempSelected.value) {
+      selectedItem.value = item
+      tempSelected.value = item
+      pendingSelectedId.value = undefined
+    }
   }
 }
 
@@ -159,7 +163,12 @@ async function queryList(pageNo: number, pageSize: number) {
       status: props.confirmedOnly ? MesProWorkOrderStatusEnum.CONFIRMED : undefined,
     })
     if (pendingSelectedId.value != null && !tempSelected.value) {
-      tempSelected.value = data.list.find(item => item.id === pendingSelectedId.value)
+      const item = data.list.find(item => item.id === pendingSelectedId.value)
+      if (item) {
+        selectedItem.value = item
+        tempSelected.value = item
+        pendingSelectedId.value = undefined
+      }
     }
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -175,17 +184,22 @@ function reload() {
 /** 根据编号加载工单回显 */
 async function resolveItemById(id?: number) {
   if (id == null) {
-    selectedItem.value = undefined
-    return
+    return undefined
   }
   if (selectedItem.value?.id === id) {
-    return
+    return selectedItem.value
   }
   try {
-    selectedItem.value = await getWorkOrder(id)
+    return await getWorkOrder(id)
   } catch {
-    selectedItem.value = undefined
+    return undefined
   }
+}
+
+/** 选择工单 */
+function handleSelect(item: ProWorkOrder) {
+  tempSelected.value = item
+  pendingSelectedId.value = undefined
 }
 
 /** 搜索按钮操作 */
@@ -204,6 +218,7 @@ function handleReset() {
 
 /** 取消 */
 function handleCancel() {
+  pendingSelectedId.value = undefined
   visible.value = false
 }
 
@@ -243,8 +258,11 @@ function handleConfirm() {
 /** 同步外部绑定值 */
 watch(
   () => props.modelValue,
-  (value) => {
-    resolveItemById(value)
+  async (value) => {
+    const item = await resolveItemById(value)
+    if (props.modelValue === value) {
+      selectedItem.value = item
+    }
   },
   { immediate: true },
 )

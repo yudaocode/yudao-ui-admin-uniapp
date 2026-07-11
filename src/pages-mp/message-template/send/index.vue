@@ -65,7 +65,7 @@ import type { MsgTemplate, MsgTemplateSend } from '@/api/mp/messageTemplate'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getMessageTemplate, sendMessageTemplate } from '@/api/mp/messageTemplate'
-import MpUserFormPicker from '@/pages-mp/user/components/form-picker.vue'
+import MpUserFormPicker from '@/pages-mp/user/components/user-form-picker.vue'
 import { delay, navigateBackPlus, normalizeEscapedNewlines } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
 

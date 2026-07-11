@@ -124,7 +124,7 @@ const trendSection: StatisticsSection = {
 } // 商品趋势分组配置
 
 const rankSection: StatisticsSection = {
-  title: '商品排行',
+  title: '商品排行（前 20）',
   columns: [
     { prop: 'name', label: '商品' },
     { prop: 'browseCount', label: '浏览量' },

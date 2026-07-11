@@ -68,7 +68,7 @@ import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { getPromotionCouponTemplatePage } from '@/api/mall/promotion/coupon/coupon-template'
+import { getPromotionCouponTemplateList } from '@/api/mall/promotion/coupon/coupon-template'
 import {
   closePromotionRewardActivity,
   deletePromotionRewardActivity,
@@ -181,19 +181,29 @@ async function handleDelete() {
 
 /** 加载优惠券模板（用于赠券名称回显） */
 async function loadCouponTemplates() {
-  const data = await getPromotionCouponTemplatePage({ pageNo: 1, pageSize: 100 })
-  couponTemplates.value = data.list || []
+  const templateIds = new Set<number>()
+  formData.value.rules?.forEach((rule) => {
+    Object.keys(rule.giveCouponTemplateCounts || {}).forEach(id => templateIds.add(Number(id)))
+  })
+  couponTemplates.value = templateIds.size
+    ? await getPromotionCouponTemplateList(Array.from(templateIds))
+    : []
+}
+
+/** 加载完整详情 */
+async function loadDetail() {
+  await getDetail()
+  await loadCouponTemplates()
 }
 
 /** 初始化 */
 onMounted(async () => {
-  await loadCouponTemplates()
-  await getDetail()
-  uni.$on('mall:promotion-reward-activity:reload', getDetail)
+  await loadDetail()
+  uni.$on('mall:promotion-reward-activity:reload', loadDetail)
 })
 
 /** 卸载 */
 onUnload(() => {
-  uni.$off('mall:promotion-reward-activity:reload', getDetail)
+  uni.$off('mall:promotion-reward-activity:reload', loadDetail)
 })
 </script>

@@ -149,6 +149,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createWorkOrderBom,
   deleteWorkOrderBom,
+  getWorkOrderBomListByWorkOrderId,
   getWorkOrderBomPage,
   updateWorkOrderBom,
 } from '@/api/mes/pro/workorder/bom'
@@ -220,8 +221,9 @@ async function loadExistingBomItemIds() {
     existingBomItemIds.value = []
     return
   }
-  const data = await getWorkOrderBomPage({ pageNo: 1, pageSize: 1000, workOrderId: props.workOrderId })
-  existingBomItemIds.value = data.list.map(item => item.itemId).filter((id): id is number => id != null)
+  const list = await getWorkOrderBomListByWorkOrderId(props.workOrderId)
+  const itemIds = list.map(item => item.itemId).filter((id): id is number => id != null)
+  existingBomItemIds.value = Array.from(new Set(itemIds))
 }
 
 /** 默认表单数据 */

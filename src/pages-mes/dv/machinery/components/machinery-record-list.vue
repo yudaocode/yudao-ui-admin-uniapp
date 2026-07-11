@@ -11,7 +11,7 @@
           点检记录
         </view>
         <wd-tag type="primary" plain>
-          {{ checkRecords.length }} 条
+          最近 {{ checkRecords.length }} 条 / 共 {{ checkTotal }} 条
         </wd-tag>
       </view>
       <view v-if="checkLoading" class="flex justify-center py-24rpx">
@@ -48,7 +48,7 @@
           保养记录
         </view>
         <wd-tag type="warning" plain>
-          {{ maintenRecords.length }} 条
+          最近 {{ maintenRecords.length }} 条 / 共 {{ maintenTotal }} 条
         </wd-tag>
       </view>
       <view v-if="maintenLoading" class="flex justify-center py-24rpx">
@@ -85,7 +85,7 @@
           维修记录
         </view>
         <wd-tag type="danger" plain>
-          {{ repairRecords.length }} 条
+          最近 {{ repairRecords.length }} 条 / 共 {{ repairTotal }} 条
         </wd-tag>
       </view>
       <view v-if="repairLoading" class="flex justify-center py-24rpx">
@@ -143,8 +143,11 @@ const checkLoading = ref(false) // 点检记录加载状态
 const maintenLoading = ref(false) // 保养记录加载状态
 const repairLoading = ref(false) // 维修记录加载状态
 const checkRecords = ref<DvCheckRecord[]>([]) // 点检记录
+const checkTotal = ref(0) // 点检记录总数
 const maintenRecords = ref<DvMaintenRecord[]>([]) // 保养记录
+const maintenTotal = ref(0) // 保养记录总数
 const repairRecords = ref<DvRepair[]>([]) // 维修记录
+const repairTotal = ref(0) // 维修记录总数
 
 /** 格式化计划频率 */
 function formatCycle(count?: number, type?: number) {
@@ -159,6 +162,7 @@ function formatCycle(count?: number, type?: number) {
 async function loadCheckRecords() {
   if (!currentMachineryId.value) {
     checkRecords.value = []
+    checkTotal.value = 0
     return
   }
   checkLoading.value = true
@@ -169,6 +173,7 @@ async function loadCheckRecords() {
       machineryId: currentMachineryId.value,
     })
     checkRecords.value = data.list
+    checkTotal.value = data.total
   } finally {
     checkLoading.value = false
   }
@@ -178,6 +183,7 @@ async function loadCheckRecords() {
 async function loadMaintenRecords() {
   if (!currentMachineryId.value) {
     maintenRecords.value = []
+    maintenTotal.value = 0
     return
   }
   maintenLoading.value = true
@@ -188,6 +194,7 @@ async function loadMaintenRecords() {
       machineryId: currentMachineryId.value,
     })
     maintenRecords.value = data.list
+    maintenTotal.value = data.total
   } finally {
     maintenLoading.value = false
   }
@@ -197,6 +204,7 @@ async function loadMaintenRecords() {
 async function loadRepairRecords() {
   if (!currentMachineryId.value) {
     repairRecords.value = []
+    repairTotal.value = 0
     return
   }
   repairLoading.value = true
@@ -207,6 +215,7 @@ async function loadRepairRecords() {
       machineryId: currentMachineryId.value,
     })
     repairRecords.value = data.list
+    repairTotal.value = data.total
   } finally {
     repairLoading.value = false
   }

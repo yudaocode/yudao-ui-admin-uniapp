@@ -130,7 +130,7 @@ async function queryList(pageNo: number, pageSize: number) {
 /** 打开选择弹窗 */
 function open() {
   visible.value = true
-  reload()
+  handleReset()
 }
 
 /** 重新加载 */

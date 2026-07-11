@@ -20,6 +20,11 @@ export function getRepairLinePage(params: PageParam) {
   return http.get<PageResult<DvRepairLine>>('/mes/dv/repair-line/page', params)
 }
 
+/** 查询指定维修工单的明细列表 */
+export function getRepairLineListByRepairId(repairId: number) {
+  return http.get<DvRepairLine[]>('/mes/dv/repair-line/list-by-repair-id', { repairId })
+}
+
 /** 查询维修工单行详情 */
 export function getRepairLine(id: number) {
   return http.get<DvRepairLine>(`/mes/dv/repair-line/get?id=${id}`)

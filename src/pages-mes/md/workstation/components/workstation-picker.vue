@@ -9,7 +9,7 @@
       <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <view class="flex items-center gap-12rpx">
-          <wd-button variant="plain" size="small" @click="visible = false">
+          <wd-button variant="plain" size="small" @click="handleCancel">
             取消
           </wd-button>
           <wd-button v-if="props.clearable" variant="plain" size="small" :disabled="!canClear" @click="handleClear">
@@ -57,7 +57,7 @@
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
             :class="selected?.id === item.id ? 'ring-2 ring-[#1677ff]' : ''"
-            @click="selected = item"
+            @click="handleSelect(item)"
           >
             <view class="mb-12rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1">
@@ -126,7 +126,12 @@ async function queryList(pageNo: number, pageSize: number) {
       status: CommonStatusEnum.ENABLE,
     })
     if (pendingSelectedId.value != null && !selected.value) {
-      selected.value = data.list.find(item => item.id === pendingSelectedId.value)
+      const item = data.list.find(item => item.id === pendingSelectedId.value)
+      if (item) {
+        selectedItem.value = item
+        selected.value = item
+        pendingSelectedId.value = undefined
+      }
     }
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -148,8 +153,12 @@ async function open(currentId?: number) {
   pendingSelectedId.value = selectedId
   reload()
   if (selectedId != null && !selected.value) {
-    await resolveItemById(selectedId)
-    selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+    const item = await resolveItemById(selectedId)
+    if (item && pendingSelectedId.value === selectedId && !selected.value) {
+      selectedItem.value = item
+      selected.value = item
+      pendingSelectedId.value = undefined
+    }
   }
 }
 
@@ -161,17 +170,22 @@ function reload() {
 /** 根据编号加载工作站回显 */
 async function resolveItemById(id?: number) {
   if (id == null) {
-    selectedItem.value = undefined
-    return
+    return undefined
   }
   if (selectedItem.value?.id === id) {
-    return
+    return selectedItem.value
   }
   try {
-    selectedItem.value = await getWorkstation(id)
+    return await getWorkstation(id)
   } catch {
-    selectedItem.value = undefined
+    return undefined
   }
+}
+
+/** 选择工作站 */
+function handleSelect(item: MdWorkstation) {
+  selected.value = item
+  pendingSelectedId.value = undefined
 }
 
 /** 搜索按钮操作 */
@@ -184,6 +198,12 @@ function handleReset() {
   queryParams.code = undefined
   queryParams.name = undefined
   reload()
+}
+
+/** 取消选择 */
+function handleCancel() {
+  pendingSelectedId.value = undefined
+  visible.value = false
 }
 
 /** 清空选择 */
@@ -212,8 +232,11 @@ function handleConfirm() {
 /** 同步外部绑定值 */
 watch(
   () => props.modelValue,
-  (value) => {
-    resolveItemById(value)
+  async (value) => {
+    const item = await resolveItemById(value)
+    if (props.modelValue === value) {
+      selectedItem.value = item
+    }
   },
   { immediate: true },
 )

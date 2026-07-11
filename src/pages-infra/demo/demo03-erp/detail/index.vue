@@ -21,7 +21,7 @@
 
       <!-- 子表：学生课程（独立 CRUD） -->
       <view class="mt-20rpx flex items-center justify-between px-24rpx py-16rpx">
-        <text class="text-28rpx text-[#333] font-semibold">学生课程（{{ courses.length }}）</text>
+        <text class="text-28rpx text-[#333] font-semibold">学生课程（{{ courseTotal }}）</text>
         <wd-button
           v-if="hasAccessByCodes(['infra:demo03-student:create'])"
           size="small" type="primary" variant="plain" @click="openCourse()"
@@ -30,32 +30,45 @@
         </wd-button>
       </view>
       <view class="px-24rpx">
-        <view v-if="!courses.length" class="rounded-12rpx bg-white py-40rpx text-center text-26rpx text-[#999]">
-          暂无课程
-        </view>
-        <view
-          v-for="course in courses"
-          :key="course.id"
-          class="mb-16rpx flex items-center gap-16rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+        <z-paging
+          ref="coursePagingRef"
+          v-model="courses"
+          :fixed="false"
+          :auto="false"
+          height="640rpx"
+          :default-page-size="10"
+          :refresher-enabled="false"
+          :inside-more="true"
+          :to-bottom-loading-more-enabled="false"
+          loading-more-default-text="点击加载更多"
+          loading-more-no-more-text="没有更多课程了"
+          empty-view-text="暂无课程"
+          @query="queryCourseList"
         >
-          <view class="min-w-0 flex-1">
-            <text class="text-30rpx text-[#333]">{{ course.name }}</text>
-            <text class="ml-16rpx text-26rpx text-[#1677ff]">{{ course.score ?? '-' }} 分</text>
+          <view
+            v-for="course in courses"
+            :key="course.id"
+            class="mb-16rpx flex items-center gap-16rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          >
+            <view class="min-w-0 flex-1">
+              <text class="text-30rpx text-[#333]">{{ course.name }}</text>
+              <text class="ml-16rpx text-26rpx text-[#1677ff]">{{ course.score ?? '-' }} 分</text>
+            </view>
+            <wd-button size="small" variant="plain" @click="openCourse(course)">
+              编辑
+            </wd-button>
+            <wd-button size="small" type="danger" variant="plain" @click="removeCourse(course)">
+              删除
+            </wd-button>
           </view>
-          <wd-button size="small" variant="plain" @click="openCourse(course)">
-            编辑
-          </wd-button>
-          <wd-button size="small" type="danger" variant="plain" @click="removeCourse(course)">
-            删除
-          </wd-button>
-        </view>
+        </z-paging>
       </view>
 
       <!-- 子表：学生班级（独立 CRUD） -->
       <view class="mt-20rpx flex items-center justify-between px-24rpx py-16rpx">
         <text class="text-28rpx text-[#333] font-semibold">学生班级（{{ grades.length }}）</text>
         <wd-button
-          v-if="hasAccessByCodes(['infra:demo03-student:create'])"
+          v-if="grades.length === 0 && hasAccessByCodes(['infra:demo03-student:create'])"
           size="small" type="primary" variant="plain" @click="openGrade()"
         >
           添加班级
@@ -109,7 +122,7 @@ import type { Demo03Course, Demo03Grade, Demo03Student } from '@/api/infra/demo/
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import {
   deleteDemo03Course,
   deleteDemo03Grade,
@@ -124,7 +137,7 @@ import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
-  id?: number | any
+  id?: number | string
 }>()
 
 definePage({
@@ -139,6 +152,8 @@ const toast = useToast()
 const dialog = useDialog()
 const formData = ref<Demo03Student>() // 主表数据
 const courses = ref<Demo03Course[]>([]) // 学生课程
+const courseTotal = ref(0) // 课程总数
+const coursePagingRef = ref<ZPagingRef<Demo03Course>>() // 课程分页组件引用
 const grades = ref<Demo03Grade[]>([]) // 学生班级
 const deleting = ref(false) // 主表删除状态
 
@@ -152,18 +167,37 @@ async function loadStudent() {
   if (!props.id) {
     return
   }
-  formData.value = await getDemo03Student(props.id)
+  formData.value = await getDemo03Student(Number(props.id))
 }
 
-/** 加载课程 */
-async function loadCourses() {
-  const data = await getDemo03CoursePage({ studentId: props.id, pageNo: 1, pageSize: 100 })
-  courses.value = data.list
+/** 查询课程列表 */
+async function queryCourseList(pageNo: number, pageSize: number) {
+  if (!props.id) {
+    courseTotal.value = 0
+    coursePagingRef.value?.completeByTotal([], 0)
+    return
+  }
+  try {
+    const data = await getDemo03CoursePage({ studentId: Number(props.id), pageNo, pageSize })
+    courseTotal.value = data.total
+    coursePagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    coursePagingRef.value?.complete(false)
+  }
+}
+
+/** 刷新课程列表 */
+function reloadCourseList() {
+  coursePagingRef.value?.reload()
 }
 
 /** 加载班级 */
 async function loadGrades() {
-  const data = await getDemo03GradePage({ studentId: props.id, pageNo: 1, pageSize: 100 })
+  if (!props.id) {
+    grades.value = []
+    return
+  }
+  const data = await getDemo03GradePage({ studentId: Number(props.id), pageNo: 1, pageSize: 1 })
   grades.value = data.list
 }
 
@@ -182,7 +216,7 @@ async function removeCourse(course: Demo03Course) {
   }
   await deleteDemo03Course(course.id!)
   toast.success('删除成功')
-  await loadCourses()
+  reloadCourseList()
 }
 
 /** 跳转班级 form（无参为新增） */
@@ -217,7 +251,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDemo03Student(props.id)
+    await deleteDemo03Student(Number(props.id))
     toast.success('删除成功')
     uni.$emit('infra:demo03-erp:reload')
     delay(handleBack)
@@ -229,7 +263,9 @@ async function handleDelete() {
 /** 进入页面加载（含编辑/子表返回后刷新） */
 onShow(() => {
   loadStudent()
-  loadCourses()
   loadGrades()
+  nextTick(() => {
+    reloadCourseList()
+  })
 })
 </script>

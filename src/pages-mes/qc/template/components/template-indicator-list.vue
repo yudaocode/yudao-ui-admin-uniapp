@@ -14,7 +14,7 @@
         新增
       </wd-button>
     </view>
-    <view v-if="loading" class="p-24rpx text-28rpx text-[#999]">
+    <view v-if="loading && list.length === 0" class="p-24rpx text-28rpx text-[#999]">
       加载中...
     </view>
     <view v-else-if="list.length === 0" class="p-24rpx text-28rpx text-[#999]">
@@ -58,6 +58,17 @@
           </wd-button>
         </view>
       </view>
+    </view>
+    <view v-if="canLoadMore" class="border-t border-[#f5f5f5] px-24rpx py-20rpx text-center">
+      <wd-button size="small" type="primary" variant="plain" :loading="loading" @click="loadNextPage">
+        {{ loadFailed ? '重新加载' : `加载更多（已加载 ${list.length} / 共 ${total} 条）` }}
+      </wd-button>
+    </view>
+    <view
+      v-else-if="list.length > 0"
+      class="border-t border-[#f5f5f5] px-24rpx py-20rpx text-center text-24rpx text-[#999]"
+    >
+      已加载全部 {{ total }} 条
     </view>
 
     <!-- 检测指标项表单 -->
@@ -144,12 +155,16 @@ const props = withDefaults(defineProps<{
 }>(), {
   showTitle: true,
 })
+const PAGE_SIZE = 20 // 每页条数
 
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const list = ref<QcTemplateIndicator[]>([]) // 检测指标项
+const total = ref(0) // 检测指标项总数
+const pageNo = ref(0) // 已成功加载的页码
 const loading = ref(false) // 列表加载状态
+const loadFailed = ref(false) // 列表加载失败状态
 const formVisible = ref(false) // 表单弹层状态
 const formLoading = ref(false) // 表单提交状态
 const editingId = ref<number>() // 当前编辑编号
@@ -165,6 +180,9 @@ const formData = ref<QcTemplateIndicator>({
 const formSchema = createFormSchema({
   indicatorId: [{ required: true, message: '质检指标不能为空' }],
 })
+const canLoadMore = computed(() => { // 是否可继续加载
+  return loadFailed.value || pageNo.value * PAGE_SIZE < total.value
+})
 
 const indicatorDisplay = computed(() => {
   return selectedIndicator.value
@@ -178,22 +196,42 @@ const unitDisplay = computed(() => {
   return selectedUnit.value?.name || formData.value.unitMeasureName || ''
 })
 
-/** 加载检测指标项 */
-async function loadList() {
+/** 重置检测指标项分页 */
+function resetList() {
+  list.value = []
+  total.value = 0
+  pageNo.value = 0
+  loadFailed.value = false
+}
+
+/** 加载下一页检测指标项 */
+async function loadNextPage() {
   if (!props.templateId) {
     return
   }
+  const nextPageNo = pageNo.value + 1
   loading.value = true
+  loadFailed.value = false
   try {
     const data = await getTemplateIndicatorPage({
-      pageNo: 1,
-      pageSize: 100,
+      pageNo: nextPageNo,
+      pageSize: PAGE_SIZE,
       templateId: props.templateId,
     })
-    list.value = data.list
+    list.value = nextPageNo === 1 ? data.list : [...list.value, ...data.list]
+    total.value = data.total
+    pageNo.value = nextPageNo
+  } catch {
+    loadFailed.value = true
   } finally {
     loading.value = false
   }
+}
+
+/** 刷新检测指标项 */
+async function loadList() {
+  resetList()
+  await loadNextPage()
 }
 
 /** 重置表单 */

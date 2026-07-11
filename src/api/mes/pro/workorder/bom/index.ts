@@ -21,6 +21,11 @@ export function getWorkOrderBomPage(params: PageParam) {
   return http.get<PageResult<ProWorkOrderBom>>(`/mes/pro/work-order-bom/page`, params)
 }
 
+/** 查询工单 BOM 列表 */
+export function getWorkOrderBomListByWorkOrderId(workOrderId: number) {
+  return http.get<ProWorkOrderBom[]>(`/mes/pro/work-order-bom/list-by-work-order-id?workOrderId=${workOrderId}`)
+}
+
 /** 查询工单 BOM 详情 */
 export function getWorkOrderBom(id: number) {
   return http.get<ProWorkOrderBom>(`/mes/pro/work-order-bom/get?id=${id}`)

@@ -115,11 +115,22 @@
       custom-style="border-radius: 24rpx 24rpx 0 0; height: 70vh;"
       @close="couponPickerVisible = false"
     >
-      <view class="h-70vh flex flex-col p-24rpx">
+      <view class="box-border h-full flex flex-col overflow-hidden p-24rpx">
         <view class="mb-16rpx text-32rpx text-[#333] font-semibold">
           选择赠送优惠券
         </view>
-        <scroll-view class="min-h-0 flex-1" scroll-y>
+        <z-paging
+          ref="couponPagingRef"
+          v-model="couponTemplates"
+          :fixed="false"
+          class="min-h-0 flex-1"
+          :default-page-size="20"
+          :refresher-enabled="true"
+          :inside-more="true"
+          :loading-more-default-as-loading="true"
+          empty-view-text="暂无优惠券模板"
+          @query="queryCouponTemplates"
+        >
           <wd-checkbox-group v-model="couponTempSelected">
             <wd-checkbox
               v-for="template in couponTemplates"
@@ -130,10 +141,7 @@
               {{ template.name }}
             </wd-checkbox>
           </wd-checkbox-group>
-          <view v-if="!couponTemplates.length" class="py-48rpx text-center text-26rpx text-[#999]">
-            暂无优惠券模板
-          </view>
-        </scroll-view>
+        </z-paging>
         <view class="mt-16rpx flex gap-20rpx">
           <wd-button class="flex-1" variant="plain" @click="couponPickerVisible = false">
             取消
@@ -196,6 +204,8 @@ const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示�
 const scopeValues = ref<number[]>([]) // 指定商品/分类编号
 const rules = ref<RewardRuleForm[]>([createRule()]) // 优惠规则（金额为元）
 const couponTemplates = ref<PromotionCouponTemplate[]>([]) // 优惠券模板列表（用于选择 + 名称回显）
+const couponTemplateMap = ref(new Map<number, PromotionCouponTemplate>()) // 优惠券模板映射
+const couponPagingRef = ref<ZPagingRef<PromotionCouponTemplate>>() // 优惠券分页组件引用
 const couponPickerVisible = ref(false) // 优惠券选择弹窗显示状态
 const couponTempSelected = ref<number[]>([]) // 弹窗内临时选中的优惠券模板编号
 const couponEditingIndex = ref(-1) // 当前编辑赠券的规则下标
@@ -231,7 +241,7 @@ function removeRule(index: number) {
 
 /** 优惠券模板名称 */
 function couponLabel(templateId: number) {
-  return couponTemplates.value.find(item => item.id === templateId)?.name || `模板 #${templateId}`
+  return couponTemplateMap.value.get(templateId)?.name || `模板 #${templateId}`
 }
 
 /** 打开赠券选择弹窗 */
@@ -239,6 +249,7 @@ function openCouponPicker(index: number) {
   couponEditingIndex.value = index
   couponTempSelected.value = rules.value[index].coupons.map(item => item.templateId)
   couponPickerVisible.value = true
+  couponPagingRef.value?.reload()
 }
 
 /** 确认赠券选择：保留已有数量，新增默认 1 */
@@ -264,22 +275,35 @@ function handleBack() {
   navigateBackPlus('/pages-mall/promotion/reward-activity/index')
 }
 
-/** 加载优惠券模板（仅「后台指定发放」ADMIN=2 类型，作为赠券候选） */
-async function loadCouponTemplates() {
-  const data = await getPromotionCouponTemplatePage({ pageNo: 1, pageSize: 100, canTakeTypes: [2] })
-  couponTemplates.value = data.list || []
+/** 查询赠券候选（仅「后台指定发放」ADMIN=2 类型） */
+async function queryCouponTemplates(pageNo: number, pageSize: number) {
+  try {
+    const data = await getPromotionCouponTemplatePage({ pageNo, pageSize, canTakeTypes: [2] })
+    data.list.forEach((item) => {
+      if (item.id != null) {
+        couponTemplateMap.value.set(item.id, item)
+      }
+    })
+    couponPagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    couponPagingRef.value?.complete(false)
+  }
 }
 
 /** 补全已选赠券模板（编辑回显：已选模板可能不在候选首页，按 ids 拉取合并） */
 async function ensureSelectedCouponTemplates() {
   const selectedIds = new Set<number>()
   rules.value.forEach(rule => rule.coupons.forEach(coupon => selectedIds.add(coupon.templateId)))
-  const missing = Array.from(selectedIds).filter(id => !couponTemplates.value.some(item => item.id === id))
+  const missing = Array.from(selectedIds).filter(id => !couponTemplateMap.value.has(id))
   if (!missing.length) {
     return
   }
   const extra = await getPromotionCouponTemplateList(missing)
-  couponTemplates.value = [...couponTemplates.value, ...(extra || [])]
+  extra.forEach((item) => {
+    if (item.id != null) {
+      couponTemplateMap.value.set(item.id, item)
+    }
+  })
 }
 
 /** 加载详情 */
@@ -368,7 +392,6 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  await loadCouponTemplates()
   await getDetail()
   await ensureSelectedCouponTemplates()
 })

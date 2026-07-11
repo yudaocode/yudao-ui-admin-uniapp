@@ -48,7 +48,7 @@
           <view class="text-26rpx text-[#999]">
             {{ periodText }}
           </view>
-          <wd-button size="small" type="primary" variant="plain" :loading="!!loadingMap[activeSection.title]" @click="loadData">
+          <wd-button size="small" type="primary" variant="plain" :loading="activeLoading" @click="loadData">
             刷新
           </wd-button>
         </view>
@@ -65,7 +65,6 @@ import type { StatisticsSection } from '@/pages-statistics/utils/statistics'
 import { computed, onMounted, reactive, ref } from 'vue'
 import {
   getBusinessInversionRateSummaryByDate,
-  getBusinessPageByDate,
   getBusinessSummaryByDate,
   getBusinessSummaryByStatus,
   getFunnelSummary,
@@ -178,28 +177,13 @@ const sections = [
       ],
     },
   },
-  {
-    title: '商机列表',
-    columns: [
-      { prop: 'name', label: '商机名称' },
-      { prop: 'customerName', label: '客户' },
-      { prop: 'totalPrice', label: '商机金额', type: 'money' },
-      { prop: 'statusName', label: '阶段' },
-    ],
-    load: loadBusinessPage,
-  },
 ] as StatisticsSection[] // 统计分组配置
 const activeSection = computed(() => sections[tabIndex.value] || sections[0]) // 当前分类
+const activeLoading = computed(() => !!loadingMap.value[activeSection.value.title]) // 当前分类加载状态
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
-}
-
-/** 加载商机列表（分页接口，仅取列表数据展示） */
-async function loadBusinessPage(params: Record<string, any>) {
-  const data = await getBusinessPageByDate({ pageNo: 1, pageSize: 20, ...params })
-  return data?.list || []
 }
 
 /** 加载当前分类数据：写入各自缓存槽，捕获 section 防止快速切 tab 时旧响应覆盖 */

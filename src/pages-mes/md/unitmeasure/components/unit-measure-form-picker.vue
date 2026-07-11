@@ -72,9 +72,14 @@ async function resolveItem(id?: number | null) {
     return
   }
   try {
-    selectedItem.value = await getUnitMeasure(id)
+    const item = await getUnitMeasure(id)
+    if (props.modelValue === id) {
+      selectedItem.value = item
+    }
   } catch {
-    selectedItem.value = undefined
+    if (props.modelValue === id) {
+      selectedItem.value = undefined
+    }
   }
 }
 

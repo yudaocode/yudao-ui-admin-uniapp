@@ -58,7 +58,7 @@
             :key="item.id"
             class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
             :class="selected?.id === item.id ? 'ring-2 ring-[#1677ff]' : ''"
-            @click="selected = item"
+            @click="handleSelect(item)"
           >
             <view class="mb-12rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1">
@@ -124,16 +124,23 @@ async function open(currentId?: number) {
   }
   const selectedId = currentId ?? props.modelValue
   visible.value = true
-  selected.value = selectedItem.value
+  selected.value = selectedItem.value?.id === selectedId ? selectedItem.value : undefined
+  if (selectedId == null) {
+    selectedItem.value = undefined
+  }
   pendingSelectedId.value = selectedId
   queryParams.value = {
     code: '',
     batchCode: '',
   }
   reload()
-  if (selectedId && !selected.value) {
-    await resolveItemById(selectedId)
-    selected.value = selectedItem.value
+  if (selectedId != null && !selected.value) {
+    const item = await resolveItemById(selectedId)
+    if (item && pendingSelectedId.value === selectedId && !selected.value) {
+      selectedItem.value = item
+      selected.value = item
+      pendingSelectedId.value = undefined
+    }
   }
 }
 
@@ -146,8 +153,13 @@ async function queryList(pageNo: number, pageSize: number) {
       pageSize,
     }
     const data = await getCardPage(params)
-    if (pendingSelectedId.value && !selected.value) {
-      selected.value = data.list.find(item => item.id === pendingSelectedId.value)
+    if (pendingSelectedId.value != null && !selected.value) {
+      const item = data.list.find(item => item.id === pendingSelectedId.value)
+      if (item) {
+        selectedItem.value = item
+        selected.value = item
+        pendingSelectedId.value = undefined
+      }
     }
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -158,17 +170,22 @@ async function queryList(pageNo: number, pageSize: number) {
 /** 根据编号加载流转卡回显 */
 async function resolveItemById(id?: number) {
   if (id == null) {
-    selectedItem.value = undefined
-    return
+    return undefined
   }
   if (selectedItem.value?.id === id) {
-    return
+    return selectedItem.value
   }
   try {
-    selectedItem.value = await getCard(id)
+    return await getCard(id)
   } catch {
-    selectedItem.value = undefined
+    return undefined
   }
+}
+
+/** 选择流转卡 */
+function handleSelect(item: ProCard) {
+  selected.value = item
+  pendingSelectedId.value = undefined
 }
 
 /** 重新加载 */
@@ -192,6 +209,7 @@ function handleReset() {
 
 /** 取消 */
 function handleCancel() {
+  pendingSelectedId.value = undefined
   visible.value = false
 }
 
@@ -227,8 +245,11 @@ function handleConfirm() {
 /** 同步外部绑定值 */
 watch(
   () => props.modelValue,
-  (value) => {
-    resolveItemById(value)
+  async (value) => {
+    const item = await resolveItemById(value)
+    if (props.modelValue === value) {
+      selectedItem.value = item
+    }
   },
   { immediate: true },
 )

@@ -116,9 +116,14 @@ async function resolveItem(id?: number) {
     return
   }
   try {
-    selectedItem.value = await getWorkOrder(id)
+    const item = await getWorkOrder(id)
+    if (props.modelValue === id) {
+      selectedItem.value = item
+    }
   } catch {
-    selectedItem.value = undefined
+    if (props.modelValue === id) {
+      selectedItem.value = undefined
+    }
   }
 }
 
