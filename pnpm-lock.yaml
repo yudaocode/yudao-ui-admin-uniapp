@@ -61,8 +61,8 @@ importers:
         specifier: 3.0.0-4070620250821001
         version: 3.0.0-4070620250821001(postcss@8.5.6)(rollup@4.50.0)(vue@3.4.21(typescript@5.8.3))
       '@wot-ui/ui':
-        specifier: ^2.0.8
-        version: 2.0.8(vue@3.4.21(typescript@5.8.3))
+        specifier: ^2.2.0
+        version: 2.2.0(vue@3.4.21(typescript@5.8.3))
       abortcontroller-polyfill:
         specifier: ^1.7.8
         version: 1.7.8
@@ -2549,8 +2549,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@wot-ui/ui@2.0.8':
-    resolution: {integrity: sha512-JeC9rNlxG75zMplQNjBuJDRZhnTzMcY/D2FVdg+5DyZGAJdwc5RX0wtkZMGxRHSSQ8aq9cnjKrpZ45ZQv4Y6EQ==}
+  '@wot-ui/ui@2.2.0':
+    resolution: {integrity: sha512-/eC3sejQ7N1OCnLOHtG8K8nMXb16cf/7SwkLnDlpULlhbUCuW1fw3Qm4fvAbz0cNLSGlB0qJ/8axklww2C/BmQ==}
     engines: {HBuilderX: ^3.8.7}
     peerDependencies:
       vue: '>=3.2.47'
@@ -12355,7 +12355,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.11
 
-  '@wot-ui/ui@2.0.8(vue@3.4.21(typescript@5.8.3))':
+  '@wot-ui/ui@2.2.0(vue@3.4.21(typescript@5.8.3))':
     dependencies:
       vue: 3.4.21(typescript@5.8.3)
 

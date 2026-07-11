@@ -117,7 +117,7 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-4070620250821001",
     "@dcloudio/uni-mp-xhs": "3.0.0-4070620250821001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4070620250821001",
-    "@wot-ui/ui": "^2.0.8",
+    "@wot-ui/ui": "^2.2.0",
     "abortcontroller-polyfill": "^1.7.8",
     "crypto-js": "^4.2.0",
     "dayjs": "1.11.10",
