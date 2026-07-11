@@ -92,7 +92,7 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.vendorId != null) {
     conditions.push(`供应商:${vendorSearchPickerRef.value?.format(formData.vendorId) || formData.vendorId}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_OUTSOURCE_RECEIPT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索外协入库'
@@ -106,7 +106,7 @@ function handleSearch() {
     name: formData.name || undefined,
     workOrderCode: formData.workOrderCode || undefined,
     vendorId: formData.vendorId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     receiptDate: formatDateRange(formData.receiptDate),
   })
 }

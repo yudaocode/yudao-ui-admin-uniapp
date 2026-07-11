@@ -43,7 +43,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   code: undefined as string | undefined,
   name: undefined as string | undefined,
-  status: -1,
+  status: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -55,7 +55,7 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索车间'
@@ -67,7 +67,7 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -75,7 +75,7 @@ function handleSearch() {
 function handleReset() {
   formData.code = undefined
   formData.name = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

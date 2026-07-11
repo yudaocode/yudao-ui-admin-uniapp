@@ -69,7 +69,7 @@ interface MaterialStockSearchFormData {
   batchCode?: string
   warehouseId?: number
   locationId?: number
-  frozen?: boolean | -1
+  frozen?: boolean
 }
 
 const emit = defineEmits<{
@@ -97,13 +97,13 @@ const placeholder = computed(() => {
   if (formData.batchCode) {
     conditions.push(`批次号:${formData.batchCode}`)
   }
-  if (formData.warehouseId) {
+  if (formData.warehouseId !== undefined) {
     conditions.push(`仓库:${warehouseSearchPickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
-  if (formData.locationId) {
+  if (formData.locationId !== undefined) {
     conditions.push(`库区:${locationSearchPickerRef.value?.format(formData.locationId) || formData.locationId}`)
   }
-  if (formData.frozen !== undefined && formData.frozen !== -1) {
+  if (formData.frozen !== undefined) {
     conditions.push(`冻结:${frozenSearchPickerRef.value?.format(formData.frozen) || formData.frozen}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存台账'
@@ -119,7 +119,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    frozen: formData.frozen === -1 ? undefined : formData.frozen,
+    frozen: formData.frozen,
   })
 }
 

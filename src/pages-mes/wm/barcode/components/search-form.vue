@@ -84,7 +84,7 @@ const formData = reactive<SearchFormData>({
 
 const placeholder = computed(() => { // 搜索条件摘要
   const conditions: string[] = []
-  if (formData.bizType != null && formData.bizType !== -1) {
+  if (formData.bizType != null) {
     conditions.push(`业务类型:${getDictLabel(DICT_TYPE.MES_WM_BARCODE_BIZ_TYPE, formData.bizType)}`)
   }
   if (formData.bizCode) {
@@ -103,7 +103,7 @@ const placeholder = computed(() => { // 搜索条件摘要
 function handleSearch() {
   visible.value = false
   emit('search', {
-    bizType: formData.bizType === -1 ? undefined : formData.bizType,
+    bizType: formData.bizType,
     bizCode: formData.bizCode || undefined,
     bizName: formData.bizName || undefined,
     content: formData.content || undefined,

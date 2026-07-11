@@ -90,7 +90,7 @@ const placeholder = computed(() => {
   if (formData.clientId != null) {
     conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索销售退货'
@@ -101,7 +101,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

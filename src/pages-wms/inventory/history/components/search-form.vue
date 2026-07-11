@@ -102,7 +102,7 @@ const placeholder = computed(() => {
   if (formData.orderNo) {
     conditions.push(`单据:${formData.orderNo}`)
   }
-  if (formData.orderType !== undefined && formData.orderType !== -1) {
+  if (formData.orderType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.WMS_ORDER_TYPE, formData.orderType)}`)
   }
   if (formData.warehouseId) {
@@ -114,17 +114,11 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存流水'
 })
 
-/** 清理全部选项值 */
-function cleanPickerValue(value?: number) {
-  return value === -1 ? undefined : value
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    orderType: cleanPickerValue(formData.orderType),
     createTime: formatDateRange(formData.createTime),
   })
 }

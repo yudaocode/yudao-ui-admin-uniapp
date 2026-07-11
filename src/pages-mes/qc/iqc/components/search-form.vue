@@ -84,7 +84,7 @@ const placeholder = computed(() => {
   if (formData.itemId != null) {
     conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.checkResult != null && formData.checkResult !== -1) {
+  if (formData.checkResult != null) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   if (receiveDateRange.value?.length === 2) {
@@ -104,7 +104,7 @@ function handleSearch() {
     vendorId: formData.vendorId,
     vendorBatch: formData.vendorBatch || undefined,
     itemId: formData.itemId,
-    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
+    checkResult: formData.checkResult,
     receiveDate: formatDateRange(receiveDateRange.value),
     inspectDate: formatDateRange(inspectDateRange.value),
   })

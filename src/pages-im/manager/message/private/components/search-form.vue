@@ -52,11 +52,11 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const senderPickerRef = ref<any>() // 发送人选择器引用
 const receiverPickerRef = ref<any>() // 接收人选择器引用
-const typeColumns = [{ label: '全部', value: -1 }, ...getIntDictOptions(DICT_TYPE.IM_CONTENT_TYPE)] // 消息类型选项（-1 全部）
+const typeColumns = getIntDictOptions(DICT_TYPE.IM_CONTENT_TYPE) // 消息类型选项
 const formData = reactive({
   senderId: undefined as number | undefined,
   receiverId: undefined as number | undefined,
-  type: -1, // -1 表示全部
+  type: undefined as number | undefined,
   content: undefined as string | undefined,
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -70,7 +70,7 @@ const placeholder = computed(() => {
   if (formData.receiverId) {
     conditions.push(`接收人:${receiverPickerRef.value?.format(formData.receiverId) || formData.receiverId}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '' })}`)
   }
   if (formData.content) {
@@ -88,7 +88,7 @@ function handleSearch() {
   emit('search', {
     senderId: formData.senderId,
     receiverId: formData.receiverId,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
     content: formData.content,
     sendTime: formatDateRange(formData.sendTime),
   })
@@ -98,7 +98,7 @@ function handleSearch() {
 function handleReset() {
   formData.senderId = undefined
   formData.receiverId = undefined
-  formData.type = -1
+  formData.type = undefined
   formData.content = undefined
   formData.sendTime = [undefined, undefined]
   visible.value = false

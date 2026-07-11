@@ -66,7 +66,7 @@ const formData = reactive({
   checkTime: [undefined, undefined] as [any, any],
   warehouseId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   remark: undefined as string | undefined,
 }) // 搜索表单数据
 
@@ -85,7 +85,7 @@ const placeholder = computed(() => {
   if (formData.warehouseId) {
     conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存盘点'
@@ -100,7 +100,7 @@ function handleSearch() {
     checkTime: formatDateRange(formData.checkTime),
     warehouseId: formData.warehouseId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     remark: formData.remark || undefined,
   })
 }
@@ -112,7 +112,7 @@ function handleReset() {
   formData.checkTime = [undefined, undefined]
   formData.warehouseId = undefined
   formData.creator = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.remark = undefined
   visible.value = false
   emit('reset')

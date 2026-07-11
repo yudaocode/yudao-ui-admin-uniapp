@@ -113,7 +113,7 @@ const placeholder = computed(() => {
   if (formData.lotNumber) {
     conditions.push(`生产批号:${formData.lotNumber}`)
   }
-  if (formData.qualityStatus !== undefined && formData.qualityStatus !== -1) {
+  if (formData.qualityStatus !== undefined) {
     conditions.push(`质量:${qualityStatusSearchPickerRef.value?.format(formData.qualityStatus) || formData.qualityStatus}`)
   }
   if (formData.purchaseOrderCode) {
@@ -135,7 +135,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    qualityStatus: formData.qualityStatus === -1 ? undefined : formData.qualityStatus,
+    qualityStatus: formData.qualityStatus,
   })
 }
 

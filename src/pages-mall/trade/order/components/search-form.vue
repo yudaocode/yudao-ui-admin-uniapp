@@ -90,8 +90,8 @@
       </view>
       <yd-search-picker v-model="formData.payChannelCode" label="支付方式" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option />
       <yd-search-picker v-model="formData.terminal" label="订单来源" :dict-type="DICT_TYPE.TERMINAL" all-option />
-      <ExpressSearchPicker v-model="formData.logisticsId" />
-      <PickUpStoreSearchPicker v-model="formData.pickUpStoreId" />
+      <ExpressSearchPicker ref="expressSearchPickerRef" v-model="formData.logisticsId" />
+      <PickUpStoreSearchPicker ref="pickUpStoreSearchPickerRef" v-model="formData.pickUpStoreId" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           核销码
@@ -126,6 +126,8 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const expressSearchPickerRef = ref<InstanceType<typeof ExpressSearchPicker>>() // 快递公司搜索选择器
+const pickUpStoreSearchPickerRef = ref<InstanceType<typeof PickUpStoreSearchPicker>>() // 自提门店搜索选择器
 const formData = reactive({
   no: undefined as string | undefined,
   userId: undefined as string | undefined,
@@ -134,10 +136,10 @@ const formData = reactive({
   status: -1,
   type: -1,
   deliveryType: -1,
-  payChannelCode: -1 as number | string, // -1=全部，否则字符串支付渠道编码
-  terminal: -1,
-  logisticsId: -1,
-  pickUpStoreId: -1, // 单选自提门店，提交时转 pickUpStoreIds 数组
+  payChannelCode: undefined as string | undefined,
+  terminal: undefined as number | undefined,
+  logisticsId: undefined as number | undefined,
+  pickUpStoreId: undefined as number | undefined, // 单选自提门店，提交时转 pickUpStoreIds 数组
   pickUpVerifyCode: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -163,11 +165,17 @@ const placeholder = computed(() => {
   if (formData.deliveryType !== -1) {
     conditions.push(`配送:${getDictLabel(DICT_TYPE.TRADE_DELIVERY_TYPE, formData.deliveryType)}`)
   }
-  if (formData.payChannelCode !== -1) {
+  if (formData.payChannelCode !== undefined) {
     conditions.push(`支付:${getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, formData.payChannelCode)}`)
   }
-  if (formData.terminal !== -1) {
+  if (formData.terminal !== undefined) {
     conditions.push(`来源:${getDictLabel(DICT_TYPE.TERMINAL, formData.terminal)}`)
+  }
+  if (formData.logisticsId !== undefined) {
+    conditions.push(`快递:${expressSearchPickerRef.value?.format(formData.logisticsId) || formData.logisticsId}`)
+  }
+  if (formData.pickUpStoreId !== undefined) {
+    conditions.push(`门店:${pickUpStoreSearchPickerRef.value?.format(formData.pickUpStoreId) || formData.pickUpStoreId}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -186,10 +194,10 @@ function handleSearch() {
     status: formData.status === -1 ? undefined : formData.status,
     type: formData.type === -1 ? undefined : formData.type,
     deliveryType: formData.deliveryType === -1 ? undefined : formData.deliveryType,
-    payChannelCode: formData.payChannelCode === -1 ? undefined : formData.payChannelCode,
-    terminal: formData.terminal === -1 ? undefined : formData.terminal,
-    logisticsId: formData.logisticsId === -1 ? undefined : formData.logisticsId,
-    pickUpStoreIds: formData.pickUpStoreId === -1 ? undefined : [formData.pickUpStoreId],
+    payChannelCode: formData.payChannelCode,
+    terminal: formData.terminal,
+    logisticsId: formData.logisticsId,
+    pickUpStoreIds: formData.pickUpStoreId === undefined ? undefined : [formData.pickUpStoreId],
     pickUpVerifyCode: formData.pickUpVerifyCode || undefined,
     createTime: formatDateRange(formData.createTime),
   })
@@ -204,10 +212,10 @@ function handleReset() {
   formData.status = -1
   formData.type = -1
   formData.deliveryType = -1
-  formData.payChannelCode = -1
-  formData.terminal = -1
-  formData.logisticsId = -1
-  formData.pickUpStoreId = -1
+  formData.payChannelCode = undefined
+  formData.terminal = undefined
+  formData.logisticsId = undefined
+  formData.pickUpStoreId = undefined
   formData.pickUpVerifyCode = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false

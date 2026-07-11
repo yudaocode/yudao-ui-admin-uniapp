@@ -63,7 +63,7 @@ const placeholder = computed(() => {
   if (formData.workstationId) {
     conditions.push(`工作站:${workstationSearchPickerRef.value?.format(formData.workstationId) || formData.workstationId}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_PRO_WORK_RECORD_TYPE, formData.type)}`)
   }
   if (createTimeRange.value[0] && createTimeRange.value[1]) {
@@ -78,7 +78,7 @@ function handleSearch() {
   emit('search', {
     userId: formData.userId,
     workstationId: formData.workstationId,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
     createTime: formatDateRange(createTimeRange.value),
   })
 }

@@ -5,7 +5,7 @@
     :columns="options"
     label-key="name"
     value-key="id"
-    :placeholder="warehouseId ? placeholder : disabledPlaceholder"
+    :placeholder="warehouseId != null ? placeholder : disabledPlaceholder"
     all-option
     @update:model-value="handleUpdate"
   />
@@ -34,11 +34,11 @@ const emit = defineEmits<{
 }>()
 
 const options = ref<WmWarehouseLocation[]>([]) // 库区选项
-const pickerValue = computed(() => props.modelValue ?? -1)
+const pickerValue = computed(() => props.modelValue)
 
 /** 加载库区选项 */
 async function loadOptions() {
-  if (!props.warehouseId) {
+  if (props.warehouseId == null) {
     options.value = []
     return
   }
@@ -46,8 +46,8 @@ async function loadOptions() {
 }
 
 /** 更新库区编号 */
-function handleUpdate(value: number) {
-  const locationId = value === -1 ? undefined : value
+function handleUpdate(value?: number) {
+  const locationId = value
   emit('update:modelValue', locationId)
   emit('change', options.value.find(item => item.id === locationId))
 }

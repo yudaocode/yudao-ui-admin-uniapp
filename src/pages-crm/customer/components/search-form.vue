@@ -46,9 +46,9 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   name: undefined,
   mobile: undefined,
-  source: -1,
-  industryId: -1,
-  level: -1,
+  source: undefined as number | undefined,
+  industryId: undefined as number | undefined,
+  level: undefined as number | undefined,
 }) // 搜索表单数据
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -59,13 +59,13 @@ const placeholder = computed(() => {
   if (formData.mobile) {
     conditions.push(`手机:${formData.mobile}`)
   }
-  if (formData.source !== -1) {
+  if (formData.source !== undefined) {
     conditions.push(`来源:${getDictLabel(DICT_TYPE.CRM_CUSTOMER_SOURCE, formData.source)}`)
   }
-  if (formData.industryId !== -1) {
+  if (formData.industryId !== undefined) {
     conditions.push(`行业:${getDictLabel(DICT_TYPE.CRM_CUSTOMER_INDUSTRY, formData.industryId)}`)
   }
-  if (formData.level !== -1) {
+  if (formData.level !== undefined) {
     conditions.push(`级别:${getDictLabel(DICT_TYPE.CRM_CUSTOMER_LEVEL, formData.level)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索客户'
@@ -77,9 +77,9 @@ function handleSearch() {
   emit('search', {
     name: formData.name,
     mobile: formData.mobile,
-    source: formData.source === -1 ? undefined : formData.source,
-    industryId: formData.industryId === -1 ? undefined : formData.industryId,
-    level: formData.level === -1 ? undefined : formData.level,
+    source: formData.source,
+    industryId: formData.industryId,
+    level: formData.level,
   })
 }
 
@@ -87,9 +87,9 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.mobile = undefined
-  formData.source = -1
-  formData.industryId = -1
-  formData.level = -1
+  formData.source = undefined
+  formData.industryId = undefined
+  formData.level = undefined
   visible.value = false
   emit('reset')
 }

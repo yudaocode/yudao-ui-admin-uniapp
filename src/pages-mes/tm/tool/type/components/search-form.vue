@@ -43,7 +43,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   code: undefined as string | undefined,
   name: undefined as string | undefined,
-  maintenType: -1,
+  maintenType: undefined,
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件展示文案
   const conditions: string[] = []
@@ -53,7 +53,7 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.maintenType !== -1) {
+  if (formData.maintenType !== undefined) {
     conditions.push(`保养:${getDictLabel(DICT_TYPE.MES_TM_MAINTEN_TYPE, formData.maintenType)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工具类型'
@@ -65,7 +65,7 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    maintenType: formData.maintenType === -1 ? undefined : formData.maintenType,
+    maintenType: formData.maintenType,
   })
 }
 
@@ -73,7 +73,7 @@ function handleSearch() {
 function handleReset() {
   formData.code = undefined
   formData.name = undefined
-  formData.maintenType = -1
+  formData.maintenType = undefined
   visible.value = false
   emit('reset')
 }

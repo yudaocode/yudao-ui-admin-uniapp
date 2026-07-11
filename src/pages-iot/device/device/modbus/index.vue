@@ -307,8 +307,8 @@ const queryParams = ref<Record<string, any>>({}) // 查询参数
 const formData = reactive({
   name: undefined as string | undefined,
   identifier: undefined as string | undefined,
-  functionCode: -1,
-  status: -1,
+  functionCode: undefined as number | undefined,
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 const isClient = computed(() => productData.value?.protocolType === ProtocolTypeEnum.MODBUS_TCP_CLIENT) // Client 模式
 const isServer = computed(() => productData.value?.protocolType === ProtocolTypeEnum.MODBUS_TCP_SERVER) // Server 模式
@@ -320,10 +320,10 @@ const placeholder = computed(() => {
   if (formData.identifier) {
     conditions.push(`标识符:${formData.identifier}`)
   }
-  if (formData.functionCode !== -1) {
+  if (formData.functionCode !== undefined) {
     conditions.push(`功能码:${functionCodeSearchPickerRef.value?.format(formData.functionCode) || formData.functionCode}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length ? conditions.join(' | ') : '搜索 Modbus 点位'
@@ -468,8 +468,8 @@ function handleSearch() {
   queryParams.value = {
     name: formData.name || undefined,
     identifier: formData.identifier || undefined,
-    functionCode: formData.functionCode === -1 ? undefined : formData.functionCode,
-    status: formData.status === -1 ? undefined : formData.status,
+    functionCode: formData.functionCode,
+    status: formData.status,
   }
   pagingRef.value?.reload()
 }
@@ -478,8 +478,8 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.identifier = undefined
-  formData.functionCode = -1
-  formData.status = -1
+  formData.functionCode = undefined
+  formData.status = undefined
   visible.value = false
   queryParams.value = {}
   pagingRef.value?.reload()

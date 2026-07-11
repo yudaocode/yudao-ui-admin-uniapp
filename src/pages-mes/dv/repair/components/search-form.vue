@@ -89,8 +89,8 @@ const formData = reactive<Record<string, any>>({
   code: '',
   name: '',
   machineryId: undefined,
-  result: -1,
-  status: -1,
+  result: undefined,
+  status: undefined,
 }) // 搜索表单数据
 const selectedMachineryText = computed(() => {
   return selectedMachinery.value
@@ -110,10 +110,10 @@ const placeholder = computed(() => {
   if (selectedMachinery.value) {
     conditions.push(`设备:${selectedMachinery.value.code || selectedMachinery.value.name}`)
   }
-  if (formData.result !== -1) {
+  if (formData.result !== undefined) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_DV_REPAIR_RESULT, formData.result)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_DV_REPAIR_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索维修工单'
@@ -143,8 +143,8 @@ function handleSearch() {
     code: formData.code || undefined,
     name: formData.name || undefined,
     machineryId: formData.machineryId || undefined,
-    result: formData.result === -1 ? undefined : formData.result,
-    status: formData.status === -1 ? undefined : formData.status,
+    result: formData.result,
+    status: formData.status,
   })
 }
 
@@ -153,8 +153,8 @@ function handleReset() {
   formData.code = ''
   formData.name = ''
   formData.machineryId = undefined
-  formData.result = -1
-  formData.status = -1
+  formData.result = undefined
+  formData.status = undefined
   selectedMachinery.value = undefined
   visible.value = false
   emit('reset')

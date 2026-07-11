@@ -99,7 +99,7 @@ const formData = reactive<Record<string, any>>({
   planId: undefined,
   machineryId: undefined,
   userId: undefined,
-  status: -1,
+  status: undefined,
 }) // 搜索表单数据
 const selectedPlanText = computed(() => {
   return selectedPlan.value
@@ -125,7 +125,7 @@ const placeholder = computed(() => {
   if (userName) {
     conditions.push(`点检人:${userName}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_DV_CHECK_RECORD_STATUS, formData.status)}`)
   }
   if (formatDateRange(checkTimeRange.value)) {
@@ -175,7 +175,7 @@ function handleSearch() {
     planId: formData.planId || undefined,
     machineryId: formData.machineryId || undefined,
     userId: formData.userId || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     checkTime: formatDateRange(checkTimeRange.value),
   })
 }
@@ -185,7 +185,7 @@ function handleReset() {
   formData.planId = undefined
   formData.machineryId = undefined
   formData.userId = undefined
-  formData.status = -1
+  formData.status = undefined
   selectedPlan.value = undefined
   selectedMachinery.value = undefined
   checkTimeRange.value = [undefined, undefined]

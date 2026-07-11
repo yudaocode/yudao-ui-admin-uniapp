@@ -71,7 +71,7 @@ const placeholder = computed(() => {
   if (issueDateRange.value?.length === 2) {
     conditions.push('领料日期')
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_PRODUCT_ISSUE_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产领料'
@@ -84,7 +84,7 @@ function handleSearch() {
     code: formData.code || undefined,
     name: formData.name || undefined,
     issueDate: formatDateRange(issueDateRange.value),
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

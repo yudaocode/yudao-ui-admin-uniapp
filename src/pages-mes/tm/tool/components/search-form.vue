@@ -61,7 +61,7 @@ const formData = reactive({
   brand: undefined as string | undefined,
   specification: undefined as string | undefined,
   toolTypeId: undefined as number | undefined,
-  status: -1,
+  status: undefined,
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件展示文案
   const conditions: string[] = []
@@ -77,10 +77,10 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.specification) {
     conditions.push(`规格:${formData.specification}`)
   }
-  if (formData.toolTypeId) {
+  if (formData.toolTypeId !== undefined) {
     conditions.push(`类型:${toolTypeSearchPickerRef.value?.format(formData.toolTypeId) || formData.toolTypeId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_TM_TOOL_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工具'
@@ -95,7 +95,7 @@ function handleSearch() {
     brand: formData.brand || undefined,
     specification: formData.specification || undefined,
     toolTypeId: formData.toolTypeId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -106,7 +106,7 @@ function handleReset() {
   formData.brand = undefined
   formData.specification = undefined
   formData.toolTypeId = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

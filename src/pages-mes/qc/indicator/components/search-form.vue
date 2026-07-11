@@ -63,10 +63,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_INDICATOR_TYPE, formData.type)}`)
   }
-  if (formData.resultType != null && formData.resultType !== -1) {
+  if (formData.resultType != null) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_RESULT_TYPE, formData.resultType)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索质检指标'
@@ -78,8 +78,8 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
-    resultType: formData.resultType === -1 ? undefined : formData.resultType,
+    type: formData.type,
+    resultType: formData.resultType,
   })
 }
 

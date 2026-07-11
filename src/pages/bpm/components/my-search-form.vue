@@ -57,7 +57,7 @@ const formData = reactive({
   name: undefined as string | undefined,
   processDefinitionKey: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
-  status: -1, // -1 表示全部
+  status: undefined as number | undefined,
   category: undefined as string | undefined,
 }) // 搜索表单数据
 const visible = ref(false) // 搜索弹窗显示状态
@@ -77,7 +77,7 @@ const placeholder = computed(() => {
   if (formData.category) {
     conditions.push(`分类:${categoryPickerRef.value?.format(formData.category) || formData.category}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -91,7 +91,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -101,7 +101,7 @@ function handleReset() {
   formData.name = undefined
   formData.processDefinitionKey = undefined
   formData.createTime = [undefined, undefined]
-  formData.status = -1
+  formData.status = undefined
   formData.category = undefined
   visible.value = false
   emit('reset')

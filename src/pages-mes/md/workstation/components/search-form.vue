@@ -56,7 +56,7 @@ const formData = reactive({
   name: undefined as string | undefined,
   workshopId: undefined as number | undefined,
   processId: undefined as number | undefined,
-  status: -1,
+  status: undefined,
 }) // 搜索表单数据
 const workshopSearchPickerRef = ref<InstanceType<typeof WorkshopSearchPicker>>() // 车间搜索选择器
 const processSearchPickerRef = ref<InstanceType<typeof ProcessSearchPicker>>() // 工序搜索选择器
@@ -76,7 +76,7 @@ const placeholder = computed(() => {
   if (formData.processId) {
     conditions.push(`工序:${processSearchPickerRef.value?.format(formData.processId) || formData.processId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工作站'
@@ -90,7 +90,7 @@ function handleSearch() {
     name: formData.name || undefined,
     workshopId: formData.workshopId,
     processId: formData.processId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -100,7 +100,7 @@ function handleReset() {
   formData.name = undefined
   formData.workshopId = undefined
   formData.processId = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

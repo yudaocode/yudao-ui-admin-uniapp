@@ -65,7 +65,7 @@ const formData = reactive({
   moveTime: [undefined, undefined] as [any, any],
   fromWarehouseId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   remark: undefined as string | undefined,
 }) // 搜索表单数据
 
@@ -84,7 +84,7 @@ const placeholder = computed(() => {
   if (formData.fromWarehouseId) {
     conditions.push(`仓库:${warehousePickerRef.value?.format(formData.fromWarehouseId) || formData.fromWarehouseId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存调拨'
@@ -99,7 +99,7 @@ function handleSearch() {
     moveTime: formatDateRange(formData.moveTime),
     fromWarehouseId: formData.fromWarehouseId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     remark: formData.remark || undefined,
   })
 }
@@ -111,7 +111,7 @@ function handleReset() {
   formData.moveTime = [undefined, undefined]
   formData.fromWarehouseId = undefined
   formData.creator = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.remark = undefined
   visible.value = false
   emit('reset')

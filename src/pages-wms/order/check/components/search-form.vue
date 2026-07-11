@@ -62,7 +62,7 @@ const placeholder = computed(() => {
   if (formData.no) {
     conditions.push(`单号:${formData.no}`)
   }
-  if (formData.status !== undefined && formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.WMS_ORDER_STATUS, formData.status)}`)
   }
   if (formData.warehouseId) {
@@ -74,17 +74,11 @@ const placeholder = computed(() => {
   return conditions.length > 0 ? conditions.join(' | ') : '搜索盘库单'
 })
 
-/** 清理全部选项值 */
-function cleanPickerValue(value?: number) {
-  return value === -1 ? undefined : value
-}
-
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: cleanPickerValue(formData.status),
     orderTime: formatDateRange(formData.orderTime),
   })
 }

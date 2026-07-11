@@ -31,7 +31,7 @@ const emit = defineEmits<{
 }>()
 
 const options = ref<WmWarehouse[]>([]) // 仓库选项
-const pickerValue = computed(() => props.modelValue ?? -1)
+const pickerValue = computed(() => props.modelValue)
 
 /** 加载仓库选项 */
 async function loadOptions() {
@@ -42,8 +42,8 @@ async function loadOptions() {
 }
 
 /** 更新仓库编号 */
-function handleUpdate(value: number) {
-  const warehouseId = value === -1 ? undefined : value
+function handleUpdate(value?: number) {
+  const warehouseId = value
   emit('update:modelValue', warehouseId)
   emit('change', options.value.find(item => item.id === warehouseId))
 }

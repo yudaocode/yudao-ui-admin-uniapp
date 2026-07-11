@@ -54,7 +54,7 @@ const warehousePickerRef = ref<InstanceType<typeof WarehouseSearchPicker>>() // 
 const formData = reactive({
   productId: undefined as number | undefined,
   warehouseId: undefined as number | undefined,
-  bizType: -1,
+  bizType: undefined as number | undefined,
   bizNo: undefined as string | undefined,
   createTime: [undefined, undefined] as [any, any],
 }) // 搜索表单数据
@@ -68,7 +68,7 @@ const placeholder = computed(() => {
   if (formData.warehouseId) {
     conditions.push(`仓库:${warehousePickerRef.value?.format(formData.warehouseId) || formData.warehouseId}`)
   }
-  if (formData.bizType !== -1) {
+  if (formData.bizType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.ERP_STOCK_RECORD_BIZ_TYPE, formData.bizType)}`)
   }
   if (formData.bizNo) {
@@ -86,7 +86,7 @@ function handleSearch() {
   emit('search', {
     productId: formData.productId,
     warehouseId: formData.warehouseId,
-    bizType: formData.bizType === -1 ? undefined : formData.bizType,
+    bizType: formData.bizType,
     bizNo: formData.bizNo || undefined,
     createTime: formatDateRange(formData.createTime),
   })
@@ -96,7 +96,7 @@ function handleSearch() {
 function handleReset() {
   formData.productId = undefined
   formData.warehouseId = undefined
-  formData.bizType = -1
+  formData.bizType = undefined
   formData.bizNo = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false

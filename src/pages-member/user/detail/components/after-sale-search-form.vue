@@ -64,9 +64,9 @@ const formData = reactive({
   spuName: undefined as string | undefined,
   no: undefined as string | undefined,
   orderNo: undefined as string | undefined,
-  status: -1,
-  way: -1,
-  type: -1,
+  status: undefined as number | undefined,
+  way: undefined as number | undefined,
+  type: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -82,13 +82,13 @@ const placeholder = computed(() => {
   if (formData.orderNo) {
     conditions.push(`订单:${formData.orderNo}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.TRADE_AFTER_SALE_STATUS, formData.status)}`)
   }
-  if (formData.way !== -1) {
+  if (formData.way !== undefined) {
     conditions.push(`方式:${getDictLabel(DICT_TYPE.TRADE_AFTER_SALE_WAY, formData.way)}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.TRADE_AFTER_SALE_TYPE, formData.type)}`)
   }
   if (formData.createTime[0] && formData.createTime[1]) {
@@ -102,9 +102,9 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
-    way: formData.way === -1 ? undefined : formData.way,
-    type: formData.type === -1 ? undefined : formData.type,
+    status: formData.status,
+    way: formData.way,
+    type: formData.type,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -114,9 +114,9 @@ function handleReset() {
   formData.spuName = undefined
   formData.no = undefined
   formData.orderNo = undefined
-  formData.status = -1
-  formData.way = -1
-  formData.type = -1
+  formData.status = undefined
+  formData.way = undefined
+  formData.type = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

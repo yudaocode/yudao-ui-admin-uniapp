@@ -63,7 +63,7 @@ const formData = reactive({
   productId: defaultProductId as number | undefined,
   identifier: undefined as string | undefined,
   name: undefined as string | undefined,
-  type: -1,
+  type: undefined as number | undefined,
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件文案
   const conditions: string[] = []
@@ -76,7 +76,7 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.IOT_THING_MODEL_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索物模型'
@@ -89,7 +89,7 @@ function handleSearch() {
     productId: formData.productId,
     identifier: formData.identifier || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
   })
 }
 
@@ -98,7 +98,7 @@ function handleReset() {
   formData.productId = defaultProductId
   formData.identifier = undefined
   formData.name = undefined
-  formData.type = -1
+  formData.type = undefined
   visible.value = false
   emit('reset')
 }

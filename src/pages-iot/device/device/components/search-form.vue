@@ -69,8 +69,8 @@ const formData = reactive({
   deviceName: undefined as string | undefined,
   nickname: undefined as string | undefined,
   productId: defaultProductId as number | undefined,
-  deviceType: -1,
-  status: -1,
+  deviceType: undefined as number | undefined,
+  status: undefined as number | undefined,
   groupId: undefined as number | undefined,
 }) // 搜索表单数据
 const placeholder = computed(() => {
@@ -84,10 +84,10 @@ const placeholder = computed(() => {
   if (formData.productId) {
     conditions.push(`产品:${productPickerRef.value?.format(formData.productId) || formData.productId}`)
   }
-  if (formData.deviceType !== -1) {
+  if (formData.deviceType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.IOT_PRODUCT_DEVICE_TYPE, formData.deviceType)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IOT_DEVICE_STATE, formData.status)}`)
   }
   if (formData.groupId) {
@@ -103,9 +103,9 @@ function handleSearch() {
     deviceName: formData.deviceName || undefined,
     nickname: formData.nickname || undefined,
     productId: formData.productId,
-    deviceType: formData.deviceType === -1 ? undefined : formData.deviceType,
+    deviceType: formData.deviceType,
     groupId: formData.groupId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -114,9 +114,9 @@ function handleReset() {
   formData.deviceName = undefined
   formData.nickname = undefined
   formData.productId = defaultProductId
-  formData.deviceType = -1
+  formData.deviceType = undefined
   formData.groupId = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

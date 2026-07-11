@@ -190,7 +190,6 @@
           :label="activeTab === 1 ? '事件标识符' : '服务标识符'"
           :columns="currentMessageIdentifierOptions"
           all-option
-          all-value=""
         />
         <yd-search-date-range v-model="messageSearchData.times" label="时间范围" />
         <view class="yd-search-form-actions">
@@ -278,7 +277,7 @@ const eventPagingRef = ref<any>() // 事件分页组件引用
 const servicePagingRef = ref<any>() // 服务分页组件引用
 const messageSearchVisible = ref(false) // 事件/服务搜索弹窗显示状态
 const messageSearchData = reactive({
-  identifier: '',
+  identifier: undefined as string | undefined,
   times: [undefined, undefined] as MessageSearchTimes,
 }) // 事件/服务搜索表单数据
 const eventQueryParams = ref<Record<string, any>>({}) // 事件查询参数
@@ -533,7 +532,7 @@ function buildMessagePlaceholder(params: Record<string, any>, fallback: string) 
 /** 打开事件/服务搜索 */
 function openMessageSearch() {
   const params = activeTab.value === 1 ? eventQueryParams.value : serviceQueryParams.value
-  messageSearchData.identifier = params.identifier ?? ''
+  messageSearchData.identifier = params.identifier
   messageSearchData.times = (params.times || [undefined, undefined]) as MessageSearchTimes
   messageSearchVisible.value = true
 }
@@ -541,7 +540,7 @@ function openMessageSearch() {
 /** 事件/服务搜索按钮操作 */
 function handleMessageSearch() {
   const params = {
-    identifier: messageSearchData.identifier || undefined,
+    identifier: messageSearchData.identifier,
     times: messageSearchData.times,
   }
   if (activeTab.value === 1) {
@@ -556,7 +555,7 @@ function handleMessageSearch() {
 
 /** 事件/服务重置按钮操作 */
 function handleMessageReset() {
-  messageSearchData.identifier = ''
+  messageSearchData.identifier = undefined
   messageSearchData.times = [undefined, undefined] as MessageSearchTimes
   if (activeTab.value === 1) {
     eventQueryParams.value = {}

@@ -68,8 +68,8 @@ const formData = reactive<Record<string, any>>({
   name: undefined,
   nickname: undefined,
   englishName: undefined,
-  type: -1,
-  status: -1,
+  type: undefined,
+  status: undefined,
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索条件展示文案
@@ -86,10 +86,10 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.englishName) {
     conditions.push(`英文:${formData.englishName}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_CLIENT_TYPE, formData.type)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索客户'
@@ -103,8 +103,8 @@ function handleSearch() {
     name: formData.name || undefined,
     nickname: formData.nickname || undefined,
     englishName: formData.englishName || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
   })
 }
 
@@ -114,8 +114,8 @@ function handleReset() {
   formData.name = undefined
   formData.nickname = undefined
   formData.englishName = undefined
-  formData.type = -1
-  formData.status = -1
+  formData.type = undefined
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

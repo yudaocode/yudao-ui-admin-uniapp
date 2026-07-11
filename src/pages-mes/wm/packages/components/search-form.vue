@@ -86,7 +86,7 @@ const placeholder = computed(() => {
   if (inspectorName) {
     conditions.push(`检查员:${inspectorName}`)
   }
-  if (formData.status !== undefined && formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索装箱单'
@@ -100,7 +100,7 @@ function handleSearch() {
     salesOrderCode: formData.salesOrderCode || undefined,
     clientId: formData.clientId,
     inspectorUserId: formData.inspectorUserId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

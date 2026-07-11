@@ -36,14 +36,12 @@
           label="消息方向"
           :columns="directionOptions"
           all-option
-          all-value=""
         />
         <yd-search-picker
           v-model="formData.reply"
           label="是否回复"
           :columns="replyOptions"
           all-option
-          all-value=""
         />
         <view class="yd-search-form-item">
           <view class="yd-search-form-label">
@@ -129,8 +127,8 @@ const autoRefresh = ref(false) // 定时刷新开关
 let autoRefreshTimer: any = null // 定时刷新定时器
 const formData = reactive({
   method: undefined as string | undefined,
-  upstream: '' as boolean | '',
-  reply: '' as boolean | '',
+  upstream: undefined as boolean | undefined,
+  reply: undefined as boolean | undefined,
   identifier: undefined as string | undefined,
   times: [undefined, undefined] as [any, any],
 }) // 搜索表单数据
@@ -148,10 +146,10 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.method) {
     conditions.push(`方法:${getDeviceMessageMethodLabel(formData.method)}`)
   }
-  if (formData.upstream !== '') {
+  if (formData.upstream !== undefined) {
     conditions.push(formData.upstream ? '方向:上行' : '方向:下行')
   }
-  if (formData.reply !== '') {
+  if (formData.reply !== undefined) {
     conditions.push(formData.reply ? '回复:是' : '回复:否')
   }
   if (formData.identifier) {
@@ -200,8 +198,8 @@ function handleSearch() {
   visible.value = false
   queryParams.value = {
     method: formData.method,
-    upstream: formData.upstream === '' ? undefined : formData.upstream,
-    reply: formData.reply === '' ? undefined : formData.reply,
+    upstream: formData.upstream,
+    reply: formData.reply,
     identifier: formData.identifier || undefined,
     times: formatDateRange(formData.times),
   }
@@ -211,8 +209,8 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.method = undefined
-  formData.upstream = ''
-  formData.reply = ''
+  formData.upstream = undefined
+  formData.reply = undefined
   formData.identifier = undefined
   formData.times = [undefined, undefined]
   visible.value = false

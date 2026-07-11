@@ -53,7 +53,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   name: undefined as string | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件文案
@@ -61,7 +61,7 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.name) {
     conditions.push(`配置名称:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -75,7 +75,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     name: formData.name || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -83,7 +83,7 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.name = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

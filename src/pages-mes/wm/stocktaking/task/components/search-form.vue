@@ -91,10 +91,10 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${typeSearchPickerRef.value?.format(formData.type) || formData.type}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索盘点任务'
@@ -106,9 +106,9 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
     takingDate: formatDateRange(formData.takingDate),
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

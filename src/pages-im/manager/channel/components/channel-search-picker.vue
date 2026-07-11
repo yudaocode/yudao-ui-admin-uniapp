@@ -8,7 +8,6 @@
     value-key="id"
     :placeholder="placeholder"
     all-option
-    :all-value="0"
     @update:model-value="handleUpdate"
   />
 </template>
@@ -29,7 +28,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
+  'update:modelValue': [value?: number]
   'change': [item: ImManagerChannelVO | undefined]
 }>()
 
@@ -37,14 +36,14 @@ const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
 const options = ref<ImManagerChannelVO[]>([]) // 频道选项
 
 /** 更新频道 */
-function handleUpdate(value: number) {
+function handleUpdate(value?: number) {
   emit('update:modelValue', value)
   emit('change', options.value.find(item => item.id === value))
 }
 
 /** 格式化频道 */
 function format(value?: number) {
-  return pickerRef.value?.format(value) || (value == null || value === 0 ? '' : String(value))
+  return pickerRef.value?.format(value) || (value === undefined ? '' : String(value))
 }
 
 defineExpose({ format })

@@ -70,7 +70,7 @@ const formData = reactive({
   creator: undefined as number | undefined,
   financeUserId: undefined as number | undefined,
   accountId: undefined as number | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   remark: undefined as string | undefined,
   bizNo: undefined as string | undefined,
 })
@@ -90,7 +90,7 @@ const placeholder = computed(() => {
   if (formData.accountId) {
     conditions.push(`账户:${accountPickerRef.value?.format(formData.accountId) || formData.accountId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.ERP_AUDIT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索收款单'
@@ -106,7 +106,7 @@ function handleSearch() {
     creator: formData.creator != null ? String(formData.creator) : undefined,
     financeUserId: formData.financeUserId != null ? String(formData.financeUserId) : undefined,
     accountId: formData.accountId,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     remark: formData.remark || undefined,
     bizNo: formData.bizNo || undefined,
   })
@@ -120,7 +120,7 @@ function handleReset() {
   formData.creator = undefined
   formData.financeUserId = undefined
   formData.accountId = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.remark = undefined
   formData.bizNo = undefined
   visible.value = false

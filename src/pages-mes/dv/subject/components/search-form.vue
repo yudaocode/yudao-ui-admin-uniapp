@@ -67,8 +67,8 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   code: '',
   name: '',
-  type: -1,
-  status: -1,
+  type: undefined,
+  status: undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -80,10 +80,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`项目名称:${formData.name}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`项目类型:${getDictLabel(DICT_TYPE.MES_DV_SUBJECT_TYPE, formData.type)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索点检项目'
@@ -100,8 +100,8 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
   })
 }
 
@@ -109,8 +109,8 @@ function handleSearch() {
 function handleReset() {
   formData.code = ''
   formData.name = ''
-  formData.type = -1
-  formData.status = -1
+  formData.type = undefined
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

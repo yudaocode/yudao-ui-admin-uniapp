@@ -95,7 +95,7 @@ const formData = reactive({
   userId: undefined as number | undefined,
   applicationName: undefined as string | undefined,
   requestUrl: undefined as string | undefined,
-  userType: -1, // -1 表示全部
+  userType: undefined as number | undefined,
   processStatus: -1, // -1 表示全部
   exceptionTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -112,7 +112,7 @@ const placeholder = computed(() => {
   if (formData.requestUrl) {
     conditions.push(`地址:${formData.requestUrl}`)
   }
-  if (formData.userType !== -1) {
+  if (formData.userType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.USER_TYPE, formData.userType)}`)
   }
   if (formData.processStatus !== -1) {
@@ -129,7 +129,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    userType: formData.userType === -1 ? undefined : formData.userType,
+    userType: formData.userType,
     processStatus: formData.processStatus === -1 ? undefined : formData.processStatus,
     exceptionTime: formatDateRange(formData.exceptionTime),
   })
@@ -140,7 +140,7 @@ function handleReset() {
   formData.userId = undefined
   formData.applicationName = undefined
   formData.requestUrl = undefined
-  formData.userType = -1
+  formData.userType = undefined
   formData.processStatus = -1
   formData.exceptionTime = [undefined, undefined]
   visible.value = false

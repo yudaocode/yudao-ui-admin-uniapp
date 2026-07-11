@@ -69,10 +69,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_TRANSFER_TYPE, formData.type)}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_TRANSFER_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索库存调拨'
@@ -84,8 +84,8 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
   })
 }
 

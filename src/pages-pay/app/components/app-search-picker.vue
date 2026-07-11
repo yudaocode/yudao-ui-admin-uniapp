@@ -7,7 +7,6 @@
     label-key="name"
     value-key="id"
     all-option
-    :all-value="0"
     placeholder="请选择支付应用"
     @update:model-value="handleUpdate"
   />
@@ -20,11 +19,11 @@ import { onMounted, ref } from 'vue'
 import { getPayAppList } from '@/api/pay/app'
 
 const props = defineProps<{
-  modelValue?: number | string
+  modelValue?: number
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number | string]
+  'update:modelValue': [value?: number]
   'change': [name: string]
 }>()
 
@@ -32,16 +31,15 @@ const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
 const options = ref<PayApp[]>([]) // 支付应用选项
 
 /** 更新支付应用编号 */
-function handleUpdate(value: number | string) {
-  const appId = Number(value) === 0 ? 0 : value
-  emit('update:modelValue', appId)
-  emit('change', Number(appId) > 0 ? options.value.find(item => item.id === Number(appId))?.name || '' : '')
+function handleUpdate(value?: number) {
+  emit('update:modelValue', value)
+  emit('change', value !== undefined ? options.value.find(item => item.id === value)?.name || '' : '')
 }
 
 /** 格式化支付应用编号 */
-function format(value?: number | string) {
+function format(value?: number) {
   const appId = arguments.length > 0 ? value : props.modelValue
-  if (appId == null || appId === '' || Number(appId) === 0) {
+  if (appId === undefined) {
     return ''
   }
   return pickerRef.value?.format(appId) || String(appId)

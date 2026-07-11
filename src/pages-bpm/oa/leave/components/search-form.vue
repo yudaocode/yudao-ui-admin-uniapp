@@ -52,8 +52,8 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
-  type: -1, // -1 表示全部
-  status: -1, // -1 表示全部
+  type: undefined as number | undefined,
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
   reason: undefined as string | undefined,
 }) // 搜索表单数据
@@ -61,10 +61,10 @@ const formData = reactive({
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.BPM_OA_LEAVE_TYPE, formData.type)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS, formData.status)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -80,8 +80,8 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
     reason: formData.reason || undefined,
     createTime: formatDateRange(formData.createTime),
   })
@@ -89,8 +89,8 @@ function handleSearch() {
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.type = -1
-  formData.status = -1
+  formData.type = undefined
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   formData.reason = undefined
   visible.value = false

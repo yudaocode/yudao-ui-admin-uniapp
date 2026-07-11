@@ -23,7 +23,7 @@
           clearable
         />
       </view>
-      <yd-search-picker v-model="formData.type" label="监听器类型" :dict-type="DICT_TYPE.BPM_PROCESS_LISTENER_TYPE" dict-kind="str" all-option all-value="" />
+      <yd-search-picker v-model="formData.type" label="监听器类型" :dict-type="DICT_TYPE.BPM_PROCESS_LISTENER_TYPE" dict-kind="str" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -50,7 +50,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   name: undefined as string | undefined,
-  type: '', // 空字符串表示全部
+  type: undefined as string | undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -59,7 +59,7 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名字:${formData.name}`)
   }
-  if (formData.type) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.BPM_PROCESS_LISTENER_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索流程监听器'
@@ -70,14 +70,14 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    type: formData.type || undefined,
+    type: formData.type,
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.name = undefined
-  formData.type = ''
+  formData.type = undefined
   visible.value = false
   emit('reset')
 }

@@ -71,7 +71,7 @@ const placeholder = computed(() => {
   if (formData.workOrderId != null) {
     conditions.push(`工单:${workOrderSearchPickerRef.value?.format(formData.workOrderId) || formData.workOrderId}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_RETURN_ISSUE_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产退料'
@@ -84,7 +84,7 @@ function handleSearch() {
     code: formData.code || undefined,
     name: formData.name || undefined,
     workOrderId: formData.workOrderId,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
   })
 }
 

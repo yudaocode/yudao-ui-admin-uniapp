@@ -33,7 +33,7 @@ const emit = defineEmits<{ search: [data: Record<string, any>], reset: [] }>()
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   name: undefined,
-  status: -1, // -1 表示全部
+  status: undefined,
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索条件展示文案
@@ -41,7 +41,7 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索设备类型'
@@ -52,14 +52,14 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     name: formData.name || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.name = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

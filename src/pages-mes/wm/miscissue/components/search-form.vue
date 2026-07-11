@@ -109,7 +109,7 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_WM_MISC_ISSUE_TYPE, formData.type)}`)
   }
   if (formData.sourceDocType) {
@@ -118,7 +118,7 @@ const placeholder = computed(() => { // 搜索条件摘要
   if (formData.sourceDocCode) {
     conditions.push(`来源单据编号:${formData.sourceDocCode}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_WM_MISC_ISSUE_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索其他出库'
@@ -130,11 +130,11 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
     sourceDocType: formData.sourceDocType || undefined,
     sourceDocCode: formData.sourceDocCode || undefined,
     issueDate: formatDateRange(formData.issueDate),
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

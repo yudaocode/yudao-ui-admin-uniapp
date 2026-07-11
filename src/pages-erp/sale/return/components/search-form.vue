@@ -78,8 +78,8 @@ const formData = reactive({
   orderNo: undefined as string | undefined,
   accountId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  status: -1,
-  refundStatus: -1,
+  status: undefined as number | undefined,
+  refundStatus: undefined as number | undefined,
   remark: undefined as string | undefined,
 }) // 搜索表单数据
 const refundStatusColumns = [
@@ -115,10 +115,10 @@ const placeholder = computed(() => {
   if (formData.creator) {
     conditions.push(`创建人:${creatorPickerRef.value?.format(formData.creator) || formData.creator}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
-  if (formData.refundStatus !== -1) {
+  if (formData.refundStatus !== undefined) {
     conditions.push(`退款:${refundStatusPickerRef.value?.format(formData.refundStatus) || formData.refundStatus}`)
   }
   if (formData.remark) {
@@ -139,8 +139,8 @@ function handleSearch() {
     orderNo: formData.orderNo || undefined,
     accountId: formData.accountId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
-    refundStatus: formData.refundStatus === -1 ? undefined : formData.refundStatus,
+    status: formData.status,
+    refundStatus: formData.refundStatus,
     remark: formData.remark || undefined,
   })
 }
@@ -155,8 +155,8 @@ function handleReset() {
   formData.orderNo = undefined
   formData.accountId = undefined
   formData.creator = undefined
-  formData.status = -1
-  formData.refundStatus = -1
+  formData.status = undefined
+  formData.refundStatus = undefined
   formData.remark = undefined
   visible.value = false
   emit('reset')

@@ -20,7 +20,7 @@
         <wd-input v-model="formData.no" placeholder="请输入订单号" clearable />
       </view>
       <yd-search-picker v-model="formData.status" label="订单状态" :dict-type="DICT_TYPE.TRADE_ORDER_STATUS" all-option />
-      <yd-search-picker v-model="formData.payChannelCode" label="支付方式" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
+      <yd-search-picker v-model="formData.payChannelCode" label="支付方式" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option />
       <yd-search-picker v-model="formData.terminal" label="订单来源" :dict-type="DICT_TYPE.TERMINAL" all-option />
       <yd-search-picker v-model="formData.type" label="订单类型" :dict-type="DICT_TYPE.TRADE_ORDER_TYPE" all-option />
       <yd-search-picker v-model="formData.deliveryType" label="配送方式" :dict-type="DICT_TYPE.TRADE_DELIVERY_TYPE" all-option />
@@ -52,11 +52,11 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   no: undefined as string | undefined,
-  status: -1,
-  type: -1,
-  deliveryType: -1,
-  payChannelCode: '' as string,
-  terminal: -1,
+  status: undefined as number | undefined,
+  type: undefined as number | undefined,
+  deliveryType: undefined as number | undefined,
+  payChannelCode: undefined as string | undefined,
+  terminal: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -66,19 +66,19 @@ const placeholder = computed(() => {
   if (formData.no) {
     conditions.push(`订单:${formData.no}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.TRADE_ORDER_STATUS, formData.status)}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.TRADE_ORDER_TYPE, formData.type)}`)
   }
-  if (formData.deliveryType !== -1) {
+  if (formData.deliveryType !== undefined) {
     conditions.push(`配送:${getDictLabel(DICT_TYPE.TRADE_DELIVERY_TYPE, formData.deliveryType)}`)
   }
-  if (formData.payChannelCode) {
+  if (formData.payChannelCode !== undefined) {
     conditions.push(`支付:${getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, formData.payChannelCode)}`)
   }
-  if (formData.terminal !== -1) {
+  if (formData.terminal !== undefined) {
     conditions.push(`来源:${getDictLabel(DICT_TYPE.TERMINAL, formData.terminal)}`)
   }
   if (formData.createTime[0] && formData.createTime[1]) {
@@ -92,11 +92,11 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
-    type: formData.type === -1 ? undefined : formData.type,
-    deliveryType: formData.deliveryType === -1 ? undefined : formData.deliveryType,
-    payChannelCode: formData.payChannelCode || undefined,
-    terminal: formData.terminal === -1 ? undefined : formData.terminal,
+    status: formData.status,
+    type: formData.type,
+    deliveryType: formData.deliveryType,
+    payChannelCode: formData.payChannelCode,
+    terminal: formData.terminal,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -104,11 +104,11 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.no = undefined
-  formData.status = -1
-  formData.type = -1
-  formData.deliveryType = -1
-  formData.payChannelCode = ''
-  formData.terminal = -1
+  formData.status = undefined
+  formData.type = undefined
+  formData.deliveryType = undefined
+  formData.payChannelCode = undefined
+  formData.terminal = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

@@ -65,7 +65,7 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`编号:${formData.code}`)
   }
-  if (formData.status !== undefined && formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索商品分类'
@@ -76,7 +76,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

@@ -66,10 +66,10 @@ const processStatusOptions = [ // 处理状态选项
 ]
 const formData = reactive({
   configId: undefined as number | undefined,
-  configLevel: -1,
+  configLevel: undefined as number | undefined,
   productId: undefined as number | undefined,
   deviceId: undefined as number | undefined,
-  processStatus: -1 as -1 | boolean,
+  processStatus: undefined as boolean | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 const placeholder = computed(() => { // 搜索条件文案
@@ -77,7 +77,7 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.configId) {
     conditions.push(`配置:${configPickerRef.value?.format(formData.configId) || formData.configId}`)
   }
-  if (formData.configLevel !== -1) {
+  if (formData.configLevel !== undefined) {
     conditions.push(`级别:${getDictLabel(DICT_TYPE.IOT_ALERT_LEVEL, formData.configLevel)}`)
   }
   if (formData.productId) {
@@ -86,7 +86,7 @@ const placeholder = computed(() => { // 搜索条件文案
   if (formData.deviceId !== undefined) {
     conditions.push(`设备:${devicePickerRef.value?.format(formData.deviceId) || formData.deviceId}`)
   }
-  if (formData.processStatus !== -1) {
+  if (formData.processStatus !== undefined) {
     conditions.push(`处理:${formData.processStatus ? '已处理' : '未处理'}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -105,10 +105,10 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     configId: formData.configId,
-    configLevel: formData.configLevel === -1 ? undefined : formData.configLevel,
+    configLevel: formData.configLevel,
     productId: formData.productId,
     deviceId: formData.deviceId === undefined ? undefined : String(formData.deviceId),
-    processStatus: formData.processStatus === -1 ? undefined : formData.processStatus,
+    processStatus: formData.processStatus,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -116,10 +116,10 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.configId = undefined
-  formData.configLevel = -1
+  formData.configLevel = undefined
   formData.productId = undefined
   formData.deviceId = undefined
-  formData.processStatus = -1
+  formData.processStatus = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

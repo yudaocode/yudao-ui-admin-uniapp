@@ -14,7 +14,7 @@
   >
     <view class="yd-search-form-container">
       <AppSearchPicker ref="appPickerRef" v-model="formData.appId" />
-      <yd-search-picker ref="channelPickerRef" v-model="formData.channelCode" label="支付渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
+      <yd-search-picker ref="channelPickerRef" v-model="formData.channelCode" label="支付渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           商户单号
@@ -65,22 +65,22 @@ const appPickerRef = ref<InstanceType<typeof AppSearchPicker>>()
 const channelPickerRef = ref<YdSearchPickerExpose>()
 const statusPickerRef = ref<YdSearchPickerExpose>()
 const formData = reactive({
-  appId: 0,
-  channelCode: '',
+  appId: undefined as number | undefined,
+  channelCode: undefined as string | undefined,
   merchantOrderId: undefined as string | undefined,
   no: undefined as string | undefined,
   channelOrderNo: undefined as string | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.appId) {
+  if (formData.appId !== undefined) {
     conditions.push(`应用:${appPickerRef.value?.format(formData.appId) || formData.appId}`)
   }
-  if (formData.channelCode) {
+  if (formData.channelCode !== undefined) {
     conditions.push(`渠道:${channelPickerRef.value?.format(formData.channelCode) || formData.channelCode}`)
   }
   if (formData.merchantOrderId) {
@@ -92,7 +92,7 @@ const placeholder = computed(() => {
   if (formData.channelOrderNo) {
     conditions.push(`渠道单号:${formData.channelOrderNo}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -105,24 +105,24 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    appId: formData.appId ? Number(formData.appId) : undefined,
-    channelCode: formData.channelCode || undefined,
+    appId: formData.appId,
+    channelCode: formData.channelCode,
     merchantOrderId: formData.merchantOrderId || undefined,
     no: formData.no || undefined,
     channelOrderNo: formData.channelOrderNo || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.appId = 0
-  formData.channelCode = ''
+  formData.appId = undefined
+  formData.channelCode = undefined
   formData.merchantOrderId = undefined
   formData.no = undefined
   formData.channelOrderNo = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

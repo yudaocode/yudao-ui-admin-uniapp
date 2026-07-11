@@ -49,7 +49,7 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索工艺路线'
@@ -59,9 +59,9 @@ const placeholder = computed(() => { // 搜索条件展示文案
 function handleSearch() {
   visible.value = false
   emit('search', {
-    code: formData.code || undefined,
-    name: formData.name || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    code: formData.code,
+    name: formData.name,
+    status: formData.status,
   })
 }
 

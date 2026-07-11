@@ -47,7 +47,7 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
-  bizType: -1,
+  bizType: undefined as number | undefined,
   title: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -55,7 +55,7 @@ const formData = reactive({
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.bizType !== -1) {
+  if (formData.bizType !== undefined) {
     conditions.push(`业务类型:${getDictLabel(DICT_TYPE.MEMBER_EXPERIENCE_BIZ_TYPE, formData.bizType)}`)
   }
   if (formData.title) {
@@ -72,14 +72,14 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    bizType: formData.bizType === -1 ? undefined : formData.bizType,
+    bizType: formData.bizType,
     createTime: formatDateRange(formData.createTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.bizType = -1
+  formData.bizType = undefined
   formData.title = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false

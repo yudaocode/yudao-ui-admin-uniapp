@@ -49,9 +49,9 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   code: '',
   name: '',
-  calendarType: -1,
-  shiftType: -1,
-  status: -1,
+  calendarType: undefined,
+  shiftType: undefined,
+  status: undefined,
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索摘要
@@ -62,13 +62,13 @@ const placeholder = computed(() => { // 搜索摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.calendarType !== -1) {
+  if (formData.calendarType !== undefined) {
     conditions.push(`班组:${getDictLabel(DICT_TYPE.MES_CAL_CALENDAR_TYPE, formData.calendarType)}`)
   }
-  if (formData.shiftType !== -1) {
+  if (formData.shiftType !== undefined) {
     conditions.push(`轮班:${getDictLabel(DICT_TYPE.MES_CAL_SHIFT_TYPE, formData.shiftType)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_CAL_PLAN_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索排班计划'
@@ -80,9 +80,9 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    calendarType: formData.calendarType === -1 ? undefined : formData.calendarType,
-    shiftType: formData.shiftType === -1 ? undefined : formData.shiftType,
-    status: formData.status === -1 ? undefined : formData.status,
+    calendarType: formData.calendarType,
+    shiftType: formData.shiftType,
+    status: formData.status,
   })
 }
 
@@ -90,9 +90,9 @@ function handleSearch() {
 function handleReset() {
   formData.code = ''
   formData.name = ''
-  formData.calendarType = -1
-  formData.shiftType = -1
-  formData.status = -1
+  formData.calendarType = undefined
+  formData.shiftType = undefined
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

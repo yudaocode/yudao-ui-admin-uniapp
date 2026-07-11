@@ -65,7 +65,7 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`编号:${formData.code}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_IPQC_TYPE, formData.type) || formData.type}`)
   }
   if (formData.workOrderId != null) {
@@ -74,7 +74,7 @@ const placeholder = computed(() => {
   if (formData.itemId != null) {
     conditions.push(`物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.checkResult != null && formData.checkResult !== -1) {
+  if (formData.checkResult != null) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索过程检验单（IPQC）'
@@ -85,10 +85,10 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     code: formData.code || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
     workOrderId: formData.workOrderId,
     itemId: formData.itemId,
-    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
+    checkResult: formData.checkResult,
   })
 }
 

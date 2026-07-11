@@ -72,7 +72,7 @@ const formData = reactive({
   code: undefined as string | undefined,
   name: undefined as string | undefined,
   itemTypeId: undefined as number | string | undefined,
-  status: -1,
+  status: undefined,
 }) // 搜索表单数据
 type ItemTypeTreeNode = Omit<MdItemType, 'children'> & {
   children?: ItemTypeTreeNode[]
@@ -88,7 +88,7 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索物料产品'
@@ -115,7 +115,7 @@ function handleSearch() {
     code: formData.code || undefined,
     name: formData.name || undefined,
     itemTypeId: formData.itemTypeId || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -124,7 +124,7 @@ function handleReset() {
   formData.code = undefined
   formData.name = undefined
   formData.itemTypeId = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

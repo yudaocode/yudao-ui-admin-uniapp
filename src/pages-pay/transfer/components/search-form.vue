@@ -19,14 +19,14 @@
         </view>
         <wd-input v-model="formData.no" placeholder="请输入转账单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.channelCode" label="转账渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option all-value="" />
+      <yd-search-picker v-model="formData.channelCode" label="转账渠道" :dict-type="DICT_TYPE.PAY_CHANNEL_CODE" dict-kind="str" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           商户单号
         </view>
         <wd-input v-model="formData.merchantOrderId" placeholder="请输入商户单号" clearable />
       </view>
-      <yd-search-picker v-model="formData.status" label="转账状态" :dict-type="DICT_TYPE.PAY_TRANSFER_STATUS" dict-kind="str" all-option all-value="" />
+      <yd-search-picker v-model="formData.status" label="转账状态" :dict-type="DICT_TYPE.PAY_TRANSFER_STATUS" dict-kind="str" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           收款人姓名
@@ -73,9 +73,9 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   no: undefined as string | undefined,
-  channelCode: '',
+  channelCode: undefined as string | undefined,
   merchantOrderId: undefined as string | undefined,
-  status: '',
+  status: undefined as string | undefined,
   userName: undefined as string | undefined,
   userAccount: undefined as string | undefined,
   channelTransferNo: undefined as string | undefined,
@@ -88,13 +88,13 @@ const placeholder = computed(() => {
   if (formData.no) {
     conditions.push(`单号:${formData.no}`)
   }
-  if (formData.channelCode) {
+  if (formData.channelCode !== undefined) {
     conditions.push(`渠道:${getDictLabel(DICT_TYPE.PAY_CHANNEL_CODE, formData.channelCode)}`)
   }
   if (formData.merchantOrderId) {
     conditions.push(`商户单号:${formData.merchantOrderId}`)
   }
-  if (formData.status) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.PAY_TRANSFER_STATUS, formData.status)}`)
   }
   if (formData.userName) {
@@ -117,9 +117,9 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     no: formData.no || undefined,
-    channelCode: formData.channelCode || undefined,
+    channelCode: formData.channelCode,
     merchantOrderId: formData.merchantOrderId || undefined,
-    status: formData.status || undefined,
+    status: formData.status,
     userName: formData.userName || undefined,
     userAccount: formData.userAccount || undefined,
     channelTransferNo: formData.channelTransferNo || undefined,
@@ -130,9 +130,9 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.no = undefined
-  formData.channelCode = ''
+  formData.channelCode = undefined
   formData.merchantOrderId = undefined
-  formData.status = ''
+  formData.status = undefined
   formData.userName = undefined
   formData.userAccount = undefined
   formData.channelTransferNo = undefined

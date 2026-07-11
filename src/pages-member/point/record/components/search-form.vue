@@ -54,7 +54,7 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   nickname: undefined as string | undefined,
-  bizType: -1,
+  bizType: undefined as number | undefined,
   title: undefined as string | undefined,
   createDate: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -65,7 +65,7 @@ const placeholder = computed(() => {
   if (formData.nickname) {
     conditions.push(`用户:${formData.nickname}`)
   }
-  if (formData.bizType !== -1) {
+  if (formData.bizType !== undefined) {
     conditions.push(`业务类型:${getDictLabel(DICT_TYPE.MEMBER_POINT_BIZ_TYPE, formData.bizType)}`)
   }
   if (formData.title) {
@@ -82,7 +82,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    bizType: formData.bizType === -1 ? undefined : formData.bizType,
+    bizType: formData.bizType,
     createDate: formatDateRange(formData.createDate),
   })
 }
@@ -90,7 +90,7 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.nickname = undefined
-  formData.bizType = -1
+  formData.bizType = undefined
   formData.title = undefined
   formData.createDate = [undefined, undefined]
   visible.value = false

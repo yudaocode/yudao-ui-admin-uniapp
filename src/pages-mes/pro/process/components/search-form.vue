@@ -49,7 +49,7 @@ const placeholder = computed(() => { // 搜索条件展示文案
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产工序'
@@ -61,7 +61,7 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 

@@ -81,8 +81,8 @@ const formData = reactive({
   orderNo: undefined as string | undefined,
   accountId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  paymentStatus: -1,
-  status: -1,
+  paymentStatus: undefined as number | undefined,
+  status: undefined as number | undefined,
   remark: undefined as string | undefined,
 })
 
@@ -122,10 +122,10 @@ const placeholder = computed(() => {
   if (formData.creator) {
     conditions.push(`创建人:${creatorPickerRef.value?.format(formData.creator) || formData.creator}`)
   }
-  if (formData.paymentStatus !== -1) {
+  if (formData.paymentStatus !== undefined) {
     conditions.push(`付款:${paymentStatusPickerRef.value?.format(formData.paymentStatus) || formData.paymentStatus}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.remark) {
@@ -146,8 +146,8 @@ function handleSearch() {
     orderNo: formData.orderNo || undefined,
     accountId: formData.accountId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    paymentStatus: formData.paymentStatus === -1 ? undefined : formData.paymentStatus,
-    status: formData.status === -1 ? undefined : formData.status,
+    paymentStatus: formData.paymentStatus,
+    status: formData.status,
     remark: formData.remark || undefined,
   })
 }
@@ -162,8 +162,8 @@ function handleReset() {
   formData.orderNo = undefined
   formData.accountId = undefined
   formData.creator = undefined
-  formData.paymentStatus = -1
-  formData.status = -1
+  formData.paymentStatus = undefined
+  formData.status = undefined
   formData.remark = undefined
   visible.value = false
   emit('reset')

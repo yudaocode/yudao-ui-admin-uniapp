@@ -101,7 +101,7 @@ const formData = reactive({
   userId: undefined as number | undefined,
   applicationName: undefined as string | undefined,
   requestUrl: undefined as string | undefined,
-  userType: -1, // -1 表示全部
+  userType: undefined as number | undefined,
   duration: undefined as number | undefined,
   resultCode: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -119,7 +119,7 @@ const placeholder = computed(() => {
   if (formData.requestUrl) {
     conditions.push(`地址:${formData.requestUrl}`)
   }
-  if (formData.userType !== -1) {
+  if (formData.userType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.USER_TYPE, formData.userType)}`)
   }
   if (formData.duration != null) {
@@ -141,7 +141,7 @@ function handleSearch() {
     userId: formData.userId,
     applicationName: formData.applicationName,
     requestUrl: formData.requestUrl,
-    userType: formData.userType === -1 ? undefined : formData.userType,
+    userType: formData.userType,
     duration: formData.duration,
     resultCode: formData.resultCode,
     beginTime: formatDateRange(formData.createTime),
@@ -153,7 +153,7 @@ function handleReset() {
   formData.userId = undefined
   formData.applicationName = undefined
   formData.requestUrl = undefined
-  formData.userType = -1
+  formData.userType = undefined
   formData.duration = undefined
   formData.resultCode = undefined
   formData.createTime = [undefined, undefined]

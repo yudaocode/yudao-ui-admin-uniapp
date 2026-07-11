@@ -81,10 +81,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${typeSearchPickerRef.value?.format(formData.type) || formData.type}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${statusSearchPickerRef.value?.format(formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索盘点方案'
@@ -95,8 +95,8 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
   })
 }
 

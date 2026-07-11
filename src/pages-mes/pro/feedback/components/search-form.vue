@@ -88,7 +88,7 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`单号:${formData.code}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_PRO_FEEDBACK_TYPE, formData.type) || formData.type}`)
   }
   if (formData.workOrderId) {
@@ -105,7 +105,7 @@ const placeholder = computed(() => {
     const nickname = creatorPickerRef.value?.format(formData.creator)
     conditions.push(`记录人:${nickname || formData.creator}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_PRO_FEEDBACK_STATUS, formData.status) || formData.status}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索生产报工'
@@ -116,8 +116,8 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
     feedbackTime: formatDateRange(formData.feedbackTime),
   })
 }

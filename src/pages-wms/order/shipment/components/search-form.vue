@@ -84,7 +84,7 @@ const placeholder = computed(() => {
   if (formData.bizOrderNo) {
     conditions.push(`业务:${formData.bizOrderNo}`)
   }
-  if (formData.status !== undefined && formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.WMS_ORDER_STATUS, formData.status)}`)
   }
   if (formData.warehouseId) {
@@ -96,24 +96,17 @@ const placeholder = computed(() => {
   if (formData.orderTime?.[0] && formData.orderTime?.[1]) {
     conditions.push(`日期:${formatDate(formData.orderTime[0])}~${formatDate(formData.orderTime[1])}`)
   }
-  if (formData.type !== undefined && formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.WMS_SHIPMENT_ORDER_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索出库单'
 })
-
-/** 清理全部选项值 */
-function cleanPickerValue(value?: number) {
-  return value === -1 ? undefined : value
-}
 
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    status: cleanPickerValue(formData.status),
-    type: cleanPickerValue(formData.type),
     orderTime: formatDateRange(formData.orderTime),
   })
 }

@@ -84,8 +84,8 @@ const formData = reactive({
   orderNo: undefined as string | undefined,
   accountId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  status: -1,
-  receiptStatus: -1,
+  status: undefined as number | undefined,
+  receiptStatus: undefined as number | undefined,
   remark: undefined as string | undefined,
 }) // 搜索表单数据
 const receiptStatusColumns = [
@@ -121,10 +121,10 @@ const placeholder = computed(() => {
   if (formData.creator) {
     conditions.push(`创建人:${creatorPickerRef.value?.format(formData.creator) || formData.creator}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
-  if (formData.receiptStatus !== -1) {
+  if (formData.receiptStatus !== undefined) {
     conditions.push(`收款:${receiptStatusPickerRef.value?.format(formData.receiptStatus) || formData.receiptStatus}`)
   }
   if (formData.remark) {
@@ -145,8 +145,8 @@ function handleSearch() {
     orderNo: formData.orderNo || undefined,
     accountId: formData.accountId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
-    receiptStatus: formData.receiptStatus === -1 ? undefined : formData.receiptStatus,
+    status: formData.status,
+    receiptStatus: formData.receiptStatus,
     remark: formData.remark || undefined,
   })
 }
@@ -161,8 +161,8 @@ function handleReset() {
   formData.orderNo = undefined
   formData.accountId = undefined
   formData.creator = undefined
-  formData.status = -1
-  formData.receiptStatus = -1
+  formData.status = undefined
+  formData.receiptStatus = undefined
   formData.remark = undefined
   visible.value = false
   emit('reset')

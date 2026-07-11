@@ -71,10 +71,10 @@ const appPickerRef = ref<InstanceType<typeof AppSearchPicker>>()
 const typePickerRef = ref<YdSearchPickerExpose>()
 const statusPickerRef = ref<YdSearchPickerExpose>()
 const formData = reactive({
-  appId: 0,
-  type: -1,
+  appId: undefined as number | undefined,
+  type: undefined as number | undefined,
   dataId: undefined as string | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   merchantOrderId: undefined as string | undefined,
   merchantRefundId: undefined as string | undefined,
   merchantTransferId: undefined as string | undefined,
@@ -84,16 +84,16 @@ const formData = reactive({
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.appId) {
+  if (formData.appId !== undefined) {
     conditions.push(`应用:${appPickerRef.value?.format(formData.appId) || formData.appId}`)
   }
-  if (formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${typePickerRef.value?.format(formData.type) || formData.type}`)
   }
   if (formData.dataId) {
     conditions.push(`关联:${formData.dataId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.merchantOrderId) {
@@ -115,10 +115,10 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    appId: formData.appId ? Number(formData.appId) : undefined,
-    type: formData.type === -1 ? undefined : formData.type,
+    appId: formData.appId,
+    type: formData.type,
     dataId: formData.dataId ? Number(formData.dataId) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     merchantOrderId: formData.merchantOrderId || undefined,
     merchantRefundId: formData.merchantRefundId || undefined,
     merchantTransferId: formData.merchantTransferId || undefined,
@@ -128,10 +128,10 @@ function handleSearch() {
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.appId = 0
-  formData.type = -1
+  formData.appId = undefined
+  formData.type = undefined
   formData.dataId = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.merchantOrderId = undefined
   formData.merchantRefundId = undefined
   formData.merchantTransferId = undefined

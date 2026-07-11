@@ -53,7 +53,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   code: '',
   name: '',
-  calendarType: -1,
+  calendarType: undefined,
 }) // 搜索表单数据
 
 const placeholder = computed(() => { // 搜索摘要
@@ -64,7 +64,7 @@ const placeholder = computed(() => { // 搜索摘要
   if (formData.name) {
     conditions.push(`名称:${formData.name}`)
   }
-  if (formData.calendarType !== -1) {
+  if (formData.calendarType !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_CAL_CALENDAR_TYPE, formData.calendarType)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索班组'
@@ -76,7 +76,7 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    calendarType: formData.calendarType === -1 ? undefined : formData.calendarType,
+    calendarType: formData.calendarType,
   })
 }
 
@@ -84,7 +84,7 @@ function handleSearch() {
 function handleReset() {
   formData.code = ''
   formData.name = ''
-  formData.calendarType = -1
+  formData.calendarType = undefined
   visible.value = false
   emit('reset')
 }

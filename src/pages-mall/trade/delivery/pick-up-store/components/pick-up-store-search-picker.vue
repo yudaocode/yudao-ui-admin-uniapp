@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number]
+  'update:modelValue': [value?: number]
   'change': [item: DeliveryPickUpStore | undefined]
 }>()
 
@@ -36,14 +36,14 @@ const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
 const options = ref<DeliveryPickUpStore[]>([]) // 自提门店选项
 
 /** 更新自提门店 */
-function handleUpdate(value: number) {
+function handleUpdate(value?: number) {
   emit('update:modelValue', value)
   emit('change', options.value.find(item => item.id === value))
 }
 
 /** 格式化自提门店 */
 function format(value?: number) {
-  return pickerRef.value?.format(value) || (value == null || value === -1 ? '' : String(value))
+  return pickerRef.value?.format(value) || (value === undefined ? '' : String(value))
 }
 
 defineExpose({ format })

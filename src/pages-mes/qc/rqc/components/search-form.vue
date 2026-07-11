@@ -81,7 +81,7 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`编号:${formData.code}`)
   }
-  if (formData.sourceDocType != null && formData.sourceDocType !== -1) {
+  if (formData.sourceDocType != null) {
     conditions.push(`来源:${getDictLabel(DICT_TYPE.MES_QC_SOURCE_DOC_TYPE, formData.sourceDocType) || formData.sourceDocType}`)
   }
   if (formData.sourceDocCode) {
@@ -93,7 +93,7 @@ const placeholder = computed(() => {
   if (formData.batchCode) {
     conditions.push(`批次:${formData.batchCode}`)
   }
-  if (formData.checkResult != null && formData.checkResult !== -1) {
+  if (formData.checkResult != null) {
     conditions.push(`结果:${getDictLabel(DICT_TYPE.MES_QC_CHECK_RESULT, formData.checkResult) || formData.checkResult}`)
   }
   if (formData.inspectorUserId != null) {
@@ -107,11 +107,11 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     code: formData.code || undefined,
-    sourceDocType: formData.sourceDocType === -1 ? undefined : formData.sourceDocType,
+    sourceDocType: formData.sourceDocType,
     sourceDocCode: formData.sourceDocCode || undefined,
     itemId: formData.itemId,
     batchCode: formData.batchCode || undefined,
-    checkResult: formData.checkResult === -1 ? undefined : formData.checkResult,
+    checkResult: formData.checkResult,
     inspectorUserId: formData.inspectorUserId,
   })
 }

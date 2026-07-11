@@ -78,7 +78,7 @@ const placeholder = computed(() => {
   if (formData.itemId !== undefined) {
     conditions.push(`产品物料:${itemSearchPickerRef.value?.format(formData.itemId) || formData.itemId}`)
   }
-  if (formData.qcType !== undefined && formData.qcType !== -1) {
+  if (formData.qcType !== undefined) {
     conditions.push(`检验类型:${getDictLabel(DICT_TYPE.MES_QC_TYPE, formData.qcType) || formData.qcType}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索待检任务'
@@ -89,7 +89,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     sourceDocCode: formData.sourceDocCode || undefined,
-    qcType: formData.qcType === -1 ? undefined : formData.qcType,
+    qcType: formData.qcType,
     itemId: formData.itemId,
   })
 }

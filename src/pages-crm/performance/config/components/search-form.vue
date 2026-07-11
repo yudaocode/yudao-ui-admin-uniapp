@@ -19,8 +19,8 @@
         </view>
         <wd-datetime-picker v-model="formData.yearTime" v-model:visible="yearVisible" title="请选择年份" type="year" />
       </view>
-      <yd-search-picker v-model="formData.bizType" label="目标类型" :columns="bizTypeColumns" all-option :all-value="0" />
-      <yd-search-picker v-model="formData.objectType" label="对象类型" :columns="objectTypeColumns" all-option :all-value="0" />
+      <yd-search-picker v-model="formData.bizType" label="目标类型" :columns="bizTypeColumns" all-option />
+      <yd-search-picker v-model="formData.objectType" label="对象类型" :columns="objectTypeColumns" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -47,8 +47,8 @@ const visible = ref(false) // 搜索弹窗显示状态
 const yearVisible = ref(false) // 年份选择器显隐
 const formData = reactive({
   yearTime: new Date(now.getFullYear(), 0, 1).getTime(),
-  bizType: 0,
-  objectType: 0,
+  bizType: undefined as number | undefined,
+  objectType: undefined as number | undefined,
 }) // 搜索表单数据
 
 const bizTypeColumns = [
@@ -65,10 +65,10 @@ const selectedYearText = computed(() => formatDate(formData.yearTime, 'YYYY'))
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions = [`年份:${selectedYearText.value}`]
-  if (formData.bizType) {
+  if (formData.bizType !== undefined) {
     conditions.push(`类型:${getBizTypeLabel(formData.bizType)}`)
   }
-  if (formData.objectType) {
+  if (formData.objectType !== undefined) {
     conditions.push(`对象:${getObjectTypeLabel(formData.objectType)}`)
   }
   return conditions.join(' | ')
@@ -79,16 +79,16 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     year: selectedYear.value,
-    bizType: formData.bizType || undefined,
-    objectType: formData.objectType || undefined,
+    bizType: formData.bizType,
+    objectType: formData.objectType,
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.yearTime = new Date(now.getFullYear(), 0, 1).getTime()
-  formData.bizType = 0
-  formData.objectType = 0
+  formData.bizType = undefined
+  formData.objectType = undefined
   visible.value = false
   emit('reset')
 }

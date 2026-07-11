@@ -68,10 +68,10 @@ const formData = reactive({
   orderTime: [undefined, undefined] as [any, any],
   supplierId: undefined as number | undefined,
   creator: undefined as number | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   remark: undefined as string | undefined,
-  inStatus: -1,
-  returnStatus: -1,
+  inStatus: undefined as number | undefined,
+  returnStatus: undefined as number | undefined,
 })
 
 /** 获取进度状态选项 */
@@ -101,16 +101,16 @@ const placeholder = computed(() => {
   if (formData.creator) {
     conditions.push(`创建人:${creatorPickerRef.value?.format(formData.creator) || formData.creator}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${statusPickerRef.value?.format(formData.status) || formData.status}`)
   }
   if (formData.remark) {
     conditions.push(`备注:${formData.remark}`)
   }
-  if (formData.inStatus !== -1) {
+  if (formData.inStatus !== undefined) {
     conditions.push(`入库:${inStatusPickerRef.value?.format(formData.inStatus) || formData.inStatus}`)
   }
-  if (formData.returnStatus !== -1) {
+  if (formData.returnStatus !== undefined) {
     conditions.push(`退货:${returnStatusPickerRef.value?.format(formData.returnStatus) || formData.returnStatus}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索采购订单'
@@ -125,10 +125,10 @@ function handleSearch() {
     orderTime: formatDateRange(formData.orderTime),
     supplierId: formData.supplierId,
     creator: formData.creator != null ? String(formData.creator) : undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     remark: formData.remark || undefined,
-    inStatus: formData.inStatus === -1 ? undefined : formData.inStatus,
-    returnStatus: formData.returnStatus === -1 ? undefined : formData.returnStatus,
+    inStatus: formData.inStatus,
+    returnStatus: formData.returnStatus,
   })
 }
 
@@ -139,10 +139,10 @@ function handleReset() {
   formData.orderTime = [undefined, undefined]
   formData.supplierId = undefined
   formData.creator = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.remark = undefined
-  formData.inStatus = -1
-  formData.returnStatus = -1
+  formData.inStatus = undefined
+  formData.returnStatus = undefined
   visible.value = false
   emit('reset')
 }

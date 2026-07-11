@@ -44,7 +44,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive<Record<string, any>>({
   name: undefined,
   no: undefined,
-  status: -1,
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -55,7 +55,7 @@ const placeholder = computed(() => {
   if (formData.no) {
     conditions.push(`编码:${formData.no}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.CRM_PRODUCT_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索产品'
@@ -67,7 +67,7 @@ function handleSearch() {
   emit('search', {
     name: formData.name,
     no: formData.no,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -75,7 +75,7 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.no = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

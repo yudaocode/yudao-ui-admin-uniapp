@@ -31,7 +31,7 @@ const emit = defineEmits<{
 }>()
 
 const options = ref<TmToolType[]>([]) // 工具类型选项
-const pickerValue = computed(() => props.modelValue ?? -1)
+const pickerValue = computed(() => props.modelValue)
 
 /** 加载工具类型选项 */
 async function loadOptions() {
@@ -42,8 +42,8 @@ async function loadOptions() {
 }
 
 /** 更新工具类型编号 */
-function handleUpdate(value: number) {
-  const toolTypeId = value === -1 ? undefined : value
+function handleUpdate(value?: number) {
+  const toolTypeId = value
   emit('update:modelValue', toolTypeId)
   emit('change', options.value.find(item => item.id === toolTypeId))
 }

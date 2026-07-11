@@ -63,10 +63,10 @@ const placeholder = computed(() => {
   if (formData.name) {
     conditions.push(`描述:${formData.name}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_INDICATOR_TYPE, formData.type)}`)
   }
-  if (formData.level != null && formData.level !== -1) {
+  if (formData.level != null) {
     conditions.push(`等级:${getDictLabel(DICT_TYPE.MES_DEFECT_LEVEL, formData.level)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索缺陷类型'
@@ -78,8 +78,8 @@ function handleSearch() {
   emit('search', {
     code: formData.code || undefined,
     name: formData.name || undefined,
-    type: formData.type === -1 ? undefined : formData.type,
-    level: formData.level === -1 ? undefined : formData.level,
+    type: formData.type,
+    level: formData.level,
   })
 }
 

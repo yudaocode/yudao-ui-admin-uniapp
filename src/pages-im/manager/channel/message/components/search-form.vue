@@ -41,14 +41,14 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const channelPickerRef = ref<InstanceType<typeof ChannelSearchPicker>>() // 频道选择器
 const formData = reactive({
-  channelId: 0, // 0 表示全部
+  channelId: undefined as number | undefined,
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.channelId) {
+  if (formData.channelId !== undefined) {
     conditions.push(`频道:${channelPickerRef.value?.format(formData.channelId) || formData.channelId}`)
   }
   if (formData.sendTime?.[0] && formData.sendTime?.[1]) {
@@ -61,14 +61,14 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    channelId: formData.channelId || undefined,
+    channelId: formData.channelId,
     sendTime: formatDateRange(formData.sendTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.channelId = 0
+  formData.channelId = undefined
   formData.sendTime = [undefined, undefined]
   visible.value = false
   emit('reset')

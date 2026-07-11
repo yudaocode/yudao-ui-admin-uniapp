@@ -51,10 +51,10 @@ const formData = reactive<SearchFormData>({
 
 const placeholder = computed(() => { // 搜索条件摘要
   const conditions: string[] = []
-  if (formData.format != null && formData.format !== -1) {
+  if (formData.format != null) {
     conditions.push(`条码格式:${getDictLabel(DICT_TYPE.MES_WM_BARCODE_FORMAT, formData.format)}`)
   }
-  if (formData.bizType != null && formData.bizType !== -1) {
+  if (formData.bizType != null) {
     conditions.push(`业务类型:${getDictLabel(DICT_TYPE.MES_WM_BARCODE_BIZ_TYPE, formData.bizType)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索条码配置'
@@ -64,8 +64,8 @@ const placeholder = computed(() => { // 搜索条件摘要
 function handleSearch() {
   visible.value = false
   emit('search', {
-    format: formData.format === -1 ? undefined : formData.format,
-    bizType: formData.bizType === -1 ? undefined : formData.bizType,
+    format: formData.format,
+    bizType: formData.bizType,
   })
 }
 

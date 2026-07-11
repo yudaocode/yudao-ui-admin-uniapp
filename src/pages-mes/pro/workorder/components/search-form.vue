@@ -104,10 +104,10 @@ const placeholder = computed(() => {
   if (formData.clientId) {
     conditions.push(`客户:${clientSearchPickerRef.value?.format(formData.clientId) || formData.clientId}`)
   }
-  if (formData.type != null && formData.type !== -1) {
+  if (formData.type != null) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.MES_PRO_WORK_ORDER_TYPE, formData.type)}`)
   }
-  if (formData.status != null && formData.status !== -1) {
+  if (formData.status != null) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.MES_PRO_WORK_ORDER_STATUS, formData.status)}`)
   }
   if (requestDateRange.value[0] && requestDateRange.value[1]) {
@@ -125,8 +125,8 @@ function handleSearch() {
     orderSourceCode: formData.orderSourceCode || undefined,
     productId: formData.productId,
     clientId: formData.clientId,
-    type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    type: formData.type,
+    status: formData.status,
     requestDate: formatDateRange(requestDateRange.value),
   })
 }

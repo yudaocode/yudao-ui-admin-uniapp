@@ -65,7 +65,7 @@ const placeholder = computed(() => {
   if (formData.code) {
     conditions.push(`编号:${formData.code}`)
   }
-  if (formData.type !== undefined && formData.type !== -1) {
+  if (formData.type !== undefined) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.WMS_MERCHANT_TYPE, formData.type)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索往来企业'
@@ -76,7 +76,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     ...formData,
-    type: formData.type === -1 ? undefined : formData.type,
+    type: formData.type,
   })
 }
 
