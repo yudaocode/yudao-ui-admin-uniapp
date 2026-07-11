@@ -36,7 +36,7 @@
     </view>
 
     <!-- 更多发送方式 -->
-    <wd-popup v-model="moreVisible" position="bottom" custom-style="border-radius: 24rpx 24rpx 0 0;">
+    <wd-popup v-model="moreVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
       <view class="grid grid-cols-2 gap-20rpx p-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))]">
         <wd-button v-if="isGroup" block variant="plain" @click="openMention">
           @成员

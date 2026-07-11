@@ -6,15 +6,15 @@
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 分页列表 -->
+    <!-- 生产工单列表 -->
     <z-paging ref="pagingRef" v-model="list" :fixed="false" class="min-h-0 flex-1" :default-page-size="10" :refresher-enabled="true" :inside-more="true" :loading-more-default-as-loading="true" empty-view-text="暂无生产工单数据" @query="queryList">
       <view class="p-24rpx">
-        <view v-for="item in flatList" :key="item.id" class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+        <view v-for="item in list" :key="item.id" class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
           <view class="p-24rpx" @click="handleDetail(item)">
             <view class="mb-16rpx flex items-start justify-between gap-16rpx">
               <view class="min-w-0 flex-1">
                 <view class="truncate text-32rpx text-[#333] font-semibold">
-                  <text v-if="item.level > 0" class="mr-8rpx text-24rpx text-[#999]">子工单</text>{{ item.name || '-' }}
+                  <text v-if="item.parentId" class="mr-8rpx text-24rpx text-[#999]">子工单</text>{{ item.name || '-' }}
                 </view>
                 <view class="mt-4rpx text-24rpx text-[#999]">
                   {{ item.code || '-' }}
@@ -54,18 +54,13 @@
 <script lang="ts" setup>
 import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { onUnload } from '@dcloudio/uni-app'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getWorkOrderPage } from '@/api/mes/pro/workorder'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { handleTree } from '@/utils/tree'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
-
-interface FlatWorkOrder extends ProWorkOrder {
-  level: number
-}
 
 definePage({
   style: {
@@ -75,31 +70,20 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ProWorkOrder[]>([]) // 工单树列表
+const list = ref<ProWorkOrder[]>([]) // 工单列表
 const pagingRef = ref<ZPagingRef<ProWorkOrder>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
-const flatList = computed<FlatWorkOrder[]>(() => flattenWorkOrders(list.value))
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
-/** 展平父子工单 */
-function flattenWorkOrders(rows: ProWorkOrder[], level = 0): FlatWorkOrder[] {
-  return rows.flatMap((item) => {
-    const current = { ...item, level }
-    const children = item.children?.length ? flattenWorkOrders(item.children, level + 1) : []
-    return [current, ...children]
-  })
-}
-
 /** 查询生产工单列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getWorkOrderPage({ ...queryParams.value, pageNo, pageSize })
-    list.value = handleTree(data.list, 'id', 'parentId')
-    pagingRef.value?.completeByTotal(list.value, data.total)
+    pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
   }

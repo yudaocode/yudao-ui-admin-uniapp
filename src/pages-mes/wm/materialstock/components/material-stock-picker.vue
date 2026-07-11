@@ -6,6 +6,7 @@
     custom-style="height: 82vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -18,18 +19,20 @@
         </wd-button>
       </view>
 
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
         <wd-input v-model="queryParams.batchCode" placeholder="批次号" clearable />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="reload">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
+      <!-- 物料库存列表 -->
       <z-paging
         ref="pagingRef"
         v-model="list"
@@ -135,8 +138,11 @@ function open(selectedIds: number[] = [], filters: Record<string, any> = {}) {
 
 /** 查询库存列表 */
 async function queryList(pageNo: number, pageSize: number) {
+  if (pageNo === 1) {
+    canLoadNextPage.value = false
+  }
   try {
-    const data = await getMaterialStockPage({
+    const params = {
       ...queryParams.value,
       pageNo,
       pageSize,

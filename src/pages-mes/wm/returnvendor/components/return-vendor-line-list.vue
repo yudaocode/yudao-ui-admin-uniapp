@@ -1,5 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
+    <!-- 顶部操作 -->
     <view class="flex items-center justify-between border-b border-b-[#f0f0f0] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         退货物料
@@ -8,6 +9,7 @@
         添加物料
       </wd-button>
     </view>
+    <!-- 退货物料列表 -->
     <z-paging
       ref="pagingRef"
       v-model="list"
@@ -121,6 +123,7 @@
     custom-style="height: 88vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="formVisible = false">
           取消
@@ -236,6 +239,7 @@
     custom-style="height: 78vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="batchPickerVisible = false">
           取消
@@ -247,8 +251,9 @@
           确定
         </wd-button>
       </view>
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="batchSearchCode" placeholder="批次号" clearable />
+        <wd-input v-model="batchQueryParams.code" placeholder="批次号" clearable />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleBatchReset">
             重置
@@ -258,7 +263,19 @@
           </wd-button>
         </view>
       </view>
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleBatchLoadMore">
+      <!-- 批次列表 -->
+      <z-paging
+        ref="batchPagingRef"
+        v-model="batchList"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        empty-view-text="暂无可选批次"
+        @query="queryBatchList"
+      >
         <view class="p-24rpx">
           <view
             v-for="batch in batchList"
@@ -283,14 +300,8 @@
               <text class="text-[#999]">入库日期：</text>{{ formatDate(batch.receiptDate) || '-' }}
             </view>
           </view>
-          <view v-if="batchList.length === 0 && !batchLoading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选批次" />
-          </view>
-          <view v-if="batchLoading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -304,7 +315,7 @@ import type { WmReturnVendorDetail } from '@/api/mes/wm/returnvendor/detail'
 import type { WmReturnVendorLine } from '@/api/mes/wm/returnvendor/line'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getBatchPage } from '@/api/mes/wm/batch'
 import {
   createReturnVendorDetail,
@@ -347,12 +358,10 @@ const detailFormData = ref<WmReturnVendorDetail>(getDefaultDetailFormData()) // 
 const currentDetailLine = ref<WmReturnVendorLine>() // 当前拣货明细所属行
 const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器引用
 const batchPickerVisible = ref(false) // 批次选择器显示状态
-const batchLoading = ref(false) // 批次加载状态
 const batchList = ref<Batch[]>([]) // 批次列表
+const batchPagingRef = ref<ZPagingRef<Batch>>() // 批次分页组件引用
 const selectedBatch = ref<Batch>() // 当前临时选择批次
-const batchSearchCode = ref('') // 批次号搜索
-const batchPageNo = ref(1) // 批次当前页
-const batchTotal = ref(0) // 批次总数
+const batchQueryParams = ref<Record<string, any>>({ code: '' }) // 批次查询参数
 const detailListMap = ref<Record<number, WmReturnVendorDetail[]>>({}) // 拣货明细列表
 const detailLoadingMap = ref<Record<number, boolean>>({}) // 拣货明细加载状态
 const stockPickerRef = ref<InstanceType<typeof MaterialStockPicker>>() // 库存选择器引用
@@ -374,15 +383,15 @@ const detailFormSchema = createFormSchema({
     { validator: value => quantityMax.value == null || Number(value) <= quantityMax.value || `数量不能大于库存 ${quantityMax.value}` },
   ],
 })
-const formTitle = computed(() => formData.value.id ? '修改供应商退货单行' : '添加供应商退货单行')
-const detailFormTitle = computed(() => detailFormData.value.id ? '编辑拣货明细' : '添加拣货明细')
-const selectedItemText = computed(() => {
+const formTitle = computed(() => formData.value.id ? '修改供应商退货单行' : '添加供应商退货单行') // 表单标题
+const detailFormTitle = computed(() => detailFormData.value.id ? '编辑拣货明细' : '添加拣货明细') // 拣货明细表单标题
+const selectedItemText = computed(() => { // 物料回显文本
   return formData.value.itemId ? `${formData.value.itemCode || '-'} ${formData.value.itemName || ''}`.trim() : ''
 })
-const selectedBatchText = computed(() => {
+const selectedBatchText = computed(() => { // 批次回显文本
   return formData.value.batchCode || selectedBatch.value?.code || ''
 })
-const detailSelectedItemText = computed(() => {
+const detailSelectedItemText = computed(() => { // 拣货物料回显文本
   if (currentDetailLine.value) {
     return `${currentDetailLine.value.itemCode || '-'} ${currentDetailLine.value.itemName || ''}`.trim()
   }
@@ -391,7 +400,7 @@ const detailSelectedItemText = computed(() => {
   }
   return detailFormData.value.itemId ? `物料 #${detailFormData.value.itemId}` : ''
 })
-const selectedStockText = computed(() => {
+const selectedStockText = computed(() => { // 库存回显文本
   if (selectedStock.value) {
     return `${selectedStock.value.batchCode || `库存 #${selectedStock.value.id}`} / ${selectedStock.value.warehouseName || '-'}`
   }
@@ -441,7 +450,7 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 刷新列表 */
+/** 重新加载 */
 function reload() {
   pagingRef.value?.reload()
 }
@@ -512,64 +521,51 @@ function handleItemConfirm(items: MdItem[]) {
 }
 
 /** 打开批次选择器 */
-function openBatchPicker() {
+async function openBatchPicker() {
   if (!formData.value.itemId) {
     toast.warning('请先选择产品物料')
     return
   }
   batchPickerVisible.value = true
   selectedBatch.value = undefined
-  batchSearchCode.value = ''
-  batchPageNo.value = 1
-  batchList.value = []
-  batchTotal.value = 0
-  loadBatchList()
+  batchQueryParams.value = { code: '' }
+  await nextTick()
+  reloadBatchList()
 }
 
 /** 搜索批次 */
 function handleBatchSearch() {
-  batchPageNo.value = 1
-  loadBatchList()
+  reloadBatchList()
 }
 
 /** 重置批次搜索 */
 function handleBatchReset() {
-  batchSearchCode.value = ''
-  batchPageNo.value = 1
-  loadBatchList()
+  batchQueryParams.value = { code: '' }
+  reloadBatchList()
 }
 
-/** 批次加载更多 */
-async function handleBatchLoadMore() {
-  if (batchLoading.value || batchList.value.length >= batchTotal.value) {
-    return
-  }
-  batchPageNo.value++
-  await loadBatchList(true)
+/** 刷新批次列表 */
+function reloadBatchList() {
+  batchPagingRef.value?.reload()
 }
 
-/** 加载批次列表 */
-async function loadBatchList(append = false) {
-  if (!formData.value.itemId || batchLoading.value) {
+/** 查询批次列表 */
+async function queryBatchList(pageNo: number, pageSize: number) {
+  if (!formData.value.itemId) {
+    batchPagingRef.value?.completeByTotal([], 0)
     return
   }
-  batchLoading.value = true
   try {
     const data = await getBatchPage({
-      pageNo: batchPageNo.value,
-      pageSize: 20,
-      code: batchSearchCode.value || undefined,
+      pageNo,
+      pageSize,
+      code: batchQueryParams.value.code || undefined,
       itemId: formData.value.itemId,
       vendorId: props.vendorId,
     })
-    if (append) {
-      batchList.value.push(...data.list)
-    } else {
-      batchList.value = data.list
-    }
-    batchTotal.value = data.total
-  } finally {
-    batchLoading.value = false
+    batchPagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    batchPagingRef.value?.complete(false)
   }
 }
 

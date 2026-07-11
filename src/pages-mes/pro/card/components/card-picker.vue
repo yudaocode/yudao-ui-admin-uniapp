@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <view class="flex items-center gap-12rpx">
           <wd-button variant="plain" size="small" @click="handleCancel">
@@ -25,21 +25,21 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="流转卡编码" clearable />
-        <wd-input v-model="searchBatchCode" placeholder="批次号" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="流转卡编码" clearable />
+        <wd-input v-model="queryParams.batchCode" placeholder="批次号" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
+      <!-- 流转卡列表 -->
       <z-paging
         ref="pagingRef"
         v-model="list"
@@ -110,8 +110,10 @@ const list = ref<ProCard[]>([]) // 流转卡列表
 const selectedItem = ref<ProCard>() // 当前选中流转卡
 const selected = ref<ProCard>() // 当前选择流转卡
 const pagingRef = ref<ZPagingRef<ProCard>>() // 分页组件引用
-const searchCode = ref('') // 流转卡编码
-const searchBatchCode = ref('') // 批次号
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  batchCode: '',
+})
 const pendingSelectedId = ref<number>() // 待回显编号
 const canClear = computed(() => Boolean(selected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 
@@ -124,8 +126,10 @@ async function open(currentId?: number) {
   visible.value = true
   selected.value = selectedItem.value
   pendingSelectedId.value = selectedId
-  searchCode.value = ''
-  searchBatchCode.value = ''
+  queryParams.value = {
+    code: '',
+    batchCode: '',
+  }
   reload()
   if (selectedId && !selected.value) {
     await resolveItemById(selectedId)
@@ -136,12 +140,12 @@ async function open(currentId?: number) {
 /** 查询流转卡列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const data = await getCardPage({
+    const params = {
+      ...queryParams.value,
       pageNo,
       pageSize,
-      code: searchCode.value || undefined,
-      batchCode: searchBatchCode.value || undefined,
-    })
+    }
+    const data = await getCardPage(params)
     if (pendingSelectedId.value && !selected.value) {
       selected.value = data.list.find(item => item.id === pendingSelectedId.value)
     }
@@ -172,15 +176,17 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 搜索 */
-function handleSearch() {
+/** 搜索按钮操作 */
+function handleQuery() {
   reload()
 }
 
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchBatchCode.value = ''
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    batchCode: '',
+  }
   reload()
 }
 

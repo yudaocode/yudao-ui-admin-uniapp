@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,22 +20,33 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
         <wd-input v-model="queryParams.code" placeholder="项目编码" clearable />
         <wd-input v-model="queryParams.name" placeholder="项目名称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 点检项列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="list"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        empty-view-text="暂无可选项目"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in list"
@@ -63,14 +74,8 @@
               已关联
             </view>
           </view>
-          <view v-if="list.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选项目" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -95,15 +100,13 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const loading = ref(false) // 加载状态
 const list = ref<DvSubject[]>([]) // 项目列表
 const selected = ref<DvSubject>() // 当前选择项目
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总条数
-const queryParams = ref<Record<string, any>>({
+const pagingRef = ref<ZPagingRef<DvSubject>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({ // 查询参数
   code: '',
   name: '',
-}) // 查询参数
+})
 
 /** 判断项目是否已关联 */
 function isDisabled(id: number) {
@@ -118,29 +121,20 @@ function handleSelect(item: DvSubject) {
   selected.value = item
 }
 
-/** 加载项目列表 */
-async function loadList(append = false) {
-  if (loading.value) {
-    return
-  }
-  loading.value = true
+/** 查询项目列表 */
+async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getSubjectPage({
-      pageNo: pageNo.value,
-      pageSize: 20,
+      pageNo,
+      pageSize,
       code: queryParams.value.code || undefined,
       name: queryParams.value.name || undefined,
       type: props.type,
       status: CommonStatusEnum.ENABLE,
     })
-    if (append) {
-      list.value.push(...data.list)
-    } else {
-      list.value = data.list
-    }
-    total.value = data.total
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
@@ -148,33 +142,30 @@ async function loadList(append = false) {
 function open() {
   visible.value = true
   selected.value = undefined
-  queryParams.value = { code: '', name: '' }
-  list.value = []
-  total.value = 0
-  pageNo.value = 1
-  loadList()
-}
-
-/** 搜索 */
-async function handleSearch() {
-  pageNo.value = 1
-  await loadList()
-}
-
-/** 重置搜索 */
-function handleResetSearch() {
-  queryParams.value = { code: '', name: '' }
-  pageNo.value = 1
-  loadList()
-}
-
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || list.value.length >= total.value) {
-    return
+  queryParams.value = {
+    code: '',
+    name: '',
   }
-  pageNo.value += 1
-  await loadList(true)
+  reload()
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
+}
+
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
+  reload()
 }
 
 /** 取消 */
@@ -185,7 +176,10 @@ function handleCancel() {
 /** 关闭时清理 */
 function handleClose() {
   selected.value = undefined
-  queryParams.value = { code: '', name: '' }
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
 }
 
 /** 确认选择 */

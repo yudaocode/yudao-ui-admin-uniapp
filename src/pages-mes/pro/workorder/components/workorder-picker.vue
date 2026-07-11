@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <view class="flex items-center gap-12rpx">
           <wd-button variant="plain" size="small" @click="handleCancel">
@@ -25,22 +25,33 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="工单编码" clearable />
-        <wd-input v-model="searchName" placeholder="工单名称" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="工单编码" clearable />
+        <wd-input v-model="queryParams.name" placeholder="工单名称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 生产工单列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="list"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        :empty-view-text="emptyTip"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in list"
@@ -66,14 +77,8 @@
               <view>数量：{{ item.quantity ?? '-' }}，批次：{{ item.batchCode || '-' }}</view>
             </view>
           </view>
-          <view v-if="list.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" :tip="emptyTip" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -108,14 +113,15 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 选择器显示状态
-const loading = ref(false) // 列表加载状态
 const list = ref<ProWorkOrder[]>([]) // 工单列表
 const selectedItem = ref<ProWorkOrder>() // 当前选中工单
 const tempSelected = ref<ProWorkOrder>() // 临时选择工单
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总数
-const searchCode = ref('') // 工单编码搜索
-const searchName = ref('') // 工单名称搜索
+const pagingRef = ref<ZPagingRef<ProWorkOrder>>() // 分页组件引用
+const pendingSelectedId = ref<number>() // 待回显编号
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  name: '',
+})
 const canClear = computed(() => Boolean(tempSelected.value || selectedItem.value || props.modelValue != null)) // 是否可清空
 
 /** 打开选择器 */
@@ -129,45 +135,41 @@ async function open(selectedId?: number) {
   if (currentId == null) {
     selectedItem.value = undefined
   }
-  searchCode.value = ''
-  searchName.value = ''
-  list.value = []
-  total.value = 0
-  pageNo.value = 1
-  await loadList(false, currentId)
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
+  pendingSelectedId.value = currentId
+  reload()
   if (currentId != null && !tempSelected.value) {
     await resolveItemById(currentId)
     tempSelected.value = selectedItem.value?.id === currentId ? selectedItem.value : undefined
   }
 }
 
-/** 加载工单列表 */
-async function loadList(append = false, selectedId?: number) {
-  if (loading.value) {
-    return
-  }
-  loading.value = true
+/** 查询工单列表 */
+async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getWorkOrderPage({
-      pageNo: pageNo.value,
-      pageSize: 20,
-      code: searchCode.value || undefined,
-      name: searchName.value || undefined,
+      pageNo,
+      pageSize,
+      code: queryParams.value.code || undefined,
+      name: queryParams.value.name || undefined,
       type: props.type,
       status: props.confirmedOnly ? MesProWorkOrderStatusEnum.CONFIRMED : undefined,
     })
-    if (append) {
-      list.value.push(...data.list)
-    } else {
-      list.value = data.list
+    if (pendingSelectedId.value != null && !tempSelected.value) {
+      tempSelected.value = data.list.find(item => item.id === pendingSelectedId.value)
     }
-    total.value = data.total
-    if (selectedId != null && !tempSelected.value) {
-      tempSelected.value = list.value.find(item => item.id === selectedId)
-    }
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 根据编号加载工单回显 */
@@ -186,27 +188,18 @@ async function resolveItemById(id?: number) {
   }
 }
 
-/** 搜索 */
-async function handleSearch() {
-  pageNo.value = 1
-  await loadList()
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
 }
 
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchName.value = ''
-  pageNo.value = 1
-  loadList()
-}
-
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || list.value.length >= total.value) {
-    return
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    name: '',
   }
-  pageNo.value += 1
-  await loadList(true)
+  reload()
 }
 
 /** 取消 */
@@ -218,6 +211,7 @@ function handleCancel() {
 function handleClear() {
   tempSelected.value = undefined
   selectedItem.value = undefined
+  pendingSelectedId.value = undefined
   emit('update:modelValue', undefined)
   emit('change', undefined)
   emit('clear')
@@ -227,8 +221,11 @@ function handleClear() {
 /** 关闭时清理 */
 function handleClose() {
   tempSelected.value = undefined
-  searchCode.value = ''
-  searchName.value = ''
+  pendingSelectedId.value = undefined
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
 }
 
 /** 确认选择 */

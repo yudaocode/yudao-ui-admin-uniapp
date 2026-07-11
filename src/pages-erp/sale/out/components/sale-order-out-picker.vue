@@ -6,7 +6,7 @@
     custom-style="height: 86vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 弹窗标题栏 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="visible = false">
           取消
@@ -28,14 +28,25 @@
           <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 订单列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 销售订单列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="list"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="10"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        empty-view-text="暂无可出库订单"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in list"
@@ -69,19 +80,8 @@
               </view>
             </view>
           </view>
-
-          <!-- 空状态 -->
-          <view v-if="!loading && list.length === 0" class="py-80rpx text-center">
-            <wd-empty icon="content" tip="暂无可出库订单" />
-          </view>
-          <view v-if="loading" class="py-24rpx text-center text-26rpx text-[#999]">
-            加载中...
-          </view>
-          <view v-else-if="finished && list.length > 0" class="py-24rpx text-center text-26rpx text-[#999]">
-            没有更多了
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -101,61 +101,42 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const visible = ref(false) // 弹窗显示状态
-const loading = ref(false) // 列表加载状态
-const finished = ref(false) // 是否加载完毕
-const pageNo = ref(1) // 当前页码
-const pageSize = 10
-const total = ref(0) // 总条数
 const list = ref<SaleOrder[]>([]) // 可出库订单列表
 const currentOrder = ref<SaleOrder>() // 当前选中订单
-let requestId = 0 // 最新查询标识
-const queryParams = reactive({
+const pagingRef = ref<ZPagingRef<SaleOrder>>() // 分页组件引用
+const queryParams = reactive({ // 查询参数
   no: undefined as string | undefined,
   productId: undefined as number | undefined,
   orderTime: [undefined, undefined] as [number | undefined, number | undefined],
-}) // 搜索条件
+})
 
 /** 查询可出库订单 */
-async function queryList(reset = false) {
-  if (!reset && (loading.value || finished.value)) {
-    return
-  }
-  if (reset) {
-    pageNo.value = 1
-    list.value = []
-    finished.value = false
-    currentOrder.value = undefined
-  }
-  const currentRequestId = ++requestId
-  const currentPageNo = pageNo.value
-  loading.value = true
+async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getSaleOrderPage({
-      pageNo: currentPageNo,
+      pageNo,
       pageSize,
       no: queryParams.no || undefined,
       productId: queryParams.productId,
       orderTime: formatDateRange(queryParams.orderTime),
       outEnable: true,
     })
-    if (currentRequestId !== requestId) {
-      return
-    }
-    list.value = reset ? data.list : list.value.concat(data.list)
-    total.value = data.total
-    finished.value = list.value.length >= total.value
-    pageNo.value = currentPageNo + 1
-  } finally {
-    if (currentRequestId === requestId) {
-      loading.value = false
-    }
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
 /** 打开选择器 */
-async function open() {
+function open() {
   visible.value = true
-  await queryList(true)
+  reload()
+}
+
+/** 重新加载 */
+function reload() {
+  currentOrder.value = undefined
+  pagingRef.value?.reload()
 }
 
 /** 选择订单 */
@@ -164,8 +145,8 @@ function handleSelect(item: SaleOrder) {
 }
 
 /** 搜索按钮操作 */
-function handleSearch() {
-  queryList(true)
+function handleQuery() {
+  reload()
 }
 
 /** 重置按钮操作 */
@@ -173,12 +154,7 @@ function handleReset() {
   queryParams.no = undefined
   queryParams.productId = undefined
   queryParams.orderTime = [undefined, undefined]
-  queryList(true)
-}
-
-/** 加载更多 */
-function handleLoadMore() {
-  queryList()
+  reload()
 }
 
 /** 确认选择 */

@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,21 +20,21 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="批次编号" clearable />
-        <wd-input v-model="searchLotNumber" placeholder="生产批号" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="批次编号" clearable />
+        <wd-input v-model="queryParams.lotNumber" placeholder="生产批号" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
+      <!-- 批次列表 -->
       <z-paging
         ref="pagingRef"
         v-model="list"
@@ -92,27 +92,31 @@ const visible = ref(false) // 弹层显示状态
 const list = ref<Batch[]>([]) // 批次列表
 const selected = ref<Batch>() // 当前选择批次
 const pagingRef = ref<ZPagingRef<Batch>>() // 分页组件引用
-const searchCode = ref('') // 批次编号
-const searchLotNumber = ref('') // 生产批号
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  lotNumber: '',
+})
 
 /** 打开选择器 */
 function open() {
   visible.value = true
   selected.value = undefined
-  searchCode.value = ''
-  searchLotNumber.value = ''
+  queryParams.value = {
+    code: '',
+    lotNumber: '',
+  }
   reload()
 }
 
 /** 查询批次列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const data = await getBatchPage({
+    const params = {
+      ...queryParams.value,
       pageNo,
       pageSize,
-      code: searchCode.value || undefined,
-      lotNumber: searchLotNumber.value || undefined,
-    })
+    }
+    const data = await getBatchPage(params)
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
@@ -124,15 +128,17 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 搜索 */
-function handleSearch() {
+/** 搜索按钮操作 */
+function handleQuery() {
   reload()
 }
 
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchLotNumber.value = ''
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    lotNumber: '',
+  }
   reload()
 }
 

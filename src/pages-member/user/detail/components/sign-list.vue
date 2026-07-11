@@ -1,8 +1,22 @@
 <template>
-  <view>
+  <view class="min-h-0 flex flex-1 flex-col">
+    <!-- 搜索组件 -->
     <SearchForm hide-user @search="handleQuery" @reset="handleReset" />
-    <scroll-view scroll-y class="min-h-520rpx">
-      <view class="p-24rpx">
+
+    <!-- 签到记录列表 -->
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无签到记录"
+      @query="queryList"
+    >
+      <view class="p-24rpx pb-160rpx">
         <view
           v-for="item in list"
           :key="item.id"
@@ -20,20 +34,14 @@
             {{ formatDateTime(item.createTime) || '-' }}
           </view>
         </view>
-        <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无签到记录" />
-        <view v-if="hasMore" class="pb-24rpx">
-          <wd-button variant="plain" block :loading="loading" @click="loadMore">
-            加载更多
-          </wd-button>
-        </view>
       </view>
-    </scroll-view>
+    </z-paging>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { MemberSignInRecord } from '@/api/member/signin/record'
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { getMemberSignInRecordPage } from '@/api/member/signin/record'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from '../../../signin/record/components/search-form.vue'
@@ -43,46 +51,32 @@ const props = defineProps<{
 }>()
 
 const list = ref<MemberSignInRecord[]>([]) // 列表数据
-const loading = ref(false) // 加载状态
-const total = ref(0) // 总条数
-const pageNo = ref(1) // 当前页码
-const pageSize = 10 // 每页条数
+const pagingRef = ref<ZPagingRef<MemberSignInRecord>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
-const hasMore = computed(() => list.value.length < total.value)
 
 /** 查询签到记录 */
-async function getList(reset = true) {
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.userId) {
-    list.value = []
-    total.value = 0
+    pagingRef.value?.complete([])
     return
   }
-  loading.value = true
   try {
-    const currentPageNo = reset ? 1 : pageNo.value + 1
     const data = await getMemberSignInRecordPage({
       ...queryParams.value,
       userId: Number(props.userId),
-      pageNo: currentPageNo,
+      pageNo,
       pageSize,
     })
-    list.value = reset ? data.list : [...list.value, ...data.list]
-    total.value = data.total
-    pageNo.value = currentPageNo
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
-}
-
-/** 加载更多 */
-function loadMore() {
-  getList(false)
 }
 
 /** 搜索按钮操作 */
 function handleQuery(data?: Record<string, any>) {
   queryParams.value = { ...data }
-  getList()
+  reload()
 }
 
 /** 重置按钮操作 */
@@ -90,15 +84,14 @@ function handleReset() {
   handleQuery()
 }
 
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
+}
+
+/** 监听会员变化，重新加载列表 */
 watch(
   () => props.userId,
-  () => {
-    getList()
-  },
+  () => reload(),
 )
-
-/** 初始化 */
-onMounted(() => {
-  getList()
-})
 </script>

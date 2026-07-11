@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,22 +20,33 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="装箱单编号" clearable />
-        <wd-input v-model="searchSalesOrderCode" placeholder="销售订单编号" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="装箱单编号" clearable />
+        <wd-input v-model="queryParams.salesOrderCode" placeholder="销售订单编号" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 装箱单列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="list"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        :empty-view-text="emptyTip"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in list"
@@ -65,14 +76,8 @@
               <text class="text-[#999]">尺寸/重量：</text>{{ getSizeText(item) }}，{{ getWeightText(item) }}
             </view>
           </view>
-          <view v-if="list.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" :tip="emptyTip" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -101,13 +106,14 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 选择器显示状态
-const loading = ref(false) // 列表加载状态
 const list = ref<WmPackage[]>([]) // 装箱单列表
 const tempSelected = ref<WmPackage>() // 临时选择装箱单
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总数
-const searchCode = ref('') // 装箱单编号搜索
-const searchSalesOrderCode = ref('') // 销售订单编号搜索
+const pagingRef = ref<ZPagingRef<WmPackage>>() // 分页组件引用
+const pendingSelectedId = ref<number>() // 待回显编号
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  salesOrderCode: '',
+})
 
 /** 客户展示 */
 function getClientText(item: WmPackage) {
@@ -133,67 +139,58 @@ function getWeightText(item: WmPackage) {
 function open(selectedId?: number) {
   visible.value = true
   tempSelected.value = undefined
-  searchCode.value = ''
-  searchSalesOrderCode.value = ''
-  list.value = []
-  total.value = 0
-  pageNo.value = 1
-  loadList(false, selectedId)
+  queryParams.value = {
+    code: '',
+    salesOrderCode: '',
+  }
+  pendingSelectedId.value = selectedId
+  reload()
 }
 
-/** 加载装箱单列表 */
-async function loadList(append = false, selectedId?: number) {
-  if (loading.value) {
-    return
-  }
-  loading.value = true
+/** 查询装箱单列表 */
+async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getPackagePage({
-      pageNo: pageNo.value,
-      pageSize: 20,
-      code: searchCode.value || undefined,
-      salesOrderCode: searchSalesOrderCode.value || undefined,
+      pageNo,
+      pageSize,
+      code: queryParams.value.code || undefined,
+      salesOrderCode: queryParams.value.salesOrderCode || undefined,
       parentId: props.childableOnly ? 0 : undefined,
       status: props.childableOnly ? MesWmPackageStatusEnum.FINISHED : undefined,
     })
     const rows = props.excludeId
       ? data.list.filter(item => item.id !== props.excludeId)
       : data.list
-    if (append) {
-      list.value.push(...rows)
+    if (pendingSelectedId.value != null && !tempSelected.value) {
+      tempSelected.value = rows.find(item => item.id === pendingSelectedId.value)
+    }
+    if (props.excludeId) {
+      pagingRef.value?.completeByNoMore(rows, pageNo * pageSize >= data.total)
     } else {
-      list.value = rows
+      pagingRef.value?.completeByTotal(rows, data.total)
     }
-    total.value = data.total
-    if (selectedId && !tempSelected.value) {
-      tempSelected.value = list.value.find(item => item.id === selectedId)
-    }
-  } finally {
-    loading.value = false
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
-/** 搜索 */
-async function handleSearch() {
-  pageNo.value = 1
-  await loadList()
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchSalesOrderCode.value = ''
-  pageNo.value = 1
-  loadList()
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
 }
 
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || list.value.length >= total.value) {
-    return
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    salesOrderCode: '',
   }
-  pageNo.value += 1
-  await loadList(true)
+  reload()
 }
 
 /** 取消 */
@@ -204,8 +201,11 @@ function handleCancel() {
 /** 关闭时清理 */
 function handleClose() {
   tempSelected.value = undefined
-  searchCode.value = ''
-  searchSalesOrderCode.value = ''
+  pendingSelectedId.value = undefined
+  queryParams.value = {
+    code: '',
+    salesOrderCode: '',
+  }
 }
 
 /** 确认选择 */

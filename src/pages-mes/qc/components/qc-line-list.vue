@@ -1,5 +1,6 @@
 <template>
   <view class="mt-24rpx bg-white">
+    <!-- 标题栏 -->
     <view v-if="showTitle" class="flex items-center justify-between border-b border-[#f5f5f5] px-24rpx py-20rpx">
       <view class="text-30rpx text-[#333] font-semibold">
         检验项明细
@@ -9,6 +10,7 @@
       </view>
     </view>
 
+    <!-- 检验项列表 -->
     <z-paging
       ref="pagingRef"
       v-model="list"
@@ -99,6 +101,7 @@
       custom-style="height: 72vh; border-radius: 24rpx 24rpx 0 0;"
     >
       <view class="h-full flex flex-col bg-[#f5f5f5]">
+        <!-- 顶部操作 -->
         <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
           <view class="min-w-0 flex-1">
             <view class="truncate text-32rpx text-[#333] font-semibold">
@@ -124,14 +127,20 @@
           </view>
         </view>
 
-        <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-          <view v-if="defectLoading" class="p-24rpx text-28rpx text-[#999]">
-            加载中...
-          </view>
-          <view v-else-if="defectList.length === 0" class="p-24rpx text-28rpx text-[#999]">
-            暂无缺陷记录
-          </view>
-          <view v-else class="p-24rpx">
+        <!-- 缺陷列表 -->
+        <z-paging
+          ref="defectPagingRef"
+          v-model="defectList"
+          :fixed="false"
+          class="min-h-0 flex-1"
+          :default-page-size="pageSize"
+          :refresher-enabled="true"
+          :inside-more="true"
+          :loading-more-default-as-loading="true"
+          empty-view-text="暂无缺陷记录"
+          @query="queryDefectList"
+        >
+          <view class="p-24rpx">
             <view
               v-for="record in defectList"
               :key="record.id"
@@ -174,14 +183,8 @@
                 </wd-button>
               </view>
             </view>
-
-            <view v-if="defectList.length < defectTotal" class="pt-4rpx">
-              <wd-button block size="small" :loading="defectLoadingMore" variant="plain" @click="loadMoreDefects">
-                加载更多
-              </wd-button>
-            </view>
           </view>
-        </scroll-view>
+        </z-paging>
       </view>
     </wd-popup>
 
@@ -263,15 +266,12 @@ const props = withDefaults(defineProps<{
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const pageSize = 10
+const pageSize = 10 // 每页条数
 const total = ref(0) // 明细总数
 const list = ref<QcLineItem[]>([]) // 检验项明细
 const pagingRef = ref<ZPagingRef<QcLineItem>>() // 分页组件引用
 const defectVisible = ref(false) // 缺陷弹层状态
-const defectLoading = ref(false) // 缺陷首屏加载状态
-const defectLoadingMore = ref(false) // 缺陷追加加载状态
-const defectPageNo = ref(1) // 缺陷当前页码
-const defectTotal = ref(0) // 缺陷总数
+const defectPagingRef = ref<ZPagingRef<QcDefectRecord>>() // 缺陷分页组件引用
 const currentLine = ref<QcLineItem>() // 当前检验项
 const defectList = ref<QcDefectRecord[]>([]) // 缺陷记录
 const defectFormVisible = ref(false) // 缺陷表单弹层状态
@@ -344,46 +344,33 @@ function queryLinePage(currentPage: number, currentPageSize: number) {
 async function openDefectRecords(item: QcLineItem) {
   currentLine.value = item
   defectVisible.value = true
-  await loadDefectRecords()
+  await nextTick()
+  reloadDefectList()
 }
 
-/** 加载缺陷记录 */
-async function loadDefectRecords(reset = true) {
+/** 查询缺陷记录 */
+async function queryDefectList(pageNo: number, currentPageSize: number) {
   if (!props.orderId || !currentLine.value?.id) {
-    defectList.value = []
-    defectTotal.value = 0
+    defectPagingRef.value?.completeByTotal([], 0)
     return
   }
-  if (reset) {
-    defectPageNo.value = 1
-    defectLoading.value = true
-  } else {
-    defectLoadingMore.value = true
-  }
-
   try {
     const data = await getDefectRecordPage({
-      pageNo: defectPageNo.value,
-      pageSize,
+      pageNo,
+      pageSize: currentPageSize,
       qcType: props.qcType,
       qcId: props.orderId,
       lineId: currentLine.value.id,
     })
-    defectList.value = reset ? data.list : [...defectList.value, ...data.list]
-    defectTotal.value = data.total
-  } finally {
-    defectLoading.value = false
-    defectLoadingMore.value = false
+    defectPagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    defectPagingRef.value?.complete(false)
   }
 }
 
-/** 加载更多缺陷记录 */
-async function loadMoreDefects() {
-  if (defectList.value.length >= defectTotal.value || defectLoadingMore.value) {
-    return
-  }
-  defectPageNo.value += 1
-  await loadDefectRecords(false)
+/** 刷新缺陷记录 */
+function reloadDefectList() {
+  defectPagingRef.value?.reload()
 }
 
 /** 新增缺陷记录 */
@@ -438,7 +425,7 @@ async function handleSubmitDefect() {
       toast.success('新增成功')
     }
     defectFormVisible.value = false
-    await loadDefectRecords()
+    reloadDefectList()
     reloadList()
   } finally {
     defectFormLoading.value = false
@@ -457,7 +444,7 @@ async function handleDeleteDefect(record: QcDefectRecord) {
   }
   await deleteDefectRecord(record.id)
   toast.success('删除成功')
-  await loadDefectRecords()
+  reloadDefectList()
   reloadList()
 }
 

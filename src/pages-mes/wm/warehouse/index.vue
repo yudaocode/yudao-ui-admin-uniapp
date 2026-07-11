@@ -1,7 +1,12 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
+    <!-- 顶部导航栏 -->
     <wd-navbar title="仓库" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
+
+    <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
+
+    <!-- 仓库列表 -->
     <z-paging ref="pagingRef" v-model="list" :fixed="false" class="min-h-0 flex-1" :default-page-size="10" :refresher-enabled="true" :inside-more="true" :loading-more-default-as-loading="true" empty-view-text="暂无仓库数据" @query="queryList">
       <view class="p-24rpx">
         <view v-for="item in list" :key="item.id" class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm" @click="handleDetail(item)">
@@ -33,6 +38,8 @@
         </view>
       </view>
     </z-paging>
+
+    <!-- 新增按钮 -->
     <wd-fab v-if="hasAccessByCodes(['mes:wm-warehouse:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
   </view>
 </template>
@@ -59,25 +66,35 @@ const { hasAccessByCodes } = useAccess()
 const list = ref<WmWarehouse[]>([]) // 列表数据
 const pagingRef = ref<ZPagingRef<WmWarehouse>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
+let userMapPromise: Promise<Map<number, string>> | undefined // 用户名称映射缓存
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-statistics/mes/home/index')
 }
 
-/** 查询列表 */
+/** 查询仓库列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const [data, users] = await Promise.all([
+    const [data, userMap] = await Promise.all([
       getWarehousePage({ ...queryParams.value, pageNo, pageSize }),
-      getSimpleUserList(),
+      getUserMap(),
     ])
-    const userMap = new Map(users.filter(user => user.id !== undefined).map(user => [user.id, user.nickname]))
     const rows = data.list.map(item => ({ ...item, chargeUserName: item.chargeUserId == null ? null : userMap.get(item.chargeUserId) || null }))
     pagingRef.value?.completeByTotal(rows, data.total)
   } catch {
     pagingRef.value?.complete(false)
   }
+}
+
+/** 获取用户名称映射 */
+async function getUserMap() {
+  userMapPromise ||= getSimpleUserList().then(users =>
+    new Map(users.filter(user => user.id !== undefined).map(user => [user.id!, user.nickname])))
+  return userMapPromise.catch((error) => {
+    userMapPromise = undefined
+    throw error
+  })
 }
 
 /** 搜索按钮操作 */
@@ -91,12 +108,12 @@ function handleReset() {
   handleQuery()
 }
 
-/** 刷新列表 */
+/** 重新加载 */
 function reload() {
   pagingRef.value?.reload()
 }
 
-/** 新增 */
+/** 新增仓库 */
 function handleAdd() {
   uni.navigateTo({ url: `/pages-mes/wm/warehouse/form/index` })
 }

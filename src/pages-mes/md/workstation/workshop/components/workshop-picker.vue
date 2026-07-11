@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,21 +20,21 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="车间编码" clearable />
-        <wd-input v-model="searchName" placeholder="车间名称" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="车间编码" clearable />
+        <wd-input v-model="queryParams.name" placeholder="车间名称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
+      <!-- 车间列表 -->
       <z-paging
         ref="pagingRef"
         v-model="list"
@@ -91,27 +91,31 @@ const visible = ref(false) // 弹层显示状态
 const list = ref<MdWorkshop[]>([]) // 车间列表
 const selected = ref<MdWorkshop>() // 当前选择车间
 const pagingRef = ref<ZPagingRef<MdWorkshop>>() // 分页组件引用
-const searchCode = ref('') // 车间编码
-const searchName = ref('') // 车间名称
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  name: '',
+})
 
 /** 打开选择器 */
 function open() {
   visible.value = true
   selected.value = undefined
-  searchCode.value = ''
-  searchName.value = ''
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
   reload()
 }
 
 /** 查询车间列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const data = await getWorkshopPage({
+    const params = {
+      ...queryParams.value,
       pageNo,
       pageSize,
-      code: searchCode.value || undefined,
-      name: searchName.value || undefined,
-    })
+    }
+    const data = await getWorkshopPage(params)
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
@@ -123,15 +127,17 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 搜索 */
-function handleSearch() {
+/** 搜索按钮操作 */
+function handleQuery() {
   reload()
 }
 
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchName.value = ''
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    name: '',
+  }
   reload()
 }
 

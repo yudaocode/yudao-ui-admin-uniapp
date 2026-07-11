@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,8 +20,19 @@
         </wd-button>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 销售通知明细列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="lineList"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        empty-view-text="暂无可选发货通知单行"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in lineList"
@@ -57,14 +68,8 @@
               <text class="text-[#999]">备注：</text>{{ item.remark || '-' }}
             </view>
           </view>
-          <view v-if="lineList.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选发货通知单行" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -84,41 +89,25 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const loading = ref(false) // 加载状态
 const lineList = ref<WmSalesNoticeLine[]>([]) // 发货通知单行列表
 const selectedLine = ref<WmSalesNoticeLine>() // 当前选中行
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总条数
+const pagingRef = ref<ZPagingRef<WmSalesNoticeLine>>() // 分页组件引用
 
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || lineList.value.length >= total.value) {
+/** 查询发货通知单行 */
+async function queryList(pageNo: number, pageSize: number) {
+  if (!props.noticeId) {
+    pagingRef.value?.completeByTotal([], 0)
     return
   }
-  pageNo.value++
-  await loadLines(true)
-}
-
-/** 加载发货通知单行 */
-async function loadLines(append = false) {
-  if (loading.value || !props.noticeId) {
-    return
-  }
-  loading.value = true
   try {
     const data = await getSalesNoticeLinePage({
-      pageNo: pageNo.value,
-      pageSize: 20,
+      pageNo,
+      pageSize,
       noticeId: props.noticeId,
     })
-    if (append) {
-      lineList.value.push(...data.list)
-    } else {
-      lineList.value = data.list
-    }
-    total.value = data.total
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
@@ -126,10 +115,12 @@ async function loadLines(append = false) {
 function open() {
   visible.value = true
   selectedLine.value = undefined
-  lineList.value = []
-  total.value = 0
-  pageNo.value = 1
-  loadLines()
+  reload()
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 取消 */

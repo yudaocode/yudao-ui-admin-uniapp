@@ -1,72 +1,68 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar title="产品 SOP" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
-    <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <!-- 顶部操作 -->
-      <view class="flex justify-end bg-white px-24rpx py-16rpx">
-        <wd-button size="small" variant="plain" :loading="loading" @click="loadList">
-          刷新
-        </wd-button>
-      </view>
+    <!-- 顶部操作 -->
+    <view class="flex justify-end bg-white px-24rpx py-16rpx">
+      <wd-button size="small" variant="plain" @click="reload">
+        刷新
+      </wd-button>
+    </view>
 
-      <view v-if="loading" class="py-100rpx text-center">
-        <wd-loading />
-        <view class="mt-16rpx text-28rpx text-[#999]">
-          加载中...
-        </view>
-      </view>
-
-      <template v-else>
-        <!-- SOP 卡片列表 -->
-        <view class="p-24rpx">
-          <view v-for="sop in list" :key="sop.id" class="mb-20rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
-            <wd-img v-if="sop.url" :src="sop.url" width="100%" height="320rpx" mode="aspectFill" enable-preview />
-            <view class="p-24rpx">
-              <view class="mb-12rpx truncate text-30rpx text-[#333] font-semibold">
-                {{ sop.title }}
+    <!-- SOP 列表 -->
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      class="min-h-0 flex-1"
+      :default-page-size="10"
+      :refresher-enabled="true"
+      :inside-more="true"
+      :loading-more-default-as-loading="true"
+      empty-view-text="暂无 SOP 数据"
+      @query="queryList"
+    >
+      <view class="p-24rpx pb-160rpx">
+        <view v-for="sop in list" :key="sop.id" class="mb-20rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+          <wd-img v-if="sop.url" :src="sop.url" width="100%" height="320rpx" mode="aspectFill" enable-preview />
+          <view class="p-24rpx">
+            <view class="mb-12rpx truncate text-30rpx text-[#333] font-semibold">
+              {{ sop.title }}
+            </view>
+            <view class="text-26rpx text-[#666] space-y-8rpx">
+              <view>展示顺序：{{ sop.sort }}</view>
+              <view>所属工序：{{ getProcessLabel(sop) }}</view>
+              <view v-if="sop.description">
+                内容说明：{{ sop.description }}
               </view>
-              <view class="text-26rpx text-[#666] space-y-8rpx">
-                <view>展示顺序：{{ sop.sort }}</view>
-                <view>所属工序：{{ getProcessLabel(sop) }}</view>
-                <view v-if="sop.description">
-                  内容说明：{{ sop.description }}
-                </view>
-                <view v-if="sop.remark">
-                  备注：{{ sop.remark }}
-                </view>
-                <view>创建时间：{{ formatDateTime(sop.createTime) || '-' }}</view>
+              <view v-if="sop.remark">
+                备注：{{ sop.remark }}
               </view>
-              <view v-if="isEdit" class="mt-16rpx flex justify-end gap-16rpx">
-                <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', sop)">
-                  编辑
-                </wd-button>
-                <wd-button
-                  v-if="canDelete"
-                  size="small"
-                  type="danger"
-                  variant="plain"
-                  :loading="deletingId === sop.id"
-                  :disabled="deletingId !== undefined"
-                  @click="handleDelete(sop)"
-                >
-                  删除
-                </wd-button>
-              </view>
+              <view>创建时间：{{ formatDateTime(sop.createTime) || '-' }}</view>
+            </view>
+            <view v-if="isEdit" class="mt-16rpx flex justify-end gap-16rpx">
+              <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', sop)">
+                编辑
+              </wd-button>
+              <wd-button
+                v-if="canDelete"
+                size="small"
+                type="danger"
+                variant="plain"
+                :loading="deletingId === sop.id"
+                :disabled="deletingId !== undefined"
+                @click="handleDelete(sop)"
+              >
+                删除
+              </wd-button>
             </view>
           </view>
-
-          <view v-if="list.length === 0" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无 SOP 数据" />
-          </view>
         </view>
-      </template>
+      </view>
+    </z-paging>
 
-      <view class="h-160rpx" />
-    </scroll-view>
-
-    <!-- 添加按钮 -->
+    <!-- 新增按钮 -->
     <view v-if="isEdit && canCreate" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button type="primary" block @click="openForm('create')">
@@ -75,12 +71,13 @@
       </view>
     </view>
 
-    <!-- 新增/编辑弹层 -->
+    <!-- 表单弹层 -->
     <wd-popup v-model="formVisible" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0; max-height: 85vh;">
       <scroll-view scroll-y class="bg-white px-24rpx pb-40rpx pt-32rpx" style="max-height: 85vh;">
         <view class="mb-32rpx text-center text-32rpx text-[#333] font-semibold">
           {{ formType === 'create' ? '新增 SOP' : '编辑 SOP' }}
         </view>
+        <!-- 表单区域 -->
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
             <wd-form-item title="标题" title-width="180rpx" prop="title">
@@ -107,6 +104,7 @@
             </wd-form-item>
           </wd-cell-group>
         </wd-form>
+        <!-- 底部操作 -->
         <view class="mt-40rpx flex gap-24rpx">
           <wd-button class="flex-1" variant="plain" @click="formVisible = false">
             取消
@@ -126,7 +124,7 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { createProductSop, deleteProductSop, getProductSopListByItemId, updateProductSop } from '@/api/mes/md/item/productSop'
+import { createProductSop, deleteProductSop, getProductSopPage, updateProductSop } from '@/api/mes/md/item/productSop'
 import { useAccess } from '@/hooks/useAccess'
 import ProcessFormPicker from '@/pages-mes/pro/process/components/process-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
@@ -145,19 +143,19 @@ definePage({
 const dialog = useDialog()
 const toast = useToast()
 const { hasAccessByCodes } = useAccess()
-const isEdit = computed(() => props.mode === 'edit')
-const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create']))
-const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update']))
-const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete']))
-const list = ref<MdProductSop[]>([]) // SOP 列表
-const loading = ref(false) // 列表加载状态
+const isEdit = computed(() => props.mode === 'edit') // 是否编辑模式
+const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create'])) // 是否可以新增
+const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update'])) // 是否可以编辑
+const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete'])) // 是否可以删除
+const list = ref<MdProductSop[]>([]) // 列表数据
+const pagingRef = ref<ZPagingRef<MdProductSop>>() // 分页组件引用
 const deletingId = ref<number>() // 正在删除的 SOP 编号
 
 const formVisible = ref(false) // 表单弹层状态
 const formType = ref<'create' | 'update'>('create') // 表单类型
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
-const formData = ref<MdProductSop>({
+const formData = ref<MdProductSop>({ // 表单数据
   itemId: 0,
   sort: 0,
   title: '',
@@ -165,11 +163,12 @@ const formData = ref<MdProductSop>({
   description: '',
   url: '',
   remark: '',
-}) // 表单数据
-const formSchema = createFormSchema({
+})
+const formSchema = createFormSchema({ // 表单校验规则
   title: [{ required: true, message: '标题不能为空' }],
   sort: [{ required: true, message: '展示顺序不能为空' }],
 })
+
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
@@ -185,17 +184,27 @@ function getProcessLabel(sop: MdProductSop): string {
   return name || code || '-'
 }
 
-/** 加载 SOP 列表 */
-async function loadList() {
+/** 查询 SOP 列表 */
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.itemId) {
+    pagingRef.value?.completeByTotal([], 0)
     return
   }
-  loading.value = true
   try {
-    list.value = await getProductSopListByItemId(Number(props.itemId))
-  } finally {
-    loading.value = false
+    const data = await getProductSopPage({
+      itemId: Number(props.itemId),
+      pageNo,
+      pageSize,
+    })
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
+}
+
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 打开新增/编辑弹层 */
@@ -255,7 +264,7 @@ async function submitForm() {
     }
     formVisible.value = false
     toast.success(`${actionName}成功`)
-    await loadList()
+    reload()
   } finally {
     formLoading.value = false
   }
@@ -278,19 +287,18 @@ async function handleDelete(sop: MdProductSop) {
   try {
     await deleteProductSop(sop.id)
     toast.success('删除成功')
-    await loadList()
+    reload()
   } finally {
     deletingId.value = undefined
   }
 }
 
 /** 初始化 */
-onMounted(async () => {
+onMounted(() => {
   if (!props.itemId) {
     toast.warning('缺少物料编号')
     delay(handleBack)
     return
   }
-  await loadList()
 })
 </script>

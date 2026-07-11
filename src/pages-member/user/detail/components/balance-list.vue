@@ -1,6 +1,18 @@
 <template>
-  <scroll-view scroll-y class="min-h-520rpx">
-    <view class="p-24rpx">
+  <!-- 余额流水列表 -->
+  <z-paging
+    ref="pagingRef"
+    v-model="list"
+    :fixed="false"
+    class="min-h-0 flex-1"
+    :default-page-size="10"
+    :refresher-enabled="true"
+    :inside-more="true"
+    :loading-more-default-as-loading="true"
+    empty-view-text="暂无余额流水"
+    @query="queryList"
+  >
+    <view class="p-24rpx pb-160rpx">
       <view
         v-for="item in list"
         :key="item.id"
@@ -22,19 +34,13 @@
           {{ formatDateTime(item.createTime) || '-' }}
         </view>
       </view>
-      <wd-empty v-if="!loading && list.length === 0" icon="content" tip="暂无余额流水" />
-      <view v-if="hasMore" class="pb-24rpx">
-        <wd-button block variant="plain" :loading="loading" @click="loadMore">
-          加载更多
-        </wd-button>
-      </view>
     </view>
-  </scroll-view>
+  </z-paging>
 </template>
 
 <script lang="ts" setup>
 import type { PayWalletTransaction } from '@/api/pay/wallet/transaction'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getPayWalletTransactionPage } from '@/api/pay/wallet/transaction'
 import { formatDateTime } from '@/utils/date'
 
@@ -43,11 +49,7 @@ const props = defineProps<{
 }>()
 
 const list = ref<PayWalletTransaction[]>([]) // 列表数据
-const loading = ref(false) // 加载状态
-const total = ref(0) // 总条数
-const pageNo = ref(1) // 当前页码
-const pageSize = 10 // 每页条数
-const hasMore = computed(() => list.value.length < total.value)
+const pagingRef = ref<ZPagingRef<PayWalletTransaction>>() // 分页组件引用
 
 /** 金额分转元展示 */
 function formatAmount(value?: number | string) {
@@ -62,42 +64,41 @@ function formatSignedAmount(value?: number | string) {
 }
 
 /** 查询余额流水 */
-async function getList(reset = true) {
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.walletId) {
-    list.value = []
-    total.value = 0
+    pagingRef.value?.complete([])
     return
   }
-  loading.value = true
   try {
-    const currentPageNo = reset ? 1 : pageNo.value + 1
     const data = await getPayWalletTransactionPage({
       walletId: props.walletId,
-      pageNo: currentPageNo,
+      pageNo,
       pageSize,
     })
-    list.value = reset ? data.list : [...list.value, ...data.list]
-    total.value = data.total
-    pageNo.value = currentPageNo
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
-/** 加载更多 */
-function loadMore() {
-  getList(false)
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
+/** 监听钱包变化，重新加载列表 */
 watch(
   () => props.walletId,
-  () => {
-    getList()
-  },
+  () => reload(),
 )
 
 /** 初始化 */
 onMounted(() => {
-  getList()
+  uni.$on('member:user:reload', reload)
+})
+
+/** 卸载 */
+onUnmounted(() => {
+  uni.$off('member:user:reload', reload)
 })
 </script>

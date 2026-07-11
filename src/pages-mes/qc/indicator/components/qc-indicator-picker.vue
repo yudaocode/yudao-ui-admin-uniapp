@@ -6,7 +6,7 @@
     custom-style="height: 82vh; border-radius: 24rpx 24rpx 0 0;"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="visible = false">
           取消
@@ -19,22 +19,33 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="query.code" placeholder="检测项编码" clearable />
-        <wd-input v-model="query.name" placeholder="检测项名称" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="检测项编码" clearable />
+        <wd-input v-model="queryParams.name" placeholder="检测项名称" clearable class="mt-12rpx" />
         <view class="mt-16rpx flex gap-16rpx">
           <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 质检指标列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="list"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="true"
+        :loading-more-default-as-loading="true"
+        empty-view-text="暂无可选质检指标"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in list"
@@ -64,14 +75,8 @@
               <view>结果值属性：{{ item.resultSpecification || '-' }}</view>
             </view>
           </view>
-          <view v-if="list.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选质检指标" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
-          </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -87,39 +92,29 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 弹层显示状态
-const loading = ref(false) // 列表加载状态
 const list = ref<QcIndicator[]>([]) // 指标列表
 const selected = ref<QcIndicator>() // 当前选中
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总条数
-const query = reactive<Record<string, any>>({
+const pagingRef = ref<ZPagingRef<QcIndicator>>() // 分页组件引用
+const pendingSelectedId = ref<number>() // 待回显编号
+const queryParams = reactive<Record<string, any>>({ // 查询参数
   code: undefined,
   name: undefined,
-}) // 搜索条件
+})
 
-/** 加载质检指标列表 */
-async function loadList(append = false, selectedId?: number) {
-  if (loading.value) {
-    return
-  }
-  loading.value = true
+/** 查询质检指标列表 */
+async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getIndicatorPage({
-      ...query,
-      pageNo: pageNo.value,
-      pageSize: 20,
+      ...queryParams,
+      pageNo,
+      pageSize,
     })
-    if (append) {
-      list.value.push(...data.list)
-    } else {
-      list.value = data.list
+    if (pendingSelectedId.value != null && !selected.value) {
+      selected.value = data.list.find(item => item.id === pendingSelectedId.value)
     }
-    total.value = data.total
-    if (selectedId && !selected.value) {
-      selected.value = list.value.find(item => item.id === selectedId)
-    }
-  } finally {
-    loading.value = false
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
@@ -127,33 +122,25 @@ async function loadList(append = false, selectedId?: number) {
 function open(currentId?: number) {
   visible.value = true
   selected.value = undefined
-  pageNo.value = 1
-  total.value = 0
-  list.value = []
-  loadList(false, currentId)
+  pendingSelectedId.value = currentId
+  reload()
 }
 
-/** 搜索 */
-function handleSearch() {
-  pageNo.value = 1
-  loadList()
+/** 重新加载 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
-/** 重置 */
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
+}
+
+/** 重置按钮操作 */
 function handleReset() {
-  query.code = undefined
-  query.name = undefined
-  pageNo.value = 1
-  loadList()
-}
-
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || list.value.length >= total.value) {
-    return
-  }
-  pageNo.value += 1
-  await loadList(true)
+  queryParams.code = undefined
+  queryParams.name = undefined
+  reload()
 }
 
 /** 确认选择 */

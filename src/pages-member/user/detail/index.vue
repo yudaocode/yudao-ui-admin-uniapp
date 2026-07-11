@@ -1,5 +1,11 @@
 <template>
-  <view class="yd-page-container pb-[140rpx]">
+  <view
+    class="yd-page-container"
+    :class="{
+      'yd-page-container-paging': isPagingTab,
+      'pb-[140rpx]': !isPagingTab,
+    }"
+  >
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="会员详情"
@@ -7,132 +13,126 @@
       @click-left="handleBack"
     />
 
-    <!-- 会员概览 -->
-    <view class="bg-white p-24rpx">
-      <view class="mb-24rpx flex items-center gap-20rpx">
-        <wd-img
-          v-if="formData?.avatar"
-          :src="formData.avatar"
-          :width="56"
-          :height="56"
-          mode="aspectFill"
-          round
-        />
-        <view
-          v-else
-          class="h-112rpx w-112rpx flex items-center justify-center rounded-full bg-[#1890ff] text-40rpx text-white"
-        >
-          {{ (formData?.nickname || formData?.mobile || '会').charAt(0) }}
-        </view>
-        <view class="min-w-0 flex-1">
-          <view class="truncate text-36rpx text-[#333] font-semibold">
-            {{ formData?.nickname || formData?.name || '-' }}
-          </view>
-          <view class="mt-8rpx text-26rpx text-[#999]">
-            {{ formData?.mobile || '未绑定手机号' }}
-          </view>
-        </view>
-        <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
-        <text v-else class="text-26rpx text-[#999]">-</text>
-      </view>
-      <view class="grid grid-cols-3 gap-12rpx rounded-8rpx bg-[#f7f8fa] p-16rpx text-center">
-        <view>
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ formData?.point ?? 0 }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            当前积分
-          </view>
-        </view>
-        <view>
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ formData?.totalPoint ?? 0 }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            总积分
-          </view>
-        </view>
-        <view>
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ formData?.experience ?? 0 }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            成长值
-          </view>
-        </view>
-        <view>
-          <view class="break-all text-28rpx text-[#333] font-semibold">
-            {{ formatAmount(walletData?.balance) }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            当前余额
-          </view>
-        </view>
-        <view>
-          <view class="break-all text-28rpx text-[#333] font-semibold">
-            {{ formatAmount(walletData?.totalExpense) }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            支出金额
-          </view>
-        </view>
-        <view>
-          <view class="break-all text-28rpx text-[#333] font-semibold">
-            {{ formatAmount(walletData?.totalRecharge) }}
-          </view>
-          <view class="mt-4rpx text-22rpx text-[#999]">
-            充值金额
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 基础信息 -->
-    <wd-cell-group border>
-      <wd-cell title="真实姓名" :value="formData?.name || '-'" />
-      <wd-cell title="邮箱" :value="formData?.email || '-'" />
-      <wd-cell title="性别">
-        <dict-tag v-if="formData?.sex != null" :type="DICT_TYPE.SYSTEM_USER_SEX" :value="formData?.sex" />
-        <text v-else>-</text>
-      </wd-cell>
-      <wd-cell title="所在地" :value="formData?.areaName || '-'" />
-      <wd-cell title="会员等级" :value="formData?.levelName || '-'" />
-      <wd-cell title="用户分组" :value="formData?.groupName || '-'" />
-      <wd-cell title="注册 IP" :value="formData?.registerIp || '-'" />
-      <wd-cell title="最后登录 IP" :value="formData?.loginIp || '-'" />
-      <wd-cell title="生日" :value="formatDate(formData?.birthday) || '-'" />
-      <wd-cell title="注册时间" :value="formatDateTime(formData?.createTime) || '-'" />
-      <wd-cell title="最后登录时间" :value="formatDateTime(formData?.loginDate) || '-'" />
-      <wd-cell title="会员备注" :value="formData?.mark || '-'" />
-    </wd-cell-group>
-
-    <!-- 明细 Tab -->
-    <view class="mt-24rpx bg-white">
-      <wd-tabs v-model="tabIndex" shrink>
-        <wd-tab title="积分" />
-        <wd-tab title="签到" />
-        <wd-tab title="成长值" />
-        <wd-tab title="余额" />
-        <wd-tab title="收货地址" />
-        <wd-tab title="订单管理" />
-        <wd-tab title="售后管理" />
-        <wd-tab title="收藏记录" />
-        <wd-tab title="优惠券" />
-        <wd-tab title="推广用户" />
+    <!-- 详情分类 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabIndex" slidable="always">
+        <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
       </wd-tabs>
     </view>
 
+    <!-- 基本信息 -->
+    <template v-if="activeTab === 'basic'">
+      <!-- 会员概览 -->
+      <view class="bg-white p-24rpx">
+        <view class="mb-24rpx flex items-center gap-20rpx">
+          <wd-img
+            v-if="formData?.avatar"
+            :src="formData.avatar"
+            :width="56"
+            :height="56"
+            mode="aspectFill"
+            round
+          />
+          <view
+            v-else
+            class="h-112rpx w-112rpx flex items-center justify-center rounded-full bg-[#1890ff] text-40rpx text-white"
+          >
+            {{ (formData?.nickname || formData?.mobile || '会').charAt(0) }}
+          </view>
+          <view class="min-w-0 flex-1">
+            <view class="truncate text-36rpx text-[#333] font-semibold">
+              {{ formData?.nickname || formData?.name || '-' }}
+            </view>
+            <view class="mt-8rpx text-26rpx text-[#999]">
+              {{ formData?.mobile || '未绑定手机号' }}
+            </view>
+          </view>
+          <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
+          <text v-else class="text-26rpx text-[#999]">-</text>
+        </view>
+        <view class="grid grid-cols-3 gap-12rpx rounded-8rpx bg-[#f7f8fa] p-16rpx text-center">
+          <view>
+            <view class="text-32rpx text-[#333] font-semibold">
+              {{ formData?.point ?? 0 }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              当前积分
+            </view>
+          </view>
+          <view>
+            <view class="text-32rpx text-[#333] font-semibold">
+              {{ formData?.totalPoint ?? 0 }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              总积分
+            </view>
+          </view>
+          <view>
+            <view class="text-32rpx text-[#333] font-semibold">
+              {{ formData?.experience ?? 0 }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              成长值
+            </view>
+          </view>
+          <view>
+            <view class="break-all text-28rpx text-[#333] font-semibold">
+              {{ formatAmount(walletData?.balance) }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              当前余额
+            </view>
+          </view>
+          <view>
+            <view class="break-all text-28rpx text-[#333] font-semibold">
+              {{ formatAmount(walletData?.totalExpense) }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              支出金额
+            </view>
+          </view>
+          <view>
+            <view class="break-all text-28rpx text-[#333] font-semibold">
+              {{ formatAmount(walletData?.totalRecharge) }}
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              充值金额
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 基础字段 -->
+      <wd-cell-group border>
+        <wd-cell title="真实姓名" :value="formData?.name || '-'" />
+        <wd-cell title="邮箱" :value="formData?.email || '-'" />
+        <wd-cell title="性别">
+          <dict-tag v-if="formData?.sex != null" :type="DICT_TYPE.SYSTEM_USER_SEX" :value="formData?.sex" />
+          <text v-else>-</text>
+        </wd-cell>
+        <wd-cell title="所在地" :value="formData?.areaName || '-'" />
+        <wd-cell title="会员等级" :value="formData?.levelName || '-'" />
+        <wd-cell title="用户分组" :value="formData?.groupName || '-'" />
+        <wd-cell title="注册 IP" :value="formData?.registerIp || '-'" />
+        <wd-cell title="最后登录 IP" :value="formData?.loginIp || '-'" />
+        <wd-cell title="生日" :value="formatDate(formData?.birthday) || '-'" />
+        <wd-cell title="注册时间" :value="formatDateTime(formData?.createTime) || '-'" />
+        <wd-cell title="最后登录时间" :value="formatDateTime(formData?.loginDate) || '-'" />
+        <wd-cell title="会员备注" :value="formData?.mark || '-'" />
+      </wd-cell-group>
+    </template>
+
     <!-- 明细列表 -->
-    <PointList v-if="loadedTabs.has(0)" v-show="tabIndex === 0" :user-id="props.id" />
-    <SignList v-if="loadedTabs.has(1)" v-show="tabIndex === 1" :user-id="props.id" />
-    <ExperienceList v-if="loadedTabs.has(2)" v-show="tabIndex === 2" :user-id="props.id" />
-    <BalanceList v-if="loadedTabs.has(3)" v-show="tabIndex === 3" :wallet-id="walletData?.id" />
-    <AddressList v-if="loadedTabs.has(4)" v-show="tabIndex === 4" :user-id="props.id" />
-    <OrderList v-if="loadedTabs.has(5)" v-show="tabIndex === 5" :user-id="props.id" />
-    <AfterSaleList v-if="loadedTabs.has(6)" v-show="tabIndex === 6" :user-id="props.id" />
-    <FavoriteList v-if="loadedTabs.has(7)" v-show="tabIndex === 7" :user-id="props.id" />
-    <CouponList v-if="loadedTabs.has(8)" v-show="tabIndex === 8" :user-id="props.id" />
-    <BrokerageList v-if="loadedTabs.has(9)" v-show="tabIndex === 9" :bind-user-id="props.id" />
+    <PointList v-if="loadedTabs.has('point')" v-show="activeTab === 'point'" class="min-h-0 flex-1" :user-id="props.id" />
+    <SignList v-if="loadedTabs.has('sign')" v-show="activeTab === 'sign'" class="min-h-0 flex-1" :user-id="props.id" />
+    <ExperienceList v-if="loadedTabs.has('experience')" v-show="activeTab === 'experience'" class="min-h-0 flex-1" :user-id="props.id" />
+    <BalanceList v-if="loadedTabs.has('balance')" v-show="activeTab === 'balance'" class="min-h-0 flex-1" :wallet-id="walletData?.id" />
+    <AddressList v-if="loadedTabs.has('address')" v-show="activeTab === 'address'" :user-id="props.id" />
+    <OrderList v-if="loadedTabs.has('order')" v-show="activeTab === 'order'" class="min-h-0 flex-1" :user-id="props.id" />
+    <AfterSaleList v-if="loadedTabs.has('after-sale')" v-show="activeTab === 'after-sale'" class="min-h-0 flex-1" :user-id="props.id" />
+    <FavoriteList v-if="loadedTabs.has('favorite')" v-show="activeTab === 'favorite'" class="min-h-0 flex-1" :user-id="props.id" />
+    <CouponList v-if="loadedTabs.has('coupon')" v-show="activeTab === 'coupon'" class="min-h-0 flex-1" :user-id="props.id" />
+    <BrokerageList v-if="loadedTabs.has('brokerage')" v-show="activeTab === 'brokerage'" class="min-h-0 flex-1" :bind-user-id="props.id" />
 
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
@@ -203,18 +203,33 @@ definePage({
   },
 })
 
+const tabs: { key: string, title: string }[] = [ // 详情分类
+  { key: 'basic', title: '基本信息' },
+  { key: 'point', title: '积分' },
+  { key: 'sign', title: '签到' },
+  { key: 'experience', title: '成长值' },
+  { key: 'balance', title: '余额' },
+  { key: 'address', title: '收货地址' },
+  { key: 'order', title: '订单管理' },
+  { key: 'after-sale', title: '售后管理' },
+  { key: 'favorite', title: '收藏记录' },
+  { key: 'coupon', title: '优惠券' },
+  { key: 'brokerage', title: '推广用户' },
+]
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const formData = ref<MemberUser>() // 详情数据
 const walletData = ref<PayWallet>() // 钱包数据
-const tabIndex = ref(0) // 当前明细 Tab
-const loadedTabs = ref(new Set<number>([0])) // 已加载过的 Tab；懒加载，避免打开详情即并发全部列表请求
+const tabIndex = ref(0) // 当前详情分类下标
+const loadedTabs = ref(new Set<string>(['basic'])) // 已加载过的分类；懒加载，避免打开详情即并发全部列表请求
 const moreActionVisible = ref(false) // 更多操作菜单
 const levelFormVisible = ref(false) // 修改等级弹窗
 const pointFormVisible = ref(false) // 修改积分弹窗
 const balanceFormVisible = ref(false) // 修改余额弹窗
 const couponSendVisible = ref(false) // 发送优惠券弹窗
-const moreActions = computed(() => {
+const activeTab = computed(() => tabs[tabIndex.value]?.key || 'basic') // 当前详情分类
+const isPagingTab = computed(() => !['basic', 'address'].includes(activeTab.value)) // 分页详情分类使用固定高布局
+const moreActions = computed(() => { // 更多操作菜单项
   const actions = []
   if (hasAccessByCodes(['member:user:update-level'])) {
     actions.push({ name: '修改等级', value: 'update-level' })
@@ -230,10 +245,10 @@ const moreActions = computed(() => {
   }
   return actions
 })
-const hasMoreActions = computed(() => moreActions.value.length > 0)
+const hasMoreActions = computed(() => moreActions.value.length > 0) // 是否显示更多操作
 
-// 切换 Tab 时记录已加载的 Tab，实现懒加载
-watch(tabIndex, value => loadedTabs.value.add(value))
+/** 切换详情分类时记录已加载分类，实现懒加载 */
+watch(activeTab, value => loadedTabs.value.add(value))
 
 /** 金额分转元展示 */
 function formatAmount(value?: number | string) {
@@ -295,7 +310,6 @@ function handleMoreAction({ item }: { item: { value: string } }) {
 /** 操作成功 */
 function handleActionSuccess() {
   uni.$emit('member:user:reload')
-  getDetail()
 }
 
 /** 初始化 */

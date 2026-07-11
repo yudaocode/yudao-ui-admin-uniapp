@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container-paging">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
       :title="pageTitle"
@@ -14,79 +14,88 @@
     </wd-navbar>
 
     <!-- 消息列表 -->
-    <scroll-view
+    <z-paging
+      ref="pagingRef"
+      v-model="messageList"
+      use-chat-record-mode
+      :fixed="false"
       class="min-h-0 flex-1 bg-[#ededed]"
-      scroll-y
-      :scroll-into-view="scrollIntoView"
-      scroll-with-animation
+      :default-page-size="PAGE_SIZE"
+      bg-color="#ededed"
+      bottom-bg-color="#fff"
+      empty-view-text="暂无消息"
+      empty-view-reload-text="重新加载"
+      :show-empty-view-reload="historyLoadFailed"
+      @query="queryList"
+      @empty-view-reload="handleEmptyViewReload"
+      @cell-style-change="cellStyle = $event"
     >
       <view class="px-24rpx py-20rpx">
-        <wd-button v-if="hasMore" block size="small" variant="plain" :loading="loadingMore" @click="loadMore">
-          加载更早消息
-        </wd-button>
-        <view v-if="!loading && messageList.length === 0" class="py-120rpx">
-          <wd-empty icon="content" tip="暂无消息" />
-        </view>
-        <MessageItem
+        <view
           v-for="(item, index) in messageList"
           :id="`msg-${item.id || item.clientMessageId || index}`"
           :key="item.id || item.clientMessageId || index"
-          :message="item"
-          :conversation-type="conversationType"
-          :self-user-id="userStore.userInfo.userId"
-          :self-name="userStore.userInfo.nickname"
-          :self-avatar="userStore.userInfo.avatar"
-          :peer-name="pageTitle"
-          :group-members="groupMembers"
-          :private-max-read-message-id="privateMaxReadMessageId"
-          :show-time="shouldShowTime(index)"
-          :select-mode="selectMode"
-          :selected="selectedIds.includes(messageKey(item))"
-          @longpress="handleMessageMore"
-          @scroll-to-quote="scrollToQuote"
-          @material-click="handleMaterialClick"
-          @merge-click="handleMergeClick"
-          @toggle-select="toggleSelect"
-          @show-readers="handleShowReaders"
-        />
-        <view id="msg-bottom" />
+          :style="cellStyle"
+        >
+          <MessageItem
+            :message="item"
+            :conversation-type="conversationType"
+            :self-user-id="userStore.userInfo.userId"
+            :self-name="userStore.userInfo.nickname"
+            :self-avatar="userStore.userInfo.avatar"
+            :peer-name="pageTitle"
+            :group-members="groupMembers"
+            :private-max-read-message-id="privateMaxReadMessageId"
+            :show-time="shouldShowTime(index)"
+            :select-mode="selectMode"
+            :selected="selectedIds.includes(messageKey(item))"
+            @longpress="handleMessageMore"
+            @scroll-to-quote="scrollToQuote"
+            @material-click="handleMaterialClick"
+            @merge-click="handleMergeClick"
+            @toggle-select="toggleSelect"
+            @show-readers="handleShowReaders"
+          />
+        </view>
       </view>
-    </scroll-view>
 
-    <!-- 输入区 -->
-    <ChatInput
-      v-if="!selectMode"
-      :conversation-type="conversationType"
-      :group-members="groupMembers"
-      :self-user-id="userStore.userInfo.userId"
-      :reply-title="getQuoteTitleByQuote(replyTarget)"
-      @send="handleSend"
-      @clear-reply="clearReplyTarget"
-    />
-    <!-- 多选操作栏 -->
-    <view
-      v-else
-      class="flex shrink-0 items-center justify-around border-t border-t-[#eee] bg-white py-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))]"
-    >
-      <text class="text-28rpx text-[#666]" @click="exitSelectMode">取消</text>
-      <text class="text-28rpx" :class="selectedIds.length ? 'text-[#1677ff]' : 'text-[#ccc]'" @click="forwardSelected">
-        转发{{ selectedIds.length ? `(${selectedIds.length})` : '' }}
-      </text>
-      <text class="text-28rpx" :class="selectedIds.length ? 'text-[#fa5151]' : 'text-[#ccc]'" @click="deleteSelected">
-        删除
-      </text>
-    </view>
+      <!-- 输入区域 -->
+      <template #bottom>
+        <ChatInput
+          v-if="!selectMode"
+          :conversation-type="conversationType"
+          :group-members="groupMembers"
+          :self-user-id="userStore.userInfo.userId"
+          :reply-title="getQuoteTitleByQuote(replyTarget)"
+          @send="handleSend"
+          @clear-reply="clearReplyTarget"
+        />
+        <!-- 多选操作栏 -->
+        <view
+          v-else
+          class="flex shrink-0 items-center justify-around border-t border-t-[#eee] bg-white py-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))]"
+        >
+          <text class="text-28rpx text-[#666]" @click="exitSelectMode">取消</text>
+          <text class="text-28rpx" :class="selectedIds.length ? 'text-[#1677ff]' : 'text-[#ccc]'" @click="forwardSelected">
+            转发{{ selectedIds.length ? `(${selectedIds.length})` : '' }}
+          </text>
+          <text class="text-28rpx" :class="selectedIds.length ? 'text-[#fa5151]' : 'text-[#ccc]'" @click="deleteSelected">
+            删除
+          </text>
+        </view>
+      </template>
+    </z-paging>
 
-    <!-- 频道素材详情 -->
+    <!-- 频道素材详情弹窗 -->
     <MaterialDetail v-model="materialVisible" :payload="materialPayload" />
 
-    <!-- 合并转发详情 -->
+    <!-- 合并转发详情弹窗 -->
     <MergeDetail v-model="mergeVisible" :payload="mergePayload" />
 
-    <!-- 转发选择 -->
+    <!-- 转发选择弹窗 -->
     <ForwardPicker v-model="forwardVisible" @confirm="handleForwardConfirm" />
 
-    <!-- 群已读情况 -->
+    <!-- 群已读情况弹窗 -->
     <ReadDetail v-model="readDetailVisible" :read-members="readMembers" :unread-members="unreadMembers" />
   </view>
 </template>
@@ -170,16 +179,18 @@ definePage({
   },
 })
 
-const PAGE_SIZE = 30
+const PAGE_SIZE = 30 // 每页消息数
 const MESSAGE_TIME_GAP = 5 * 60 * 1000 // 时间分隔间隔（5 分钟）
 const toast = useToast()
 const userStore = useUserStore()
-const loading = ref(false) // 初始加载状态
-const loadingMore = ref(false) // 加载更早状态
-const hasMore = ref(false) // 是否还有更早消息
-const messageList = ref<ChatMessage[]>([]) // 消息列表
+const pagingRef = ref<any>() // 分页组件引用
+const messageList = ref<ChatMessage[]>([]) // 消息列表（最新在前）
+const firstPageLoading = ref(false) // 首屏消息加载状态
+const pendingLatestMessages = ref<ChatMessage[]>([]) // 首屏加载期间待追加消息
+const cellStyle = ref<Record<string, string>>({ transform: 'scaleY(-1)' }) // 聊天记录模式单元格倒置样式
+const historyMaxId = ref<number>() // 历史消息游标（已加载最早消息编号）
+const historyLoadFailed = ref(false) // 删除清空后的历史补拉失败状态
 const groupMembers = ref<ImGroupMemberRespVO[]>([]) // 群成员
-const scrollIntoView = ref('msg-bottom') // 滚动锚点
 const privateMaxReadMessageId = ref<number>() // 私聊对方已读位置
 const materialVisible = ref(false) // 素材详情弹窗
 const materialPayload = ref<ImMaterialMessage>() // 素材消息内容
@@ -196,17 +207,10 @@ const replyTarget = ref<ImQuoteMessage>() // 回复目标
 const { markConversationRead, setActiveConversation, buildIncomingMessage, applyIncomingMessage } = useImConversations()
 const chatVisible = ref(false) // 当前聊天页是否可见
 
-/** 当前会话类型 */
-const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE))
-
-/** 当前会话目标 */
-const targetId = computed(() => Number(props.targetId))
-
-/** 当前会话主键 */
-const currentCcid = computed(() => getClientConversationId(conversationType.value, targetId.value))
-
-/** 页面标题 */
-const pageTitle = computed(() => props.title ? decodeURIComponent(props.title) : '聊天')
+const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 当前会话类型
+const targetId = computed(() => Number(props.targetId)) // 当前会话目标
+const currentCcid = computed(() => getClientConversationId(conversationType.value, targetId.value)) // 当前会话主键
+const pageTitle = computed(() => props.title ? decodeURIComponent(props.title) : '聊天') // 页面标题
 
 /** 返回上一页 */
 function handleBack() {
@@ -253,9 +257,8 @@ async function scrollToQuote(content: string) {
   if (!quote?.messageId) {
     return
   }
-  scrollIntoView.value = ''
   await nextTick()
-  scrollIntoView.value = `msg-${quote.messageId}`
+  pagingRef.value?.scrollIntoViewById(`msg-${quote.messageId}`, 0, true)
 }
 
 /** 清空回复目标 */
@@ -321,7 +324,9 @@ function exitSelectMode() {
 
 /** 当前选中的消息 */
 function getSelectedMessages() {
-  return messageList.value.filter(item => selectedIds.value.includes(messageKey(item)))
+  return messageList.value
+    .filter(item => selectedIds.value.includes(messageKey(item)))
+    .reverse()
 }
 
 /** 打开转发选择 */
@@ -367,7 +372,11 @@ function confirmDelete(messages: ChatMessage[]) {
         return
       }
       const keys = new Set(messages.map(messageKey))
-      messageList.value = messageList.value.filter(item => !keys.has(messageKey(item)))
+      const nextMessages = messageList.value.filter(item => !keys.has(messageKey(item)))
+      pagingRef.value?.resetTotalData(nextMessages)
+      if (nextMessages.length === 0) {
+        loadOlderMessagesAfterClear()
+      }
       exitSelectMode()
     },
   })
@@ -391,73 +400,100 @@ async function handleShowReaders(message: ChatMessage) {
   readDetailVisible.value = true
 }
 
-/** 滚动到底部 */
-async function scrollToBottom() {
-  await nextTick()
-  scrollIntoView.value = ''
-  await nextTick()
-  scrollIntoView.value = 'msg-bottom'
-}
-
 /** 查询历史消息 */
-async function queryMessages(maxId?: number) {
+async function queryMessages(maxId?: number, limit = PAGE_SIZE) {
   if (conversationType.value === ImConversationType.GROUP) {
-    return getGroupMessageList({ groupId: targetId.value, maxId, limit: PAGE_SIZE })
+    return getGroupMessageList({ groupId: targetId.value, maxId, limit })
   }
-  return getPrivateMessageList({ receiverId: targetId.value, maxId, limit: PAGE_SIZE })
+  return getPrivateMessageList({ receiverId: targetId.value, maxId, limit })
 }
 
-/** 加载最新消息 */
-async function loadMessages() {
-  if (!targetId.value) {
+/** 删除清空后继续加载更早消息 */
+async function loadOlderMessagesAfterClear() {
+  if (!historyMaxId.value) {
     return
   }
-  loading.value = true
+  historyLoadFailed.value = false
   try {
-    if (conversationType.value === ImConversationType.GROUP) {
-      groupMembers.value = await getGroupMemberList(targetId.value)
+    const messages = normalizeMessages(await queryMessages(historyMaxId.value, PAGE_SIZE))
+    if (messages.length) {
+      historyMaxId.value = messages.at(-1)?.id
     }
-    const data = await queryMessages()
-    messageList.value = normalizeMessages(data)
-    hasMore.value = data.length >= PAGE_SIZE
+    const mergedMessages = normalizeMessages([...messageList.value, ...messages])
+      .filter((message, index, rows) => rows.findIndex(item => isSameMessage(item, message)) === index)
+    pagingRef.value?.resetTotalData(mergedMessages)
+  } catch {
+    historyLoadFailed.value = true
+  }
+}
+
+/** 空状态重新加载 */
+function handleEmptyViewReload(callback: (reload?: boolean) => void) {
+  if (!historyLoadFailed.value) {
+    callback(true)
+    return
+  }
+  callback(false)
+  loadOlderMessagesAfterClear()
+}
+
+/** 分页查询：第一页加载最新消息，后续按最早消息编号向前加载 */
+async function queryList(pageNo: number, pageSize: number) {
+  const isFirstPage = pageNo === 1
+  let querySucceeded = false
+  if (isFirstPage) {
+    firstPageLoading.value = true
+  }
+  if (!targetId.value) {
+    await pagingRef.value?.complete([])
+    if (isFirstPage) {
+      flushPendingLatestMessages()
+    }
+    return
+  }
+  try {
+    const maxId = isFirstPage ? undefined : historyMaxId.value
+    const data = await queryMessages(maxId, pageSize)
+    const messages = normalizeMessages(data)
+    if (messages.length) {
+      historyMaxId.value = messages.at(-1)?.id
+    }
+    await pagingRef.value?.complete(messages)
+    querySucceeded = true
+  } catch {
+    await pagingRef.value?.complete(false).catch(() => undefined)
+    return
+  } finally {
+    if (isFirstPage && querySucceeded) {
+      flushPendingLatestMessages()
+    }
+  }
+  if (isFirstPage) {
     await markRead()
     await syncPrivateReadStatus()
-    await scrollToBottom()
-  } finally {
-    loading.value = false
   }
 }
 
-/** 加载更早消息 */
-async function loadMore() {
-  const firstId = messageList.value[0]?.id
-  if (!firstId || loadingMore.value) {
+/** 加载群成员 */
+async function loadGroupMembers() {
+  if (conversationType.value !== ImConversationType.GROUP || !targetId.value) {
     return
   }
-  loadingMore.value = true
-  try {
-    const data = await queryMessages(firstId)
-    const older = normalizeMessages(data)
-    messageList.value = [...older, ...messageList.value]
-    hasMore.value = data.length >= PAGE_SIZE
-  } finally {
-    loadingMore.value = false
-  }
+  groupMembers.value = await getGroupMemberList(targetId.value)
 }
 
 /** 标记已读 */
-async function markRead() {
-  const last = messageList.value[messageList.value.length - 1]
-  if (!last?.id) {
+async function markRead(latest = messageList.value[0]) {
+  if (!latest?.id) {
     return
   }
   if (conversationType.value === ImConversationType.GROUP) {
-    await readGroupMessages(targetId.value, last.id)
+    await readGroupMessages(targetId.value, latest.id)
   } else {
-    await readPrivateMessages(targetId.value, last.id)
+    await readPrivateMessages(targetId.value, latest.id)
   }
   // 同步清除会话列表未读
-  await markConversationRead(conversationType.value, targetId.value, last.id)
+  await markConversationRead(conversationType.value, targetId.value, latest.id)
 }
 
 /** 同步私聊已读位置 */
@@ -537,7 +573,9 @@ async function handleRecallMessage(item: ChatMessage) {
     : await recallPrivateMessage(item.id)
   const index = messageList.value.findIndex(message => message.id === item.id)
   if (index >= 0) {
-    messageList.value[index] = recalled as ChatMessage
+    const nextMessages = [...messageList.value]
+    nextMessages[index] = recalled as ChatMessage
+    pagingRef.value?.resetTotalData(nextMessages)
   }
   toast.success('已撤回')
 }
@@ -561,7 +599,7 @@ async function sendRawMessage(type: number, payload: Record<string, any>, option
         type,
         content,
       })
-  messageList.value.push(message)
+  addLatestMessage(message)
   // 自己发的消息 WebSocket 不会回推，手动同步到会话列表（更新摘要 + 落库 + 重排）
   const incoming = buildIncomingMessage(conversationType.value, message)
   if (incoming) {
@@ -570,7 +608,6 @@ async function sendRawMessage(type: number, payload: Record<string, any>, option
   if (quote && replyTarget.value === quote) {
     clearReplyTarget()
   }
-  await scrollToBottom()
 }
 
 /** 输入区发送：转发给 sendRawMessage */
@@ -578,9 +615,9 @@ function handleSend(data: SendData) {
   return sendRawMessage(data.type, data.payload, data.options)
 }
 
-/** 规范化消息顺序 */
+/** 规范化聊天记录顺序：最新消息在前 */
 function normalizeMessages(data: ChatMessage[]) {
-  return [...data].sort((a, b) => (a.id || 0) - (b.id || 0))
+  return [...data].sort((a, b) => (b.id || 0) - (a.id || 0))
 }
 
 /** 时间转毫秒 */
@@ -591,14 +628,43 @@ function toMillis(time?: number | string) {
   return typeof time === 'number' ? time : new Date(time).getTime()
 }
 
-/** 是否展示时间分隔（首条或距上一条超过 5 分钟） */
+/** 是否展示时间分隔（最早一条或与更早消息间隔超过 5 分钟） */
 function shouldShowTime(index: number) {
-  if (index === 0) {
+  const current = messageList.value[index]
+  const older = messageList.value[index + 1]
+  return !older || toMillis(current.sendTime) - toMillis(older.sendTime) > MESSAGE_TIME_GAP
+}
+
+/** 是否为同一条消息 */
+function isSameMessage(left: ChatMessage, right: ChatMessage) {
+  return !!((right.id && left.id === right.id)
+    || (right.clientMessageId && left.clientMessageId === right.clientMessageId))
+}
+
+/** 去重后追加最新消息并滚动到底部 */
+function addLatestMessage(message: ChatMessage) {
+  if (messageList.value.some(item => isSameMessage(item, message))
+    || pendingLatestMessages.value.some(item => isSameMessage(item, message))) {
+    return false
+  }
+  if (firstPageLoading.value) {
+    pendingLatestMessages.value.push(message)
     return true
   }
-  const current = messageList.value[index]
-  const previous = messageList.value[index - 1]
-  return toMillis(current.sendTime) - toMillis(previous.sendTime) > MESSAGE_TIME_GAP
+  if (pagingRef.value) {
+    pagingRef.value.addChatRecordData(message)
+  } else {
+    messageList.value = [message, ...messageList.value]
+  }
+  return true
+}
+
+/** 追加首屏加载期间收到的新消息 */
+function flushPendingLatestMessages() {
+  firstPageLoading.value = false
+  const messages = normalizeMessages(pendingLatestMessages.value).reverse()
+  pendingLatestMessages.value = []
+  messages.forEach(message => addLatestMessage(message))
 }
 
 /** 收到实时消息：属于当前会话且页面可见时追加气泡 */
@@ -608,15 +674,10 @@ function onIncoming(data: { message?: { clientConversationId?: string }, payload
   if (!chatVisible.value || !message || !payload || message.clientConversationId !== currentCcid.value) {
     return
   }
-  const exists = messageList.value.some(item =>
-    (payload.id && item.id === payload.id)
-    || (payload.clientMessageId && item.clientMessageId === payload.clientMessageId))
-  if (exists) {
+  if (!addLatestMessage(payload)) {
     return
   }
-  messageList.value = normalizeMessages([...messageList.value, payload])
-  scrollToBottom()
-  markRead()
+  markRead(payload)
 }
 
 /** 初始化 */
@@ -626,7 +687,7 @@ onMounted(() => {
     return
   }
   uni.$on('im:message', onIncoming)
-  loadMessages()
+  loadGroupMembers()
 })
 
 /** 进入页面：标记活跃会话 + 建立实时连接 */
