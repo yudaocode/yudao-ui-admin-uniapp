@@ -83,11 +83,6 @@ export function deleteTask(id: number) {
   return http.delete<boolean>(`/mes/pro/task/delete?id=${id}`)
 }
 
-/** 导出生产任务 Excel */
-export function exportTask(params: Record<string, any>) {
-  return http.get<Blob>('/mes/pro/task/export-excel', params)
-}
-
 /** 获得甘特图任务列表 */
 export function getGanttTaskList(params: Record<string, any>) {
   return http.get<ProTaskGantt[]>('/mes/pro/task/gantt-list', params)

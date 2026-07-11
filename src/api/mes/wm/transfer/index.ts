@@ -69,8 +69,3 @@ export function finishTransfer(id: number) {
 export function cancelTransfer(id: number) {
   return http.put<boolean>(`/mes/wm/transfer/cancel?id=${id}`)
 }
-
-/** 导出转移单 Excel */
-export function exportTransfer(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/transfer/export-excel', params)
-}

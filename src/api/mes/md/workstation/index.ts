@@ -43,8 +43,3 @@ export function updateWorkstation(data: MdWorkstation) {
 export function deleteWorkstation(id: number) {
   return http.delete<boolean>(`/mes/md-workstation/delete?id=${id}`)
 }
-
-/** 导出工作站 Excel */
-export function exportWorkstation(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md-workstation/export-excel`, params)
-}

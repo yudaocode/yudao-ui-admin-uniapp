@@ -43,8 +43,3 @@ export function updateWorkshop(data: MdWorkshop) {
 export function deleteWorkshop(id: number) {
   return http.delete<boolean>(`/mes/md-workshop/delete?id=${id}`)
 }
-
-/** 导出车间 Excel */
-export function exportWorkshop(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md-workshop/export-excel`, params)
-}

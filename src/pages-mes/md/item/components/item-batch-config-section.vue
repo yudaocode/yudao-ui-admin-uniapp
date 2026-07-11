@@ -17,13 +17,13 @@
           <wd-cell-group border>
             <wd-cell title="生产日期" center>
               <view class="flex justify-end">
-                <wd-switch v-if="canUpdate" v-model="formData.produceDateFlag" />
+                <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.produceDateFlag" />
                 <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.produceDateFlag)" />
               </view>
             </wd-cell>
             <wd-cell title="质量状态" center>
               <view class="flex justify-end">
-                <wd-switch v-if="canUpdate" v-model="formData.qualityStatusFlag" />
+                <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.qualityStatusFlag" />
                 <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.qualityStatusFlag)" />
               </view>
             </wd-cell>
@@ -39,31 +39,31 @@
             <wd-cell-group border>
               <wd-cell title="供应商" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.vendorFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.vendorFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.vendorFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="采购订单编号" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.purchaseOrderCodeFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.purchaseOrderCodeFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.purchaseOrderCodeFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="生产批号" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.lotNumberFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.lotNumberFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.lotNumberFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="有效期" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.expireDateFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.expireDateFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.expireDateFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="入库日期" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.receiptDateFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.receiptDateFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.receiptDateFlag)" />
                 </view>
               </wd-cell>
@@ -80,43 +80,43 @@
             <wd-cell-group border>
               <wd-cell title="客户" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.clientFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.clientFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.clientFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="销售订单编号" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.salesOrderCodeFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.salesOrderCodeFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.salesOrderCodeFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="生产工单" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.workorderFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.workorderFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.workorderFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="生产任务" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.taskFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.taskFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.taskFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="工作站" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.workstationFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.workstationFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.workstationFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="工具" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.toolFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.toolFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.toolFlag)" />
                 </view>
               </wd-cell>
               <wd-cell title="模具" center>
                 <view class="flex justify-end">
-                  <wd-switch v-if="canUpdate" v-model="formData.moldFlag" />
+                  <wd-switch v-if="hasAccessByCodes(['mes:md-item:update'])" v-model="formData.moldFlag" />
                   <dict-tag v-else :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="String(formData.moldFlag)" />
                 </view>
               </wd-cell>
@@ -130,7 +130,7 @@
     </scroll-view>
 
     <!-- 保存按钮 -->
-    <view v-if="canUpdate" class="yd-detail-footer">
+    <view v-if="hasAccessByCodes(['mes:md-item:update'])" class="yd-detail-footer">
       <wd-button type="primary" block :loading="saving" @click="handleSave">
         保存批次属性
       </wd-button>
@@ -155,7 +155,6 @@ const props = defineProps<{
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const canUpdate = computed(() => hasAccessByCodes(['mes:md-item:update']))
 const loading = ref(false) // 加载状态
 const saving = ref(false) // 保存状态
 const itemType = computed(() => String(props.itemOrProduct || '').toUpperCase())

@@ -41,8 +41,3 @@ export function getMaterialStock(id: number) {
 export function updateMaterialStockFrozen(data: { frozen: boolean, id: number }) {
   return http.put<boolean>('/mes/wm/material-stock/update-frozen', data)
 }
-
-/** 导出库存台账 Excel */
-export function exportMaterialStock(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/material-stock/export-excel', params)
-}

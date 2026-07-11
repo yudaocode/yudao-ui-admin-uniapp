@@ -28,12 +28,12 @@
                 </view>
                 <view>创建时间：{{ formatDateTime(item.createTime) || '-' }}</view>
               </view>
-              <view v-if="canUpdate || canDelete" class="mt-16rpx flex justify-end gap-16rpx">
-                <wd-button v-if="canUpdate" size="small" variant="plain" @click="openForm('update', item)">
+              <view v-if="hasAccessByCodes(['mes:md-item:update', 'mes:md-item:delete'])" class="mt-16rpx flex justify-end gap-16rpx">
+                <wd-button v-if="hasAccessByCodes(['mes:md-item:update'])" size="small" variant="plain" @click="openForm('update', item)">
                   编辑
                 </wd-button>
                 <wd-button
-                  v-if="canDelete"
+                  v-if="hasAccessByCodes(['mes:md-item:delete'])"
                   size="small"
                   type="danger"
                   variant="plain"
@@ -59,7 +59,7 @@
     </scroll-view>
 
     <!-- 添加按钮 -->
-    <view v-if="canCreate" class="yd-detail-footer">
+    <view v-if="hasAccessByCodes(['mes:md-item:create'])" class="yd-detail-footer">
       <wd-button type="primary" block @click="openForm('create')">
         添加 {{ title }}
       </wd-button>
@@ -162,9 +162,6 @@ const props = defineProps<{
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const canCreate = computed(() => hasAccessByCodes(['mes:md-item:create']))
-const canUpdate = computed(() => hasAccessByCodes(['mes:md-item:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:md-item:delete']))
 const list = ref<PictureItem[]>([]) // 图片资料列表
 const loading = ref(false) // 列表加载状态
 const deletingId = ref<number>() // 正在删除的资料编号

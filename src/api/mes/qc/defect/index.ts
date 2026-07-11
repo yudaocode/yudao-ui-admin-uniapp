@@ -41,8 +41,3 @@ export function updateDefect(data: QcDefect) {
 export function deleteDefect(id: number) {
   return http.delete<boolean>(`/mes/qc/defect/delete?id=${id}`)
 }
-
-/** 导出缺陷类型 Excel */
-export function exportDefect(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/defect/export-excel`, params)
-}

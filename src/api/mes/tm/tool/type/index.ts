@@ -28,11 +28,6 @@ export function getToolType(id: number) {
   return http.get<TmToolType>(`/mes/tm/tool-type/get?id=${id}`)
 }
 
-/** 导出工具类型 Excel */
-export function exportToolType(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/tm/tool-type/export-excel`, params)
-}
-
 /** 新增工具类型 */
 export function createToolType(data: TmToolType) {
   return http.post<number>(`/mes/tm/tool-type/create`, data)

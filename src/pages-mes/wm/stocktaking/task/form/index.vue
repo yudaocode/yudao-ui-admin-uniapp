@@ -176,7 +176,7 @@ const formData = ref<StockTakingTask>(getDefaultFormData()) // 表单数据
 const canExecuteTask = computed(() => { // 审批中任务可执行盘点
   return isExecuteMode.value
     && formData.value.status === MesWmStockTakingTaskStatusEnum.APPROVING
-    && hasAccessByCodes(['mes:wm-stock-taking-task:update'])
+    && hasAccessByCodes(['mes:wm-stock-taking-task:finish'])
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 const pickerVisible = ref<Record<string, boolean>>({}) // 日期选择器显示状态

@@ -295,7 +295,7 @@ const kpiCards = computed<MesHomeKpiCard[]>(() => [ // 生产总览指标
     unit: '%',
     icon: 'check-circle',
     color: '#e6a23c',
-    url: '/pages-mes/qc/iqc/index',
+    url: '/pages-mes/pro/feedback/index',
     subItems: hasQualityData.value
       ? [
           { label: `合格 ${summary.value.todayQualifiedQuantity}`, color: '#67c23a' },

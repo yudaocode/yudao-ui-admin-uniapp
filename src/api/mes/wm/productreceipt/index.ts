@@ -68,8 +68,3 @@ export function cancelProductReceipt(id: number) {
 export function checkProductReceiptQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/product-receipt/check-quantity?id=${id}`)
 }
-
-/** 导出产品入库单 Excel */
-export function exportProductReceipt(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/product-receipt/export-excel', params)
-}

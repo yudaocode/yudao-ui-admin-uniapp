@@ -48,8 +48,3 @@ export function deleteSalesNotice(id: number) {
 export function submitSalesNotice(id: number) {
   return http.put<boolean>(`/mes/wm/sales-notice/submit?id=${id}`)
 }
-
-/** 导出发货通知单 Excel */
-export function exportSalesNotice(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/sales-notice/export-excel', params)
-}

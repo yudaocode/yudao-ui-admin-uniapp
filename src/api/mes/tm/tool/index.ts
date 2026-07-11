@@ -30,11 +30,6 @@ export function getTool(id: number) {
   return http.get<TmTool>(`/mes/tm/tool/get?id=${id}`)
 }
 
-/** 导出工具 Excel */
-export function exportTool(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/tm/tool/export-excel`, params)
-}
-
 /** 新增工具 */
 export function createTool(data: TmTool) {
   return http.post<number>(`/mes/tm/tool/create`, data)

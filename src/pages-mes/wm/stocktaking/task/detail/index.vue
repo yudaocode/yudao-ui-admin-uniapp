@@ -141,7 +141,7 @@ const isPrepare = computed(() => formData.value?.status === MesWmStockTakingTask
 const isApproving = computed(() => formData.value?.status === MesWmStockTakingTaskStatusEnum.APPROVING)
 const canUpdate = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isPrepare.value)
 const canSubmit = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isPrepare.value)
-const canExecute = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isApproving.value)
+const canExecute = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:finish']) && isApproving.value)
 const canCancel = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:update']) && isApproving.value)
 const canDelete = computed(() => hasAccessByCodes(['mes:wm-stock-taking-task:delete']) && isPrepare.value)
 const hasFooterActions = computed(() => {

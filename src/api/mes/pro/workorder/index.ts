@@ -61,11 +61,6 @@ export function deleteWorkOrder(id: number) {
   return http.delete<boolean>(`/mes/pro/work-order/delete?id=${id}`)
 }
 
-/** 导出生产工单 Excel */
-export function exportWorkOrder(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/pro/work-order/export-excel`, params)
-}
-
 /** 完成工单 */
 export function finishWorkOrder(id: number) {
   return http.put<boolean>(`/mes/pro/work-order/finish?id=${id}`)

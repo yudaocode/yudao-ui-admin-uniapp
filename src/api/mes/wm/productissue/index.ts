@@ -70,8 +70,3 @@ export function finishProductIssue(id: number) {
 export function checkProductIssueQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/product-issue/check-quantity?id=${id}`)
 }
-
-/** 导出领料出库单 Excel */
-export function exportProductIssue(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/product-issue/export-excel', params)
-}

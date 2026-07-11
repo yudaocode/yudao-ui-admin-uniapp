@@ -42,7 +42,7 @@
       </wd-cell-group>
 
       <!-- 编码规则组成部分 -->
-      <AutoCodePartSection v-if="formData?.id" :rule-id="formData.id" />
+      <AutoCodePartList v-if="formData?.id" :rule-id="formData.id" />
     </view>
 
     <!-- 底部操作按钮 -->
@@ -79,7 +79,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import AutoCodePartSection from '../components/auto-code-part-section.vue'
+import AutoCodePartList from '../components/auto-code-part-list.vue'
 
 const props = defineProps<{
   id?: number | string

@@ -67,8 +67,3 @@ export function cancelReturnSales(id: number) {
 export function checkReturnSalesQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/return-sales/check-quantity?id=${id}`)
 }
-
-/** 导出销售退货单 Excel */
-export function exportReturnSales(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/return-sales/export-excel', params)
-}

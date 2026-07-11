@@ -40,8 +40,3 @@ export function updateAutoCodeRule(data: AutoCodeRule) {
 export function deleteAutoCodeRule(id: number) {
   return http.delete<boolean>(`/mes/md/auto-code-rule/delete?id=${id}`)
 }
-
-/** 导出编码规则 Excel */
-export function exportAutoCodeRule(params: Record<string, any>) {
-  return http.get<ArrayBuffer>(`/mes/md/auto-code-rule/export-excel`, params)
-}

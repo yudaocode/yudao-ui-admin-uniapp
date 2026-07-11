@@ -65,8 +65,3 @@ export function finishRqc(id: number) {
 export function deleteRqc(id: number) {
   return http.delete<boolean>(`/mes/qc/rqc/delete?id=${id}`)
 }
-
-/** 导出退货检验单 Excel */
-export function exportRqc(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/rqc/export-excel`, params)
-}

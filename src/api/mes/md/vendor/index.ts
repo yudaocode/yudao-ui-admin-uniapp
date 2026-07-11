@@ -52,8 +52,3 @@ export function updateVendor(data: MdVendor) {
 export function deleteVendor(id: number) {
   return http.delete<boolean>(`/mes/md-vendor/delete?id=${id}`)
 }
-
-/** 导出供应商 Excel */
-export function exportVendor(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md-vendor/export-excel`, params)
-}

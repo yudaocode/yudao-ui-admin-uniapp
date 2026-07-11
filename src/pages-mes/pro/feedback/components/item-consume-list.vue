@@ -3,34 +3,41 @@
     <view v-if="showTitle" class="mb-16rpx px-24rpx text-28rpx text-[#333] font-semibold">
       BOM 物资消耗
     </view>
-    <view v-if="loading" class="flex justify-center py-24rpx">
-      <wd-loading />
-    </view>
-    <view v-else-if="list.length === 0" class="rounded-12rpx bg-white py-48rpx">
-      <wd-empty icon="content" tip="暂无物资消耗记录" />
-    </view>
-    <view v-else class="space-y-16rpx">
-      <view v-for="item in list" :key="item.id" class="rounded-12rpx bg-white p-24rpx shadow-sm">
-        <view class="mb-12rpx text-30rpx text-[#333] font-semibold">
-          {{ item.itemCode || '-' }}
-        </view>
-        <view class="text-26rpx text-[#666] space-y-8rpx">
-          <view>物资名称：{{ item.itemName || '-' }}</view>
-          <view>规格型号：{{ item.specification || '-' }}</view>
-          <view>消耗数量：{{ item.quantity ?? '-' }} {{ item.unitName || '' }}</view>
-          <view>批次号：{{ item.batchCode || '-' }}</view>
+    <z-paging
+      ref="pagingRef"
+      v-model="list"
+      :fixed="false"
+      :auto="false"
+      height="640rpx"
+      :default-page-size="20"
+      :refresher-enabled="false"
+      :inside-more="true"
+      :to-bottom-loading-more-enabled="false"
+      loading-more-default-text="点击加载更多"
+      loading-more-no-more-text="没有更多物资消耗记录了"
+      empty-view-text="暂无物资消耗记录"
+      @query="queryList"
+    >
+      <view class="space-y-16rpx">
+        <view v-for="item in list" :key="item.id" class="rounded-12rpx bg-white p-24rpx shadow-sm">
+          <view class="mb-12rpx text-30rpx text-[#333] font-semibold">
+            {{ item.itemCode || '-' }}
+          </view>
+          <view class="text-26rpx text-[#666] space-y-8rpx">
+            <view>物资名称：{{ item.itemName || '-' }}</view>
+            <view>规格型号：{{ item.specification || '-' }}</view>
+            <view>消耗数量：{{ item.quantity ?? '-' }} {{ item.unitName || '' }}</view>
+            <view>批次号：{{ item.batchCode || '-' }}</view>
+          </view>
         </view>
       </view>
-      <wd-button v-if="hasMore" block size="small" :loading="loadingMore" variant="plain" @click="loadMore">
-        加载更多
-      </wd-button>
-    </view>
+    </z-paging>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { WmItemConsumeLine } from '@/api/mes/wm/itemconsume/line'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getItemConsumeLinePage } from '@/api/mes/wm/itemconsume/line'
 
 const props = withDefaults(defineProps<{
@@ -40,67 +47,50 @@ const props = withDefaults(defineProps<{
   showTitle: true,
 })
 
-const loading = ref(false) // 列表加载状态
-const loadingMore = ref(false) // 加载更多状态
 const list = ref<WmItemConsumeLine[]>([]) // 消耗行列表
-const total = ref(0) // 消耗行总数
-const pageNo = ref(1) // 当前页码
-const hasMore = computed(() => list.value.length < total.value)
+const pagingRef = ref<ZPagingRef<WmItemConsumeLine>>() // 分页组件引用
 
-/** 加载消耗行数据 */
-async function loadList(currentPage = 1) {
+/** 查询消耗行列表 */
+async function queryList(pageNo: number, pageSize: number) {
   if (!props.feedbackId) {
-    list.value = []
-    total.value = 0
-    pageNo.value = 1
+    pagingRef.value?.completeByTotal([], 0)
     return
-  }
-  const firstPage = currentPage === 1
-  if (firstPage) {
-    loading.value = true
-  } else {
-    loadingMore.value = true
   }
   try {
     const data = await getItemConsumeLinePage({
-      pageNo: currentPage,
-      pageSize: 20,
+      pageNo,
+      pageSize,
       feedbackId: props.feedbackId,
     })
-    pageNo.value = currentPage
-    total.value = data.total
-    list.value = firstPage ? data.list : [...list.value, ...data.list]
-  } finally {
-    if (firstPage) {
-      loading.value = false
-    } else {
-      loadingMore.value = false
-    }
+    pagingRef.value?.completeByTotal(data.list, data.total)
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
-/** 加载更多 */
-function loadMore() {
-  if (!hasMore.value || loading.value || loadingMore.value) {
-    return
-  }
-  loadList(pageNo.value + 1)
+/** 刷新列表 */
+function reload() {
+  pagingRef.value?.reload()
 }
 
 /** 监听报工编号变化 */
 watch(
   () => props.feedbackId,
-  () => loadList(),
+  async () => {
+    list.value = []
+    await nextTick()
+    reload()
+  },
   { immediate: true },
 )
 
 /** 监听刷新事件 */
 onMounted(() => {
-  uni.$on('mes:pro:feedback:reload', loadList)
+  uni.$on('mes:pro:feedback:reload', reload)
 })
 
 /** 卸载 */
 onUnmounted(() => {
-  uni.$off('mes:pro:feedback:reload', loadList)
+  uni.$off('mes:pro:feedback:reload', reload)
 })
 </script>

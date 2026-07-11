@@ -46,11 +46,6 @@ export function deleteCard(id: number) {
   return http.delete<boolean>(`/mes/pro/card/delete?id=${id}`)
 }
 
-/** 导出生产流转卡 Excel */
-export function exportCard(params: Record<string, any>) {
-  return http.get<Blob>('/mes/pro/card/export-excel', params)
-}
-
 /** 提交生产流转卡 */
 export function submitCard(id: number) {
   return http.put<boolean>(`/mes/pro/card/submit?id=${id}`)

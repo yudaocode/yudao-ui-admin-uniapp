@@ -55,8 +55,3 @@ export function finishMiscReceipt(id: number) {
 export function cancelMiscReceipt(id: number) {
   return http.put<boolean>(`/mes/wm/misc-receipt/cancel?id=${id}`)
 }
-
-/** 导出杂项入库单 Excel */
-export function exportMiscReceipt(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/misc-receipt/export-excel', params)
-}

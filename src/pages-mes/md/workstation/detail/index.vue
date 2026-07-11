@@ -40,7 +40,7 @@
       v-else-if="formData?.id"
       :workstation-id="formData.id"
       :resource-type="currentResourceType"
-      mode="edit"
+      mode="detail"
     />
 
     <view v-if="formData && tabType === 'basic'" class="yd-detail-footer">

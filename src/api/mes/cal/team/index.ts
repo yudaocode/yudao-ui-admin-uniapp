@@ -40,8 +40,3 @@ export function deleteTeam(id: number) {
 export function getTeamList() {
   return http.get<CalTeam[]>(`/mes/cal/team/list`)
 }
-
-/** 导出班组 Excel */
-export function exportTeam(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/cal/team/export-excel`, params)
-}

@@ -48,8 +48,3 @@ export function deleteAndonRecord(id: number) {
 export function updateAndonRecord(data: ProAndonRecord) {
   return http.put<boolean>(`/mes/pro/andon-record/update`, data)
 }
-
-/** 导出安灯记录 Excel */
-export function exportAndonRecord(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/pro/andon-record/export-excel`, params)
-}

@@ -51,13 +51,3 @@ export function updateItemStatus(id: number, status: number) {
 export function deleteItem(id: number) {
   return http.delete<boolean>(`/mes/md/item/delete?id=${id}`)
 }
-
-/** 导出物料产品 Excel */
-export function exportItem(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md/item/export-excel`, params)
-}
-
-/** 下载物料导入模板 */
-export function importTemplate() {
-  return http.get<Blob>(`/mes/md/item/get-import-template`)
-}

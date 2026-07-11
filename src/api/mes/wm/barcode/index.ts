@@ -46,11 +46,6 @@ export function deleteBarcode(id: number) {
   return http.delete<boolean>(`/mes/wm/barcode/delete?id=${id}`)
 }
 
-/** 导出条码 Excel */
-export function exportBarcode(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/barcode/export-excel', params)
-}
-
 /** 生成条码内容 */
 export function generateBarcodeContent(bizType: number, bizCode: string) {
   return http.get<string>('/mes/wm/barcode/generate-content', { bizType, bizCode })

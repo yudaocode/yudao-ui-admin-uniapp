@@ -56,11 +56,6 @@ export function cancelMiscIssue(id: number) {
   return http.put<boolean>(`/mes/wm/misc-issue/cancel?id=${id}`)
 }
 
-/** 导出杂项出库单 Excel */
-export function exportMiscIssue(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/misc-issue/export-excel', params)
-}
-
 /** 校验杂项出库单数量 */
 export function checkMiscIssueQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/misc-issue/check-quantity?id=${id}`)

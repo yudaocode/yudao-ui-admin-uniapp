@@ -62,8 +62,3 @@ export function cancelReturnIssue(id: number) {
 export function finishReturnIssue(id: number) {
   return http.put<boolean>(`/mes/wm/return-issue/finish?id=${id}`)
 }
-
-/** 导出生产退料单 Excel */
-export function exportReturnIssue(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/return-issue/export-excel', params)
-}

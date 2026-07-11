@@ -51,8 +51,3 @@ export function submitMaintenRecord(id: number) {
 export function deleteMaintenRecord(id: number) {
   return http.delete<boolean>(`/mes/dv/mainten-record/delete?id=${id}`)
 }
-
-/** 导出设备保养记录 Excel */
-export function exportMaintenRecord(params: Record<string, any>) {
-  return http.get<Blob>('/mes/dv/mainten-record/export-excel', params)
-}

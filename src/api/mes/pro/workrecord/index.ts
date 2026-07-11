@@ -36,11 +36,6 @@ export function getWorkRecordLog(id: number) {
   return http.get<ProWorkRecordLog>(`/mes/pro/workrecord/log/get?id=${id}`)
 }
 
-/** 导出工作记录 Excel */
-export function exportWorkRecordLog(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/pro/workrecord/log/export-excel`, params)
-}
-
 /** 上线（绑定工作站） */
 export function clockInWorkRecord(workstationId: number) {
   return http.put<number>(`/mes/pro/workrecord/clock-in?workstationId=${workstationId}`)

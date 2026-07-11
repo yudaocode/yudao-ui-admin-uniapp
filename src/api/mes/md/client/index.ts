@@ -51,8 +51,3 @@ export function updateClient(data: MdClient) {
 export function deleteClient(id: number) {
   return http.delete<boolean>(`/mes/md-client/delete?id=${id}`)
 }
-
-/** 导出客户 Excel */
-export function exportClient(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md-client/export-excel`, params)
-}

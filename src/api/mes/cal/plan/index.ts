@@ -46,8 +46,3 @@ export function confirmPlan(id: number) {
 export function deletePlan(id: number) {
   return http.delete<boolean>(`/mes/cal/plan/delete?id=${id}`)
 }
-
-/** 导出排班计划 Excel */
-export function exportPlan(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/cal/plan/export-excel`, params)
-}

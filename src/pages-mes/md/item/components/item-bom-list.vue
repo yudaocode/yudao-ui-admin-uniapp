@@ -26,12 +26,12 @@
               备注：{{ item.remark }}
             </view>
           </view>
-          <view v-if="canUpdate || canDelete" class="mt-16rpx flex justify-end gap-16rpx">
-            <wd-button v-if="canUpdate" size="small" variant="plain" @click="openEdit(item)">
+          <view v-if="hasAccessByCodes(['mes:md-item:update', 'mes:md-item:delete'])" class="mt-16rpx flex justify-end gap-16rpx">
+            <wd-button v-if="hasAccessByCodes(['mes:md-item:update'])" size="small" variant="plain" @click="openEdit(item)">
               编辑
             </wd-button>
             <wd-button
-              v-if="canDelete"
+              v-if="hasAccessByCodes(['mes:md-item:delete'])"
               size="small"
               type="danger"
               variant="plain"
@@ -54,7 +54,7 @@
     </scroll-view>
 
     <!-- 添加按钮 -->
-    <view v-if="canCreate" class="yd-detail-footer">
+    <view v-if="hasAccessByCodes(['mes:md-item:create'])" class="yd-detail-footer">
       <wd-button type="primary" block :loading="creating" @click="handleAdd">
         {{ creating ? '创建中...' : '添加 BOM 物料' }}
       </wd-button>
@@ -96,7 +96,7 @@
     </wd-popup>
 
     <ItemPicker
-      v-if="canCreate"
+      v-if="hasAccessByCodes(['mes:md-item:create'])"
       ref="itemPickerRef"
       :item-id="itemId"
       :existing-ids="existingBomItemIds"
@@ -128,9 +128,6 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const itemId = computed(() => getItemId() || 0) // 当前物料编号
-const canCreate = computed(() => hasAccessByCodes(['mes:md-item:create']))
-const canUpdate = computed(() => hasAccessByCodes(['mes:md-item:update']))
-const canDelete = computed(() => hasAccessByCodes(['mes:md-item:delete']))
 const list = ref<MdProductBom[]>([]) // BOM 列表
 const loading = ref(false) // 列表加载状态
 const creating = ref(false) // 添加状态

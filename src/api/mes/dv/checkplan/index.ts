@@ -50,8 +50,3 @@ export function disableCheckPlan(id: number) {
 export function deleteCheckPlan(id: number) {
   return http.delete<boolean>(`/mes/dv/check-plan/delete?id=${id}`)
 }
-
-/** 导出点检保养方案 Excel */
-export function exportCheckPlan(params: Record<string, any>) {
-  return http.get<Blob>('/mes/dv/check-plan/export-excel', params)
-}

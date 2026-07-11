@@ -70,11 +70,6 @@ export function deleteFeedback(id: number) {
   return http.delete<boolean>(`/mes/pro/feedback/delete?id=${id}`)
 }
 
-/** 导出生产报工 Excel */
-export function exportFeedback(params: Record<string, any>) {
-  return http.get<Blob>('/mes/pro/feedback/export-excel', params)
-}
-
 /** 提交报工 */
 export function submitFeedback(id: number) {
   return http.put<boolean>(`/mes/pro/feedback/submit?id=${id}`)

@@ -46,8 +46,3 @@ export function updateRouteStatus(id: number, status: number) {
 export function deleteRoute(id: number) {
   return http.delete<boolean>(`/mes/pro/route/delete?id=${id}`)
 }
-
-/** 导出工艺路线 Excel */
-export function exportRoute(params: Record<string, any>) {
-  return http.get<Blob>('/mes/pro/route/export-excel', params)
-}

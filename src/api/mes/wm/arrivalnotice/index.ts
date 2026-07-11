@@ -47,8 +47,3 @@ export function deleteArrivalNotice(id: number) {
 export function submitArrivalNotice(id: number) {
   return http.put<boolean>(`/mes/wm/arrival-notice/submit?id=${id}`)
 }
-
-/** 导出到货通知单 Excel */
-export function exportArrivalNotice(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/arrival-notice/export-excel', params)
-}

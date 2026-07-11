@@ -77,8 +77,3 @@ export function finishIpqc(id: number) {
 export function deleteIpqc(id: number) {
   return http.delete<boolean>(`/mes/qc/ipqc/delete?id=${id}`)
 }
-
-/** 导出过程检验单 Excel */
-export function exportIpqc(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/ipqc/export-excel`, params)
-}

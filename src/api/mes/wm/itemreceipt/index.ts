@@ -63,8 +63,3 @@ export function finishItemReceipt(id: number) {
 export function cancelItemReceipt(id: number) {
   return http.put<boolean>(`/mes/wm/item-receipt/cancel?id=${id}`)
 }
-
-/** 导出采购入库单 Excel */
-export function exportItemReceipt(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/item-receipt/export-excel', params)
-}

@@ -69,8 +69,3 @@ export function finishReturnVendor(id: number) {
 export function checkReturnVendorQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/return-vendor/check-quantity?id=${id}`)
 }
-
-/** 导出供应商退货单 Excel */
-export function exportReturnVendor(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/return-vendor/export-excel', params)
-}

@@ -61,8 +61,3 @@ export function finishOutsourceReceipt(id: number) {
 export function cancelOutsourceReceipt(id: number) {
   return http.put<boolean>(`/mes/wm/outsource-receipt/cancel?id=${id}`)
 }
-
-/** 导出外协入库单 Excel */
-export function exportOutsourceReceipt(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/outsource-receipt/export-excel', params)
-}

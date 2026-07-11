@@ -70,8 +70,3 @@ export function finishOqc(id: number) {
 export function deleteOqc(id: number) {
   return http.delete<boolean>(`/mes/qc/oqc/delete?id=${id}`)
 }
-
-/** 导出出货检验单 Excel */
-export function exportOqc(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/oqc/export-excel`, params)
-}

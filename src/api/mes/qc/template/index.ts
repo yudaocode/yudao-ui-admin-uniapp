@@ -36,8 +36,3 @@ export function updateTemplate(data: QcTemplate) {
 export function deleteTemplate(id: number) {
   return http.delete<boolean>(`/mes/qc/template/delete?id=${id}`)
 }
-
-/** 导出质检方案 Excel */
-export function exportTemplate(params: Record<string, any>) {
-  return http.get<ArrayBuffer>(`/mes/qc/template/export-excel`, params)
-}

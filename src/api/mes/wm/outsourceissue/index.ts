@@ -67,8 +67,3 @@ export function cancelOutsourceIssue(id: number) {
 export function checkOutsourceIssueQuantity(id: number) {
   return http.get<boolean>(`/mes/wm/outsource-issue/check-quantity?id=${id}`)
 }
-
-/** 导出外协发料单 Excel */
-export function exportOutsourceIssue(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/outsource-issue/export-excel', params)
-}

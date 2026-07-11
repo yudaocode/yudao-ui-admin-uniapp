@@ -38,8 +38,3 @@ export function updateSubject(data: DvSubject) {
 export function deleteSubject(id: number) {
   return http.delete<boolean>(`/mes/dv/subject/delete?id=${id}`)
 }
-
-/** 导出点检保养项目 Excel */
-export function exportSubject(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/dv/subject/export-excel`, params)
-}

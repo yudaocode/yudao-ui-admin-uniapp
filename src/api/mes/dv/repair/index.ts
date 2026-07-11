@@ -58,11 +58,6 @@ export function deleteRepair(id: number) {
   return http.delete<boolean>(`/mes/dv/repair/delete?id=${id}`)
 }
 
-/** 导出维修工单 Excel */
-export function exportRepair(params: Record<string, any>) {
-  return http.get<Blob>('/mes/dv/repair/export-excel', params)
-}
-
 /** 提交维修工单（草稿→维修中） */
 export function submitRepair(id: number) {
   return http.put<boolean>(`/mes/dv/repair/submit?id=${id}`)

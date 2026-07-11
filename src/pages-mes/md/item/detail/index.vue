@@ -53,15 +53,15 @@
       <view class="h-160rpx" />
     </scroll-view>
 
-    <ItemBomSection v-if="tabType === 'bom' && formData?.id" :item-id="formData.id" />
+    <ItemBomList v-if="tabType === 'bom' && formData?.id" :item-id="formData.id" />
     <ItemBatchConfigSection
       v-if="tabType === 'batch' && formData?.id"
       :item-id="formData.id"
       :item-or-product="formData.itemOrProduct"
     />
-    <ItemProcessPictureSection v-if="tabType === 'sip' && formData?.id" :item-id="formData.id" type="sip" />
-    <ItemProcessPictureSection v-if="tabType === 'sop' && formData?.id" :item-id="formData.id" type="sop" />
-    <ItemSubstituteSection v-if="tabType === 'substitute'" />
+    <ItemProcessPictureList v-if="tabType === 'sip' && formData?.id" :item-id="formData.id" type="sip" />
+    <ItemProcessPictureList v-if="tabType === 'sop' && formData?.id" :item-id="formData.id" type="sop" />
+    <ItemSubstituteList v-if="tabType === 'substitute'" />
 
     <!-- 底部操作按钮 -->
     <view v-if="formData && tabType === 'basic'" class="yd-detail-footer">
@@ -102,9 +102,9 @@ import { delay, navigateBackPlus } from '@/utils'
 import { BarcodeBizTypeEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import ItemBatchConfigSection from '../components/item-batch-config-section.vue'
-import ItemBomSection from '../components/item-bom-section.vue'
-import ItemProcessPictureSection from '../components/item-process-picture-section.vue'
-import ItemSubstituteSection from '../components/item-substitute-section.vue'
+import ItemBomList from '../components/item-bom-list.vue'
+import ItemProcessPictureList from '../components/item-process-picture-list.vue'
+import ItemSubstituteList from '../components/item-substitute-list.vue'
 
 const props = defineProps<{ id?: number | string }>()
 

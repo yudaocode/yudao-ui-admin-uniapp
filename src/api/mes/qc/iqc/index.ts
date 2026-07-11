@@ -68,8 +68,3 @@ export function finishIqc(id: number) {
 export function deleteIqc(id: number) {
   return http.delete<boolean>(`/mes/qc/iqc/delete?id=${id}`)
 }
-
-/** 导出来料检验单 Excel */
-export function exportIqc(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/iqc/export-excel`, params)
-}

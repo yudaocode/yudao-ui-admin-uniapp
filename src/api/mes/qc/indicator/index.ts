@@ -38,8 +38,3 @@ export function updateIndicator(data: QcIndicator) {
 export function deleteIndicator(id: number) {
   return http.delete<boolean>(`/mes/qc/indicator/delete?id=${id}`)
 }
-
-/** 导出质检指标 Excel */
-export function exportIndicator(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/qc/indicator/export-excel`, params)
-}

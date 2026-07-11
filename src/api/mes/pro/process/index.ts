@@ -41,8 +41,3 @@ export function updateProcess(data: ProProcess) {
 export function deleteProcess(id: number) {
   return http.delete<boolean>(`/mes/pro/process/delete?id=${id}`)
 }
-
-/** 导出生产工序 Excel */
-export function exportProcess(params: Record<string, any>) {
-  return http.get<Blob>('/mes/pro/process/export-excel', params)
-}

@@ -29,11 +29,6 @@ export function getMachinery(id: number) {
   return http.get<DvMachinery>(`/mes/dv/machinery/get?id=${id}`)
 }
 
-/** 导出设备 Excel */
-export function exportMachinery(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/dv/machinery/export-excel`, params)
-}
-
 /** 新增设备 */
 export function createMachinery(data: DvMachinery) {
   return http.post<number>(`/mes/dv/machinery/create`, data)

@@ -51,8 +51,3 @@ export function submitCheckRecord(id: number) {
 export function deleteCheckRecord(id: number) {
   return http.delete<boolean>(`/mes/dv/check-record/delete?id=${id}`)
 }
-
-/** 导出设备点检记录 Excel */
-export function exportCheckRecord(params: Record<string, any>) {
-  return http.get<Blob>('/mes/dv/check-record/export-excel', params)
-}

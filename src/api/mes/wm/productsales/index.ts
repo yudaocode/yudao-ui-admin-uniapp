@@ -84,8 +84,3 @@ export function finishProductSales(id: number) {
 export function cancelProductSales(id: number) {
   return http.put<boolean>(`/mes/wm/product-sales/cancel?id=${id}`)
 }
-
-/** 导出销售出库单 Excel */
-export function exportProductSales(params: Record<string, any>) {
-  return http.get<Blob>('/mes/wm/product-sales/export-excel', params)
-}

@@ -42,8 +42,13 @@
                 {{ item.itemName || '-' }}
               </view>
             </view>
-            <view class="shrink-0 text-28rpx text-[#1677ff] font-semibold">
-              {{ item.quantity ?? '-' }}
+            <view class="shrink-0 text-right text-26rpx">
+              <view class="text-[#999]">
+                账面：{{ item.quantity ?? '-' }}
+              </view>
+              <view class="mt-4rpx text-28rpx text-[#1677ff] font-semibold">
+                实盘：{{ item.takingQuantity ?? '-' }}
+              </view>
             </view>
           </view>
           <view class="mb-8rpx flex text-26rpx text-[#666]">
@@ -145,11 +150,6 @@
 <script lang="ts" setup>
 import type { MdItem } from '@/api/mes/md/item'
 import type { StockTakingResult } from '@/api/mes/wm/stocktaking/task/result'
-import type { StockTakingTaskLine } from '@/api/mes/wm/stocktaking/task/line'
-import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { getStockTakingTaskLineSimpleList } from '@/api/mes/wm/stocktaking/task/line'
 import {
   createStockTakingResult,
   deleteStockTakingResult,
@@ -157,6 +157,11 @@ import {
   getStockTakingResultPage,
   updateStockTakingResult,
 } from '@/api/mes/wm/stocktaking/task/result'
+import type { StockTakingTaskLine } from '@/api/mes/wm/stocktaking/task/line'
+import { getStockTakingTaskLineSimpleList } from '@/api/mes/wm/stocktaking/task/line'
+import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import ItemPicker from '@/pages-mes/md/item/components/item-picker.vue'
 import { createFormSchema } from '@/utils/wot'
 import WarehouseAreaFormPicker from '../../../warehouse/area/components/warehouse-area-form-picker.vue'
@@ -263,11 +268,7 @@ async function openUpdateForm(item: StockTakingResult) {
   formVisible.value = true
   formLoading.value = true
   try {
-    const data = await getStockTakingResult(item.id)
-    formData.value = {
-      ...data,
-      takingQuantity: data.takingQuantity ?? data.quantity,
-    }
+    formData.value = await getStockTakingResult(item.id)
   } finally {
     formLoading.value = false
   }

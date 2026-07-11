@@ -43,8 +43,3 @@ export function updateUnitMeasure(data: MdUnitMeasure) {
 export function deleteUnitMeasure(id: number) {
   return http.delete<boolean>(`/mes/md/unit-measure/delete?id=${id}`)
 }
-
-/** 导出计量单位 Excel */
-export function exportUnitMeasure(params: Record<string, any>) {
-  return http.get<Blob>(`/mes/md/unit-measure/export-excel`, params)
-}
