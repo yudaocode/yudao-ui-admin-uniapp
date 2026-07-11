@@ -40,8 +40,11 @@
         class="min-h-0 flex-1"
         :default-page-size="10"
         :refresher-enabled="true"
-        :inside-more="true"
+        :inside-more="!props.positiveOnly"
+        :hide-empty-view="canLoadNextPage"
         :loading-more-default-as-loading="true"
+        :show-default-loading-more-text="!canLoadNextPage"
+        :to-bottom-loading-more-enabled="!canLoadNextPage"
         empty-view-text="暂无库存物资"
         @query="queryList"
       >
@@ -87,6 +90,11 @@
               </view>
             </view>
           </view>
+          <view v-if="canLoadNextPage" class="py-32rpx text-center">
+            <wd-button size="small" variant="plain" @click="handleLoadNextPage">
+              加载下一页
+            </wd-button>
+          </view>
         </view>
       </z-paging>
     </view>
@@ -125,6 +133,7 @@ const presetSelectedIds = ref<number[]>([]) // 打开时预选库存编号
 const pagingRef = ref<ZPagingRef<WmMaterialStock>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const openFilters = ref<Record<string, any>>({}) // 本次打开透传过滤条件
+const canLoadNextPage = ref(false) // 当前过滤模式仍有后续页
 
 /** 打开选择器 */
 function open(selectedIds: number[] = [], filters: Record<string, any> = {}) {
@@ -147,10 +156,19 @@ async function queryList(pageNo: number, pageSize: number) {
       pageNo,
       pageSize,
       frozen: false,
-    })
-    const rows = props.positiveOnly ? data.list.filter(item => Number(item.quantity) > 0) : data.list
+    }
+    const data = await getMaterialStockPage(params)
+    const rows = props.positiveOnly
+      ? data.list.filter(item => Number(item.quantity) > 0)
+      : data.list
+    const noMore = pageNo * pageSize >= data.total
+    canLoadNextPage.value = props.positiveOnly && !noMore
     applyPresetSelected(rows)
-    pagingRef.value?.completeByTotal(rows, data.total)
+    if (props.positiveOnly) {
+      pagingRef.value?.completeByNoMore(rows, noMore)
+    } else {
+      pagingRef.value?.completeByTotal(rows, data.total)
+    }
   } catch {
     pagingRef.value?.complete(false)
   }
@@ -158,10 +176,21 @@ async function queryList(pageNo: number, pageSize: number) {
 
 /** 重新加载 */
 function reload() {
+  canLoadNextPage.value = false
   pagingRef.value?.reload()
 }
 
-/** 重置搜索 */
+/** 加载下一个后端分页 */
+function handleLoadNextPage() {
+  pagingRef.value?.doLoadMore()
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
+}
+
+/** 重置按钮操作 */
 function handleReset() {
   queryParams.value = createDefaultQueryParams(openFilters.value)
   reload()
@@ -207,10 +236,22 @@ function handleConfirm() {
 
 /** 回显预选库存 */
 function applyPresetSelected(rows: WmMaterialStock[]) {
-  if (presetSelectedIds.value.length === 0 || selectedList.value.length > 0) {
+  if (presetSelectedIds.value.length === 0) {
     return
   }
-  selectedList.value = rows.filter(item => presetSelectedIds.value.includes(item.id))
+  const hits = rows.filter(item => presetSelectedIds.value.includes(item.id))
+  presetSelectedIds.value = presetSelectedIds.value.filter(id => !hits.some(item => item.id === id))
+  if (!props.multiple) {
+    if (selectedList.value.length === 0 && hits[0]) {
+      selectedList.value = [hits[0]]
+    }
+    return
+  }
+  const selectedIds = new Set(selectedList.value.map(item => item.id))
+  selectedList.value = [
+    ...selectedList.value,
+    ...hits.filter(item => !selectedIds.has(item.id)),
+  ]
 }
 
 /** 默认查询参数 */

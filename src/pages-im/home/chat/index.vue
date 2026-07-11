@@ -23,11 +23,9 @@
       :default-page-size="PAGE_SIZE"
       bg-color="#ededed"
       bottom-bg-color="#fff"
+      :hide-empty-view="historyLoadFailed"
       empty-view-text="暂无消息"
-      empty-view-reload-text="重新加载"
-      :show-empty-view-reload="historyLoadFailed"
       @query="queryList"
-      @empty-view-reload="handleEmptyViewReload"
       @cell-style-change="cellStyle = $event"
     >
       <view class="px-24rpx py-20rpx">
@@ -56,6 +54,12 @@
             @toggle-select="toggleSelect"
             @show-readers="handleShowReaders"
           />
+        </view>
+        <!-- 历史消息重试 -->
+        <view v-if="historyLoadFailed" :style="cellStyle" class="py-24rpx text-center">
+          <wd-button size="small" variant="plain" @click="loadOlderMessagesAfterClear">
+            重新加载历史消息
+          </wd-button>
         </view>
       </view>
 
@@ -425,16 +429,6 @@ async function loadOlderMessagesAfterClear() {
   } catch {
     historyLoadFailed.value = true
   }
-}
-
-/** 空状态重新加载 */
-function handleEmptyViewReload(callback: (reload?: boolean) => void) {
-  if (!historyLoadFailed.value) {
-    callback(true)
-    return
-  }
-  callback(false)
-  loadOlderMessagesAfterClear()
 }
 
 /** 分页查询：第一页加载最新消息，后续按最早消息编号向前加载 */

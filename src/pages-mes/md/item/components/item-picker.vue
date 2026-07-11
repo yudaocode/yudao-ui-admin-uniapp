@@ -7,7 +7,7 @@
     @close="handleClose"
   >
     <view class="h-full flex flex-col bg-[#f5f5f5]">
-      <!-- 头部 -->
+      <!-- 顶部操作 -->
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
         <wd-button variant="plain" size="small" @click="handleCancel">
           取消
@@ -20,30 +20,44 @@
         </wd-button>
       </view>
 
-      <!-- 搜索 -->
+      <!-- 搜索区域 -->
       <view class="bg-white px-24rpx pb-20rpx">
-        <wd-input v-model="searchCode" placeholder="物料编码" clearable />
-        <wd-input v-model="searchName" placeholder="物料名称" clearable class="mt-12rpx" />
+        <wd-input v-model="queryParams.code" placeholder="物料编码" clearable />
+        <wd-input v-model="queryParams.name" placeholder="物料名称" clearable class="mt-12rpx" />
         <view class="mt-12rpx">
           <yd-tree-select
-            v-model="searchItemTypeId"
+            v-model="queryParams.itemTypeId"
             :data="itemTypeTree"
             placeholder="物料分类"
             :props="{ value: 'id', label: 'name', children: 'children' }"
           />
         </view>
         <view class="mt-16rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" @click="handleResetSearch">
+          <wd-button class="flex-1" variant="plain" @click="handleReset">
             重置
           </wd-button>
-          <wd-button class="flex-1" type="primary" @click="handleSearch">
+          <wd-button class="flex-1" type="primary" @click="handleQuery">
             搜索
           </wd-button>
         </view>
       </view>
 
-      <!-- 列表 -->
-      <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation @scrolltolower="handleLoadMore">
+      <!-- 物料列表 -->
+      <z-paging
+        ref="pagingRef"
+        v-model="itemList"
+        :fixed="false"
+        class="min-h-0 flex-1"
+        :default-page-size="20"
+        :refresher-enabled="true"
+        :inside-more="!props.itemOrProduct"
+        :hide-empty-view="canLoadNextPage"
+        :loading-more-default-as-loading="true"
+        :show-default-loading-more-text="!canLoadNextPage"
+        :to-bottom-loading-more-enabled="!canLoadNextPage"
+        empty-view-text="暂无可选物料"
+        @query="queryList"
+      >
         <view class="p-24rpx">
           <view
             v-for="item in itemList"
@@ -74,14 +88,13 @@
               <text class="text-[#999]">分类：</text>{{ item.itemTypeName || '-' }}
             </view>
           </view>
-          <view v-if="itemList.length === 0 && !loading" class="py-100rpx text-center">
-            <wd-empty icon="content" tip="暂无可选物料" />
-          </view>
-          <view v-if="loading" class="flex justify-center py-24rpx">
-            <wd-loading />
+          <view v-if="canLoadNextPage" class="py-32rpx text-center">
+            <wd-button size="small" variant="plain" @click="handleLoadNextPage">
+              加载下一页
+            </wd-button>
           </view>
         </view>
-      </scroll-view>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
@@ -119,14 +132,15 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 弹窗显示状态
-const loading = ref(false) // 列表加载状态
 const itemList = ref<MdItem[]>([]) // 物料列表
 const tempSelected = ref<MdItem[]>([]) // 临时选中物料
-const pageNo = ref(1) // 当前页码
-const total = ref(0) // 总数量
-const searchCode = ref('') // 搜索编码
-const searchName = ref('') // 搜索名称
-const searchItemTypeId = ref<number>() // 搜索分类
+const pagingRef = ref<ZPagingRef<MdItem>>() // 分页组件引用
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  code: '',
+  name: '',
+  itemTypeId: undefined,
+})
+const canLoadNextPage = ref(false) // 当前过滤模式仍有后续页
 const itemTypeTree = ref<MdItemType[]>([]) // 分类树
 
 /** 加载分类树 */
@@ -163,55 +177,32 @@ function toggleItem(item: MdItem) {
   }
 }
 
-/** 搜索 */
-async function handleSearch() {
-  pageNo.value = 1
-  await loadItems()
-}
-
-/** 重置搜索 */
-function handleResetSearch() {
-  searchCode.value = ''
-  searchName.value = ''
-  searchItemTypeId.value = undefined
-  pageNo.value = 1
-  loadItems()
-}
-
-/** 加载更多 */
-async function handleLoadMore() {
-  if (loading.value || itemList.value.length >= total.value)
-    return
-  pageNo.value++
-  await loadItems(true)
-}
-
-/** 加载物料列表 */
-async function loadItems(append = false) {
-  if (loading.value)
-    return
-  loading.value = true
+/** 查询物料列表 */
+async function queryList(pageNo: number, pageSize: number) {
+  if (pageNo === 1) {
+    canLoadNextPage.value = false
+  }
   try {
     const data = await getItemPage({
-      pageNo: pageNo.value,
-      pageSize: 20,
-      code: searchCode.value || undefined,
-      name: searchName.value || undefined,
-      itemTypeId: searchItemTypeId.value || undefined,
-      itemOrProduct: props.itemOrProduct,
+      pageNo,
+      pageSize,
+      code: queryParams.value.code || undefined,
+      name: queryParams.value.name || undefined,
+      itemTypeId: queryParams.value.itemTypeId || undefined,
       status: CommonStatusEnum.ENABLE,
     })
     const rows = props.itemOrProduct
       ? data.list.filter(item => item.itemOrProduct === props.itemOrProduct)
       : data.list
-    if (append) {
-      itemList.value.push(...rows)
+    const noMore = pageNo * pageSize >= data.total
+    canLoadNextPage.value = !!props.itemOrProduct && !noMore
+    if (props.itemOrProduct) {
+      pagingRef.value?.completeByNoMore(rows, noMore)
     } else {
-      itemList.value = rows
+      pagingRef.value?.completeByTotal(rows, data.total)
     }
-    total.value = data.total
-  } finally {
-    loading.value = false
+  } catch {
+    pagingRef.value?.complete(false)
   }
 }
 
@@ -219,14 +210,39 @@ async function loadItems(append = false) {
 function open() {
   visible.value = true
   tempSelected.value = []
-  searchCode.value = ''
-  searchName.value = ''
-  searchItemTypeId.value = undefined
-  itemList.value = []
-  total.value = 0
-  pageNo.value = 1
+  queryParams.value = {
+    code: '',
+    name: '',
+    itemTypeId: undefined,
+  }
   loadTree()
-  loadItems()
+  reload()
+}
+
+/** 重新加载 */
+function reload() {
+  canLoadNextPage.value = false
+  pagingRef.value?.reload()
+}
+
+/** 加载下一个后端分页 */
+function handleLoadNextPage() {
+  pagingRef.value?.doLoadMore()
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  reload()
+}
+
+/** 重置按钮操作 */
+function handleReset() {
+  queryParams.value = {
+    code: '',
+    name: '',
+    itemTypeId: undefined,
+  }
+  reload()
 }
 
 /** 取消 */
@@ -237,9 +253,11 @@ function handleCancel() {
 /** 关闭时清理 */
 function handleClose() {
   tempSelected.value = []
-  searchCode.value = ''
-  searchName.value = ''
-  searchItemTypeId.value = undefined
+  queryParams.value = {
+    code: '',
+    name: '',
+    itemTypeId: undefined,
+  }
 }
 
 /** 确认选择 */
