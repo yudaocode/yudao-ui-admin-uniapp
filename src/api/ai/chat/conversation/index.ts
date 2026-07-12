@@ -19,6 +19,8 @@ export interface ChatConversationVO {
   roleAvatar?: string
   modelMaxTokens?: string
   modelMaxContexts?: string
+  roleName?: string
+  messageCount?: number
 }
 
 /** 获得我的聊天对话 */
@@ -56,19 +58,12 @@ export function getChatConversationPage(params: PageParam) {
   return http.get<PageResult<ChatConversationVO>>('/ai/chat/conversation/page', params)
 }
 
+/** 获得对话详情 */
+export function getChatConversation(id: number) {
+  return http.get<ChatConversationVO>(`/ai/chat/conversation/get?id=${id}`)
+}
+
 /** 管理员删除对话 */
 export function deleteChatConversationByAdmin(id: number) {
   return http.delete<boolean>(`/ai/chat/conversation/delete-by-admin?id=${id}`)
-}
-
-/** AI 聊天对话 API */
-export const ChatConversationApi = {
-  getChatConversationMy,
-  createChatConversationMy,
-  updateChatConversationMy,
-  deleteChatConversationMy,
-  deleteChatConversationMyByUnpinned,
-  getChatConversationMyList,
-  getChatConversationPage,
-  deleteChatConversationByAdmin,
 }

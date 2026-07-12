@@ -1,0 +1,127 @@
+<template>
+  <view class="yd-page-container">
+    <!-- 顶部导航栏 -->
+    <wd-navbar
+      title="API 密钥详情"
+      left-arrow placeholder safe-area-inset-top fixed
+      @click-left="handleBack"
+    />
+
+    <!-- 详情内容 -->
+    <view>
+      <wd-cell-group border>
+        <wd-cell title="平台">
+          <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
+          <text v-else>-</text>
+        </wd-cell>
+        <wd-cell title="名称" :value="formData?.name || '-'" />
+        <wd-cell title="密钥" :value="formData?.apiKey || '-'" />
+        <wd-cell title="API URL" :value="formData?.url || '-'" />
+        <wd-cell title="状态">
+          <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
+        </wd-cell>
+      </wd-cell-group>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="yd-detail-footer">
+      <view class="yd-detail-footer-actions">
+        <wd-button v-if="hasAccessByCodes(['ai:api-key:update'])" class="flex-1" type="warning" @click="handleEdit">
+          编辑
+        </wd-button>
+        <wd-button v-if="hasAccessByCodes(['ai:api-key:delete'])" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+          删除
+        </wd-button>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script lang="ts" setup>
+import type { ApiKeyVO } from '@/api/ai/model/apiKey'
+import { onUnload } from '@dcloudio/uni-app'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { onMounted, ref } from 'vue'
+import { deleteApiKey, getApiKey } from '@/api/ai/model/apiKey'
+import { useAccess } from '@/hooks/useAccess'
+import { delay, navigateBackPlus } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
+
+const props = defineProps<{
+  id?: number | any
+}>()
+
+definePage({
+  style: {
+    navigationBarTitleText: '',
+    navigationStyle: 'custom',
+  },
+})
+
+const { hasAccessByCodes } = useAccess()
+const toast = useToast()
+const dialog = useDialog()
+const formData = ref<ApiKeyVO>() // 详情数据
+const deleting = ref(false) // 删除状态
+
+/** 返回上一页 */
+function handleBack() {
+  navigateBackPlus('/pages-ai/model/apiKey/index')
+}
+
+/** 加载密钥详情 */
+async function getDetail() {
+  if (!props.id || deleting.value) {
+    return
+  }
+  try {
+    toast.loading('加载中...')
+    formData.value = await getApiKey(Number(props.id))
+  } finally {
+    toast.close()
+  }
+}
+
+/** 编辑密钥 */
+function handleEdit() {
+  uni.navigateTo({
+    url: `/pages-ai/model/apiKey/form/index?id=${props.id}`,
+  })
+}
+
+/** 删除密钥 */
+async function handleDelete() {
+  if (!props.id) {
+    return
+  }
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: `确定要删除密钥【${formData.value?.name || '-'}】吗？`,
+    })
+  } catch {
+    return
+  }
+  deleting.value = true
+  try {
+    await deleteApiKey(Number(props.id))
+    toast.success('删除成功')
+    uni.$emit('ai:api-key:reload')
+    delay(handleBack)
+  } finally {
+    deleting.value = false
+  }
+}
+
+/** 初始化 */
+onMounted(() => {
+  uni.$on('ai:api-key:reload', getDetail)
+  getDetail()
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('ai:api-key:reload', getDetail)
+})
+</script>

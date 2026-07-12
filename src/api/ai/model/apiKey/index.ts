@@ -40,13 +40,3 @@ export function updateApiKey(data: ApiKeyVO) {
 export function deleteApiKey(id: number) {
   return http.delete<boolean>(`/ai/api-key/delete?id=${id}`)
 }
-
-/** AI API 密钥 API */
-export const ApiKeyApi = {
-  getApiKeyPage,
-  getApiKeySimpleList,
-  getApiKey,
-  createApiKey,
-  updateApiKey,
-  deleteApiKey,
-}

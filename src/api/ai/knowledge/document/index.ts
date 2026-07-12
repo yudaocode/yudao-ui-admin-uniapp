@@ -15,6 +15,27 @@ export interface KnowledgeDocumentVO {
   createTime?: string
 }
 
+/** AI 知识库文档新增请求 */
+export interface KnowledgeDocumentCreateReq {
+  knowledgeId: number
+  name: string
+  url: string
+  segmentMaxTokens: number
+}
+
+/** AI 知识库文档修改请求 */
+export interface KnowledgeDocumentUpdateReq {
+  id: number
+  name?: string
+  segmentMaxTokens?: number
+}
+
+/** AI 知识库文档状态修改请求 */
+export interface KnowledgeDocumentUpdateStatusReq {
+  id: number
+  status: number
+}
+
 /** 查询知识库文档分页 */
 export function getKnowledgeDocumentPage(params: PageParam) {
   return http.get<PageResult<KnowledgeDocumentVO>>('/ai/knowledge/document/page', params)
@@ -26,7 +47,7 @@ export function getKnowledgeDocument(id: number) {
 }
 
 /** 新增知识库文档 */
-export function createKnowledgeDocument(data: Record<string, any>) {
+export function createKnowledgeDocument(data: KnowledgeDocumentCreateReq) {
   return http.post<number>('/ai/knowledge/document/create', data)
 }
 
@@ -36,27 +57,16 @@ export function createKnowledgeDocumentList(data: Record<string, any>) {
 }
 
 /** 修改知识库文档 */
-export function updateKnowledgeDocument(data: Record<string, any>) {
+export function updateKnowledgeDocument(data: KnowledgeDocumentUpdateReq) {
   return http.put<boolean>('/ai/knowledge/document/update', data)
 }
 
 /** 修改知识库文档状态 */
-export function updateKnowledgeDocumentStatus(data: Record<string, any>) {
+export function updateKnowledgeDocumentStatus(data: KnowledgeDocumentUpdateStatusReq) {
   return http.put<boolean>('/ai/knowledge/document/update-status', data)
 }
 
 /** 删除知识库文档 */
 export function deleteKnowledgeDocument(id: number) {
   return http.delete<boolean>(`/ai/knowledge/document/delete?id=${id}`)
-}
-
-/** AI 知识库文档 API */
-export const KnowledgeDocumentApi = {
-  getKnowledgeDocumentPage,
-  getKnowledgeDocument,
-  createKnowledgeDocument,
-  createKnowledgeDocumentList,
-  updateKnowledgeDocument,
-  updateKnowledgeDocumentStatus,
-  deleteKnowledgeDocument,
 }

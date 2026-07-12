@@ -1,3 +1,4 @@
+export * from './constants/biz-ai-enum'
 export * from './constants/biz-bpm-enum'
 export * from './constants/biz-erp-enum'
 export * from './constants/biz-im-enum'

@@ -110,7 +110,7 @@ interface RightOperationType {
   variant: ButtonVariant
 }
 const operationIconsMap: Record<number, string> = {
-  [BpmTaskOperationButtonTypeEnum.COMMENT]: 'chat',
+  [BpmTaskOperationButtonTypeEnum.COMMENT]: 'message',
   [BpmTaskOperationButtonTypeEnum.TRANSFER]: 'swap',
   [BpmTaskOperationButtonTypeEnum.ADD_SIGN]: 'user-add',
   [BpmTaskOperationButtonTypeEnum.DELEGATE]: 'send',

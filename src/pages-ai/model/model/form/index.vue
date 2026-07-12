@@ -36,18 +36,18 @@
           <wd-form-item title="模型标识" title-width="200rpx" prop="model">
             <wd-input v-model="formData.model" clearable placeholder="请输入模型标识" />
           </wd-form-item>
-          <wd-form-item title="排序" title-width="200rpx">
+          <wd-form-item title="排序" title-width="200rpx" prop="sort">
             <wd-input-number v-model="formData.sort" :min="0" />
           </wd-form-item>
           <!-- 聊天模型专属参数 -->
           <template v-if="formData.type === AiModelTypeEnum.CHAT">
-            <wd-form-item title="温度" title-width="200rpx">
+            <wd-form-item title="温度" title-width="200rpx" prop="temperature">
               <wd-input-number v-model="formData.temperature" :min="0" :max="2" :step="0.1" />
             </wd-form-item>
-            <wd-form-item title="Token 数" title-width="200rpx">
+            <wd-form-item title="Token 数" title-width="200rpx" prop="maxTokens">
               <wd-input-number v-model="formData.maxTokens" :min="0" :max="8192" />
             </wd-form-item>
-            <wd-form-item title="上下文" title-width="200rpx">
+            <wd-form-item title="上下文" title-width="200rpx" prop="maxContexts">
               <wd-input-number v-model="formData.maxContexts" :min="0" :max="20" />
             </wd-form-item>
           </template>
@@ -88,9 +88,8 @@ import { computed, onMounted, ref } from 'vue'
 import { createModel, getModel, updateModel } from '@/api/ai/model/model'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
 import ApiKeyFormPicker from '../../apiKey/components/api-key-form-picker.vue'
 
 const props = defineProps<{
@@ -125,6 +124,10 @@ const formSchema = createFormSchema({
   keyId: [{ required: true, message: 'API 密钥不能为空' }],
   name: [{ required: true, message: '模型名字不能为空' }],
   model: [{ required: true, message: '模型标识不能为空' }],
+  sort: [{ required: true, message: '排序不能为空' }],
+  temperature: [{ required: () => formData.value.type === AiModelTypeEnum.CHAT, message: '温度参数不能为空' }],
+  maxTokens: [{ required: () => formData.value.type === AiModelTypeEnum.CHAT, message: 'Token 数不能为空' }],
+  maxContexts: [{ required: () => formData.value.type === AiModelTypeEnum.CHAT, message: '上下文数量不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用

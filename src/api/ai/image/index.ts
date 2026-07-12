@@ -8,43 +8,48 @@ export interface ImageVO {
   platform?: string
   model?: string
   prompt?: string
-  width?: number | string
-  height?: number | string
+  width?: number
+  height?: number
   status?: number
   publicStatus?: boolean
   picUrl?: string
   errorMessage?: string
-  options?: Record<string, any>
-  taskId?: number | string
+  options?: Record<string, string>
+  taskId?: string
   buttons?: ImageMidjourneyButtonsVO[]
   createTime?: string
   finishTime?: string
 }
 
 /** AI 图片生成请求 */
-export interface ImageDrawReqVO {
+export interface ImageDrawReq {
   prompt: string
-  modelId?: number
-  style?: string
-  width?: string
-  height?: string
-  options?: Record<string, any>
+  modelId: number
+  width: number
+  height: number
+  options?: Record<string, string>
 }
 
 /** Midjourney 生成请求 */
-export interface ImageMidjourneyImagineReqVO {
+export interface ImageMidjourneyImagineReq {
   prompt: string
   modelId: number
-  base64Array: string[]
-  width: string
-  height: string
+  referImageUrl?: string
+  width: number
+  height: number
   version: string
 }
 
 /** Midjourney 操作请求 */
-export interface ImageMidjourneyActionVO {
+export interface ImageMidjourneyActionReq {
   id: number
   customId: string
+}
+
+/** AI 图片更新请求 */
+export interface ImageUpdateReq {
+  id: number
+  publicStatus?: boolean
 }
 
 /** Midjourney 操作按钮 */
@@ -71,7 +76,7 @@ export function getImageListMyByIds(ids: number[]) {
 }
 
 /** 生成图片 */
-export function drawImage(data: ImageDrawReqVO) {
+export function drawImage(data: ImageDrawReq) {
   return http.post<number>('/ai/image/draw', data)
 }
 
@@ -81,12 +86,12 @@ export function deleteImageMy(id: number) {
 }
 
 /** Midjourney 生成图片 */
-export function midjourneyImagine(data: ImageMidjourneyImagineReqVO) {
+export function midjourneyImagine(data: ImageMidjourneyImagineReq) {
   return http.post<number>('/ai/image/midjourney/imagine', data)
 }
 
 /** Midjourney 二次生成 */
-export function midjourneyAction(data: ImageMidjourneyActionVO) {
+export function midjourneyAction(data: ImageMidjourneyActionReq) {
   return http.post<number>('/ai/image/midjourney/action', data)
 }
 
@@ -95,26 +100,17 @@ export function getImagePage(params: PageParam) {
   return http.get<PageResult<ImageVO>>('/ai/image/page', params)
 }
 
+/** 查询绘画详情 */
+export function getImage(id: number) {
+  return http.get<ImageVO>(`/ai/image/get?id=${id}`)
+}
+
 /** 更新绘画发布状态 */
-export function updateImage(data: ImageVO) {
+export function updateImage(data: ImageUpdateReq) {
   return http.put<boolean>('/ai/image/update', data)
 }
 
 /** 删除绘画 */
 export function deleteImage(id: number) {
   return http.delete<boolean>(`/ai/image/delete?id=${id}`)
-}
-
-/** AI 图片 API */
-export const ImageApi = {
-  getImagePageMy,
-  getImageMy,
-  getImageListMyByIds,
-  drawImage,
-  deleteImageMy,
-  midjourneyImagine,
-  midjourneyAction,
-  getImagePage,
-  updateImage,
-  deleteImage,
 }

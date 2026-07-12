@@ -2198,13 +2198,6 @@
           "name": "AI 工具",
           "menus": [
             {
-              "key": "aiWorkbench",
-              "name": "AI 工作台",
-              "icon": "message",
-              "iconColor": "#1677ff",
-              "url": "/pages-ai/index/index"
-            },
-            {
               "key": "aiChat",
               "name": "AI 对话",
               "icon": "message",
@@ -2219,13 +2212,6 @@
               "url": "/pages-ai/image/index"
             },
             {
-              "key": "aiMusic",
-              "name": "AI 音乐",
-              "icon": "sound",
-              "iconColor": "#f5222d",
-              "url": "/pages-ai/music/index"
-            },
-            {
               "key": "aiWrite",
               "name": "AI 写作",
               "icon": "edit",
@@ -2233,29 +2219,15 @@
               "url": "/pages-ai/write/index"
             },
             {
-              "key": "aiMindMap",
-              "name": "思维导图",
-              "icon": "share-alt",
-              "iconColor": "#52c41a",
-              "url": "/pages-ai/mindmap/index"
-            }
-          ]
-        },
-        {
-          "key": "config",
-          "name": "配置与数据",
-          "menus": [
-            {
-              "key": "aiModel",
-              "name": "模型配置",
-              "icon": "settings",
-              "iconColor": "#eb2f96",
-              "url": "/pages-ai/model/index",
-              "permission": "ai:model:query"
+              "key": "aiMusic",
+              "name": "AI 音乐",
+              "icon": "sound",
+              "iconColor": "#f5222d",
+              "url": "/pages-ai/music/index"
             },
             {
               "key": "aiKnowledge",
-              "name": "知识库",
+              "name": "AI 知识库",
               "icon": "folder",
               "iconColor": "#2f54eb",
               "url": "/pages-ai/knowledge/index",
@@ -2270,11 +2242,89 @@
               "permission": "ai:workflow:query"
             },
             {
-              "key": "aiContent",
-              "name": "生成记录",
-              "icon": "list",
+              "key": "aiMindMap",
+              "name": "思维导图",
+              "icon": "share-alt",
+              "iconColor": "#52c41a",
+              "url": "/pages-ai/mindmap/index"
+            }
+          ]
+        },
+        {
+          "key": "console",
+          "name": "控制台",
+          "menus": [
+            {
+              "key": "aiApiKey",
+              "name": "API 密钥",
+              "icon": "lock",
+              "iconColor": "#1677ff",
+              "url": "/pages-ai/model/apiKey/index",
+              "permission": "ai:api-key:query"
+            },
+            {
+              "key": "aiModelConfig",
+              "name": "模型配置",
+              "icon": "settings",
+              "iconColor": "#13c2c2",
+              "url": "/pages-ai/model/model/index",
+              "permission": "ai:model:query"
+            },
+            {
+              "key": "aiChatRole",
+              "name": "聊天角色",
+              "icon": "user",
+              "iconColor": "#722ed1",
+              "url": "/pages-ai/model/chatRole/index",
+              "permission": "ai:chat-role:query"
+            },
+            {
+              "key": "aiTool",
+              "name": "工具管理",
+              "icon": "tool",
+              "iconColor": "#fa8c16",
+              "url": "/pages-ai/model/tool/index",
+              "permission": "ai:tool:query"
+            },
+            {
+              "key": "aiChatManager",
+              "name": "聊天管理",
+              "icon": "message",
+              "iconColor": "#2f54eb",
+              "url": "/pages-ai/chat/manager/index",
+              "permission": "ai:chat-conversation:query"
+            },
+            {
+              "key": "aiImageManager",
+              "name": "绘图管理",
+              "icon": "image",
+              "iconColor": "#eb2f96",
+              "url": "/pages-ai/image/manager/index",
+              "permission": "ai:image:query"
+            },
+            {
+              "key": "aiMusicManager",
+              "name": "音乐管理",
+              "icon": "sound",
+              "iconColor": "#f5222d",
+              "url": "/pages-ai/music/manager/index",
+              "permission": "ai:music:query"
+            },
+            {
+              "key": "aiWriteManager",
+              "name": "写作管理",
+              "icon": "edit",
               "iconColor": "#faad14",
-              "url": "/pages-ai/content/index"
+              "url": "/pages-ai/write/manager/index",
+              "permission": "ai:write:query"
+            },
+            {
+              "key": "aiMindMapManager",
+              "name": "导图管理",
+              "icon": "share-alt",
+              "iconColor": "#52c41a",
+              "url": "/pages-ai/mindmap/manager/index",
+              "permission": "ai:mind-map:query"
             }
           ]
         }

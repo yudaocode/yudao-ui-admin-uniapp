@@ -7,6 +7,7 @@ export interface ToolVO {
   name?: string
   description?: string
   status?: number
+  createTime?: string
 }
 
 /** 查询工具分页 */
@@ -37,14 +38,4 @@ export function deleteTool(id: number) {
 /** 获取工具简单列表 */
 export function getToolSimpleList() {
   return http.get<ToolVO[]>('/ai/tool/simple-list')
-}
-
-/** AI 工具 API */
-export const ToolApi = {
-  getToolPage,
-  getTool,
-  createTool,
-  updateTool,
-  deleteTool,
-  getToolSimpleList,
 }

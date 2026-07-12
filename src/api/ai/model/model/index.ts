@@ -14,6 +14,7 @@ export interface ModelVO {
   temperature?: number
   maxTokens?: number
   maxContexts?: number
+  createTime?: string
 }
 
 /** 查询模型分页 */
@@ -44,14 +45,4 @@ export function updateModel(data: ModelVO) {
 /** 删除模型 */
 export function deleteModel(id: number) {
   return http.delete<boolean>(`/ai/model/delete?id=${id}`)
-}
-
-/** AI 模型 API */
-export const ModelApi = {
-  getModelPage,
-  getModelSimpleList,
-  getModel,
-  createModel,
-  updateModel,
-  deleteModel,
 }

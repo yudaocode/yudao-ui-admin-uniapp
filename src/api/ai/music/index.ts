@@ -16,7 +16,7 @@ export interface MusicVO {
   platform?: string
   model?: string
   generateMode?: number
-  tags?: string | string[]
+  tags?: string[]
   duration?: number
   publicStatus?: boolean
   taskId?: string
@@ -25,7 +25,7 @@ export interface MusicVO {
 }
 
 /** AI 音乐生成请求 */
-export interface MusicGenerateReqVO {
+export interface MusicGenerateReq {
   platform: string
   generateMode: number
   prompt?: string
@@ -35,13 +35,25 @@ export interface MusicGenerateReqVO {
   title?: string
 }
 
+/** AI 音乐更新请求 */
+export interface MusicUpdateReq {
+  id: number
+  publicStatus?: boolean
+}
+
+/** AI 我的音乐更新请求 */
+export interface MusicUpdateMyReq {
+  id: number
+  title?: string
+}
+
 /** 查询我的音乐分页 */
 export function getMusicMyPage(params: PageParam) {
   return http.get<PageResult<MusicVO>>('/ai/music/my-page', params)
 }
 
 /** 生成音乐 */
-export function generateMusic(data: MusicGenerateReqVO) {
+export function generateMusic(data: MusicGenerateReq) {
   return http.post<number[]>('/ai/music/generate', data)
 }
 
@@ -56,7 +68,7 @@ export function getMusicMy(id: number) {
 }
 
 /** 修改我的音乐标题 */
-export function updateMusicMy(data: Pick<MusicVO, 'id' | 'title'>) {
+export function updateMusicMy(data: MusicUpdateMyReq) {
   return http.post<boolean>('/ai/music/update-my', data)
 }
 
@@ -65,24 +77,17 @@ export function getMusicPage(params: PageParam) {
   return http.get<PageResult<MusicVO>>('/ai/music/page', params)
 }
 
+/** 查询音乐详情 */
+export function getMusic(id: number) {
+  return http.get<MusicVO>(`/ai/music/get?id=${id}`)
+}
+
 /** 更新音乐 */
-export function updateMusic(data: MusicVO) {
+export function updateMusic(data: MusicUpdateReq) {
   return http.put<boolean>('/ai/music/update', data)
 }
 
 /** 删除音乐 */
 export function deleteMusic(id: number) {
   return http.delete<boolean>(`/ai/music/delete?id=${id}`)
-}
-
-/** AI 音乐 API */
-export const MusicApi = {
-  getMusicMyPage,
-  generateMusic,
-  deleteMusicMy,
-  getMusicMy,
-  updateMusicMy,
-  getMusicPage,
-  updateMusic,
-  deleteMusic,
 }

@@ -6,6 +6,7 @@ export interface ChatRoleVO {
   id?: number
   modelId?: number
   modelName?: string
+  model?: string
   name?: string
   avatar?: string
   category?: string
@@ -18,10 +19,11 @@ export interface ChatRoleVO {
   knowledgeIds?: number[]
   toolIds?: number[]
   mcpClientNames?: string[]
+  createTime?: string
 }
 
 /** AI 聊天角色分页请求 */
-export interface ChatRolePageReqVO extends PageParam {
+export interface ChatRolePageReq extends PageParam {
   name?: string
   category?: string
   publicStatus?: boolean
@@ -53,7 +55,7 @@ export function deleteChatRole(id: number) {
 }
 
 /** 获取我的角色分页 */
-export function getMyPage(params: ChatRolePageReqVO) {
+export function getMyPage(params: ChatRolePageReq) {
   return http.get<PageResult<ChatRoleVO>>('/ai/chat-role/my-page', params)
 }
 
@@ -75,18 +77,4 @@ export function updateMy(data: ChatRoleVO) {
 /** 删除我的角色 */
 export function deleteMy(id: number) {
   return http.delete<boolean>(`/ai/chat-role/delete-my?id=${id}`)
-}
-
-/** AI 聊天角色 API */
-export const ChatRoleApi = {
-  getChatRolePage,
-  getChatRole,
-  createChatRole,
-  updateChatRole,
-  deleteChatRole,
-  getMyPage,
-  getCategoryList,
-  createMy,
-  updateMy,
-  deleteMy,
 }

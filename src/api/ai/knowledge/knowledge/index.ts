@@ -43,13 +43,3 @@ export function deleteKnowledge(id: number) {
 export function getSimpleKnowledgeList() {
   return http.get<KnowledgeVO[]>('/ai/knowledge/simple-list')
 }
-
-/** AI 知识库 API */
-export const KnowledgeApi = {
-  getKnowledgePage,
-  getKnowledge,
-  createKnowledge,
-  updateKnowledge,
-  deleteKnowledge,
-  getSimpleKnowledgeList,
-}

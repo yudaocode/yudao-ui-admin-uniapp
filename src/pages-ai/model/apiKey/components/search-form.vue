@@ -19,6 +19,8 @@
         </view>
         <wd-input v-model="formData.name" placeholder="请输入名称" clearable />
       </view>
+      <yd-search-picker v-model="formData.platform" label="平台" :dict-type="DICT_TYPE.AI_PLATFORM" dict-kind="str" all-option />
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -33,7 +35,9 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -43,19 +47,39 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   name: undefined as string | undefined,
+  platform: undefined as string | undefined,
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 
-const placeholder = computed(() => formData.name ? `名称:${formData.name}` : '搜索 API 密钥')
+const placeholder = computed(() => {
+  const conditions: string[] = []
+  if (formData.name) {
+    conditions.push(`名称:${formData.name}`)
+  }
+  if (formData.platform) {
+    conditions.push(`平台:${getDictLabel(DICT_TYPE.AI_PLATFORM, formData.platform)}`)
+  }
+  if (formData.status !== undefined) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索 API 密钥'
+})
 
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    name: formData.name || undefined,
+    platform: formData.platform,
+    status: formData.status,
+  })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.name = undefined
+  formData.platform = undefined
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

@@ -16,6 +16,19 @@ export interface KnowledgeSegmentVO {
   createTime?: string
 }
 
+/** AI 知识库分段保存请求 */
+export interface KnowledgeSegmentReq {
+  id?: number
+  documentId?: number
+  content: string
+}
+
+/** AI 知识库分段状态修改请求 */
+export interface KnowledgeSegmentUpdateStatusReq {
+  id: number
+  status: number
+}
+
 /** 查询知识库分段分页 */
 export function getKnowledgeSegmentPage(params: PageParam) {
   return http.get<PageResult<KnowledgeSegmentVO>>('/ai/knowledge/segment/page', params)
@@ -32,17 +45,17 @@ export function deleteKnowledgeSegment(id: number) {
 }
 
 /** 新增知识库分段 */
-export function createKnowledgeSegment(data: KnowledgeSegmentVO) {
+export function createKnowledgeSegment(data: KnowledgeSegmentReq) {
   return http.post<number>('/ai/knowledge/segment/create', data)
 }
 
 /** 修改知识库分段 */
-export function updateKnowledgeSegment(data: KnowledgeSegmentVO) {
+export function updateKnowledgeSegment(data: KnowledgeSegmentReq) {
   return http.put<boolean>('/ai/knowledge/segment/update', data)
 }
 
 /** 修改知识库分段状态 */
-export function updateKnowledgeSegmentStatus(data: Record<string, any>) {
+export function updateKnowledgeSegmentStatus(data: KnowledgeSegmentUpdateStatusReq) {
   return http.put<boolean>('/ai/knowledge/segment/update-status', data)
 }
 
@@ -59,17 +72,4 @@ export function getKnowledgeSegmentProcessList(documentIds: number[]) {
 /** 搜索知识库分段 */
 export function searchKnowledgeSegment(params: Record<string, any>) {
   return http.get<KnowledgeSegmentVO[]>('/ai/knowledge/segment/search', params)
-}
-
-/** AI 知识库分段 API */
-export const KnowledgeSegmentApi = {
-  getKnowledgeSegmentPage,
-  getKnowledgeSegment,
-  deleteKnowledgeSegment,
-  createKnowledgeSegment,
-  updateKnowledgeSegment,
-  updateKnowledgeSegmentStatus,
-  splitContent,
-  getKnowledgeSegmentProcessList,
-  searchKnowledgeSegment,
 }

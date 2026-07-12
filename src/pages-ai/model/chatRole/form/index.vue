@@ -15,13 +15,13 @@
           <wd-form-item title="角色名称" title-width="210rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入角色名称" />
           </wd-form-item>
-          <wd-form-item title="头像" title-width="210rpx">
-            <wd-input v-model="formData.avatar" clearable placeholder="请输入头像 URL" />
+          <wd-form-item title="头像" title-width="210rpx" prop="avatar">
+            <yd-upload-img v-model="formData.avatar" directory="ai/chat-role" />
           </wd-form-item>
-          <wd-form-item title="角色类别" title-width="210rpx">
+          <wd-form-item title="角色类别" title-width="210rpx" prop="category">
             <wd-input v-model="formData.category" clearable placeholder="请输入角色类别" />
           </wd-form-item>
-          <wd-form-item title="角色描述" title-width="210rpx">
+          <wd-form-item title="角色描述" title-width="210rpx" prop="description">
             <wd-textarea v-model="formData.description" placeholder="请输入角色描述" clearable />
           </wd-form-item>
           <wd-form-item title="角色设定" title-width="210rpx" prop="systemMessage">
@@ -39,10 +39,10 @@
             filterable
             placeholder="请选择 MCP"
           />
-          <wd-form-item title="是否公开" title-width="210rpx" center>
+          <wd-form-item title="是否公开" title-width="210rpx" prop="publicStatus" center>
             <wd-switch v-model="formData.publicStatus" />
           </wd-form-item>
-          <wd-form-item title="排序" title-width="210rpx">
+          <wd-form-item title="排序" title-width="210rpx" prop="sort">
             <wd-input-number v-model="formData.sort" :min="0" />
           </wd-form-item>
           <wd-form-item title="状态" title-width="210rpx" prop="status" center>
@@ -82,9 +82,8 @@ import { computed, onMounted, ref } from 'vue'
 import { createChatRole, getChatRole, updateChatRole } from '@/api/ai/model/chatRole'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
 import KnowledgeFormPicker from '@/pages-ai/knowledge/components/knowledge-form-picker.vue'
 import ModelFormPicker from '../../model/components/model-form-picker.vue'
 import ToolFormPicker from '../../tool/components/tool-form-picker.vue'
@@ -119,7 +118,15 @@ const formData = ref<ChatRoleVO>({
 }) // 表单数据
 const formSchema = createFormSchema({
   name: [{ required: true, message: '角色名称不能为空' }],
+  avatar: [
+    { required: true, message: '角色头像不能为空' },
+    { pattern: /^https?:\/\//, message: '角色头像必须是 URL 格式' },
+  ],
+  category: [{ required: true, message: '角色类别不能为空' }],
+  sort: [{ required: true, message: '角色排序不能为空' }],
+  description: [{ required: true, message: '角色描述不能为空' }],
   systemMessage: [{ required: true, message: '角色设定不能为空' }],
+  publicStatus: [{ required: true, message: '是否公开不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用

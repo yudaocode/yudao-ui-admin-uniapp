@@ -68,6 +68,38 @@ export const ImConversationType = {
   CHANNEL: 3,
 } as const
 
+/** IM 通话媒体类型 */
+export const ImRtcCallMediaType = {
+  VOICE: 1,
+  VIDEO: 2,
+} as const
+
+/** IM 通话状态 */
+export const ImRtcCallStatus = {
+  CREATED: 10,
+  RUNNING: 20,
+  ENDED: 30,
+} as const
+
+/** IM 通话参与者状态 */
+export const ImRtcParticipantStatus = {
+  INVITING: 10,
+  JOINED: 20,
+  REJECTED: 30,
+  NO_ANSWER: 40,
+  LEFT: 50,
+} as const
+
+/** IM 通话页面阶段 */
+export const ImRtcCallStage = {
+  IDLE: 'idle',
+  INVITING: 'inviting',
+  INCOMING: 'incoming',
+  RUNNING: 'running',
+} as const
+
+export type ImRtcCallStageValue = (typeof ImRtcCallStage)[keyof typeof ImRtcCallStage]
+
 /** IM 群成员角色 */
 export const ImGroupMemberRole = {
   OWNER: 1,

@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="工具"
+      title="工具管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -28,6 +28,7 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          @click="handleDetail(item)"
         >
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
@@ -39,22 +40,6 @@
           </view>
           <view class="line-clamp-3 text-26rpx text-[#666]">
             {{ item.description || '-' }}
-          </view>
-          <view class="mt-20rpx flex justify-end gap-16rpx">
-            <wd-button
-              v-if="hasAccessByCodes(['ai:tool:update'])"
-              size="small" type="warning" variant="plain"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:tool:delete'])"
-              size="small" type="danger" variant="plain"
-              @click="handleDelete(item)"
-            >
-              删除
-            </wd-button>
           </view>
         </view>
       </view>
@@ -73,11 +58,9 @@
 
 <script lang="ts" setup>
 import type { ToolVO } from '@/api/ai/model/tool'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { deleteTool, getToolPage } from '@/api/ai/model/tool'
+import { getToolPage } from '@/api/ai/model/tool'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -91,21 +74,23 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const dialog = useDialog()
 const list = ref<ToolVO[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-ai/model/index')
+  navigateBackPlus()
 }
 
 /** 查询工具列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const params = { ...queryParams.value, pageNo, pageSize }
+    const params = {
+      ...queryParams.value,
+      pageNo,
+      pageSize,
+    }
     const data = await getToolPage(params)
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -131,24 +116,16 @@ function reload() {
 
 /** 新增工具 */
 function handleAdd() {
-  uni.navigateTo({ url: '/pages-ai/model/tool/form/index' })
+  uni.navigateTo({
+    url: '/pages-ai/model/tool/form/index',
+  })
 }
 
-/** 编辑工具 */
-function handleEdit(item: ToolVO) {
-  uni.navigateTo({ url: `/pages-ai/model/tool/form/index?id=${item.id}` })
-}
-
-/** 删除工具 */
-async function handleDelete(item: ToolVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除工具【${item.name}】吗？` })
-  } catch {
-    return
-  }
-  await deleteTool(item.id!)
-  toast.success('删除成功')
-  reload()
+/** 查看工具详情 */
+function handleDetail(item: ToolVO) {
+  uni.navigateTo({
+    url: `/pages-ai/model/tool/detail/index?id=${item.id}`,
+  })
 }
 
 /** 初始化 */

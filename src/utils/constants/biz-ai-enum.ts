@@ -37,6 +37,14 @@ export const AiMusicStatusEnum = {
   FAIL: 30,
 } as const
 
+/** AI 音乐生成模式枚举 */
+export const MusicGenerateModeEnum = {
+  DESCRIPTION: 1,
+  LYRIC: 2,
+} as const
+
+export type MusicGenerateMode = typeof MusicGenerateModeEnum[keyof typeof MusicGenerateModeEnum]
+
 /** AI 写作类型枚举 */
 export enum AiWriteTypeEnum {
   WRITING = 1,

@@ -7,14 +7,13 @@ export interface ChatMessageVO {
   id?: number
   conversationId?: number
   type?: string
-  userId?: string
+  userId?: number
   roleId?: string
   model?: number | string
   modelId?: number
   content?: string
   reasoningContent?: string
   attachmentUrls?: string[]
-  tokens?: number
   segmentIds?: number[]
   segments?: Array<{
     id: number
@@ -33,6 +32,9 @@ export interface ChatMessageVO {
   createTime?: string
   roleAvatar?: string
   userAvatar?: string
+  roleName?: string
+  replyId?: number
+  useContext?: boolean
 }
 
 /** 消息列表 */
@@ -82,17 +84,12 @@ export function getChatMessagePage(params: PageParam) {
   return http.get<PageResult<ChatMessageVO>>('/ai/chat/message/page', params)
 }
 
+/** 获得消息详情 */
+export function getChatMessage(id: number) {
+  return http.get<ChatMessageVO>(`/ai/chat/message/get?id=${id}`)
+}
+
 /** 管理员删除消息 */
 export function deleteChatMessageByAdmin(id: number) {
   return http.delete<boolean>(`/ai/chat/message/delete-by-admin?id=${id}`)
-}
-
-/** AI 聊天消息 API */
-export const ChatMessageApi = {
-  getChatMessageListByConversationId,
-  sendChatMessageStream,
-  deleteChatMessage,
-  deleteByConversationId,
-  getChatMessagePage,
-  deleteChatMessageByAdmin,
 }

@@ -130,10 +130,9 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnmounted, reactive, ref } from 'vue'
 import { deleteWrite, getWritePage, writeStream } from '@/api/ai/write'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { AiWriteDefaultOptions, AiWriteTypeEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import { AiWriteDefaultOptions, AiWriteTypeEnum } from '@/pages-ai/utils/constants'
 
 definePage({
   style: {
@@ -151,6 +150,7 @@ const historyList = ref<AiWriteRespVO[]>([]) // 历史列表
 const writeResult = ref('') // 写作结果
 const isWriting = ref(false) // 写作生成状态
 const streamController = ref<AbortController>() // 流式请求控制器
+const settingsVisible = ref(false) // 写作参数弹窗
 const formData = reactive({
   type: AiWriteTypeEnum.WRITING,
   prompt: '',
@@ -165,7 +165,7 @@ const formSchema = createFormSchema({
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-ai/index/index')
+  navigateBackPlus()
 }
 
 /** 查询历史记录 */
@@ -180,6 +180,9 @@ async function queryHistory(pageNo: number, pageSize: number) {
 
 /** 提交写作 */
 async function handleSubmit() {
+  if (isWriting.value) {
+    return
+  }
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return

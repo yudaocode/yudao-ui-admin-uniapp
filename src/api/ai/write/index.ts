@@ -1,7 +1,7 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { sendSsePost } from '@/api/ai/utils'
 import { http } from '@/http/http'
-import type { AiWriteTypeEnum } from '@/pages-ai/utils/constants'
+import type { AiWriteTypeEnum } from '@/utils/constants'
 
 /** AI 写作请求 */
 export interface WriteVO {
@@ -21,7 +21,7 @@ export interface WriteVO {
 }
 
 /** AI 写作分页请求 */
-export interface AiWritePageReqVO extends PageParam {
+export interface AiWritePageReq extends PageParam {
   userId?: number
   type?: AiWriteTypeEnum
   platform?: string
@@ -58,18 +58,16 @@ export function writeStream(options: {
 }
 
 /** 获取写作列表 */
-export function getWritePage(params: AiWritePageReqVO) {
+export function getWritePage(params: AiWritePageReq) {
   return http.get<PageResult<AiWriteRespVO>>('/ai/write/page', params)
+}
+
+/** 获取写作详情 */
+export function getWrite(id: number) {
+  return http.get<AiWriteRespVO>(`/ai/write/get?id=${id}`)
 }
 
 /** 删除写作 */
 export function deleteWrite(id: number) {
   return http.delete<boolean>(`/ai/write/delete?id=${id}`)
-}
-
-/** AI 写作 API */
-export const WriteApi = {
-  writeStream,
-  getWritePage,
-  deleteWrite,
 }
