@@ -54,7 +54,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AiWriteRespVO } from '@/api/ai/write'
+import type { AiWrite } from '@/api/ai/write'
 import type { User } from '@/api/system/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -72,7 +72,7 @@ definePage({
   },
 })
 
-const list = ref<AiWriteRespVO[]>([]) // 写作列表
+const list = ref<AiWrite[]>([]) // 写作列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const userList = ref<User[]>([]) // 用户精简列表
@@ -114,7 +114,7 @@ function reload() {
 }
 
 /** 查看写作详情 */
-function handleDetail(item: AiWriteRespVO) {
+function handleDetail(item: AiWrite) {
   uni.navigateTo({
     url: `/pages-ai/write/manager/detail/index?id=${item.id}`,
   })

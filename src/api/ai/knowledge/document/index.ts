@@ -2,11 +2,12 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI 知识库文档 */
-export interface KnowledgeDocumentVO {
+export interface KnowledgeDocument {
   id?: number
   knowledgeId?: number
-  knowledgeName?: string
   name?: string
+  url?: string
+  content?: string
   contentLength?: number
   tokens?: number
   segmentMaxTokens?: number
@@ -21,6 +22,16 @@ export interface KnowledgeDocumentCreateReq {
   name: string
   url: string
   segmentMaxTokens: number
+}
+
+/** AI 知识库文档批量新增请求 */
+export interface KnowledgeDocumentCreateListReq {
+  knowledgeId: number
+  segmentMaxTokens: number
+  list: Array<{
+    name: string
+    url: string
+  }>
 }
 
 /** AI 知识库文档修改请求 */
@@ -38,12 +49,12 @@ export interface KnowledgeDocumentUpdateStatusReq {
 
 /** 查询知识库文档分页 */
 export function getKnowledgeDocumentPage(params: PageParam) {
-  return http.get<PageResult<KnowledgeDocumentVO>>('/ai/knowledge/document/page', params)
+  return http.get<PageResult<KnowledgeDocument>>('/ai/knowledge/document/page', params)
 }
 
 /** 查询知识库文档详情 */
 export function getKnowledgeDocument(id: number) {
-  return http.get<KnowledgeDocumentVO>(`/ai/knowledge/document/get?id=${id}`)
+  return http.get<KnowledgeDocument>(`/ai/knowledge/document/get?id=${id}`)
 }
 
 /** 新增知识库文档 */
@@ -52,7 +63,7 @@ export function createKnowledgeDocument(data: KnowledgeDocumentCreateReq) {
 }
 
 /** 批量新增知识库文档 */
-export function createKnowledgeDocumentList(data: Record<string, any>) {
+export function createKnowledgeDocumentList(data: KnowledgeDocumentCreateListReq) {
   return http.post<number[]>('/ai/knowledge/document/create-list', data)
 }
 

@@ -2,7 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI 聊天对话 */
-export interface ChatConversationVO {
+export interface ChatConversation {
   id?: number
   userId?: number
   title?: string
@@ -25,16 +25,16 @@ export interface ChatConversationVO {
 
 /** 获得我的聊天对话 */
 export function getChatConversationMy(id: number) {
-  return http.get<ChatConversationVO>(`/ai/chat/conversation/get-my?id=${id}`)
+  return http.get<ChatConversation>(`/ai/chat/conversation/get-my?id=${id}`)
 }
 
 /** 新增我的聊天对话 */
-export function createChatConversationMy(data?: ChatConversationVO) {
+export function createChatConversationMy(data?: ChatConversation) {
   return http.post<number>('/ai/chat/conversation/create-my', data || {})
 }
 
 /** 更新我的聊天对话 */
-export function updateChatConversationMy(data: ChatConversationVO) {
+export function updateChatConversationMy(data: ChatConversation) {
   return http.put<boolean>('/ai/chat/conversation/update-my', data)
 }
 
@@ -50,17 +50,17 @@ export function deleteChatConversationMyByUnpinned() {
 
 /** 获得我的聊天对话列表 */
 export function getChatConversationMyList() {
-  return http.get<ChatConversationVO[]>('/ai/chat/conversation/my-list')
+  return http.get<ChatConversation[]>('/ai/chat/conversation/my-list')
 }
 
 /** 获得对话分页 */
 export function getChatConversationPage(params: PageParam) {
-  return http.get<PageResult<ChatConversationVO>>('/ai/chat/conversation/page', params)
+  return http.get<PageResult<ChatConversation>>('/ai/chat/conversation/page', params)
 }
 
 /** 获得对话详情 */
 export function getChatConversation(id: number) {
-  return http.get<ChatConversationVO>(`/ai/chat/conversation/get?id=${id}`)
+  return http.get<ChatConversation>(`/ai/chat/conversation/get?id=${id}`)
 }
 
 /** 管理员删除对话 */

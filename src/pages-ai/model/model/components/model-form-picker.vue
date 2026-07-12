@@ -17,14 +17,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModelVO } from '@/api/ai/model/model'
+import type { AiModel } from '@/api/ai/model/model'
 import { computed, ref, watch } from 'vue'
 import { getModelSimpleList } from '@/api/ai/model/model'
 
 const props = withDefaults(defineProps<{
   modelValue?: number
   modelType?: number
-  options?: ModelVO[]
+  options?: AiModel[]
   excludePlatforms?: string[]
   label?: string
   labelWidth?: string
@@ -43,10 +43,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: ModelVO | undefined]
+  'change': [item: AiModel | undefined]
 }>()
 
-const loadedOptions = ref<ModelVO[]>([]) // 加载的模型选项
+const loadedOptions = ref<AiModel[]>([]) // 加载的模型选项
 const pickerOptions = computed(() => { // 过滤后的模型选项
   const options = props.options ?? loadedOptions.value
   if (!props.excludePlatforms?.length) {

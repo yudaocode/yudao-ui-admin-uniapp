@@ -1,9 +1,9 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
-import { sendSsePost } from '@/api/ai/utils'
+import { sendSsePost } from '@/http/sse'
 
 /** AI 聊天消息 */
-export interface ChatMessageVO {
+export interface ChatMessage {
   id?: number
   conversationId?: number
   type?: string
@@ -39,7 +39,7 @@ export interface ChatMessageVO {
 
 /** 消息列表 */
 export function getChatMessageListByConversationId(conversationId: number | null) {
-  return http.get<ChatMessageVO[]>(`/ai/chat/message/list-by-conversation-id?conversationId=${conversationId}`)
+  return http.get<ChatMessage[]>(`/ai/chat/message/list-by-conversation-id?conversationId=${conversationId}`)
 }
 
 /** 发送 Stream 消息 */
@@ -81,12 +81,12 @@ export function deleteByConversationId(conversationId: number) {
 
 /** 获得消息分页 */
 export function getChatMessagePage(params: PageParam) {
-  return http.get<PageResult<ChatMessageVO>>('/ai/chat/message/page', params)
+  return http.get<PageResult<ChatMessage>>('/ai/chat/message/page', params)
 }
 
 /** 获得消息详情 */
 export function getChatMessage(id: number) {
-  return http.get<ChatMessageVO>(`/ai/chat/message/get?id=${id}`)
+  return http.get<ChatMessage>(`/ai/chat/message/get?id=${id}`)
 }
 
 /** 管理员删除消息 */

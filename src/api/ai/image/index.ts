@@ -2,7 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI 绘图 */
-export interface ImageVO {
+export interface AiImage {
   id?: number
   userId?: number
   platform?: string
@@ -16,7 +16,7 @@ export interface ImageVO {
   errorMessage?: string
   options?: Record<string, string>
   taskId?: string
-  buttons?: ImageMidjourneyButtonsVO[]
+  buttons?: ImageMidjourneyButton[]
   createTime?: string
   finishTime?: string
 }
@@ -53,7 +53,7 @@ export interface ImageUpdateReq {
 }
 
 /** Midjourney 操作按钮 */
-export interface ImageMidjourneyButtonsVO {
+export interface ImageMidjourneyButton {
   customId: string
   emoji: string
   label: string
@@ -62,17 +62,17 @@ export interface ImageMidjourneyButtonsVO {
 
 /** 获取我的绘图分页 */
 export function getImagePageMy(params: PageParam) {
-  return http.get<PageResult<ImageVO>>('/ai/image/my-page', params)
+  return http.get<PageResult<AiImage>>('/ai/image/my-page', params)
 }
 
 /** 获取我的绘图记录 */
 export function getImageMy(id: number) {
-  return http.get<ImageVO>(`/ai/image/get-my?id=${id}`)
+  return http.get<AiImage>(`/ai/image/get-my?id=${id}`)
 }
 
 /** 获取我的绘图记录列表 */
 export function getImageListMyByIds(ids: number[]) {
-  return http.get<ImageVO[]>('/ai/image/my-list-by-ids', { ids: ids.join(',') })
+  return http.get<AiImage[]>('/ai/image/my-list-by-ids', { ids: ids.join(',') })
 }
 
 /** 生成图片 */
@@ -97,12 +97,12 @@ export function midjourneyAction(data: ImageMidjourneyActionReq) {
 
 /** 查询绘画分页 */
 export function getImagePage(params: PageParam) {
-  return http.get<PageResult<ImageVO>>('/ai/image/page', params)
+  return http.get<PageResult<AiImage>>('/ai/image/page', params)
 }
 
 /** 查询绘画详情 */
 export function getImage(id: number) {
-  return http.get<ImageVO>(`/ai/image/get?id=${id}`)
+  return http.get<AiImage>(`/ai/image/get?id=${id}`)
 }
 
 /** 更新绘画发布状态 */

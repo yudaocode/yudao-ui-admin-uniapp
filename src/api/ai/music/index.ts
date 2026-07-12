@@ -2,7 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI 音乐 */
-export interface MusicVO {
+export interface Music {
   id?: number
   userId?: number
   title?: string
@@ -49,7 +49,7 @@ export interface MusicUpdateMyReq {
 
 /** 查询我的音乐分页 */
 export function getMusicMyPage(params: PageParam) {
-  return http.get<PageResult<MusicVO>>('/ai/music/my-page', params)
+  return http.get<PageResult<Music>>('/ai/music/my-page', params)
 }
 
 /** 生成音乐 */
@@ -64,7 +64,7 @@ export function deleteMusicMy(id: number) {
 
 /** 查询我的音乐详情 */
 export function getMusicMy(id: number) {
-  return http.get<MusicVO>(`/ai/music/get-my?id=${id}`)
+  return http.get<Music>(`/ai/music/get-my?id=${id}`)
 }
 
 /** 修改我的音乐标题 */
@@ -74,12 +74,12 @@ export function updateMusicMy(data: MusicUpdateMyReq) {
 
 /** 查询音乐分页 */
 export function getMusicPage(params: PageParam) {
-  return http.get<PageResult<MusicVO>>('/ai/music/page', params)
+  return http.get<PageResult<Music>>('/ai/music/page', params)
 }
 
 /** 查询音乐详情 */
 export function getMusic(id: number) {
-  return http.get<MusicVO>(`/ai/music/get?id=${id}`)
+  return http.get<Music>(`/ai/music/get?id=${id}`)
 }
 
 /** 更新音乐 */

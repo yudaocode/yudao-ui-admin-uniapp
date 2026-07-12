@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModelVO } from '@/api/ai/model/model'
+import type { AiModel } from '@/api/ai/model/model'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getModelPage } from '@/api/ai/model/model'
@@ -85,7 +85,7 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ModelVO[]>([]) // 列表数据
+const list = ref<AiModel[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
@@ -133,7 +133,7 @@ function handleAdd() {
 }
 
 /** 查看模型详情 */
-function handleDetail(item: ModelVO) {
+function handleDetail(item: AiModel) {
   uni.navigateTo({
     url: `/pages-ai/model/model/detail/index?id=${item.id}`,
   })

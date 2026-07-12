@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ToolVO } from '@/api/ai/model/tool'
+import type { Tool } from '@/api/ai/model/tool'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -57,7 +57,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ToolVO>() // 详情数据
+const formData = ref<Tool>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */

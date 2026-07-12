@@ -2,7 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI 模型 */
-export interface ModelVO {
+export interface AiModel {
   id?: number
   keyId?: number
   name?: string
@@ -19,26 +19,26 @@ export interface ModelVO {
 
 /** 查询模型分页 */
 export function getModelPage(params: PageParam) {
-  return http.get<PageResult<ModelVO>>('/ai/model/page', params)
+  return http.get<PageResult<AiModel>>('/ai/model/page', params)
 }
 
 /** 获得模型列表 */
 export function getModelSimpleList(type?: number) {
-  return http.get<ModelVO[]>('/ai/model/simple-list', { type })
+  return http.get<AiModel[]>('/ai/model/simple-list', { type })
 }
 
 /** 查询模型详情 */
 export function getModel(id: number) {
-  return http.get<ModelVO>(`/ai/model/get?id=${id}`)
+  return http.get<AiModel>(`/ai/model/get?id=${id}`)
 }
 
 /** 新增模型 */
-export function createModel(data: ModelVO) {
+export function createModel(data: AiModel) {
   return http.post<number>('/ai/model/create', data)
 }
 
 /** 修改模型 */
-export function updateModel(data: ModelVO) {
+export function updateModel(data: AiModel) {
   return http.put<boolean>('/ai/model/update', data)
 }
 

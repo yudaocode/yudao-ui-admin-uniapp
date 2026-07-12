@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChatConversationVO } from '@/api/ai/chat/conversation'
+import type { ChatConversation } from '@/api/ai/chat/conversation'
 import type { User } from '@/api/system/user'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getChatConversationPage } from '@/api/ai/chat/conversation'
@@ -53,7 +53,7 @@ import { getSimpleUserList } from '@/api/system/user'
 import { formatDateTime } from '@/utils/date'
 import ConversationSearchForm from './conversation-search-form.vue'
 
-const list = ref<ChatConversationVO[]>([]) // 对话列表
+const list = ref<ChatConversation[]>([]) // 对话列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const userList = ref<User[]>([]) // 用户精简列表
@@ -90,7 +90,7 @@ function reload() {
 }
 
 /** 查看对话详情 */
-function handleDetail(item: ChatConversationVO) {
+function handleDetail(item: ChatConversation) {
   uni.navigateTo({
     url: `/pages-ai/chat/manager/conversation/detail/index?id=${item.id}`,
   })

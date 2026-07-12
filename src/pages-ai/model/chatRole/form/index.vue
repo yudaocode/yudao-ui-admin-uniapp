@@ -76,7 +76,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ChatRoleVO } from '@/api/ai/model/chatRole'
+import type { ChatRole } from '@/api/ai/model/chatRole'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createChatRole, getChatRole, updateChatRole } from '@/api/ai/model/chatRole'
@@ -102,7 +102,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑聊天角色' : '新增聊天角色')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<ChatRoleVO>({
+const formData = ref<ChatRole>({
   modelId: undefined,
   name: '',
   avatar: '',

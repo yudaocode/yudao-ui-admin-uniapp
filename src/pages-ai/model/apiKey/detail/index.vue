@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiKeyVO } from '@/api/ai/model/apiKey'
+import type { ApiKey } from '@/api/ai/model/apiKey'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -62,7 +62,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ApiKeyVO>() // 详情数据
+const formData = ref<ApiKey>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */

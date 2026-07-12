@@ -82,7 +82,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ModelVO } from '@/api/ai/model/model'
+import type { AiModel } from '@/api/ai/model/model'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createModel, getModel, updateModel } from '@/api/ai/model/model'
@@ -106,7 +106,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑模型' : '新增模型')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<ModelVO>({
+const formData = ref<AiModel>({
   keyId: undefined,
   name: '',
   model: '',

@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ToolVO } from '@/api/ai/model/tool'
+import type { Tool } from '@/api/ai/model/tool'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getToolPage } from '@/api/ai/model/tool'
@@ -74,7 +74,7 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ToolVO[]>([]) // 列表数据
+const list = ref<Tool[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
@@ -122,7 +122,7 @@ function handleAdd() {
 }
 
 /** 查看工具详情 */
-function handleDetail(item: ToolVO) {
+function handleDetail(item: Tool) {
   uni.navigateTo({
     url: `/pages-ai/model/tool/detail/index?id=${item.id}`,
   })

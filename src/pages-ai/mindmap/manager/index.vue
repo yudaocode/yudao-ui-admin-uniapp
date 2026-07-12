@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="导图管理"
+      title="脑图管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -49,7 +49,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { MindMapVO } from '@/api/ai/mindmap'
+import type { MindMap } from '@/api/ai/mindmap'
 import type { User } from '@/api/system/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -66,7 +66,7 @@ definePage({
   },
 })
 
-const list = ref<MindMapVO[]>([]) // 导图列表
+const list = ref<MindMap[]>([]) // 导图列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const userList = ref<User[]>([]) // 用户精简列表
@@ -108,7 +108,7 @@ function reload() {
 }
 
 /** 查看导图详情 */
-function handleDetail(item: MindMapVO) {
+function handleDetail(item: MindMap) {
   uni.navigateTo({
     url: `/pages-ai/mindmap/manager/detail/index?id=${item.id}`,
   })

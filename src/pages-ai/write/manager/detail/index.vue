@@ -8,42 +8,56 @@
     />
 
     <!-- 详情内容 -->
-    <view>
-      <wd-cell-group border>
-        <wd-cell title="编号" :value="formData?.id || '-'" />
-        <wd-cell title="用户" :value="getUserName(formData?.userId)" />
-        <wd-cell title="写作类型">
-          <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.AI_WRITE_TYPE" :value="formData.type" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="平台">
-          <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="模型" :value="formData?.model || '-'" />
-        <wd-cell title="生成内容提示" :value="formData?.prompt || '-'" />
-        <wd-cell title="原文" :value="formData?.originalContent || '-'" />
-        <wd-cell title="长度">
-          <dict-tag v-if="formData?.length != null" :type="DICT_TYPE.AI_WRITE_LENGTH" :value="formData.length" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="格式">
-          <dict-tag v-if="formData?.format != null" :type="DICT_TYPE.AI_WRITE_FORMAT" :value="formData.format" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="语气">
-          <dict-tag v-if="formData?.tone != null" :type="DICT_TYPE.AI_WRITE_TONE" :value="formData.tone" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="语言">
-          <dict-tag v-if="formData?.language != null" :type="DICT_TYPE.AI_WRITE_LANGUAGE" :value="formData.language" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="生成内容" :value="formData?.generatedContent || '-'" />
-        <wd-cell title="错误信息" :value="formData?.errorMessage || '-'" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
-      </wd-cell-group>
-    </view>
+    <scroll-view scroll-y class="min-h-0 flex-1">
+      <view class="p-24rpx">
+        <view class="overflow-hidden rounded-16rpx bg-white shadow-sm">
+          <wd-cell-group border>
+            <wd-cell title="编号" :value="formData?.id || '-'" />
+            <wd-cell title="用户" :value="getUserName(formData?.userId)" />
+            <wd-cell title="写作类型">
+              <dict-tag v-if="formData?.type != null" :type="DICT_TYPE.AI_WRITE_TYPE" :value="formData.type" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="写作要求" :value="formData?.prompt || '-'" />
+            <wd-cell v-if="formData?.originalContent" title="原文" :value="formData.originalContent" />
+            <wd-cell title="长度">
+              <dict-tag v-if="formData?.length != null" :type="DICT_TYPE.AI_WRITE_LENGTH" :value="formData.length" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="格式">
+              <dict-tag v-if="formData?.format != null" :type="DICT_TYPE.AI_WRITE_FORMAT" :value="formData.format" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="语气">
+              <dict-tag v-if="formData?.tone != null" :type="DICT_TYPE.AI_WRITE_TONE" :value="formData.tone" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="语言">
+              <dict-tag v-if="formData?.language != null" :type="DICT_TYPE.AI_WRITE_LANGUAGE" :value="formData.language" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="平台">
+              <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="模型" :value="formData?.model || '-'" />
+            <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+          </wd-cell-group>
+        </view>
+
+        <view class="mt-24rpx rounded-16rpx bg-white p-24rpx shadow-sm">
+          <view class="mb-20rpx text-30rpx text-[#222] font-semibold">
+            生成内容
+          </view>
+          <text v-if="formData?.generatedContent" selectable class="whitespace-pre-wrap text-28rpx text-[#333] leading-46rpx">
+            {{ formData.generatedContent }}
+          </text>
+          <view v-else class="py-40rpx text-center text-26rpx text-[#999]">
+            {{ formData?.errorMessage || '暂无生成内容' }}
+          </view>
+        </view>
+      </view>
+    </scroll-view>
 
     <!-- 底部操作按钮 -->
     <view v-if="hasAccessByCodes(['ai:write:delete'])" class="yd-detail-footer">
@@ -57,7 +71,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AiWriteRespVO } from '@/api/ai/write'
+import type { AiWrite } from '@/api/ai/write'
 import type { User } from '@/api/system/user'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -83,7 +97,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<AiWriteRespVO>() // 详情数据
+const formData = ref<AiWrite>() // 详情数据
 const deleting = ref(false) // 删除状态
 const userList = ref<User[]>([]) // 用户精简列表
 

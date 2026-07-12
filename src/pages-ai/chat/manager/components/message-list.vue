@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChatMessageVO } from '@/api/ai/chat/message'
+import type { ChatMessage } from '@/api/ai/chat/message'
 import type { User } from '@/api/system/user'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getChatMessagePage } from '@/api/ai/chat/message'
@@ -64,7 +64,7 @@ const props = defineProps<{
   conversationId?: number
 }>()
 
-const list = ref<ChatMessageVO[]>([]) // 消息列表
+const list = ref<ChatMessage[]>([]) // 消息列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({
   conversationId: props.conversationId,
@@ -103,7 +103,7 @@ function reload() {
 }
 
 /** 查看消息详情 */
-function handleDetail(item: ChatMessageVO) {
+function handleDetail(item: ChatMessage) {
   uni.navigateTo({
     url: `/pages-ai/chat/manager/message/detail/index?id=${item.id}`,
   })

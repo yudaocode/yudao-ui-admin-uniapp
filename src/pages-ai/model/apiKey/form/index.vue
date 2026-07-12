@@ -60,7 +60,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ApiKeyVO } from '@/api/ai/model/apiKey'
+import type { ApiKey } from '@/api/ai/model/apiKey'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createApiKey, getApiKey, updateApiKey } from '@/api/ai/model/apiKey'
@@ -83,7 +83,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑 API 密钥' : '新增 API 密钥')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<ApiKeyVO>({
+const formData = ref<ApiKey>({
   id: undefined,
   name: '',
   apiKey: '',

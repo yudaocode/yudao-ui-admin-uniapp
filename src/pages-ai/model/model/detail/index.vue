@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModelVO } from '@/api/ai/model/model'
+import type { AiModel } from '@/api/ai/model/model'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -71,7 +71,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ModelVO>() // 详情数据
+const formData = ref<AiModel>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */

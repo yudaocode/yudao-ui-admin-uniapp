@@ -1,10 +1,10 @@
 import type { PageParam, PageResult } from '@/http/types'
-import { sendSsePost } from '@/api/ai/utils'
+import { sendSsePost } from '@/http/sse'
 import { http } from '@/http/http'
 import type { AiWriteTypeEnum } from '@/utils/constants'
 
 /** AI 写作请求 */
-export interface WriteVO {
+export interface AiWriteGenerateReq {
   type: AiWriteTypeEnum
   prompt: string
   originalContent?: string
@@ -20,16 +20,8 @@ export interface WriteVO {
   createTime?: string
 }
 
-/** AI 写作分页请求 */
-export interface AiWritePageReq extends PageParam {
-  userId?: number
-  type?: AiWriteTypeEnum
-  platform?: string
-  createTime?: [string, string]
-}
-
-/** AI 写作响应 */
-export interface AiWriteRespVO {
+/** AI 写作 */
+export interface AiWrite {
   id: number
   userId: number
   type: number
@@ -48,7 +40,7 @@ export interface AiWriteRespVO {
 
 /** 流式写作 */
 export function writeStream(options: {
-  data: WriteVO
+  data: AiWriteGenerateReq
   onMessage?: (res: { data: string }) => void | Promise<void>
   onError?: (...args: any[]) => void
   onClose?: (...args: any[]) => void
@@ -58,13 +50,13 @@ export function writeStream(options: {
 }
 
 /** 获取写作列表 */
-export function getWritePage(params: AiWritePageReq) {
-  return http.get<PageResult<AiWriteRespVO>>('/ai/write/page', params)
+export function getWritePage(params: PageParam) {
+  return http.get<PageResult<AiWrite>>('/ai/write/page', params)
 }
 
 /** 获取写作详情 */
 export function getWrite(id: number) {
-  return http.get<AiWriteRespVO>(`/ai/write/get?id=${id}`)
+  return http.get<AiWrite>(`/ai/write/get?id=${id}`)
 }
 
 /** 删除写作 */

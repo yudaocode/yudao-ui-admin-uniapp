@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiKeyVO } from '@/api/ai/model/apiKey'
+import type { ApiKey } from '@/api/ai/model/apiKey'
 import { onMounted, ref } from 'vue'
 import { getApiKeySimpleList } from '@/api/ai/model/apiKey'
 
@@ -40,10 +40,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: ApiKeyVO | undefined]
+  'change': [item: ApiKey | undefined]
 }>()
 
-const options = ref<ApiKeyVO[]>([]) // API 密钥选项
+const options = ref<ApiKey[]>([]) // API 密钥选项
 
 /** 加载 API 密钥选项 */
 async function loadOptions() {

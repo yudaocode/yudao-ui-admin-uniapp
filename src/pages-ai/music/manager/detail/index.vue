@@ -82,7 +82,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { MusicVO } from '@/api/ai/music'
+import type { Music } from '@/api/ai/music'
 import type { User } from '@/api/system/user'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -108,7 +108,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<MusicVO>() // 详情数据
+const formData = ref<Music>() // 详情数据
 const deleting = ref(false) // 删除状态
 const userList = ref<User[]>([]) // 用户精简列表
 

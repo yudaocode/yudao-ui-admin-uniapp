@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ImageVO } from '@/api/ai/image'
+import type { AiImage } from '@/api/ai/image'
 import type { User } from '@/api/system/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -81,7 +81,7 @@ definePage({
   },
 })
 
-const list = ref<ImageVO[]>([]) // 绘图列表
+const list = ref<AiImage[]>([]) // 绘图列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const userList = ref<User[]>([]) // 用户精简列表
@@ -123,7 +123,7 @@ function reload() {
 }
 
 /** 查看绘图详情 */
-function handleDetail(item: ImageVO) {
+function handleDetail(item: AiImage) {
   uni.navigateTo({
     url: `/pages-ai/image/manager/detail/index?id=${item.id}`,
   })

@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { ToolVO } from '@/api/ai/model/tool'
+import type { Tool } from '@/api/ai/model/tool'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createTool, getTool, updateTool } from '@/api/ai/model/tool'
@@ -71,7 +71,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑工具' : '新增工具')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<ToolVO>({
+const formData = ref<Tool>({
   name: '',
   description: '',
   status: CommonStatusEnum.ENABLE,

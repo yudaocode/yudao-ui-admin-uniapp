@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChatMessageVO } from '@/api/ai/chat/message'
+import type { ChatMessage } from '@/api/ai/chat/message'
 import type { User } from '@/api/system/user'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -93,7 +93,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ChatMessageVO>() // 详情数据
+const formData = ref<ChatMessage>() // 详情数据
 const deleting = ref(false) // 删除状态
 const userList = ref<User[]>([]) // 用户精简列表
 

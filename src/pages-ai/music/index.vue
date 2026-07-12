@@ -168,21 +168,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { MusicGenerateReqVO, MusicVO } from '@/api/ai/music'
+import type { Music, MusicGenerateReq } from '@/api/ai/music'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref } from 'vue'
 import { deleteMusicMy, generateMusic, getMusicMyPage } from '@/api/ai/music'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { AiPlatformEnum, DICT_TYPE, MusicGenerateModeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { AiPlatformEnum } from '@/pages-ai/utils/constants'
-
-const MusicGenerateModeEnum = {
-  DESCRIPTION: 1,
-  LYRIC: 2,
-} as const
-type MusicGenerateMode = typeof MusicGenerateModeEnum[keyof typeof MusicGenerateModeEnum]
+import type { MusicGenerateMode } from '@/utils/constants'
 
 definePage({
   style: {
@@ -194,7 +188,7 @@ definePage({
 const toast = useToast()
 const dialog = useDialog()
 const tabIndex = ref(0)
-const list = ref<MusicVO[]>([]) // 音乐列表
+const list = ref<Music[]>([]) // 音乐列表
 const pagingRef = ref<any>() // 分页组件引用
 const generating = ref(false) // 音乐生成状态
 const customTag = ref('') // 自定义风格
@@ -206,19 +200,19 @@ const formData = reactive({
   title: '',
   tags: [] as string[],
 }) // 音乐生成表单
-const modeOptions = [
+const modeOptions = [ // 音乐生成模式
   { label: '描述模式', value: MusicGenerateModeEnum.DESCRIPTION },
   { label: '歌词模式', value: MusicGenerateModeEnum.LYRIC },
 ]
-const modelOptions = [
+const modelOptions = [ // Suno 模型选项
   { label: 'Suno V3.5', value: 'chirp-v3.5' },
   { label: 'Suno V3', value: 'chirp-v3.0' },
 ]
-const styleTags = ['rock', 'punk', 'jazz', 'soul', 'country', 'kidsmusic', 'pop']
+const styleTags = ['rock', 'punk', 'jazz', 'soul', 'country', 'kidsmusic', 'pop'] // 常用音乐风格
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-ai/index/index')
+  navigateBackPlus()
 }
 
 /** Tab 切换 */
@@ -273,7 +267,7 @@ async function handleGenerate() {
 
   generating.value = true
   try {
-    const data: MusicGenerateReqVO = {
+    const data: MusicGenerateReq = {
       platform: AiPlatformEnum.SUNO,
       generateMode: formData.generateMode,
       prompt: formData.prompt,
@@ -291,7 +285,7 @@ async function handleGenerate() {
 }
 
 /** 删除音乐记录 */
-async function handleDelete(item: MusicVO) {
+async function handleDelete(item: Music) {
   if (!item.id) {
     return
   }

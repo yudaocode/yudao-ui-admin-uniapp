@@ -2,27 +2,39 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="导图详情"
+      title="脑图详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
 
     <!-- 详情内容 -->
-    <view>
-      <wd-cell-group border>
-        <wd-cell title="编号" :value="formData?.id || '-'" />
-        <wd-cell title="用户" :value="getUserName(formData?.userId)" />
-        <wd-cell title="提示词" :value="formData?.prompt || '-'" />
-        <wd-cell title="平台">
-          <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
-          <text v-else>-</text>
-        </wd-cell>
-        <wd-cell title="模型" :value="formData?.model || '-'" />
-        <wd-cell title="生成内容" :value="formData?.generatedContent || '-'" />
-        <wd-cell title="错误信息" :value="formData?.errorMessage || '-'" />
-        <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
-      </wd-cell-group>
-    </view>
+    <scroll-view scroll-y class="min-h-0 flex-1">
+      <view class="p-24rpx">
+        <view class="overflow-hidden rounded-16rpx bg-white shadow-sm">
+          <wd-cell-group border>
+            <wd-cell title="编号" :value="formData?.id || '-'" />
+            <wd-cell title="用户" :value="getUserName(formData?.userId)" />
+            <wd-cell title="生成主题" :value="formData?.prompt || '-'" />
+            <wd-cell title="平台">
+              <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
+              <text v-else>-</text>
+            </wd-cell>
+            <wd-cell title="模型" :value="formData?.model || '-'" />
+            <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
+          </wd-cell-group>
+        </view>
+
+        <view class="mt-24rpx rounded-16rpx bg-white p-24rpx shadow-sm">
+          <view class="mb-20rpx text-30rpx text-[#222] font-semibold">
+            思维导图
+          </view>
+          <YdMindMap v-if="formData?.generatedContent" :content="formData.generatedContent" />
+          <view v-else class="py-40rpx text-center text-26rpx text-[#999]">
+            {{ formData?.errorMessage || '暂无生成内容' }}
+          </view>
+        </view>
+      </view>
+    </scroll-view>
 
     <!-- 底部操作按钮 -->
     <view v-if="hasAccessByCodes(['ai:mind-map:delete'])" class="yd-detail-footer">
@@ -36,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { MindMapVO } from '@/api/ai/mindmap'
+import type { MindMap } from '@/api/ai/mindmap'
 import type { User } from '@/api/system/user'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -44,6 +56,7 @@ import { onMounted, ref } from 'vue'
 import { deleteMindMap, getMindMap } from '@/api/ai/mindmap'
 import { getSimpleUserList } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
+import YdMindMap from '@/pages-ai/components/yd-mind-map/yd-mind-map.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -62,7 +75,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<MindMapVO>() // 详情数据
+const formData = ref<MindMap>() // 详情数据
 const deleting = ref(false) // 删除状态
 const userList = ref<User[]>([]) // 用户精简列表
 

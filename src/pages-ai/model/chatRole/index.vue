@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChatRoleVO } from '@/api/ai/model/chatRole'
+import type { ChatRole } from '@/api/ai/model/chatRole'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getChatRolePage } from '@/api/ai/model/chatRole'
@@ -82,7 +82,7 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ChatRoleVO[]>([]) // 列表数据
+const list = ref<ChatRole[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
@@ -130,7 +130,7 @@ function handleAdd() {
 }
 
 /** 查看角色详情 */
-function handleDetail(item: ChatRoleVO) {
+function handleDetail(item: ChatRole) {
   uni.navigateTo({
     url: `/pages-ai/model/chatRole/detail/index?id=${item.id}`,
   })

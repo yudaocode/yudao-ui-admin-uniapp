@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ToolVO } from '@/api/ai/model/tool'
+import type { Tool } from '@/api/ai/model/tool'
 import { onMounted, ref } from 'vue'
 import { getToolSimpleList } from '@/api/ai/model/tool'
 
@@ -44,10 +44,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | number[] | undefined]
-  'change': [items: ToolVO[]]
+  'change': [items: Tool[]]
 }>()
 
-const options = ref<ToolVO[]>([]) // 工具选项
+const options = ref<Tool[]>([]) // 工具选项
 
 /** 更新工具 */
 function handleUpdate(value?: number | number[]) {

@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { MusicVO } from '@/api/ai/music'
+import type { Music } from '@/api/ai/music'
 import type { User } from '@/api/system/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -75,7 +75,7 @@ definePage({
   },
 })
 
-const list = ref<MusicVO[]>([]) // 音乐列表
+const list = ref<Music[]>([]) // 音乐列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const userList = ref<User[]>([]) // 用户精简列表
@@ -117,7 +117,7 @@ function reload() {
 }
 
 /** 查看音乐详情 */
-function handleDetail(item: MusicVO) {
+function handleDetail(item: Music) {
   uni.navigateTo({
     url: `/pages-ai/music/manager/detail/index?id=${item.id}`,
   })

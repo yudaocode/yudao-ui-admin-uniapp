@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiKeyVO } from '@/api/ai/model/apiKey'
+import type { ApiKey } from '@/api/ai/model/apiKey'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getApiKeyPage } from '@/api/ai/model/apiKey'
@@ -82,7 +82,7 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const list = ref<ApiKeyVO[]>([]) // 列表数据
+const list = ref<ApiKey[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
@@ -130,7 +130,7 @@ function handleAdd() {
 }
 
 /** 查看密钥详情 */
-function handleDetail(item: ApiKeyVO) {
+function handleDetail(item: ApiKey) {
   uni.navigateTo({
     url: `/pages-ai/model/apiKey/detail/index?id=${item.id}`,
   })

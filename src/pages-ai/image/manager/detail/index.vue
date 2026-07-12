@@ -75,7 +75,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ImageVO } from '@/api/ai/image'
+import type { AiImage } from '@/api/ai/image'
 import type { User } from '@/api/system/user'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -102,7 +102,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ImageVO>() // 详情数据
+const formData = ref<AiImage>() // 详情数据
 const deleting = ref(false) // 删除状态
 const userList = ref<User[]>([]) // 用户精简列表
 

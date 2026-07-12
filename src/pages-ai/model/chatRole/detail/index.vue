@@ -46,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ChatRoleVO } from '@/api/ai/model/chatRole'
+import type { ChatRole } from '@/api/ai/model/chatRole'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -69,7 +69,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<ChatRoleVO>() // 详情数据
+const formData = ref<ChatRole>() // 详情数据
 const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */

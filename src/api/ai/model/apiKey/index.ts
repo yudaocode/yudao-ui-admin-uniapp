@@ -2,7 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
 /** AI API 密钥 */
-export interface ApiKeyVO {
+export interface ApiKey {
   id?: number
   name?: string
   apiKey?: string
@@ -13,26 +13,26 @@ export interface ApiKeyVO {
 
 /** 查询 API 密钥分页 */
 export function getApiKeyPage(params: PageParam) {
-  return http.get<PageResult<ApiKeyVO>>('/ai/api-key/page', params)
+  return http.get<PageResult<ApiKey>>('/ai/api-key/page', params)
 }
 
 /** 获得 API 密钥列表 */
 export function getApiKeySimpleList() {
-  return http.get<ApiKeyVO[]>('/ai/api-key/simple-list')
+  return http.get<ApiKey[]>('/ai/api-key/simple-list')
 }
 
 /** 查询 API 密钥详情 */
 export function getApiKey(id: number) {
-  return http.get<ApiKeyVO>(`/ai/api-key/get?id=${id}`)
+  return http.get<ApiKey>(`/ai/api-key/get?id=${id}`)
 }
 
 /** 新增 API 密钥 */
-export function createApiKey(data: ApiKeyVO) {
+export function createApiKey(data: ApiKey) {
   return http.post<number>('/ai/api-key/create', data)
 }
 
 /** 修改 API 密钥 */
-export function updateApiKey(data: ApiKeyVO) {
+export function updateApiKey(data: ApiKey) {
   return http.put<boolean>('/ai/api-key/update', data)
 }
 
