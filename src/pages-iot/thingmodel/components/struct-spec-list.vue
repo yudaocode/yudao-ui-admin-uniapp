@@ -72,7 +72,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref, watch } from 'vue'
 import { getDataTypeOptions, IoTDataSpecsDataTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import { buildStructDataSpec, seedDataSpecs, validateThingModelDataSpecs } from '@/utils/iot/thing-model'
+import { buildStructDataSpec, seedDataSpecs, validateThingModelDataSpecs } from '@/pages-iot/thingmodel/utils/thing-model'
 import SimpleDataSpecsForm from './simple-data-specs-form.vue'
 
 const props = defineProps<{ modelValue?: any[] }>()

@@ -128,7 +128,7 @@ import { DICT_TYPE, getDataTypeOptions, IoTDataSpecsDataTypeEnum, IoTThingModelA
 import { createFormSchema } from '@/utils/wot'
 import DataSpecsForm from '../components/data-specs-form.vue'
 import ParamList from '../components/param-list.vue'
-import { seedDataSpecs, validateThingModelDataSpecs, validateThingModelParamList } from '@/utils/iot/thing-model'
+import { seedDataSpecs, validateThingModelDataSpecs, validateThingModelParamList } from '@/pages-iot/thingmodel/utils/thing-model'
 
 const props = defineProps<{ id?: number | string, productId?: number | string }>()
 definePage({

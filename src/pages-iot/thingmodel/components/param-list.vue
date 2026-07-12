@@ -61,7 +61,7 @@ import { reactive, ref, watch } from 'vue'
 import DataSpecsForm from './data-specs-form.vue'
 import { getDataTypeOptions, IoTDataSpecsDataTypeEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import { seedDataSpecs, validateThingModelDataSpecs } from '@/utils/iot/thing-model'
+import { seedDataSpecs, validateThingModelDataSpecs } from '@/pages-iot/thingmodel/utils/thing-model'
 
 const props = defineProps<{ modelValue: any[], direction: string, title: string }>()
 const emit = defineEmits<{ (e: 'update:modelValue', value: any[]): void }>()
