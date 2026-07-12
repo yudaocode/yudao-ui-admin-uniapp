@@ -26,7 +26,10 @@
               <wd-input-number v-model="retrievalForm.topK" :min="1" :max="20" />
             </wd-cell>
             <wd-cell title="相似度">
-              <wd-input-number v-model="retrievalForm.similarityThreshold" :min="0" :max="1" :step="0.01" />
+              <wd-input-number
+                v-model="retrievalForm.similarityThreshold"
+                :min="0" :max="1" :step="0.01" :precision="2"
+              />
             </wd-cell>
           </wd-cell-group>
           <view class="mt-24rpx">
@@ -67,9 +70,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { KnowledgeSegmentVO } from '@/api/ai/knowledge/segment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { searchKnowledgeSegment } from '@/api/ai/knowledge/segment'
 import { navigateBackPlus } from '@/utils'
 import KnowledgeFormPicker from '../components/knowledge-form-picker.vue'
@@ -88,9 +90,9 @@ definePage({
 
 const toast = useToast()
 const retrievalLoading = ref(false) // 召回测试状态
-const retrievalSegments = ref<(KnowledgeSegmentVO & { score?: number })[]>([]) // 召回结果（含相似度 score）
+const retrievalSegments = ref<any[]>([]) // 召回结果
 const retrievalForm = reactive({
-  knowledgeId: undefined as number | undefined,
+  knowledgeId: props.knowledgeId ? Number(props.knowledgeId) : undefined,
   content: '',
   topK: 10,
   similarityThreshold: 0.5,
@@ -124,12 +126,4 @@ async function handleRetrieval() {
     retrievalLoading.value = false
   }
 }
-
-/** 初始化 */
-onMounted(() => {
-  // 知识库编号通过 query 注入时预填，便于从知识库列表直接进入召回测试
-  if (props.knowledgeId) {
-    retrievalForm.knowledgeId = Number(props.knowledgeId)
-  }
-})
 </script>

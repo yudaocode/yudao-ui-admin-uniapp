@@ -28,6 +28,7 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          @click="handleDetail(item)"
         >
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
@@ -35,37 +36,18 @@
                 分段 #{{ item.id }}
               </view>
             </view>
-            <wd-switch
-              v-if="hasAccessByCodes(['ai:knowledge:update'])"
-              v-model="item.status"
-              :active-value="CommonStatusEnum.ENABLE"
-              :inactive-value="CommonStatusEnum.DISABLE"
-              @change="handleStatusChange(item)"
-            />
+            <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="text-26rpx text-[#666]">
             <view class="line-clamp-4">
               {{ item.content || '-' }}
             </view>
             <view class="mt-12rpx text-24rpx text-[#999]">
-              文档：{{ documentName || documentId || '-' }} / Token {{ item.tokens ?? 0 }}
+              文档：{{ documentName || props.documentId || '-' }} / Token {{ item.tokens ?? 0 }}
             </view>
           </view>
-          <view class="mt-20rpx flex justify-end gap-16rpx">
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:update'])"
-              size="small" type="warning" variant="plain"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:delete'])"
-              size="small" type="danger" variant="plain"
-              @click="handleDelete(item)"
-            >
-              删除
-            </wd-button>
+          <view class="mt-20rpx text-24rpx text-[#999]">
+            <text>召回 {{ item.retrievalCount ?? 0 }}</text>
           </view>
         </view>
       </view>
@@ -83,19 +65,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { KnowledgeSegmentVO } from '@/api/ai/knowledge/segment'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import type { KnowledgeSegment } from '@/api/ai/knowledge/segment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
-import {
-  deleteKnowledgeSegment,
-  getKnowledgeSegmentPage,
-  updateKnowledgeSegmentStatus,
-} from '@/api/ai/knowledge/segment'
+import { getKnowledgeSegmentPage } from '@/api/ai/knowledge/segment'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { CommonStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{
@@ -113,19 +90,26 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const dialog = useDialog()
-const list = ref<KnowledgeSegmentVO[]>([]) // 列表数据
+const list = ref<KnowledgeSegment[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
-const navbarTitle = computed(() => props.documentName ? `${props.documentName} · 分段` : '分段')
+const documentName = computed(() => props.documentName ? decodeURIComponent(props.documentName) : '') // 文档名称
+const navbarTitle = computed(() => documentName.value ? `${documentName.value} · 分段` : '分段')
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-ai/knowledge/index')
+  const query = [
+    props.knowledgeId ? `knowledgeId=${props.knowledgeId}` : '',
+  ].filter(Boolean).join('&')
+  navigateBackPlus(`/pages-ai/knowledge/document/index${query ? `?${query}` : ''}`)
 }
 
 /** 查询分段列表 */
 async function queryList(pageNo: number, pageSize: number) {
+  if (!props.documentId) {
+    pagingRef.value?.completeByTotal([], 0)
+    return
+  }
   try {
     const params = {
       ...queryParams.value,
@@ -156,50 +140,34 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 修改状态操作 */
-async function handleStatusChange(item: KnowledgeSegmentVO) {
-  try {
-    const text = item.status === CommonStatusEnum.ENABLE ? '启用' : '停用'
-    await dialog.confirm({ title: '提示', msg: `确认要"${text}"该分段吗？` })
-    await updateKnowledgeSegmentStatus({ id: item.id, status: item.status })
-    toast.success('修改成功')
-    reload()
-  } catch {
-    // 取消或失败时，回滚开关状态
-    item.status = item.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
-  }
-}
-
 /** 新增分段 */
 function handleAdd() {
+  if (!props.documentId) {
+    toast.warning('缺少文档编号')
+    return
+  }
   const query = [
-    props.documentId ? `documentId=${props.documentId}` : 'documentId=',
-    props.knowledgeId ? `knowledgeId=${props.knowledgeId}` : 'knowledgeId=',
-  ].join('&')
+    `documentId=${props.documentId}`,
+    props.knowledgeId ? `knowledgeId=${props.knowledgeId}` : '',
+  ].filter(Boolean).join('&')
   uni.navigateTo({ url: `/pages-ai/knowledge/segment/form/index?${query}` })
 }
 
-/** 编辑分段 */
-function handleEdit(item: KnowledgeSegmentVO) {
-  uni.navigateTo({
-    url: `/pages-ai/knowledge/segment/form/index?id=${item.id}&documentId=${item.documentId}&knowledgeId=${item.knowledgeId}`,
-  })
-}
-
-/** 删除分段 */
-async function handleDelete(item: KnowledgeSegmentVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除分段【#${item.id}】吗？` })
-  } catch {
-    return
-  }
-  await deleteKnowledgeSegment(item.id!)
-  toast.success('删除成功')
-  reload()
+/** 查看分段详情 */
+function handleDetail(item: KnowledgeSegment) {
+  const query = [
+    `id=${item.id}`,
+    props.documentId ? `documentId=${props.documentId}` : '',
+    props.knowledgeId ? `knowledgeId=${props.knowledgeId}` : '',
+  ].filter(Boolean).join('&')
+  uni.navigateTo({ url: `/pages-ai/knowledge/segment/detail/index?${query}` })
 }
 
 /** 初始化 */
 onMounted(() => {
+  if (!props.documentId) {
+    toast.warning('缺少文档编号，无法查看分段')
+  }
   uni.$on('ai:knowledge-segment:reload', reload)
 })
 

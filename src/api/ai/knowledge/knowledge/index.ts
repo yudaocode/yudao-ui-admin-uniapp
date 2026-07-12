@@ -14,17 +14,6 @@ export interface Knowledge {
   createTime?: number
 }
 
-/** AI 知识库保存请求 */
-export interface KnowledgeSaveReq {
-  id?: number
-  name: string
-  description?: string
-  embeddingModelId: number
-  topK: number
-  similarityThreshold: number
-  status: number
-}
-
 /** 查询知识库分页 */
 export function getKnowledgePage(params: PageParam) {
   return http.get<PageResult<Knowledge>>('/ai/knowledge/page', params)
@@ -36,12 +25,12 @@ export function getKnowledge(id: number) {
 }
 
 /** 新增知识库 */
-export function createKnowledge(data: KnowledgeSaveReq) {
+export function createKnowledge(data: Knowledge) {
   return http.post<number>('/ai/knowledge/create', data)
 }
 
 /** 修改知识库 */
-export function updateKnowledge(data: KnowledgeSaveReq) {
+export function updateKnowledge(data: Knowledge) {
   return http.put<boolean>('/ai/knowledge/update', data)
 }
 

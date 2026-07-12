@@ -19,6 +19,7 @@
         </view>
         <wd-input v-model="formData.content" placeholder="请输入分段内容" clearable />
       </view>
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -33,7 +34,9 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -43,19 +46,33 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   content: undefined as string | undefined,
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 
-const placeholder = computed(() => formData.content ? `内容:${formData.content}` : '搜索分段内容')
+const placeholder = computed(() => {
+  const conditions: string[] = []
+  if (formData.content) {
+    conditions.push(`内容:${formData.content}`)
+  }
+  if (formData.status !== undefined) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
+  }
+  return conditions.length > 0 ? conditions.join(' | ') : '搜索分段内容'
+})
 
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    content: formData.content || undefined,
+    status: formData.status,
+  })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
   formData.content = undefined
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

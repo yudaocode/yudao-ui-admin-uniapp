@@ -55,15 +55,14 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { KnowledgeVO } from '@/api/ai/knowledge/knowledge'
+import type { Knowledge } from '@/api/ai/knowledge/knowledge'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createKnowledge, getKnowledge, updateKnowledge } from '@/api/ai/knowledge/knowledge'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
-import { AiModelTypeEnum } from '@/pages-ai/utils/constants'
 import ModelFormPicker from '@/pages-ai/model/model/components/model-form-picker.vue'
 
 const props = defineProps<{
@@ -80,7 +79,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑知识库' : '新增知识库')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<KnowledgeVO>({
+const formData = ref<Knowledge>({
   id: undefined,
   name: '',
   description: '',
@@ -120,15 +119,15 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    const data = { ...formData.value }
     if (props.id) {
-      await updateKnowledge(data)
+      await updateKnowledge(formData.value)
       toast.success('修改成功')
     } else {
-      await createKnowledge(data)
+      await createKnowledge(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('ai:knowledge:reload')
+    uni.$emit('ai:knowledge:detail-reload')
     delay(handleBack)
   } finally {
     formLoading.value = false

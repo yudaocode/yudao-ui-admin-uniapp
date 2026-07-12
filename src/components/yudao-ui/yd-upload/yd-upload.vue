@@ -53,7 +53,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string[]]
-  'uploaded': [value: string]
+  'uploaded': [value: string, name?: string]
   'success': [value: any]
   'fail': [value: any]
   'remove': [value: any]
@@ -177,7 +177,7 @@ function handleChange({ fileList }: { fileList: UploadFileItem[] }) {
 function handleSuccess(event: { file: UploadFileItem }) {
   const url = resolveUrl(event.file)
   if (url) {
-    emit('uploaded', url)
+    emit('uploaded', url, event.file.name)
   }
   emit('success', event)
 }

@@ -50,7 +50,9 @@ const placeholder = computed(() => formData.name ? `文档名称:${formData.name
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
-  emit('search', { ...formData })
+  emit('search', {
+    name: formData.name || undefined,
+  })
 }
 
 /** 重置按钮操作 */

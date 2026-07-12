@@ -28,6 +28,7 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          @click="handleDetail(item)"
         >
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
@@ -48,27 +49,8 @@
               TopK {{ item.topK ?? '-' }} / 相似度 {{ item.similarityThreshold ?? '-' }}
             </view>
           </view>
-          <view class="mt-20rpx flex flex-wrap justify-end gap-16rpx">
-            <wd-button size="small" variant="plain" @click="handleDocument(item)">
-              文档
-            </wd-button>
-            <wd-button size="small" variant="plain" @click="handleRetrieval(item)">
-              召回
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:update'])"
-              size="small" type="warning" variant="plain"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:delete'])"
-              size="small" type="danger" variant="plain"
-              @click="handleDelete(item)"
-            >
-              删除
-            </wd-button>
+          <view class="mt-20rpx text-24rpx text-[#999]">
+            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
           </view>
         </view>
       </view>
@@ -86,15 +68,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { KnowledgeVO } from '@/api/ai/knowledge/knowledge'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
+import type { Knowledge } from '@/api/ai/knowledge/knowledge'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { deleteKnowledge, getKnowledgePage } from '@/api/ai/knowledge/knowledge'
+import { getKnowledgePage } from '@/api/ai/knowledge/knowledge'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -105,15 +86,13 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const toast = useToast()
-const dialog = useDialog()
-const list = ref<KnowledgeVO[]>([]) // 列表数据
+const list = ref<Knowledge[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus('/pages-ai/index/index')
+  navigateBackPlus()
 }
 
 /** 查询知识库列表 */
@@ -148,35 +127,9 @@ function handleAdd() {
   uni.navigateTo({ url: '/pages-ai/knowledge/form/index' })
 }
 
-/** 编辑知识库 */
-function handleEdit(item: KnowledgeVO) {
-  uni.navigateTo({ url: `/pages-ai/knowledge/form/index?id=${item.id}` })
-}
-
-/** 查看文档 */
-function handleDocument(item: KnowledgeVO) {
-  uni.navigateTo({
-    url: `/pages-ai/knowledge/document/index?knowledgeId=${item.id}&knowledgeName=${encodeURIComponent(item.name || '')}`,
-  })
-}
-
-/** 召回测试 */
-function handleRetrieval(item: KnowledgeVO) {
-  uni.navigateTo({
-    url: `/pages-ai/knowledge/retrieval/index?knowledgeId=${item.id}&knowledgeName=${encodeURIComponent(item.name || '')}`,
-  })
-}
-
-/** 删除知识库 */
-async function handleDelete(item: KnowledgeVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除知识库【${item.name}】吗？` })
-  } catch {
-    return
-  }
-  await deleteKnowledge(item.id!)
-  toast.success('删除成功')
-  reload()
+/** 查看知识库详情 */
+function handleDetail(item: Knowledge) {
+  uni.navigateTo({ url: `/pages-ai/knowledge/detail/index?id=${item.id}` })
 }
 
 /** 初始化 */

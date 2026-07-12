@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import type { YdSearchPickerExpose } from '@/components/yudao-ui'
-import type { KnowledgeVO } from '@/api/ai/knowledge/knowledge'
+import type { Knowledge } from '@/api/ai/knowledge/knowledge'
 import { onMounted, ref } from 'vue'
 import { getSimpleKnowledgeList } from '@/api/ai/knowledge/knowledge'
 
@@ -28,11 +28,11 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | undefined]
-  'change': [item: KnowledgeVO | undefined]
+  'change': [item: Knowledge | undefined]
 }>()
 
 const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
-const options = ref<KnowledgeVO[]>([]) // 知识库选项
+const options = ref<Knowledge[]>([]) // 知识库选项
 
 /** 更新知识库 */
 function handleUpdate(value?: number) {

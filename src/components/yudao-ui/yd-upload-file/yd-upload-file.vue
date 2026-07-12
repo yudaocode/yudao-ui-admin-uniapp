@@ -10,7 +10,7 @@
       :file-size="fileSize"
       :file-type="fileType"
       @update:model-value="handleUpdate"
-      @uploaded="emit('uploaded', $event)"
+      @uploaded="handleUploaded"
       @success="emit('success', $event)"
       @fail="emit('fail', $event)"
       @remove="emit('remove', $event)"
@@ -54,7 +54,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | string[]]
-  'uploaded': [value: string]
+  'uploaded': [value: string, name?: string]
   'success': [value: any]
   'fail': [value: any]
   'remove': [value: any]
@@ -90,6 +90,11 @@ function handleUpdate(urls: string[]) {
   } else {
     emit('update:modelValue', urls)
   }
+}
+
+/** 转发上传结果 */
+function handleUploaded(url: string, name?: string) {
+  emit('uploaded', url, name)
 }
 </script>
 

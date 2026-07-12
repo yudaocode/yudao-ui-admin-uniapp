@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { KnowledgeVO } from '@/api/ai/knowledge/knowledge'
+import type { Knowledge } from '@/api/ai/knowledge/knowledge'
 import { onMounted, ref } from 'vue'
 import { getSimpleKnowledgeList } from '@/api/ai/knowledge/knowledge'
 
@@ -44,10 +44,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: number | number[] | undefined]
-  'change': [items: KnowledgeVO[]]
+  'change': [items: Knowledge[]]
 }>()
 
-const options = ref<KnowledgeVO[]>([]) // 知识库选项
+const options = ref<Knowledge[]>([]) // 知识库选项
 
 /** 更新知识库 */
 function handleUpdate(value?: number | number[]) {

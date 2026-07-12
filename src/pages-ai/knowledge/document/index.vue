@@ -28,6 +28,7 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          @click="handleDetail(item)"
         >
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
             <view class="min-w-0 flex-1">
@@ -35,41 +36,16 @@
                 {{ item.name || '-' }}
               </view>
               <view class="mt-8rpx text-24rpx text-[#999]">
-                知识库：{{ item.knowledgeName || props.knowledgeName || item.knowledgeId || '-' }}
+                知识库：{{ knowledgeName || item.knowledgeId || '-' }}
               </view>
             </view>
-            <wd-switch
-              v-model="item.status"
-              :active-value="CommonStatusEnum.ENABLE"
-              :inactive-value="CommonStatusEnum.DISABLE"
-              :disabled="!hasAccessByCodes(['ai:knowledge:update'])"
-              @change="handleStatusChange(item)"
-            />
+            <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="text-24rpx text-[#999]">
             字符 {{ item.contentLength ?? 0 }} / Token {{ item.tokens ?? 0 }} / 召回 {{ item.retrievalCount ?? 0 }}
           </view>
-          <view class="mt-20rpx flex justify-end gap-16rpx">
-            <wd-button
-              size="small" type="primary" variant="plain"
-              @click="handleSegment(item)"
-            >
-              分段
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:update'])"
-              size="small" type="warning" variant="plain"
-              @click="handleEdit(item)"
-            >
-              编辑
-            </wd-button>
-            <wd-button
-              v-if="hasAccessByCodes(['ai:knowledge:delete'])"
-              size="small" type="danger" variant="plain"
-              @click="handleDelete(item)"
-            >
-              删除
-            </wd-button>
+          <view class="mt-20rpx text-24rpx text-[#999]">
+            <text>{{ formatDateTime(item.createTime) || '-' }}</text>
           </view>
         </view>
       </view>
@@ -87,19 +63,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { KnowledgeDocumentVO } from '@/api/ai/knowledge/document'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import type { KnowledgeDocument } from '@/api/ai/knowledge/document'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
-import {
-  deleteKnowledgeDocument,
-  getKnowledgeDocumentPage,
-  updateKnowledgeDocumentStatus,
-} from '@/api/ai/knowledge/document'
+import { getKnowledgeDocumentPage } from '@/api/ai/knowledge/document'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { CommonStatusEnum } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{
@@ -116,12 +88,12 @@ definePage({
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const dialog = useDialog()
-const list = ref<KnowledgeDocumentVO[]>([]) // 列表数据
+const list = ref<KnowledgeDocument[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const pagingRef = ref<any>() // 分页组件引用
 
-const navbarTitle = computed(() => props.knowledgeName ? `${props.knowledgeName} · 文档` : '文档') // 导航栏标题
+const knowledgeName = computed(() => props.knowledgeName ? decodeURIComponent(props.knowledgeName) : '') // 知识库名称
+const navbarTitle = computed(() => knowledgeName.value ? `${knowledgeName.value} · 文档` : '文档') // 导航栏标题
 
 /** 返回上一页 */
 function handleBack() {
@@ -130,6 +102,10 @@ function handleBack() {
 
 /** 查询文档列表 */
 async function queryList(pageNo: number, pageSize: number) {
+  if (!props.knowledgeId) {
+    pagingRef.value?.completeByTotal([], 0)
+    return
+  }
   try {
     const params = {
       ...queryParams.value,
@@ -160,54 +136,29 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 修改文档状态 */
-async function handleStatusChange(item: KnowledgeDocumentVO) {
-  const text = item.status === CommonStatusEnum.ENABLE ? '启用' : '停用'
-  try {
-    await dialog.confirm({ title: '提示', msg: `确认要${text}文档【${item.name}】吗？` })
-  } catch {
-    // 取消后，回滚开关状态
-    item.status = item.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
-    return
-  }
-  try {
-    await updateKnowledgeDocumentStatus({ id: item.id, status: item.status })
-    toast.success('更新成功')
-  } catch {
-    // 失败后，回滚开关状态
-    item.status = item.status === CommonStatusEnum.ENABLE ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
-  }
-}
-
-/** 跳转分段列表 */
-function handleSegment(item: KnowledgeDocumentVO) {
-  uni.navigateTo({ url: `/pages-ai/knowledge/segment/index?documentId=${item.id}&knowledgeId=${item.knowledgeId}&documentName=${encodeURIComponent(item.name || '')}` })
-}
-
 /** 新增文档 */
 function handleAdd() {
-  uni.navigateTo({ url: `/pages-ai/knowledge/document/form/index?knowledgeId=${props.knowledgeId || ''}` })
-}
-
-/** 编辑文档 */
-function handleEdit(item: KnowledgeDocumentVO) {
-  uni.navigateTo({ url: `/pages-ai/knowledge/document/form/index?id=${item.id}&knowledgeId=${item.knowledgeId}` })
-}
-
-/** 删除文档 */
-async function handleDelete(item: KnowledgeDocumentVO) {
-  try {
-    await dialog.confirm({ title: '提示', msg: `确定要删除文档【${item.name}】吗？` })
-  } catch {
+  if (!props.knowledgeId) {
+    toast.warning('缺少知识库编号')
     return
   }
-  await deleteKnowledgeDocument(item.id!)
-  toast.success('删除成功')
-  reload()
+  uni.navigateTo({ url: `/pages-ai/knowledge/document/form/index?knowledgeId=${props.knowledgeId}` })
+}
+
+/** 查看文档详情 */
+function handleDetail(item: KnowledgeDocument) {
+  const query = [
+    `id=${item.id}`,
+    props.knowledgeId ? `knowledgeId=${props.knowledgeId}` : '',
+  ].filter(Boolean).join('&')
+  uni.navigateTo({ url: `/pages-ai/knowledge/document/detail/index?${query}` })
 }
 
 /** 初始化 */
 onMounted(() => {
+  if (!props.knowledgeId) {
+    toast.warning('缺少知识库编号，无法查看文档')
+  }
   uni.$on('ai:knowledge-document:reload', reload)
 })
 

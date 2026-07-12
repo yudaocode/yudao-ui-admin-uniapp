@@ -14,13 +14,13 @@
       </view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <wd-form-item title="绘图平台" title-width="170rpx" center>
-            <wd-radio-group v-model="formData.platformMode" type="button">
-              <wd-radio v-for="item in platformModeOptions" :key="item.value" :value="item.value">
-                {{ item.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.platformMode"
+            label="绘图平台"
+            label-width="170rpx"
+            :columns="platformModeOptions"
+            placeholder="请选择绘图平台"
+          />
 
           <ModelFormPicker
             v-if="isCommonMode"
@@ -145,8 +145,8 @@ const formRef = ref<FormInstance>() // 表单组件引用
 const platformModeOptions = [ // 绘图平台选项
   { label: '通用', value: 'common' },
   { label: 'DALL·E', value: 'dall3' },
-  { label: 'MJ', value: 'midjourney' },
-  { label: 'SD', value: 'stableDiffusion' },
+  { label: 'Midjourney', value: 'midjourney' },
+  { label: 'Stable Diffusion', value: 'stableDiffusion' },
 ]
 const sizeOptions = [ // 通用图片尺寸
   { label: '512 x 512', value: '512x512' },
