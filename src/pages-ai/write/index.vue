@@ -102,7 +102,7 @@ async function handleSubmit() {
       isWriting.value = false
       streamController.value = undefined
     },
-  })
+  }).catch(() => undefined)
 }
 
 /** 停止生成 */
@@ -127,7 +127,7 @@ function handleReset() {
 function parseStreamData(raw: string) {
   try {
     const result = JSON.parse(raw)
-    if (result.code !== 0 && result.code !== 200) {
+    if (result.code !== 0) {
       toast.error(result.msg || result.message || '生成失败')
       stopStream()
       return undefined

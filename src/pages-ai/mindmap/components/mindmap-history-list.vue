@@ -38,10 +38,10 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { getMindMapPage } from '@/api/ai/mindmap'
 import { formatDateTime } from '@/utils/date'
 
-const list = ref<MindMap[]>([]) // 脑图记录
+const list = ref<MindMap[]>([]) // 思维导图记录
 const pagingRef = ref<any>() // 分页组件引用
 
-/** 查询脑图记录 */
+/** 查询思维导图记录 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getMindMapPage({ pageNo, pageSize })
@@ -51,7 +51,7 @@ async function queryList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 打开脑图详情 */
+/** 打开思维导图详情 */
 function handleOpen(item: MindMap) {
   if (!item.id) {
     return
@@ -59,7 +59,7 @@ function handleOpen(item: MindMap) {
   uni.navigateTo({ url: `/pages-ai/mindmap/detail/index?id=${item.id}` })
 }
 
-/** 刷新脑图记录 */
+/** 刷新思维导图记录 */
 function handleReload() {
   pagingRef.value?.reload()
 }

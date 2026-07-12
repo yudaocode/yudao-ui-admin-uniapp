@@ -179,7 +179,6 @@ const displayMessageList = computed(() => {
     return []
   }
   return [{
-    id: 0,
     conversationId: activeConversation.value.id,
     type: 'system',
     content: activeConversation.value.systemMessage,
@@ -226,7 +225,7 @@ const conversationItemActions = computed(() => { // 对话列表项操作
 })
 const messageActions = computed(() => { // 消息操作
   const actions = [{ name: '复制', value: 'copy' }]
-  if (actionMessage.value?.id && actionMessage.value.id > 0) {
+  if (actionMessage.value?.id) {
     actions.push({ name: '删除', value: 'delete' })
   }
   if (actionMessage.value?.type === 'user') {
@@ -583,7 +582,7 @@ async function handleSend() {
       streamController.value = undefined
     },
     currentAttachmentUrls,
-  )
+  ).catch(() => undefined)
 }
 
 /** 追加流式返回内容 */
@@ -664,7 +663,7 @@ function stopStream() {
 function parseStreamData(raw: string) {
   try {
     const result = JSON.parse(raw)
-    if (result.code !== 0 && result.code !== 200) {
+    if (result.code !== 0) {
       toast.error(result.msg || result.message || '生成失败')
       stopStream()
       return undefined

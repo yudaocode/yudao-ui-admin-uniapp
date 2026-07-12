@@ -13,7 +13,7 @@ export interface KnowledgeDocument {
   segmentMaxTokens?: number
   retrievalCount?: number
   status?: number
-  createTime?: string
+  createTime?: number
 }
 
 /** AI 知识库文档新增请求 */

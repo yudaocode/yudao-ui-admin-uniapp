@@ -56,7 +56,7 @@ const formSchema = createFormSchema({
   prompt: [{ required: true, message: '请输入思维导图主题' }],
 })
 
-/** 校验脑图主题 */
+/** 校验思维导图主题 */
 function validate() {
   return formRef.value?.validate()
 }

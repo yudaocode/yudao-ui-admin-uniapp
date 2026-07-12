@@ -11,7 +11,7 @@ export interface Knowledge {
   topK?: number
   similarityThreshold?: number
   status?: number
-  createTime?: string
+  createTime?: number
 }
 
 /** AI 知识库保存请求 */

@@ -38,7 +38,7 @@ export interface ChatMessage {
 }
 
 /** 消息列表 */
-export function getChatMessageListByConversationId(conversationId: number | null) {
+export function getChatMessageListByConversationId(conversationId: number) {
   return http.get<ChatMessage[]>(`/ai/chat/message/list-by-conversation-id?conversationId=${conversationId}`)
 }
 
@@ -70,7 +70,7 @@ export function sendChatMessageStream(
 }
 
 /** 删除消息 */
-export function deleteChatMessage(id: number | string) {
+export function deleteChatMessage(id: number) {
   return http.delete<boolean>(`/ai/chat/message/delete?id=${id}`)
 }
 

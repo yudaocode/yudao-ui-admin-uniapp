@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="脑图生成"
+      title="思维导图生成"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -98,7 +98,7 @@ async function handleSubmit() {
       isGenerating.value = false
       streamController.value = undefined
     },
-  })
+  }).catch(() => undefined)
 }
 
 /** 停止生成 */
@@ -118,7 +118,7 @@ function handleReset() {
 function parseStreamData(raw: string) {
   try {
     const result = JSON.parse(raw)
-    if (result.code !== 0 && result.code !== 200) {
+    if (result.code !== 0) {
       toast.error(result.msg || result.message || '生成失败')
       stopStream()
       return undefined

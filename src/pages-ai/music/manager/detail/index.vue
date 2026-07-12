@@ -135,15 +135,26 @@ async function handlePublicChange() {
   if (!formData.value?.id) {
     return
   }
+  const publicStatus = formData.value.publicStatus
+  const text = publicStatus ? '公开' : '私有'
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: `确认要“${text}”该音乐吗？`,
+    })
+  } catch {
+    formData.value.publicStatus = !publicStatus
+    return
+  }
   try {
     await updateMusic({
       id: formData.value.id,
-      publicStatus: formData.value.publicStatus,
+      publicStatus,
     })
     toast.success('更新成功')
     uni.$emit('ai:music:reload')
   } catch {
-    formData.value.publicStatus = !formData.value.publicStatus
+    formData.value.publicStatus = !publicStatus
   }
 }
 

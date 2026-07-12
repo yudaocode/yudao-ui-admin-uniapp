@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="脑图详情"
+      title="导图详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />

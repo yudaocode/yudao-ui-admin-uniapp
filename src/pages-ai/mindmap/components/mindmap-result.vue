@@ -6,7 +6,7 @@
           <view class="h-48rpx w-48rpx flex items-center justify-center rounded-14rpx bg-[#52c41a]">
             <wd-icon name="share-alt" size="28rpx" color="#fff" />
           </view>
-          <text class="text-28rpx text-[#333] font-medium">当前脑图</text>
+          <text class="text-28rpx text-[#333] font-medium">当前思维导图</text>
         </view>
         <wd-loading v-if="generating" size="30rpx" />
       </view>

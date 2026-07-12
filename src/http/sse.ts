@@ -13,6 +13,8 @@ interface ChunkRequestTask extends UniNamespace.RequestTask {
   onChunkReceived: (callback: (res: { data: ArrayBuffer }) => void) => void
 }
 
+const SSE_TIMEOUT = 10 * 60 * 1000 // 流式请求最长等待时间
+
 /** 创建 SSE 消息解析器 */
 function createSseParser<T>(options: SseOptions<T>) {
   let buffer = ''
@@ -29,6 +31,9 @@ function createSseParser<T>(options: SseOptions<T>) {
 
   /** 解析流式文本 */
   async function push(text: string) {
+    if (closed) {
+      return
+    }
     buffer += text
     const chunks = buffer.split(/\r?\n\r?\n/)
     buffer = chunks.pop() || ''
@@ -51,8 +56,17 @@ function createSseParser<T>(options: SseOptions<T>) {
     }
   }
 
+  /** 处理流结束时未带空行的最后一帧 */
+  async function finish() {
+    if (closed || !buffer.trim()) {
+      return
+    }
+    await push('\n\n')
+  }
+
   return {
     push,
+    finish,
     close,
     isClosed: () => closed,
   }
@@ -62,7 +76,8 @@ function createSseParser<T>(options: SseOptions<T>) {
 function createUtf8ChunkDecoder() {
   let pending = new Uint8Array()
 
-  return (buffer: ArrayBuffer) => {
+  /** 解码当前分块 */
+  function decode(buffer: ArrayBuffer) {
     const current = new Uint8Array(buffer)
     const bytes = new Uint8Array(pending.length + current.length)
     bytes.set(pending)
@@ -113,6 +128,17 @@ function createUtf8ChunkDecoder() {
     pending = bytes.slice(index)
     return result
   }
+
+  /** 刷新流结束时残留的不完整字符 */
+  function flush() {
+    if (!pending.length) {
+      return ''
+    }
+    pending = new Uint8Array()
+    return '\uFFFD'
+  }
+
+  return { decode, flush }
 }
 
 /** 获取 H5 流式请求基础地址 */
@@ -125,17 +151,27 @@ function getSseBaseUrl() {
   return getEnvBaseUrl()
 }
 
-/** 发送 SSE POST 请求 */
-export async function sendSsePost<T = Record<string, any>>(url: string, options: SseOptions<T>) {
-  // #ifdef MP-WEIXIN
+// #ifdef MP-WEIXIN
+/** 发送微信小程序 SSE POST 请求 */
+async function sendMpSsePost<T>(url: string, options: SseOptions<T>) {
   const mpToken = await useTokenStore().tryGetValidToken()
   const mpParser = createSseParser(options)
-  const decodeChunk = createUtf8ChunkDecoder()
+  const decoder = createUtf8ChunkDecoder()
   let processing = Promise.resolve()
 
   return new Promise<void>((resolve, reject) => {
     let settled = false
     let aborted = false
+    let requestTask: ChunkRequestTask
+
+    /** 主动取消请求 */
+    const handleAbort = () => {
+      aborted = true
+      requestTask?.abort()
+    }
+
+    /** 清理主动取消监听 */
+    const cleanup = () => options.ctrl.signal.removeEventListener('abort', handleAbort)
 
     /** 正常结束请求 */
     const close = () => {
@@ -143,7 +179,12 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
         return
       }
       settled = true
-      mpParser.close()
+      cleanup()
+      try {
+        mpParser.close()
+      } catch (error) {
+        console.error('SSE 关闭回调异常', error)
+      }
       resolve()
     }
 
@@ -153,11 +194,21 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
         return
       }
       settled = true
-      options.onError?.(error)
+      cleanup()
+      try {
+        options.onError?.(error)
+      } catch (callbackError) {
+        console.error('SSE 错误回调异常', callbackError)
+      }
+      try {
+        mpParser.close()
+      } catch (callbackError) {
+        console.error('SSE 关闭回调异常', callbackError)
+      }
       reject(error)
     }
 
-    const requestTask = uni.request({
+    requestTask = uni.request({
       url: `${getEnvBaseUrl()}${url}`,
       method: 'POST',
       header: {
@@ -166,14 +217,23 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
       },
       data: options.data,
       enableChunked: true,
-      timeout: 10 * 60 * 1000,
+      timeout: SSE_TIMEOUT,
       success: async (res) => {
-        await processing
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          fail(new Error(`请求失败：${res.statusCode}`))
-          return
+        try {
+          await processing
+          const remainingText = decoder.flush()
+          if (remainingText) {
+            await mpParser.push(remainingText)
+          }
+          await mpParser.finish()
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            fail(new Error(`请求失败：${res.statusCode}`))
+            return
+          }
+          close()
+        } catch (error) {
+          fail(error instanceof Error ? error : new Error(String(error)))
         }
-        close()
       },
       fail: (res) => {
         if (aborted) {
@@ -185,34 +245,40 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
     }) as ChunkRequestTask
 
     requestTask.onChunkReceived((res) => {
-      const text = decodeChunk(res.data)
-      processing = processing.then(() => mpParser.push(text))
+      const text = decoder.decode(res.data)
+      processing = processing
+        .then(() => mpParser.push(text))
+        .catch((error) => {
+          fail(error instanceof Error ? error : new Error(String(error)))
+        })
     })
 
-    const handleAbort = () => {
-      aborted = true
-      requestTask.abort()
-    }
     if (options.ctrl.signal.aborted) {
       handleAbort()
     } else {
       options.ctrl.signal.addEventListener('abort', handleAbort, { once: true })
     }
   })
-  // #endif
+}
+// #endif
 
-  // #ifndef H5
-  // #ifndef MP-WEIXIN
-  const error = new Error('当前端暂不支持 AI 流式生成，请使用 H5 或微信小程序访问')
-  options.onError?.(error)
-  throw error
-  // #endif
-  // #endif
-
-  // #ifdef H5
+// #ifdef H5
+/** 发送 H5 SSE POST 请求 */
+async function sendH5SsePost<T>(url: string, options: SseOptions<T>) {
   const token = await useTokenStore().tryGetValidToken()
   const parser = createSseParser(options)
-  let closed = false
+  const requestController = new AbortController()
+  let timedOut = false
+  const handleAbort = () => requestController.abort()
+  const timeoutTimer = setTimeout(() => {
+    timedOut = true
+    requestController.abort()
+  }, SSE_TIMEOUT)
+  if (options.ctrl.signal.aborted) {
+    handleAbort()
+  } else {
+    options.ctrl.signal.addEventListener('abort', handleAbort, { once: true })
+  }
   try {
     const response = await fetch(`${getSseBaseUrl()}${url}`, {
       method: 'POST',
@@ -221,7 +287,7 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(options.data),
-      signal: options.ctrl.signal,
+      signal: requestController.signal,
     })
 
     if (!response.ok) {
@@ -240,20 +306,52 @@ export async function sendSsePost<T = Record<string, any>>(url: string, options:
       }
       await parser.push(decoder.decode(value, { stream: true }))
       if (parser.isClosed()) {
-        closed = true
         return
       }
     }
-    if (!closed) {
-      parser.close()
-    }
+    await parser.push(decoder.decode())
+    await parser.finish()
+    parser.close()
   } catch (error: any) {
     if (error?.name === 'AbortError') {
+      if (timedOut) {
+        const timeoutError = new Error('流式请求超时')
+        options.onError?.(timeoutError)
+        parser.close()
+        throw timeoutError
+      }
       parser.close()
       return
     }
     options.onError?.(error)
+    parser.close()
     throw error
+  } finally {
+    clearTimeout(timeoutTimer)
+    options.ctrl.signal.removeEventListener('abort', handleAbort)
   }
+}
+// #endif
+
+/** 发送 SSE POST 请求 */
+export function sendSsePost<T = Record<string, any>>(url: string, options: SseOptions<T>) {
+  let request = Promise.resolve()
+
+  // #ifdef MP-WEIXIN
+  request = sendMpSsePost(url, options)
   // #endif
+
+  // #ifdef H5
+  request = sendH5SsePost(url, options)
+  // #endif
+
+  // #ifndef H5
+  // #ifndef MP-WEIXIN
+  const error = new Error('当前端暂不支持 AI 流式生成，请使用 H5 或微信小程序访问')
+  options.onError?.(error)
+  request = Promise.reject(error)
+  // #endif
+  // #endif
+
+  return request
 }

@@ -2,7 +2,7 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="脑图详情"
+      title="思维导图详情"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -38,7 +38,7 @@
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
-          删除脑图
+          删除思维导图
         </wd-button>
       </view>
     </view>
@@ -71,12 +71,12 @@ const dialog = useDialog()
 const formData = ref<MindMap>() // 详情数据
 const deleting = ref(false) // 删除状态
 
-/** 返回脑图页面 */
+/** 返回思维导图页面 */
 function handleBack() {
   navigateBackPlus('/pages-ai/mindmap/index')
 }
 
-/** 加载脑图详情 */
+/** 加载思维导图详情 */
 async function getDetail() {
   if (!props.id || deleting.value) {
     return
@@ -89,7 +89,7 @@ async function getDetail() {
   }
 }
 
-/** 删除脑图 */
+/** 删除思维导图 */
 async function handleDelete() {
   if (!props.id) {
     return

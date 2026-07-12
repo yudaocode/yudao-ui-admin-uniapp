@@ -119,6 +119,9 @@ const models = ref<AiModel[]>([]) // 图片模型列表
 const drawing = ref(false) // 图片生成状态
 const actionLoadingId = ref('') // MJ 操作加载标识
 let pollingTimer: ReturnType<typeof setTimeout> | undefined // 当前图片轮询定时器
+let pollingImageId: number | undefined // 当前轮询图片编号
+let pollingCount = 0 // 当前轮询次数
+const maxPollingCount = 300 // 最长轮询约十分钟
 const formData = reactive<ImageGenerationForm>({
   platformMode: 'common',
   modelId: undefined,
@@ -189,24 +192,47 @@ async function handleDraw() {
       prompt: formData.prompt,
       status: AiImageStatusEnum.IN_PROGRESS,
     }
-    schedulePolling(id)
+    startPolling(id)
     toast.success('已提交生成任务')
   } finally {
     drawing.value = false
   }
 }
 
-/** 轮询当前图片 */
-function schedulePolling(id: number) {
+/** 开始轮询当前图片 */
+function startPolling(id: number) {
   stopPolling()
+  pollingImageId = id
+  pollingCount = 0
+  schedulePolling(id)
+}
+
+/** 安排下一次图片轮询 */
+function schedulePolling(id: number) {
   pollingTimer = setTimeout(async () => {
+    pollingTimer = undefined
+    pollingCount += 1
     try {
       const data = await getImageMy(id)
+      if (pollingImageId !== id) {
+        return
+      }
       currentImage.value = data
       if (data.status === AiImageStatusEnum.IN_PROGRESS) {
+        if (pollingCount >= maxPollingCount) {
+          toast.error('图片生成等待超时，请稍后在历史记录中查看')
+          return
+        }
         schedulePolling(id)
       }
     } catch {
+      if (pollingImageId !== id) {
+        return
+      }
+      if (pollingCount >= maxPollingCount) {
+        toast.error('图片状态查询失败，请稍后在历史记录中查看')
+        return
+      }
       schedulePolling(id)
     }
   }, 2000)
@@ -214,6 +240,7 @@ function schedulePolling(id: number) {
 
 /** 停止图片轮询 */
 function stopPolling() {
+  pollingImageId = undefined
   if (pollingTimer) {
     clearTimeout(pollingTimer)
     pollingTimer = undefined
@@ -340,7 +367,7 @@ async function handleMidjourneyAction(item: AiImage, customId: string) {
       status: AiImageStatusEnum.IN_PROGRESS,
     }
     tabIndex.value = 0
-    schedulePolling(id)
+    startPolling(id)
     toast.success('已提交操作')
   } finally {
     actionLoadingId.value = ''

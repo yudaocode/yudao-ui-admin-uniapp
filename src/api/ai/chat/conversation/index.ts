@@ -39,7 +39,7 @@ export function updateChatConversationMy(data: ChatConversation) {
 }
 
 /** 删除我的聊天对话 */
-export function deleteChatConversationMy(id: number | string) {
+export function deleteChatConversationMy(id: number) {
   return http.delete<boolean>(`/ai/chat/conversation/delete-my?id=${id}`)
 }
 

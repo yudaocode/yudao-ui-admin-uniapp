@@ -319,10 +319,7 @@ function handleCopyUrl(url?: string) {
 }
 
 /** 获取风格文案 */
-function getTagsText(tags?: string | string[]) {
-  if (Array.isArray(tags)) {
-    return tags.length > 0 ? tags.join('、') : '-'
-  }
-  return tags || '-'
+function getTagsText(tags?: string[]) {
+  return tags?.length ? tags.join('、') : '-'
 }
 </script>
