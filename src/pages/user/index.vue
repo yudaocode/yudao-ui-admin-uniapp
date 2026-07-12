@@ -26,6 +26,18 @@
     <!-- 菜单区域 -->
     <view class="mx-24rpx mt-32rpx">
       <wd-cell-group custom-class="menu-group" border>
+        <TenantVisitPicker
+          v-if="tenantEnabled && hasAccessByCodes(['system:tenant:visit'])"
+          @confirm="handleTenantConfirm"
+        >
+          <template #default="{ value }">
+            <wd-cell title="当前租户" :value="value" is-link>
+              <template #prefix>
+                <wd-icon name="home" size="20px" color="#1677ff" class="mr-16rpx" />
+              </template>
+            </wd-cell>
+          </template>
+        </TenantVisitPicker>
         <wd-cell title="个人资料" is-link @click="handleGoProfile">
           <template #prefix>
             <wd-icon name="user" size="20px" color="#1890ff" class="mr-16rpx" />
@@ -69,15 +81,19 @@
 </template>
 
 <script lang="ts" setup>
+import type { TenantVO } from '@/api/login'
 import type { UserProfileVO } from '@/api/system/user/profile'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { storeToRefs } from 'pinia'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getUserProfile } from '@/api/system/user/profile'
+import { useAccess } from '@/hooks/useAccess'
 import { LOGIN_PAGE } from '@/router/config'
 import { useUserStore } from '@/store'
+import { useDictStore } from '@/store/dict'
 import { useTokenStore } from '@/store/token'
+import TenantVisitPicker from './components/tenant-visit-picker.vue'
 
 definePage({
   style: {
@@ -87,10 +103,13 @@ definePage({
 
 const userStore = useUserStore()
 const tokenStore = useTokenStore()
+const dictStore = useDictStore()
 const toast = useToast()
 const dialog = useDialog()
+const { hasAccessByCodes } = useAccess()
 const { userInfo } = storeToRefs(userStore)
 const userProfile = ref<UserProfileVO | null>(null) // 用户详细信息
+const tenantEnabled = computed(() => import.meta.env.VITE_APP_TENANT_ENABLE === 'true') // 租户开关
 
 /** 页面加载时获取用户信息 */
 onMounted(async () => {
@@ -126,6 +145,32 @@ function handleGoContact() {
 /** 跳转到应用设置 */
 function handleGoSettings() {
   uni.navigateTo({ url: '/pages-core/user/settings/index' })
+}
+
+/** 切换当前访问的租户 */
+async function handleTenantConfirm(tenant: TenantVO) {
+  const currentTenantId = userStore.visitTenantId || userStore.tenantId
+  if (tenant.id === currentTenantId) {
+    return
+  }
+  const restoreLoginTenant = tenant.id === userStore.tenantId
+  try {
+    await dialog.confirm({
+      title: '切换租户',
+      msg: restoreLoginTenant
+        ? `确定恢复访问登录租户「${tenant.name}」吗？`
+        : `确定切换至租户「${tenant.name}」吗？切换后业务数据将按该租户展示。`,
+    })
+  } catch {
+    return
+  }
+  // 访问租户只切换数据上下文，用户与权限仍沿用登录租户
+  userStore.setVisitTenantId(restoreLoginTenant ? null : tenant.id)
+  dictStore.clearDictCache()
+  toast.success(restoreLoginTenant ? '已恢复登录租户' : `已切换至${tenant.name}`)
+  setTimeout(() => {
+    uni.reLaunch({ url: '/pages/index/index' })
+  }, 500)
 }
 
 /** 退出登录 */

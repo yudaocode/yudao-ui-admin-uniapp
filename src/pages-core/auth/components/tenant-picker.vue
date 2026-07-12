@@ -1,14 +1,14 @@
 <template>
   <view v-if="tenantEnabled" class="input-item">
     <wd-icon name="home" size="20px" color="#1890ff" />
-    <view class="ml-16rpx flex flex-1 items-center justify-between" @click="pickerVisible.tenantId = true">
+    <view class="ml-16rpx flex flex-1 items-center justify-between" @click="handleOpen">
       <text class="text-28rpx text-[#333]">
         {{ getWotPickerDisplay(tenantList, tenantId, { valueKey: 'id', labelKey: 'name', placeholder: '请选择租户' }) }}
       </text>
     </view>
     <wd-picker
       v-model:visible="pickerVisible.tenantId"
-      :model-value="tenantId"
+      :model-value="tenantPickerValue"
       :columns="tenantList"
       label-key="name"
       value-key="id"
@@ -28,6 +28,11 @@ import {
 import { useUserStore } from '@/store/user'
 import { getWotPickerDisplay } from '@/utils/wot'
 
+const props = defineProps<{
+  preferredTenantId?: number
+  disabled?: boolean
+}>()
+
 const toast = useToast()
 const userStore = useUserStore()
 
@@ -39,10 +44,12 @@ const pickerVisible = ref<Record<string, boolean>>({})
 
 const tenantId = computed(
   () =>
-    userStore.tenantId
+    props.preferredTenantId
+    || userStore.tenantId
     || Number(import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT_ID)
     || undefined,
 ) // 当前选中的租户
+const tenantPickerValue = computed(() => tenantId.value !== undefined ? [tenantId.value] : []) // Wot Picker 使用数组值
 
 /** 获取租户列表，并根据域名/appId 自动选中租户 */
 async function fetchTenantList() {
@@ -55,11 +62,11 @@ async function fetchTenantList() {
     const list = await getTenantSimpleList()
     tenantList.value = list || []
 
-    // 2. 确定选中的租户：域名/appId > store 中的租户 > 列表第一个
-    let selectedTenantId: number | null = null
-    // 2.1 优先使用域名/appId 对应的租户
+    // 2. 确定选中的租户：授权指定租户 > 域名/appId > store 中的租户 > 列表第一个
     const websiteTenant = await websiteTenantPromise
-    if (websiteTenant?.id) {
+    let selectedTenantId: number | null = props.preferredTenantId || null
+    // 2.1 授权未指定租户时，使用域名/appId 对应的租户
+    if (!selectedTenantId && websiteTenant?.id) {
       selectedTenantId = websiteTenant.id
     }
     // 2.2 如果没有从域名获取到，使用 store 中的租户
@@ -77,6 +84,13 @@ async function fetchTenantList() {
     }
   } catch (error) {
     console.error('获取租户列表失败:', error)
+  }
+}
+
+/** 打开租户选择器 */
+function handleOpen() {
+  if (!props.disabled) {
+    pickerVisible.value.tenantId = true
   }
 }
 
@@ -126,11 +140,17 @@ function validate(): boolean {
     toast.warning('请选择租户')
     return false
   }
+  if (tenantId.value !== userStore.tenantId) {
+    userStore.setTenantId(tenantId.value)
+  }
   return true
 }
 
 /** 页面加载时获取租户列表 */
 onMounted(() => {
+  if (tenantEnabled.value && tenantId.value && tenantId.value !== userStore.tenantId) {
+    userStore.setTenantId(tenantId.value)
+  }
   fetchTenantList()
 })
 

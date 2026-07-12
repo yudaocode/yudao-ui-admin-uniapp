@@ -22,6 +22,7 @@ export const useUserStore = defineStore(
     // 定义用户信息
     const userInfo = ref<IUserInfoRes>({ ...userInfoState })
     const tenantId = ref<number | null>(null) // 租户编号
+    const visitTenantId = ref<number | null>(null) // 当前访问的租户编号
     const roles = ref<string[]>([]) // 角色标识列表
     const permissions = ref<string[]>([]) // 权限标识列表
     const favoriteMenus = ref<string[]>([]) // 常用菜单 key 列表
@@ -48,6 +49,7 @@ export const useUserStore = defineStore(
     /** 删除用户信息 */
     const clearUserInfo = () => {
       userInfo.value = { ...userInfoState }
+      visitTenantId.value = null
       roles.value = []
       permissions.value = []
       uni.removeStorageSync('user')
@@ -56,6 +58,11 @@ export const useUserStore = defineStore(
     /** 设置租户编号 */
     const setTenantId = (id: number) => {
       tenantId.value = id
+    }
+
+    /** 设置当前访问的租户编号 */
+    const setVisitTenantId = (id: number | null) => {
+      visitTenantId.value = id
     }
 
     /** 设置常用菜单 */
@@ -82,6 +89,7 @@ export const useUserStore = defineStore(
     return {
       userInfo,
       tenantId,
+      visitTenantId,
       roles,
       permissions,
       favoriteMenus,
@@ -91,6 +99,7 @@ export const useUserStore = defineStore(
       setUserInfo,
       setUserAvatar,
       setTenantId,
+      setVisitTenantId,
       setFavoriteMenus,
       addRecentMenu,
     }

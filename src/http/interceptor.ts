@@ -73,6 +73,10 @@ const httpInterceptor = {
       if (tenantId) {
         options.header['tenant-id'] = tenantId
       }
+      const visitTenantId = useUserStore().visitTenantId
+      if (token && visitTenantId) {
+        options.header['visit-tenant-id'] = visitTenantId
+      }
     }
 
     // 5. add by panda：是否 API 加密
