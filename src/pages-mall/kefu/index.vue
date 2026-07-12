@@ -58,6 +58,9 @@
       </view>
       <wd-empty v-else icon="message" tip="暂无会话" />
     </scroll-view>
+
+    <!-- 会话操作菜单 -->
+    <wd-action-sheet v-model="actionVisible" :actions="conversationActions" @select="handleConversationAction" />
   </view>
 </template>
 
@@ -85,6 +88,9 @@ definePage({
 
 const toast = useToast()
 const conversations = ref<PromotionKefuConversation[]>([]) // 会话列表
+const actionVisible = ref(false) // 会话操作菜单显示状态
+const actionConversation = ref<PromotionKefuConversation>() // 当前操作的会话
+const conversationActions = ref<Array<{ name: string, value: 'pin' | 'delete', color?: string }>>([]) // 会话操作菜单项
 const sortedConversations = computed(() => [...conversations.value].sort((a, b) => {
   if (!!a.adminPinned !== !!b.adminPinned) {
     return a.adminPinned ? -1 : 1
@@ -104,16 +110,24 @@ async function loadConversations() {
 
 /** 长按会话：置顶 / 删除 */
 function handleLongPress(item: PromotionKefuConversation) {
-  uni.showActionSheet({
-    itemList: [item.adminPinned ? '取消置顶' : '置顶', '删除会话'],
-    success: ({ tapIndex }) => {
-      if (tapIndex === 0) {
-        togglePin(item)
-      } else if (tapIndex === 1) {
-        confirmDelete(item)
-      }
-    },
-  })
+  actionConversation.value = item
+  conversationActions.value = [
+    { name: item.adminPinned ? '取消置顶' : '置顶', value: 'pin' },
+    { name: '删除会话', value: 'delete', color: '#fa5151' },
+  ]
+  actionVisible.value = true
+}
+
+/** 处理会话操作 */
+function handleConversationAction({ item }: { item: { value: 'pin' | 'delete' } }) {
+  if (!actionConversation.value) {
+    return
+  }
+  if (item.value === 'pin') {
+    togglePin(actionConversation.value)
+  } else {
+    confirmDelete(actionConversation.value)
+  }
 }
 
 /** 切换会话置顶状态 */

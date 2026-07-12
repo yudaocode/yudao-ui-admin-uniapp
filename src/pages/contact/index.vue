@@ -69,6 +69,14 @@
         <wd-empty icon="content" tip="暂无数据" />
       </view>
     </view>
+
+    <!-- 联系方式菜单 -->
+    <wd-action-sheet
+      v-model="contactActionVisible"
+      :actions="contactActions"
+      :title="contactUser?.nickname"
+      @select="handleContactAction"
+    />
   </view>
 </template>
 
@@ -96,6 +104,9 @@ const toast = useToast()
 
 const currentDeptId = ref(0) // 当前层级的部门编号
 const breadcrumbRef = ref<InstanceType<typeof Breadcrumb>>()
+const contactActionVisible = ref(false) // 联系方式菜单显示状态
+const contactUser = ref<User>() // 当前查看的用户
+const contactActions = ref<Array<{ name: string, value: 'mobile' | 'email' }>>([]) // 联系方式菜单项
 
 /** 当前层级的部门列表 */
 const currentDeptList = computed(() => {
@@ -122,35 +133,35 @@ function handleEnterDept(item: Dept) {
 /** 点击用户：弹出联系方式 */
 async function handleUserClick(item: User) {
   const userInfo = await getUser(item.id!)
-  const actions: string[] = []
+  const actions: Array<{ name: string, value: 'mobile' | 'email' }> = []
   if (userInfo.mobile) {
-    actions.push(`手机：${userInfo.mobile}`)
+    actions.push({ name: `手机：${userInfo.mobile}`, value: 'mobile' })
   }
   if (userInfo.email) {
-    actions.push(`邮箱：${userInfo.email}`)
+    actions.push({ name: `邮箱：${userInfo.email}`, value: 'email' })
   }
   if (actions.length === 0) {
     toast.show('暂无联系方式')
     return
   }
-  uni.showActionSheet({
-    title: userInfo.nickname,
-    itemList: actions,
-    success: (res) => {
-      const selected = actions[res.tapIndex]
-      if (selected.startsWith('手机')) {
-        uni.makePhoneCall({ phoneNumber: userInfo.mobile! })
-      } else if (selected.startsWith('邮箱')) {
-        uni.setClipboardData({
-          data: userInfo.email!,
-          success: () => {
-            uni.hideToast()
-            toast.success('邮箱已复制')
-          },
-        })
-      }
-    },
-  })
+  contactUser.value = userInfo
+  contactActions.value = actions
+  contactActionVisible.value = true
+}
+
+/** 选择联系方式 */
+function handleContactAction({ item }: { item: { value: 'mobile' | 'email' } }) {
+  if (item.value === 'mobile' && contactUser.value?.mobile) {
+    uni.makePhoneCall({ phoneNumber: contactUser.value.mobile })
+  } else if (item.value === 'email' && contactUser.value?.email) {
+    uni.setClipboardData({
+      data: contactUser.value.email,
+      success: () => {
+        uni.hideToast()
+        toast.success('邮箱已复制')
+      },
+    })
+  }
 }
 
 /** 初始化 */
