@@ -22,7 +22,10 @@
             <wd-input-number v-model="formData.topK" :min="0" :max="10" />
           </wd-form-item>
           <wd-form-item title="相似度阈值" title-width="230rpx" prop="similarityThreshold">
-            <wd-input-number v-model="formData.similarityThreshold" :min="0" :max="1" :step="0.01" />
+            <wd-input-number
+              v-model="formData.similarityThreshold"
+              :min="0" :max="1" :step="0.01" :precision="2"
+            />
           </wd-form-item>
           <wd-form-item title="状态" title-width="230rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">

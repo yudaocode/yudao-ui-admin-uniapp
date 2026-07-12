@@ -163,7 +163,8 @@ import {
   getKnowledgeSegmentProcessList,
   splitContent,
 } from '@/api/ai/knowledge/segment'
-import { navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
+import { getFileNameFromUrl } from '@/utils/download'
 import KnowledgeFormPicker from '../../components/knowledge-form-picker.vue'
 
 interface DocumentFile {
@@ -241,7 +242,7 @@ const allProcessComplete = computed(() => formData.value.list.length > 0
 watch(uploadUrls, (urls) => {
   const fileMap = new Map(formData.value.list.map(file => [file.url, file]))
   formData.value.list = urls.map(url => fileMap.get(url) || {
-    name: getFileName(url),
+    name: getFileNameFromUrl(url) || '未命名文档',
     url,
   })
   if (currentFileIndex.value >= formData.value.list.length) {
@@ -257,23 +258,16 @@ function handleBack() {
   navigateBackPlus(`/pages-ai/knowledge/document/index${query ? `?${query}` : ''}`)
 }
 
-/** 解析文档名称 */
-function getFileName(url: string) {
-  const path = url.split('?')[0]
-  return decodeURIComponent(path.slice(path.lastIndexOf('/') + 1)) || '未命名文档'
-}
-
 /** 回填上传时的原始文档名称 */
-function handleUploadSuccess(url: string, name?: string) {
+async function handleUploadSuccess(url: string, name?: string) {
   if (!name) {
     return
   }
-  nextTick(() => {
-    const document = formData.value.list.find(item => item.url === url)
-    if (document) {
-      document.name = name
-    }
-  })
+  await nextTick()
+  const document = formData.value.list.find(item => item.url === url)
+  if (document) {
+    document.name = name
+  }
 }
 
 /** 加载文档详情 */
@@ -355,9 +349,14 @@ async function handleSave() {
       })
       formData.value.list.forEach((file, index) => file.id = ids[index])
     }
-    activeStep.value = 2
     uni.$emit('ai:knowledge-document:reload')
     uni.$emit('ai:knowledge-document:detail-reload')
+    if (props.id) {
+      toast.success('修改成功')
+      delay(handleBack)
+      return
+    }
+    activeStep.value = 2
     startPolling()
   } finally {
     formLoading.value = false
