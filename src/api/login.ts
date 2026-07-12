@@ -6,6 +6,8 @@ import type {
 } from './types/login'
 import { http } from '@/http/http'
 
+export const AUTH_THIRD_LOGIN_NOT_BIND_CODE = 1002000005 // 三方账号尚未绑定
+
 /**
  * 登录表单
  */
@@ -17,6 +19,16 @@ export interface ILoginForm {
   captchaVerification?: string
   mobile?: string
   code?: string
+  socialType?: number
+  socialCode?: string
+  socialState?: string
+}
+
+/** 社交登录请求 */
+export interface AuthSocialLoginReq {
+  type: number
+  code: string
+  state: string
 }
 
 /** 账号密码登录 Request VO */
@@ -122,27 +134,14 @@ export function logout() {
   return http.post<void>('/system/auth/logout')
 }
 
-// TODO @芋艿：三方登录
-/**
- * 获取微信登录凭证
- * @returns Promise 包含微信登录凭证(code)
- */
-export function getWxCode() {
-  return new Promise<UniApp.LoginRes>((resolve, reject) => {
-    uni.login({
-      provider: 'weixin',
-      success: res => resolve(res),
-      fail: err => reject(new Error(err)),
-    })
-  })
+/** 获取社交授权地址 */
+export function getSocialAuthRedirect(type: number, redirectUri: string) {
+  return http.get<string>('/system/auth/social-auth-redirect', { type, redirectUri })
 }
 
-// TODO @芋艿：三方登录
-/**
- * 微信登录
- * @param params 微信登录参数，包含code
- * @returns Promise 包含登录结果
- */
-export function wxLogin(data: { code: string }) {
-  return http.post<IAuthLoginRes>('/auth/wxLogin', data)
+/** 社交快捷登录 */
+export function socialLogin(data: AuthSocialLoginReq) {
+  return http.post<IAuthLoginRes>('/system/auth/social-login', data, undefined, undefined, {
+    hideErrorToast: true,
+  })
 }

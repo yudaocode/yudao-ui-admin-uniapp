@@ -13,6 +13,7 @@ export const LOGIN_PAGE = '/pages-core/auth/login' // edit by 芋艿：自定义
 export const REGISTER_PAGE = '/pages-core/auth/register' // edit by 芋艿：自定义了注册页路径
 export const CODE_LOGIN_PAGE = '/pages-core/auth/code-login' // edit by 芋艿：自定义了短信登录页路径
 export const FORGET_PASSWORD_PAGE = '/pages-core/auth/forget-password' // edit by 芋艿：自定义了忘记密码页路径
+export const SOCIAL_LOGIN_PAGE = '/pages-core/auth/social-login/index' // 三方登录回调页
 export const NOT_FOUND_PAGE = '/pages-core/error/404' // edit by 芋艿：调整 404 页面路径
 export const ONLY_PC_PAGE = '/pages-core/error/pc-only' // edit by 芋艿：新增仅 PC 端访问提示页面路径
 
@@ -22,6 +23,7 @@ export const LOGIN_PAGE_LIST = [
   REGISTER_PAGE,
   CODE_LOGIN_PAGE,
   FORGET_PASSWORD_PAGE,
+  SOCIAL_LOGIN_PAGE,
 ]
 
 // 注释 by 芋艿：在 mp 环境下，getAllPages 函数还没初始化好，所以不能直接调用。统一优化到 judgeIsExcludePath 函数里面去获取

@@ -5,7 +5,14 @@
 
     <!-- 表单区域 -->
     <view class="form-container">
-      <TenantPicker ref="tenantPickerRef" />
+      <TenantPicker
+        ref="tenantPickerRef"
+        :disabled="Boolean(socialBindingContext) || authLoading"
+        :preferred-tenant-id="socialBindingContext?.tenantId"
+      />
+      <view v-if="socialBindingContext" class="mb-24rpx rounded-12rpx bg-[#e8f4ff] px-24rpx py-20rpx text-26rpx text-[#1890ff]">
+        三方授权成功，请使用账号密码登录完成绑定
+      </view>
       <view class="input-item">
         <wd-icon name="user" size="20px" color="#1890ff" />
         <wd-input
@@ -38,36 +45,28 @@
 
       <!-- 登录按钮 -->
       <view class="mb-2 mt-2 flex justify-between">
-        <text class="text-28rpx text-[#1890ff]" @click="goToSmsLogin">
+        <text v-if="!socialBindingContext && !authLoading" class="text-28rpx text-[#1890ff]" @click="goToSmsLogin">
           验证码登录
         </text>
-        <text class="text-28rpx text-[#1890ff]" @click="goToForgetPassword">
+        <text v-if="!authLoading" class="text-28rpx text-[#1890ff]" @click="goToForgetPassword">
           忘记密码？
         </text>
       </view>
-      <wd-button block :loading="loading" type="primary" @click="handleLogin">
+      <wd-button block :disabled="authLoading" :loading="loading" type="primary" @click="handleLogin">
         登录
       </wd-button>
 
       <!-- 第三方登录 -->
-      <view class="mt-100rpx">
-        <view class="divider mb-40rpx flex items-center justify-center">
-          <view class="h-1rpx flex-1 bg-[#e5e5e5]" />
-          <text class="px-24rpx text-26rpx text-[#999]">其他登录方式</text>
-          <view class="h-1rpx flex-1 bg-[#e5e5e5]" />
-        </view>
-        <!-- TODO @芋艿：图标换下！ -->
-        <view class="icons flex justify-center gap-60rpx">
-          <view class="icon-item" @click="handleWechatLogin">
-            <wd-icon name="message" size="24px" color="#07c160" />
-          </view>
-          <view class="icon-item" @click="handleDingTalkLogin">
-            <wd-icon name="desktop" size="24px" color="#3370ff" />
-          </view>
-        </view>
-      </view>
+      <SocialLoginPanel
+        v-model="socialBindingContext"
+        v-model:loading="socialLoginLoading"
+        :disabled="authLoading"
+        :redirect-url="redirectUrl"
+        :social-bind="Boolean(pageProps.socialBind)"
+        :validate-tenant="validateTenant"
+      />
       <!-- 创建账号 -->
-      <view class="mt-40rpx flex items-center justify-center">
+      <view v-if="!socialBindingContext && !authLoading" class="mt-40rpx flex items-center justify-center">
         <text class="text-28rpx text-[#666]">还没有账号？</text>
         <text class="text-28rpx text-[#1890ff]" @click="goToRegister">
           创建账号
@@ -78,8 +77,9 @@
 </template>
 
 <script lang="ts" setup>
+import type { SocialLoginBindingContext } from '@/utils/social-login'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import {
   CODE_LOGIN_PAGE,
   FORGET_PASSWORD_PAGE,
@@ -88,6 +88,7 @@ import {
 import { useTokenStore } from '@/store/token'
 import { ensureDecodeURIComponent, redirectAfterLogin } from '@/utils'
 import Header from './components/header.vue'
+import SocialLoginPanel from './components/social-login-panel.vue'
 import TenantPicker from './components/tenant-picker.vue'
 import Verify from './components/verifition/verify.vue'
 
@@ -98,6 +99,11 @@ defineOptions({
   },
 })
 
+const pageProps = defineProps<{
+  redirect?: string
+  socialBind?: string
+}>()
+
 definePage({
   style: {
     navigationStyle: 'custom',
@@ -106,7 +112,7 @@ definePage({
 
 const toast = useToast()
 const loading = ref(false) // 表单提交状态
-const redirectUrl = ref<string>() // 重定向地址
+const redirectUrl = ref(pageProps.redirect ? ensureDecodeURIComponent(pageProps.redirect) : undefined) // 重定向地址
 const tenantPickerRef = ref<InstanceType<typeof TenantPicker>>() // 租户选择器引用
 const captchaEnabled = import.meta.env.VITE_APP_CAPTCHA_ENABLE === 'true' // 验证码开关
 const verifyRef = ref()
@@ -117,12 +123,18 @@ const formData = reactive({
   password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || '',
   captchaVerification: '', // 验证码校验值
 }) // 表单数据
-
-/** 页面加载时处理重定向 */
-onLoad((options) => {
-  if (options?.redirect) {
-    redirectUrl.value = ensureDecodeURIComponent(options.redirect)
-  }
+const socialBindingContext = ref<SocialLoginBindingContext>() // 待绑定的三方授权上下文
+const socialLoginLoading = ref(false) // 三方登录进行状态
+const authLoading = computed(() => loading.value || socialLoginLoading.value) // 任一登录流程进行状态
+const socialAuth = computed(() => { // 待绑定的三方授权参数
+  const context = socialBindingContext.value
+  return context
+    ? {
+        socialType: context.socialType,
+        socialCode: context.socialCode,
+        socialState: context.socialState,
+      }
+    : undefined
 })
 
 /** 获取验证码 */
@@ -139,7 +151,10 @@ async function getCode() {
 
 /** 登录处理 */
 async function handleLogin() {
-  if (!tenantPickerRef.value?.validate()) {
+  if (authLoading.value) {
+    return
+  }
+  if (!validateTenant()) {
     return
   }
   if (!formData.username) {
@@ -153,6 +168,7 @@ async function handleLogin() {
   await getCode()
 }
 
+/** 验证成功后登录 */
 async function verifySuccess(params: any) {
   loading.value = true
   try {
@@ -162,9 +178,10 @@ async function verifySuccess(params: any) {
     await tokenStore.login({
       type: 'username',
       ...formData,
+      ...socialAuth.value,
     })
     // 处理跳转
-    redirectAfterLogin(redirectUrl.value)
+    redirectAfterLogin(socialBindingContext.value?.redirect || redirectUrl.value)
   } finally {
     loading.value = false
   }
@@ -185,30 +202,12 @@ function goToForgetPassword() {
   uni.navigateTo({ url: FORGET_PASSWORD_PAGE })
 }
 
-/** 微信登录 */
-// TODO @芋艿：后续开发
-function handleWechatLogin() {
-  toast.info('微信登录功能开发中')
-}
-
-/** 钉钉登录 */
-// TODO @芋艿：后续开发
-function handleDingTalkLogin() {
-  toast.info('钉钉登录功能开发中')
+/** 校验当前租户 */
+function validateTenant() {
+  return Boolean(tenantPickerRef.value?.validate())
 }
 </script>
 
 <style lang="scss" scoped>
 @import './styles/auth.scss';
-
-// 第三方登录图标
-.icon-item {
-  width: 40rpx;
-  height: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f5f7fa;
-}
 </style>

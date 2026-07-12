@@ -56,4 +56,14 @@ export const SystemUserSocialTypeEnum = {
     source: 'wechat_enterprise',
     img: 'https://s1.ax1x.com/2022/05/22/OzMrzn.png',
   },
+  WECHAT_MP: {
+    title: '微信公众号',
+    type: 31,
+    source: 'wechat_mp',
+  },
+  WECHAT_MINI_PROGRAM: {
+    title: '微信小程序',
+    type: 34,
+    source: 'wechat_mini_program',
+  },
 }

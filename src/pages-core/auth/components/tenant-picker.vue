@@ -41,6 +41,7 @@ const tenantEnabled = computed(
 ) // 租户开关：通过环境变量控制
 const tenantList = ref<TenantVO[]>([]) // 租户列表数据
 const pickerVisible = ref<Record<string, boolean>>({})
+const tenantLoading = ref(false) // 租户信息初始化状态
 
 const tenantId = computed(
   () =>
@@ -56,6 +57,7 @@ async function fetchTenantList() {
   if (!tenantEnabled.value) {
     return
   }
+  tenantLoading.value = true
   try {
     // 1. 并行获取租户列表和域名对应的租户
     const websiteTenantPromise = fetchTenantByWebsite()
@@ -84,6 +86,8 @@ async function fetchTenantList() {
     }
   } catch (error) {
     console.error('获取租户列表失败:', error)
+  } finally {
+    tenantLoading.value = false
   }
 }
 
@@ -135,6 +139,10 @@ function handleTenantConfirm(value?: number | string) {
 function validate(): boolean {
   if (!tenantEnabled.value) {
     return true
+  }
+  if (tenantLoading.value) {
+    toast.info('租户信息加载中，请稍后再试')
+    return false
   }
   if (!tenantId.value) {
     toast.warning('请选择租户')

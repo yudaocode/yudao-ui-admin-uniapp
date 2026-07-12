@@ -61,3 +61,24 @@
     padding: 0 !important;
   }
 }
+
+// 第三方登录图标
+.icon-item {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f5f7fa;
+}
+
+.social-item {
+  display: flex;
+  min-width: 120rpx;
+  align-items: center;
+  flex-direction: column;
+  gap: 12rpx;
+  color: #666;
+  font-size: 24rpx;
+}

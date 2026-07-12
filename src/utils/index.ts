@@ -199,8 +199,8 @@ export function redirectAfterLogin(redirectUrl?: string) {
   if (isPageTabbar(_path)) {
     uni.switchTab({ url: path })
   } else {
-    // 如果 query 有值则通过reLaunch方式跳转过来所以不能用back
-    if (Object.keys(query).length > 0) {
+    // 登录后目标包含参数或页面栈无上一页时，使用 reLaunch 保证跳转成功
+    if (Object.keys(query).length > 0 || getCurrentPages().length <= 1) {
       uni.reLaunch({ url: path })
     } else {
       uni.navigateBack()
