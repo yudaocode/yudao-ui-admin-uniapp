@@ -19,6 +19,10 @@ const markdown = new MarkdownIt({
   linkify: true,
   typographer: true,
 })
+markdown.renderer.rules.paragraph_open = (tokens, index, options, env, renderer) => {
+  tokens[index].attrJoin('class', 'yd-markdown-paragraph')
+  return renderer.renderToken(tokens, index, options)
+}
 
 const htmlContent = computed(() => markdown.render(props.content))
 </script>
@@ -53,7 +57,7 @@ const htmlContent = computed(() => markdown.render(props.content))
     font-size: 30rpx;
   }
 
-  :deep(p),
+  :deep(.yd-markdown-paragraph),
   :deep(blockquote),
   :deep(pre),
   :deep(ul),

@@ -194,6 +194,8 @@ async function sendMpSsePost<T>(url: string, options: SseOptions<T>) {
         return
       }
       settled = true
+      aborted = true
+      requestTask?.abort()
       cleanup()
       try {
         options.onError?.(error)
