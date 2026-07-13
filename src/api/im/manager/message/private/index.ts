@@ -12,6 +12,7 @@ export interface ImManagerPrivateMessageVO {
   type: number
   content: string
   status: number
+  receiptStatus: number
   sendTime: string
   createTime: string
 }

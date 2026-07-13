@@ -8,7 +8,7 @@
     />
 
     <!-- 详情内容 -->
-    <view>
+    <view class="pb-160rpx">
       <wd-cell-group border>
         <wd-cell title="封面" center>
           <wd-img
@@ -31,15 +31,11 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <!-- 表情管理入口 -->
-      <wd-cell-group border class="mt-20rpx">
-        <wd-cell
-          title="表情列表"
-          label="管理该表情包下的所有表情"
-          is-link
-          @click="handleManageItems"
-        />
-      </wd-cell-group>
+      <!-- 表情列表 -->
+      <PackItemList
+        v-if="hasAccessByCodes(['im:manager:face-pack-item:query'])"
+        :pack-id="props.id"
+      />
     </view>
 
     <!-- 底部操作按钮 -->
@@ -64,6 +60,7 @@
 
 <script lang="ts" setup>
 import type { ImManagerFacePackVO } from '@/api/im/manager/face/pack'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -72,6 +69,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import PackItemList from '../../item/components/pack-item-list.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -97,7 +95,7 @@ function handleBack() {
 
 /** 加载表情包详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -106,13 +104,6 @@ async function getDetail() {
   } finally {
     toast.close()
   }
-}
-
-/** 管理表情 */
-function handleManageItems() {
-  uni.navigateTo({
-    url: `/pages-im/manager/face/item/index?packId=${props.id}`,
-  })
 }
 
 /** 编辑表情包 */
@@ -147,8 +138,14 @@ async function handleDelete() {
   }
 }
 
-/** 初始化 */
+/** 初始化表情包详情和变更监听 */
 onMounted(() => {
+  uni.$on('im:manager:face-pack:reload', getDetail)
   getDetail()
+})
+
+/** 移除表情包变更监听 */
+onUnload(() => {
+  uni.$off('im:manager:face-pack:reload', getDetail)
 })
 </script>

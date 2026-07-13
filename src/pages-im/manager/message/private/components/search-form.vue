@@ -16,6 +16,7 @@
       <UserSearchPicker ref="senderPickerRef" v-model="formData.senderId" label="发送人" placeholder="请选择发送人" />
       <UserSearchPicker ref="receiverPickerRef" v-model="formData.receiverId" label="接收人" placeholder="请选择接收人" />
       <yd-search-picker v-model="formData.type" label="消息类型" :dict-type="DICT_TYPE.IM_CONTENT_TYPE" all-option />
+      <yd-search-picker v-model="formData.status" label="消息状态" :dict-type="DICT_TYPE.IM_MESSAGE_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           消息内容
@@ -38,11 +39,15 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
-import { getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
-import { getWotPickerDisplay } from '@/utils/wot'
+
+const props = defineProps<{
+  senderId?: number
+  receiverId?: number
+}>()
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -52,11 +57,11 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const senderPickerRef = ref<any>() // 发送人选择器引用
 const receiverPickerRef = ref<any>() // 接收人选择器引用
-const typeColumns = getIntDictOptions(DICT_TYPE.IM_CONTENT_TYPE) // 消息类型选项
 const formData = reactive({
-  senderId: undefined as number | undefined,
-  receiverId: undefined as number | undefined,
+  senderId: props.senderId,
+  receiverId: props.receiverId,
   type: undefined as number | undefined,
+  status: undefined as number | undefined,
   content: undefined as string | undefined,
   sendTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -71,7 +76,10 @@ const placeholder = computed(() => {
     conditions.push(`接收人:${receiverPickerRef.value?.format(formData.receiverId) || formData.receiverId}`)
   }
   if (formData.type !== undefined) {
-    conditions.push(`类型:${getWotPickerDisplay(typeColumns, formData.type, { valueKey: 'value', labelKey: 'label', placeholder: '' })}`)
+    conditions.push(`类型:${getDictLabel(DICT_TYPE.IM_CONTENT_TYPE, formData.type)}`)
+  }
+  if (formData.status !== undefined) {
+    conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_MESSAGE_STATUS, formData.status)}`)
   }
   if (formData.content) {
     conditions.push(`内容:${formData.content}`)
@@ -89,16 +97,18 @@ function handleSearch() {
     senderId: formData.senderId,
     receiverId: formData.receiverId,
     type: formData.type,
-    content: formData.content,
+    status: formData.status,
+    content: formData.content || undefined,
     sendTime: formatDateRange(formData.sendTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.senderId = undefined
-  formData.receiverId = undefined
+  formData.senderId = props.senderId
+  formData.receiverId = props.receiverId
   formData.type = undefined
+  formData.status = undefined
   formData.content = undefined
   formData.sendTime = [undefined, undefined]
   visible.value = false

@@ -134,19 +134,19 @@ function handleAdd() {
   })
 }
 
-/** 查看详情 */
+/** 查看频道素材详情 */
 function handleDetail(item: ImManagerChannelMaterialVO) {
   uni.navigateTo({
     url: `/pages-im/manager/channel/material/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册频道素材变更监听 */
 onMounted(() => {
   uni.$on('im:manager:channel-material:reload', reload)
 })
 
-/** 卸载 */
+/** 移除频道素材变更监听 */
 onUnload(() => {
   uni.$off('im:manager:channel-material:reload', reload)
 })

@@ -131,19 +131,19 @@ function handleAdd() {
   })
 }
 
-/** 查看详情 */
+/** 查看表情包详情 */
 function handleDetail(item: ImManagerFacePackVO) {
   uni.navigateTo({
     url: `/pages-im/manager/face/pack/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册表情包变更监听 */
 onMounted(() => {
   uni.$on('im:manager:face-pack:reload', reload)
 })
 
-/** 卸载 */
+/** 移除表情包变更监听 */
 onUnload(() => {
   uni.$off('im:manager:face-pack:reload', reload)
 })

@@ -55,6 +55,7 @@
 
 <script lang="ts" setup>
 import type { ImManagerFacePackItemVO } from '@/api/im/manager/face/item'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -83,12 +84,12 @@ const deleting = ref(false) // 删除状态
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus()
+  navigateBackPlus('/pages-im/manager/face/item/index')
 }
 
 /** 加载表情详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -131,8 +132,14 @@ async function handleDelete() {
   }
 }
 
-/** 初始化 */
+/** 初始化表情详情和变更监听 */
 onMounted(() => {
+  uni.$on('im:manager:face-pack-item:reload', getDetail)
   getDetail()
+})
+
+/** 移除表情变更监听 */
+onUnload(() => {
+  uni.$off('im:manager:face-pack-item:reload', getDetail)
 })
 </script>

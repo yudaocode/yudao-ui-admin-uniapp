@@ -42,6 +42,7 @@
 
 <script lang="ts" setup>
 import type { ImManagerSensitiveWordVO } from '@/api/im/manager/sensitiveword'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -75,7 +76,7 @@ function handleBack() {
 
 /** 加载敏感词详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -118,8 +119,14 @@ async function handleDelete() {
   }
 }
 
-/** 初始化 */
+/** 初始化敏感词详情和变更监听 */
 onMounted(() => {
+  uni.$on('im:manager:sensitive-word:reload', getDetail)
   getDetail()
+})
+
+/** 移除敏感词变更监听 */
+onUnload(() => {
+  uni.$off('im:manager:sensitive-word:reload', getDetail)
 })
 </script>

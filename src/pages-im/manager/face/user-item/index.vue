@@ -137,12 +137,12 @@ async function handleLongPress(item: ImManagerFaceUserItemVO) {
   reload()
 }
 
-/** 初始化 */
+/** 注册用户表情变更监听 */
 onMounted(() => {
   uni.$on('im:manager:face-user-item:reload', reload)
 })
 
-/** 卸载 */
+/** 移除用户表情变更监听 */
 onUnload(() => {
   uni.$off('im:manager:face-user-item:reload', reload)
 })

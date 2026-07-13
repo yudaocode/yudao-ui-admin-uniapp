@@ -8,7 +8,12 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm @search="handleQuery" @reset="handleReset" />
+    <SearchForm
+      :sender-id="props.senderId ? Number(props.senderId) : undefined"
+      :receiver-id="props.receiverId ? Number(props.receiverId) : undefined"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 私聊消息列表 -->
     <z-paging
@@ -43,7 +48,14 @@
           </view>
           <view class="mt-12rpx flex items-center justify-between text-24rpx text-[#999]">
             <text>{{ formatDateTime(item.sendTime) }}</text>
-            <text>{{ getDictLabel(DICT_TYPE.IM_MESSAGE_STATUS, item.status) }}</text>
+            <view class="flex items-center gap-12rpx">
+              <text>{{ getDictLabel(DICT_TYPE.IM_MESSAGE_STATUS, item.status) }}</text>
+              <dict-tag
+                v-if="item.receiptStatus != null"
+                :type="DICT_TYPE.IM_MESSAGE_RECEIPT_STATUS"
+                :value="item.receiptStatus"
+              />
+            </view>
           </view>
         </view>
       </view>
@@ -76,7 +88,10 @@ definePage({
 
 const list = ref<ImManagerPrivateMessageVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  senderId: props.senderId ? Number(props.senderId) : undefined,
+  receiverId: props.receiverId ? Number(props.receiverId) : undefined,
+})
 
 /** 返回上一页 */
 function handleBack() {
@@ -87,8 +102,6 @@ function handleBack() {
 async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getManagerPrivateMessagePage({
-      senderId: props.senderId,
-      receiverId: props.receiverId,
       ...queryParams.value,
       pageNo,
       pageSize,
@@ -107,7 +120,10 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery()
+  handleQuery({
+    senderId: props.senderId ? Number(props.senderId) : undefined,
+    receiverId: props.receiverId ? Number(props.receiverId) : undefined,
+  })
 }
 
 /** 重新加载 */
@@ -115,7 +131,7 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 查看详情 */
+/** 查看私聊消息详情 */
 function handleDetail(item: ImManagerPrivateMessageVO) {
   uni.navigateTo({
     url: `/pages-im/manager/message/private/detail/index?id=${item.id}`,

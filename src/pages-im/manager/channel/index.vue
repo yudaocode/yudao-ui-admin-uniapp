@@ -131,19 +131,19 @@ function handleAdd() {
   })
 }
 
-/** 查看详情 */
+/** 查看频道详情 */
 function handleDetail(item: ImManagerChannelVO) {
   uni.navigateTo({
     url: `/pages-im/manager/channel/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册频道变更监听 */
 onMounted(() => {
   uni.$on('im:manager:channel:reload', reload)
 })
 
-/** 卸载 */
+/** 移除频道变更监听 */
 onUnload(() => {
   uni.$off('im:manager:channel:reload', reload)
 })

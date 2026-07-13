@@ -108,10 +108,8 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 查看详情 */
+/** 查看通话记录详情 */
 function handleDetail(item: ImManagerRtcCallVO) {
-  uni.navigateTo({
-    url: `/pages-im/manager/rtc/detail/index?id=${item.id}&snapshot=${encodeURIComponent(JSON.stringify(item))}`,
-  })
+  uni.navigateTo({ url: `/pages-im/manager/rtc/detail/index?id=${item.id}` })
 }
 </script>

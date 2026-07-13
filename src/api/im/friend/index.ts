@@ -19,7 +19,7 @@ export interface ImFriendRespVO {
 }
 
 /** IM 好友更新 */
-export interface ImFriendUpdateReqVO {
+export interface ImFriendUpdateReq {
   friendUserId: number
   silent?: boolean
   displayName?: string
@@ -42,7 +42,7 @@ export function deleteFriend(friendUserId: number | string, clear: boolean) {
 }
 
 /** 更新好友信息 */
-export function updateFriend(data: ImFriendUpdateReqVO) {
+export function updateFriend(data: ImFriendUpdateReq) {
   return http.put<boolean>('/im/friend/update', data)
 }
 

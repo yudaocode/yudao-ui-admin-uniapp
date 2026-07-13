@@ -9,26 +9,28 @@ export interface ImPrivateMessageRespVO {
   type: number
   content: string
   status: number
+  receiptStatus: number
   sendTime: string
 }
 
 /** IM 私聊消息发送 */
-export interface ImPrivateMessageSendReqVO {
+export interface ImPrivateMessageSendReq {
   clientMessageId: string
   receiverId: number
   type: number
   content: string
+  receipt?: boolean
 }
 
 /** IM 私聊历史消息查询 */
-export interface ImPrivateMessageListReqVO {
+export interface ImPrivateMessageListReq {
   receiverId: number | string
   maxId?: number | string
   limit: number
 }
 
 /** 发送私聊消息 */
-export function sendPrivateMessage(data: ImPrivateMessageSendReqVO) {
+export function sendPrivateMessage(data: ImPrivateMessageSendReq) {
   return http.post<ImPrivateMessageRespVO>('/im/message/private/send', data)
 }
 
@@ -38,7 +40,7 @@ export function pullPrivateMessages(params: { minId: number | string, size: numb
 }
 
 /** 查询私聊历史消息 */
-export function getPrivateMessageList(params: ImPrivateMessageListReqVO) {
+export function getPrivateMessageList(params: ImPrivateMessageListReq) {
   return http.get<ImPrivateMessageRespVO[]>('/im/message/private/list', params)
 }
 

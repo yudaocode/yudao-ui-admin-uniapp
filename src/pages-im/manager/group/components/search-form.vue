@@ -20,39 +20,8 @@
         <wd-input v-model="formData.name" placeholder="请输入群名称" clearable />
       </view>
       <UserSearchPicker ref="ownerPickerRef" v-model="formData.ownerUserId" label="群主" placeholder="请选择群主" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          群状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_GROUP_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          封禁状态
-        </view>
-        <wd-radio-group v-model="formData.banned" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio :value="true">
-            已封禁
-          </wd-radio>
-          <wd-radio :value="false">
-            未封禁
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="群状态" :dict-type="DICT_TYPE.IM_GROUP_STATUS" all-option />
+      <yd-search-picker v-model="formData.banned" label="封禁状态" :columns="bannedOptions" all-option />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -69,7 +38,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -81,11 +50,15 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const ownerPickerRef = ref<any>() // 群主选择器引用
+const bannedOptions = [ // 封禁状态选项
+  { label: '已封禁', value: true },
+  { label: '未封禁', value: false },
+]
 const formData = reactive({
   name: undefined as string | undefined,
   ownerUserId: undefined as number | undefined,
-  status: -1, // -1 表示全部
-  banned: -1 as -1 | boolean, // -1 全部，true 已封禁，false 未封禁
+  status: undefined as number | undefined,
+  banned: undefined as boolean | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -98,10 +71,10 @@ const placeholder = computed(() => {
   if (formData.ownerUserId) {
     conditions.push(`群主:${ownerPickerRef.value?.format(formData.ownerUserId) || formData.ownerUserId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_GROUP_STATUS, formData.status)}`)
   }
-  if (formData.banned !== -1) {
+  if (formData.banned !== undefined) {
     conditions.push(`封禁:${formData.banned === true ? '已封禁' : '未封禁'}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -114,10 +87,10 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    name: formData.name,
+    name: formData.name || undefined,
     ownerUserId: formData.ownerUserId,
-    status: formData.status === -1 ? undefined : formData.status,
-    banned: formData.banned === -1 ? undefined : formData.banned,
+    status: formData.status,
+    banned: formData.banned,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -126,8 +99,8 @@ function handleSearch() {
 function handleReset() {
   formData.name = undefined
   formData.ownerUserId = undefined
-  formData.status = -1
-  formData.banned = -1
+  formData.status = undefined
+  formData.banned = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

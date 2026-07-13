@@ -2,6 +2,7 @@
   <wd-popup
     v-model="visible"
     position="bottom"
+    root-portal
     safe-area-inset-bottom
     custom-style="height: 86vh; border-radius: 24rpx 24rpx 0 0;"
     @close="handleClose"

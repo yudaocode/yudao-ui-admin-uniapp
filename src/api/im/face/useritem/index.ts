@@ -10,7 +10,7 @@ export interface ImFaceUserItemVO {
 }
 
 /** 添加个人表情 */
-export interface ImFaceUserItemSaveReqVO {
+export interface ImFaceUserItemSaveReq {
   url: string
   name?: string
   width: number
@@ -23,7 +23,7 @@ export function getFaceUserItemList() {
 }
 
 /** 添加个人表情 */
-export function createFaceUserItem(data: ImFaceUserItemSaveReqVO) {
+export function createFaceUserItem(data: ImFaceUserItemSaveReq) {
   return http.post<number>('/im/face-user-item/create', data)
 }
 

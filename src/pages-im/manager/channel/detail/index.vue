@@ -55,6 +55,7 @@
 
 <script lang="ts" setup>
 import type { ImManagerChannelVO } from '@/api/im/manager/channel'
+import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -88,7 +89,7 @@ function handleBack() {
 
 /** 加载频道详情 */
 async function getDetail() {
-  if (!props.id) {
+  if (!props.id || deleting.value) {
     return
   }
   try {
@@ -131,8 +132,14 @@ async function handleDelete() {
   }
 }
 
-/** 初始化 */
+/** 初始化频道详情和变更监听 */
 onMounted(() => {
+  uni.$on('im:manager:channel:reload', getDetail)
   getDetail()
+})
+
+/** 移除频道变更监听 */
+onUnload(() => {
+  uni.$off('im:manager:channel:reload', getDetail)
 })
 </script>

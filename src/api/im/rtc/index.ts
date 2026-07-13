@@ -1,7 +1,7 @@
 import { http } from '@/http/http'
 
 /** IM 创建新通话请求 */
-export interface ImRtcCallCreateReqVO {
+export interface ImRtcCallCreateReq {
   conversationType: number
   mediaType: number
   groupId?: number
@@ -9,7 +9,7 @@ export interface ImRtcCallCreateReqVO {
 }
 
 /** IM 通话中追加邀请 */
-export interface ImRtcCallInviteReqVO {
+export interface ImRtcCallInviteReq {
   room: string
   inviteeIds: number[]
 }
@@ -40,12 +40,12 @@ export interface ImRtcGroupCallRespVO {
 }
 
 /** 创建新通话 */
-export function createCall(data: ImRtcCallCreateReqVO) {
+export function createCall(data: ImRtcCallCreateReq) {
   return http.post<ImRtcCallRespVO>('/im/rtc/create', data)
 }
 
 /** 通话中追加邀请 */
-export function inviteCall(data: ImRtcCallInviteReqVO) {
+export function inviteCall(data: ImRtcCallInviteReq) {
   return http.post<boolean>('/im/rtc/invite', data)
 }
 

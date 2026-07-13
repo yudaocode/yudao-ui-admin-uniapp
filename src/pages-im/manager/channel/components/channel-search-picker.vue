@@ -18,7 +18,7 @@ import type { ImManagerChannelVO } from '@/api/im/manager/channel'
 import { onMounted, ref } from 'vue'
 import { getSimpleChannelList } from '@/api/im/manager/channel'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   modelValue?: number
   label?: string
   placeholder?: string
@@ -35,6 +35,15 @@ const emit = defineEmits<{
 const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
 const options = ref<ImManagerChannelVO[]>([]) // 频道选项
 
+/** 加载频道选项 */
+async function loadOptions() {
+  try {
+    options.value = await getSimpleChannelList()
+  } catch {
+    options.value = []
+  }
+}
+
 /** 更新频道 */
 function handleUpdate(value?: number) {
   emit('update:modelValue', value)
@@ -48,8 +57,8 @@ function format(value?: number) {
 
 defineExpose({ format })
 
-/** 初始化 */
-onMounted(async () => {
-  options.value = await getSimpleChannelList()
+/** 初始化频道选项 */
+onMounted(() => {
+  loadOptions()
 })
 </script>

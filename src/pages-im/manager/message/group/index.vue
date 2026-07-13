@@ -8,7 +8,11 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm @search="handleQuery" @reset="handleReset" />
+    <SearchForm
+      :group-id="props.groupId ? Number(props.groupId) : undefined"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 群聊消息列表 -->
     <z-paging
@@ -76,7 +80,9 @@ definePage({
 
 const list = ref<ImManagerGroupMessageVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  groupId: props.groupId ? Number(props.groupId) : undefined,
+})
 
 /** 返回上一页 */
 function handleBack() {
@@ -87,7 +93,6 @@ function handleBack() {
 async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getManagerGroupMessagePage({
-      groupId: props.groupId,
       ...queryParams.value,
       pageNo,
       pageSize,
@@ -106,7 +111,9 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery()
+  handleQuery({
+    groupId: props.groupId ? Number(props.groupId) : undefined,
+  })
 }
 
 /** 重新加载 */
@@ -114,7 +121,7 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 查看详情 */
+/** 查看群聊消息详情 */
 function handleDetail(item: ImManagerGroupMessageVO) {
   uni.navigateTo({
     url: `/pages-im/manager/message/group/detail/index?id=${item.id}`,

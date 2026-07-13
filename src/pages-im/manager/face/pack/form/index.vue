@@ -25,17 +25,13 @@
           <wd-form-item title="排序" title-width="180rpx" prop="sort" center>
             <wd-input-number v-model="formData.sort" :min="0" :max="9999" />
           </wd-form-item>
-          <wd-form-item title="状态" title-width="180rpx" prop="status" center>
-            <wd-radio-group v-model="formData.status" type="button">
-              <wd-radio
-                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-                :key="dict.value"
-                :value="dict.value"
-              >
-                {{ dict.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.status"
+            label="状态"
+            label-width="180rpx"
+            prop="status"
+            :dict-type="DICT_TYPE.COMMON_STATUS"
+          />
         </wd-cell-group>
       </wd-form>
     </view>
@@ -64,7 +60,6 @@ import {
   getManagerFacePack,
   updateManagerFacePack,
 } from '@/api/im/manager/face/pack'
-import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -81,7 +76,7 @@ definePage({
 })
 
 const toast = useToast()
-const formRef = ref<FormInstance>() // 表单组件引用
+const getTitle = computed(() => props.id ? '编辑表情包' : '新增表情包') // 表单标题
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<ImManagerFacePackVO>({
   id: undefined,
@@ -92,18 +87,17 @@ const formData = ref<ImManagerFacePackVO>({
 }) // 表单数据
 const formSchema = createFormSchema({
   name: [{ required: true, message: '名称不能为空' }],
+  sort: [{ required: true, message: '排序不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
 })
-
-/** 表单标题 */
-const getTitle = computed(() => props.id ? '编辑表情包' : '新增表情包')
+const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-im/manager/face/pack/index')
 }
 
-/** 加载详情 */
+/** 加载表情包详情 */
 async function getDetail() {
   if (!props.id) {
     return
@@ -113,18 +107,17 @@ async function getDetail() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const { valid } = await formRef.value!.validate()
+  const { valid } = await formRef.value.validate()
   if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data = { ...formData.value }
     if (props.id) {
-      await updateManagerFacePack(data)
+      await updateManagerFacePack(formData.value)
       toast.success('修改成功')
     } else {
-      await createManagerFacePack(data)
+      await createManagerFacePack(formData.value)
       toast.success('新增成功')
     }
     uni.$emit('im:manager:face-pack:reload')
@@ -134,7 +127,7 @@ async function handleSubmit() {
   }
 }
 
-/** 初始化 */
+/** 初始化表情包表单 */
 onMounted(() => {
   getDetail()
 })

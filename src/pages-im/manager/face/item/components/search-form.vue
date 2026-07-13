@@ -13,29 +13,18 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
+      <PackSearchPicker
+        ref="packPickerRef"
+        v-model="formData.packId"
+        :disabled="Boolean(props.packId)"
+      />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           表情名
         </view>
         <wd-input v-model="formData.name" placeholder="请输入表情名" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -50,9 +39,14 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
+import PackSearchPicker from '../../pack/components/pack-search-picker.vue'
+
+const props = defineProps<{
+  packId?: number
+}>()
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -60,18 +54,23 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
+const packPickerRef = ref<InstanceType<typeof PackSearchPicker>>() // 表情包选择器
 const formData = reactive({
+  packId: props.packId,
   name: undefined as string | undefined,
-  status: -1, // -1 表示全部
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
+  if (formData.packId) {
+    conditions.push(`表情包:${packPickerRef.value?.format(formData.packId) || formData.packId}`)
+  }
   if (formData.name) {
     conditions.push(`表情名:${formData.name}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索表情'
@@ -81,15 +80,17 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
-    status: formData.status === -1 ? undefined : formData.status,
+    packId: formData.packId,
+    name: formData.name || undefined,
+    status: formData.status,
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
+  formData.packId = props.packId
   formData.name = undefined
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }

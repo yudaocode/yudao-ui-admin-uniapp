@@ -55,7 +55,6 @@ definePage({
 })
 
 const toast = useToast()
-const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
 const groupName = ref(props.name ? decodeURIComponent(props.name) : '') // 群名称
 const formData = ref({
@@ -64,6 +63,7 @@ const formData = ref({
 const formSchema = createFormSchema({
   reason: [{ required: true, message: '封禁原因不能为空' }],
 })
+const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */
 function handleBack() {
@@ -72,10 +72,14 @@ function handleBack() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const { valid } = await formRef.value!.validate()
+  if (!props.id) {
+    return
+  }
+  const { valid } = await formRef.value.validate()
   if (!valid) {
     return
   }
+
   formLoading.value = true
   try {
     await banManagerGroup({ id: Number(props.id), reason: formData.value.reason })

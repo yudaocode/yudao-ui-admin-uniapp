@@ -2467,19 +2467,12 @@
               "icon": "message",
               "iconColor": "#1677ff",
               "url": "/pages-im/home/index/index"
-            },
-            {
-              "key": "imStatistics",
-              "name": "数据统计",
-              "icon": "dashboard",
-              "iconColor": "#722ed1",
-              "url": "/pages-statistics/im/index"
             }
           ]
         },
         {
           "key": "friend",
-          "name": "好友",
+          "name": "好友管理",
           "menus": [
             {
               "key": "imFriend",
@@ -2506,7 +2499,7 @@
         },
         {
           "key": "group",
-          "name": "群聊",
+          "name": "群聊管理",
           "menus": [
             {
               "key": "imGroup",
@@ -2533,7 +2526,7 @@
         },
         {
           "key": "channel",
-          "name": "频道",
+          "name": "拼单管理",
           "menus": [
             {
               "key": "imChannel",
@@ -2560,8 +2553,15 @@
         },
         {
           "key": "other",
-          "name": "通话与内容",
+          "name": "其他管理",
           "menus": [
+            {
+              "key": "imStatistics",
+              "name": "数据统计",
+              "icon": "dashboard",
+              "iconColor": "#722ed1",
+              "url": "/pages-statistics/im/index"
+            },
             {
               "key": "imRtc",
               "name": "通话记录",

@@ -19,19 +19,19 @@ export interface ImGroupMemberRespVO {
 }
 
 /** IM 群成员邀请 */
-export interface ImGroupMemberInviteReqVO {
+export interface ImGroupMemberInviteReq {
   groupId: number
   memberUserIds: number[]
 }
 
 /** IM 群成员移除 */
-export interface ImGroupMemberRemoveReqVO {
+export interface ImGroupMemberRemoveReq {
   groupId: number
   memberUserIds: number[]
 }
 
 /** IM 群成员更新 */
-export interface ImGroupMemberUpdateReqVO {
+export interface ImGroupMemberUpdateReq {
   groupId: number
   displayUserName?: string
   groupRemark?: string
@@ -39,7 +39,7 @@ export interface ImGroupMemberUpdateReqVO {
 }
 
 /** 邀请用户加入群 */
-export function inviteGroupMember(data: ImGroupMemberInviteReqVO) {
+export function inviteGroupMember(data: ImGroupMemberInviteReq) {
   return http.post<boolean>('/im/group/invite', data)
 }
 
@@ -49,7 +49,7 @@ export function quitGroup(groupId: number | string) {
 }
 
 /** 移除群成员 */
-export function removeGroupMember(data: ImGroupMemberRemoveReqVO) {
+export function removeGroupMember(data: ImGroupMemberRemoveReq) {
   return http.delete<boolean>('/im/group/kicking', data)
 }
 
@@ -64,6 +64,6 @@ export function getGroupMemberList(groupId: number | string) {
 }
 
 /** 更新群成员 */
-export function updateGroupMember(data: ImGroupMemberUpdateReqVO) {
+export function updateGroupMember(data: ImGroupMemberUpdateReq) {
   return http.put<boolean>('/im/group-member/update', data)
 }

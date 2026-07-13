@@ -15,39 +15,8 @@
     <view class="yd-search-form-container">
       <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <UserSearchPicker ref="friendPickerRef" v-model="formData.friendUserId" label="好友" placeholder="请选择好友" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_FRIEND_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          免打扰
-        </view>
-        <wd-radio-group v-model="formData.silent" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio :value="true">
-            是
-          </wd-radio>
-          <wd-radio :value="false">
-            否
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.IM_FRIEND_STATUS" all-option />
+      <yd-search-picker v-model="formData.silent" label="免打扰" :columns="booleanOptions" all-option />
       <yd-search-date-range v-model="formData.addTime" label="添加时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -64,7 +33,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -77,11 +46,15 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const userPickerRef = ref<any>() // 用户选择器引用
 const friendPickerRef = ref<any>() // 好友选择器引用
+const booleanOptions = [ // 布尔筛选选项
+  { label: '是', value: true },
+  { label: '否', value: false },
+]
 const formData = reactive({
   userId: undefined as number | undefined,
   friendUserId: undefined as number | undefined,
-  status: -1, // -1 表示全部
-  silent: -1 as -1 | boolean, // -1 全部，true 免打扰，false 正常
+  status: undefined as number | undefined,
+  silent: undefined as boolean | undefined,
   addTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -94,10 +67,10 @@ const placeholder = computed(() => {
   if (formData.friendUserId) {
     conditions.push(`好友:${friendPickerRef.value?.format(formData.friendUserId) || formData.friendUserId}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_FRIEND_STATUS, formData.status)}`)
   }
-  if (formData.silent !== -1) {
+  if (formData.silent !== undefined) {
     conditions.push(`免打扰:${formData.silent === true ? '是' : '否'}`)
   }
   if (formData.addTime?.[0] && formData.addTime?.[1]) {
@@ -112,8 +85,8 @@ function handleSearch() {
   emit('search', {
     userId: formData.userId,
     friendUserId: formData.friendUserId,
-    status: formData.status === -1 ? undefined : formData.status,
-    silent: formData.silent === -1 ? undefined : formData.silent,
+    status: formData.status,
+    silent: formData.silent,
     addTime: formatDateRange(formData.addTime),
   })
 }
@@ -122,8 +95,8 @@ function handleSearch() {
 function handleReset() {
   formData.userId = undefined
   formData.friendUserId = undefined
-  formData.status = -1
-  formData.silent = -1
+  formData.status = undefined
+  formData.silent = undefined
   formData.addTime = [undefined, undefined]
   visible.value = false
   emit('reset')

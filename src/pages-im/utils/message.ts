@@ -1,4 +1,5 @@
-import { ImMessageType, isFriendChatTip, isGroupNotification, isRtcCallTip } from '@/utils/constants'
+// TODO @AI：这里的 utils，按道理说，应该和 /Users/yunai/Java/yudao-ui-admin-vue3/src/views/im/utils 对齐呀！
+import { ImMessageType, isFriendChatTip, isGroupNotification } from '@/utils/constants'
 
 /** 文本消息内容 */
 export interface ImTextMessage {
@@ -28,6 +29,14 @@ export interface ImMediaMessage {
   coverUrl?: string
   duration?: number
   size?: number
+}
+
+/** 音视频通话提示 */
+export interface ImRtcCallTipMessage {
+  conversationType?: number
+  mediaType?: number
+  endReason?: number
+  durationSeconds?: number
 }
 
 /** 名片消息内容 */
@@ -196,8 +205,29 @@ export function getMessageSummary(type?: number, content?: string) {
   if (isGroupNotification(type ?? -1)) {
     return '[群通知]'
   }
-  if (isRtcCallTip(type ?? -1)) {
-    return '[通话]'
+  if (type === ImMessageType.RTC_CALL_START) {
+    const rtc = parseMessage<ImRtcCallTipMessage>(content)
+    return `${rtc?.mediaType === 2 ? '视频' : '语音'}通话`
+  }
+  if (type === ImMessageType.RTC_CALL_END) {
+    const rtc = parseMessage<ImRtcCallTipMessage>(content)
+    if (rtc?.conversationType === 2) {
+      return `${rtc.mediaType === 2 ? '视频' : '语音'}通话已结束`
+    }
+    if (rtc?.durationSeconds != null) {
+      const minutes = Math.floor(rtc.durationSeconds / 60)
+      const seconds = rtc.durationSeconds % 60
+      return `通话时长 ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }
+    const reasonText: Record<number, string> = {
+      1: '通话结束',
+      2: '已拒绝',
+      3: '已取消',
+      4: '无人接听',
+      5: '对方正忙',
+      9: '通话异常',
+    }
+    return reasonText[rtc?.endReason || 0] || '通话已结束'
   }
   const payload = parseMessage<Record<string, any>>(content)
   return payload?.content ? String(payload.content) : content || ''

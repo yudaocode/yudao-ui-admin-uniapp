@@ -69,7 +69,7 @@
 <script lang="ts" setup>
 import type { ImManagerRtcCallVO, ImManagerRtcParticipantVO } from '@/api/im/manager/rtc'
 import { onMounted, ref } from 'vue'
-import { getManagerRtcCallParticipantList } from '@/api/im/manager/rtc'
+import { getManagerRtcCall, getManagerRtcCallParticipantList } from '@/api/im/manager/rtc'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -77,7 +77,6 @@ import { formatCallDuration } from '../utils'
 
 const props = defineProps<{
   id?: number | string
-  snapshot?: string
 }>()
 
 definePage({
@@ -87,41 +86,30 @@ definePage({
   },
 })
 
-const call = ref<ImManagerRtcCallVO>() // 通话信息（来自列表快照）
+const call = ref<ImManagerRtcCallVO>() // 通话信息
 const participants = ref<ImManagerRtcParticipantVO[]>([]) // 参与者
-
-/** 解析列表传入的通话快照 */
-function parseSnapshot(raw?: string): ImManagerRtcCallVO | undefined {
-  if (!raw) {
-    return undefined
-  }
-  try {
-    return JSON.parse(raw)
-  } catch {
-    try {
-      return JSON.parse(decodeURIComponent(raw))
-    } catch {
-      return undefined
-    }
-  }
-}
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-im/manager/rtc/index')
 }
 
-/** 加载参与者 */
-async function loadParticipants() {
+/** 加载通话详情 */
+async function getDetail() {
   if (!props.id) {
     return
   }
-  participants.value = await getManagerRtcCallParticipantList(Number(props.id))
+  const id = Number(props.id)
+  const [callData, participantList] = await Promise.all([
+    getManagerRtcCall(id),
+    getManagerRtcCallParticipantList(id),
+  ])
+  call.value = callData
+  participants.value = participantList
 }
 
-/** 初始化 */
+/** 初始化通话记录详情 */
 onMounted(() => {
-  call.value = parseSnapshot(props.snapshot)
-  loadParticipants()
+  getDetail()
 })
 </script>

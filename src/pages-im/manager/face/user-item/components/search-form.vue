@@ -71,7 +71,8 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    ...formData,
+    userId: formData.userId,
+    name: formData.name || undefined,
     createTime: formatDateRange(formData.createTime),
   })
 }

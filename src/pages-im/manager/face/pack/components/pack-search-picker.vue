@@ -1,17 +1,26 @@
 <template>
-  <!-- 表情包表单选择入口 -->
-  <wd-form-item
-    :title="label"
-    :title-width="labelWidth"
-    :prop="prop || undefined"
-    :is-link="!disabled"
-    :value="displayValue"
-    :placeholder="placeholder"
-    @click="handleOpen"
-  />
+  <view class="yd-search-form-item">
+    <!-- 表情包搜索选择入口 -->
+    <view class="yd-search-form-label">
+      {{ label }}
+    </view>
+    <view class="min-h-72rpx flex items-center gap-12rpx rounded-8rpx bg-[#f7f8fa] px-24rpx text-28rpx" @click="handleOpen">
+      <text class="min-w-0 flex-1 truncate" :class="displayValue ? 'text-[#333]' : 'text-[#999]'">
+        {{ displayValue || placeholder }}
+      </text>
+      <wd-icon
+        v-if="clearable && !disabled && modelValue"
+        name="close-circle"
+        size="30rpx"
+        custom-style="color: #c0c4cc;"
+        @click.stop="handleClear"
+      />
+      <wd-icon v-else name="arrow-right" size="28rpx" color="#c0c4cc" />
+    </view>
 
-  <!-- 表情包选择弹窗 -->
-  <PackPicker ref="pickerRef" @confirm="handleConfirm" />
+    <!-- 表情包选择弹窗 -->
+    <PackPicker ref="pickerRef" @confirm="handleConfirm" />
+  </view>
 </template>
 
 <script lang="ts" setup>
@@ -23,15 +32,13 @@ import PackPicker from './pack-picker.vue'
 const props = withDefaults(defineProps<{
   modelValue?: number
   label?: string
-  labelWidth?: string
   placeholder?: string
-  prop?: string
+  clearable?: boolean
   disabled?: boolean
 }>(), {
   label: '表情包',
-  labelWidth: '220rpx',
   placeholder: '请选择表情包',
-  prop: '',
+  clearable: true,
   disabled: false,
 })
 
@@ -62,8 +69,15 @@ function handleConfirm(pack: ImManagerFacePackVO) {
   emit('change', pack)
 }
 
+/** 清空表情包 */
+function handleClear() {
+  selectedPack.value = undefined
+  emit('update:modelValue', undefined)
+  emit('change', undefined)
+}
+
 /** 加载表情包回显 */
-async function resolvePack(id?: number) {
+async function loadSelected(id?: number) {
   if (!id) {
     selectedPack.value = undefined
     return
@@ -71,22 +85,19 @@ async function resolvePack(id?: number) {
   if (selectedPack.value?.id === id) {
     return
   }
-  try {
-    const pack = await getManagerFacePack(id)
-    if (props.modelValue === id) {
-      selectedPack.value = pack
-    }
-  } catch {
-    if (props.modelValue === id) {
-      selectedPack.value = undefined
-    }
+  const pack = await getManagerFacePack(id)
+  if (props.modelValue === id) {
+    selectedPack.value = pack
   }
 }
 
+/** 格式化表情包 */
+function format(value?: number) {
+  return !value || value === props.modelValue ? displayValue.value : `表情包 ${value}`
+}
+
 /** 监听表情包编号变化 */
-watch(
-  () => props.modelValue,
-  value => resolvePack(value),
-  { immediate: true },
-)
+watch(() => props.modelValue, loadSelected, { immediate: true })
+
+defineExpose({ format })
 </script>

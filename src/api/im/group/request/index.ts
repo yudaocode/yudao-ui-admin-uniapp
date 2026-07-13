@@ -22,14 +22,14 @@ export interface ImGroupRequestRespVO {
 }
 
 /** IM 加群申请发起 */
-export interface ImGroupRequestApplyReqVO {
+export interface ImGroupRequestApplyReq {
   groupId: number
   applyContent?: string
   addSource?: number
 }
 
 /** 申请加群 */
-export function applyJoinGroup(data: ImGroupRequestApplyReqVO) {
+export function applyJoinGroup(data: ImGroupRequestApplyReq) {
   return http.post<number | null>('/im/group-request/apply', data)
 }
 

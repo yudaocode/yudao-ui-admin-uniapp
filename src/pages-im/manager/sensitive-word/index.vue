@@ -122,19 +122,19 @@ function handleAdd() {
   })
 }
 
-/** 查看详情 */
+/** 查看敏感词详情 */
 function handleDetail(item: ImManagerSensitiveWordVO) {
   uni.navigateTo({
     url: `/pages-im/manager/sensitive-word/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册敏感词变更监听 */
 onMounted(() => {
   uni.$on('im:manager:sensitive-word:reload', reload)
 })
 
-/** 卸载 */
+/** 移除敏感词变更监听 */
 onUnload(() => {
   uni.$off('im:manager:sensitive-word:reload', reload)
 })

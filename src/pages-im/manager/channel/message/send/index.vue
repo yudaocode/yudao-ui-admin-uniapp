@@ -21,18 +21,15 @@
             placeholder="请选择素材"
             :before-open="handleOpenMaterialPicker"
           />
-          <wd-form-item title="受众" title-width="180rpx" prop="receiverUserType" center>
-            <wd-radio-group v-model="formData.receiverUserType" type="button">
-              <wd-radio value="all">
-                全员
-              </wd-radio>
-              <wd-radio value="users">
-                指定用户
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
+          <yd-form-picker
+            v-model="formData.receiverUserType"
+            label="受众"
+            label-width="180rpx"
+            prop="receiverUserType"
+            :columns="receiverTypeOptions"
+          />
           <UserFormPicker
-            v-if="formData.receiverUserType === 'users'"
+            v-if="formData.receiverUserType === ImChannelMessageReceiverType.USERS"
             v-model="formData.receiverUserIds"
             label="接收用户"
             prop="receiverUserIds"
@@ -60,12 +57,14 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ImManagerChannelVO } from '@/api/im/manager/channel'
+import type { ImChannelMessageReceiverTypeValue } from '@/utils/constants'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
 import { getSimpleManagerChannelMaterialList } from '@/api/im/manager/channel/material'
 import { sendManagerChannelMessage } from '@/api/im/manager/channel/message'
 import { UserFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
+import { ImChannelMessageReceiverType } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import ChannelFormPicker from '@/pages-im/manager/channel/components/channel-form-picker.vue'
 
@@ -77,23 +76,27 @@ definePage({
 })
 
 const toast = useToast()
-const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
 const materialOptions = ref<{ label: string, value: number }[]>([]) // 素材选项
+const receiverTypeOptions = [ // 接收范围选项
+  { label: '全员', value: ImChannelMessageReceiverType.ALL },
+  { label: '指定用户', value: ImChannelMessageReceiverType.USERS },
+]
 const formData = ref({
   channelId: undefined as number | undefined,
   materialId: undefined as number | undefined,
-  receiverUserType: 'all' as 'all' | 'users',
+  receiverUserType: ImChannelMessageReceiverType.ALL as ImChannelMessageReceiverTypeValue,
   receiverUserIds: [] as number[],
 }) // 表单数据
 const formSchema = createFormSchema(() => ({
   channelId: [{ required: true, message: '所属频道不能为空' }],
   materialId: [{ required: true, message: '素材不能为空' }],
   receiverUserIds: [{
-    required: () => formData.value.receiverUserType === 'users',
+    required: () => formData.value.receiverUserType === ImChannelMessageReceiverType.USERS,
     message: '接收用户不能为空',
   }],
 }))
+const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */
 function handleBack() {
@@ -129,7 +132,7 @@ function handleOpenMaterialPicker() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  const { valid } = await formRef.value!.validate()
+  const { valid } = await formRef.value.validate()
   if (!valid || !formData.value.materialId) {
     return
   }
@@ -137,7 +140,7 @@ async function handleSubmit() {
   try {
     await sendManagerChannelMessage({
       materialId: formData.value.materialId,
-      receiverUserIds: formData.value.receiverUserType === 'users'
+      receiverUserIds: formData.value.receiverUserType === ImChannelMessageReceiverType.USERS
         ? formData.value.receiverUserIds
         : undefined,
     })

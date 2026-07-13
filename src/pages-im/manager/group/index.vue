@@ -117,19 +117,19 @@ function reload() {
   pagingRef.value?.reload()
 }
 
-/** 查看详情 */
+/** 查看群聊详情 */
 function handleDetail(item: ImManagerGroupVO) {
   uni.navigateTo({
     url: `/pages-im/manager/group/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册群聊变更监听 */
 onMounted(() => {
   uni.$on('im:manager:group:reload', reload)
 })
 
-/** 卸载 */
+/** 移除群聊变更监听 */
 onUnload(() => {
   uni.$off('im:manager:group:reload', reload)
 })

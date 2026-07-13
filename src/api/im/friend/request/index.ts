@@ -18,7 +18,7 @@ export interface ImFriendRequestRespVO {
 }
 
 /** IM 好友申请发起 */
-export interface ImFriendRequestApplyReqVO {
+export interface ImFriendRequestApplyReq {
   toUserId: number
   applyContent?: string
   displayName?: string
@@ -26,7 +26,7 @@ export interface ImFriendRequestApplyReqVO {
 }
 
 /** 发起好友申请 */
-export function applyFriendRequest(data: ImFriendRequestApplyReqVO) {
+export function applyFriendRequest(data: ImFriendRequestApplyReq) {
   return http.post<number | null>('/im/friend-request/apply', data)
 }
 

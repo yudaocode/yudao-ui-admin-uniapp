@@ -39,37 +39,69 @@
 
       <!-- 群成员 -->
       <wd-cell-group border class="mt-20rpx">
-        <view class="px-24rpx py-20rpx text-30rpx text-[#333] font-semibold">
-          群成员（{{ members.length }}）
+        <view class="flex items-center justify-between gap-16rpx px-24rpx py-20rpx">
+          <view class="text-30rpx text-[#333] font-semibold">
+            群成员（{{ filteredMembers.length }}）
+          </view>
+          <wd-radio-group v-model="memberScope" type="button" size="small">
+            <wd-radio value="current">
+              当前成员
+            </wd-radio>
+            <wd-radio value="all">
+              全部历史
+            </wd-radio>
+          </wd-radio-group>
         </view>
-        <view v-if="members.length === 0" class="px-24rpx pb-24rpx text-26rpx text-[#999]">
+        <view v-if="filteredMembers.length === 0" class="px-24rpx pb-24rpx text-26rpx text-[#999]">
           暂无成员
         </view>
         <view
-          v-for="member in members"
+          v-for="member in filteredMembers"
           :key="member.userId"
-          class="flex items-center gap-16rpx border-t border-t-[#f2f3f5] px-24rpx py-16rpx"
+          class="border-t border-t-[#f2f3f5] px-24rpx py-20rpx"
         >
-          <wd-img
-            v-if="member.avatar"
-            :src="member.avatar"
-            width="64rpx"
-            height="64rpx"
-            mode="aspectFill"
-            round
-          />
-          <view v-else class="h-64rpx w-64rpx flex items-center justify-center rounded-full bg-[#f0f2f5] text-22rpx text-[#bbb]">
-            {{ (member.nickname || '?').slice(0, 1) }}
-          </view>
-          <view class="min-w-0 flex-1">
-            <view class="line-clamp-1 text-28rpx text-[#333]">
-              {{ member.nickname || `用户 ${member.userId}` }}
+          <view class="flex items-center gap-16rpx">
+            <wd-img
+              v-if="member.avatar"
+              :src="member.avatar"
+              width="64rpx"
+              height="64rpx"
+              mode="aspectFill"
+              round
+            />
+            <view v-else class="h-64rpx w-64rpx flex items-center justify-center rounded-full bg-[#f0f2f5] text-22rpx text-[#bbb]">
+              {{ (member.displayUserName || member.nickname || '?').slice(0, 1) }}
             </view>
-            <view v-if="member.groupRemark" class="mt-2rpx text-22rpx text-[#999]">
-              群备注：{{ member.groupRemark }}
+            <view class="min-w-0 flex-1">
+              <view class="line-clamp-1 text-28rpx text-[#333]">
+                {{ member.displayUserName || member.nickname || `用户 ${member.userId}` }}
+              </view>
+              <view class="mt-2rpx text-22rpx text-[#999]">
+                {{ member.nickname || `用户 ${member.userId}` }} · ID {{ member.userId }}
+              </view>
+            </view>
+            <dict-tag v-if="member.role != null" :type="DICT_TYPE.IM_GROUP_MEMBER_ROLE" :value="member.role" />
+          </view>
+          <view class="grid grid-cols-2 ml-80rpx mt-14rpx gap-x-20rpx gap-y-10rpx text-23rpx text-[#777]">
+            <view>
+              状态：{{ member.quitTime || member.status === CommonStatusEnum.DISABLE ? '已退出' : '群内' }}
+            </view>
+            <view>
+              免打扰：{{ member.silent ? '是' : '否' }}
+            </view>
+            <view class="col-span-2">
+              加入时间：{{ formatDateTime(member.joinTime) || '-' }}
+            </view>
+            <view v-if="member.quitTime" class="col-span-2">
+              退出时间：{{ formatDateTime(member.quitTime) || '-' }}
+            </view>
+            <view class="col-span-2">
+              禁言至：{{ formatDateTime(member.muteEndTime) || '未禁言' }}
+            </view>
+            <view class="col-span-2">
+              群备注：{{ member.groupRemark || '-' }}
             </view>
           </view>
-          <dict-tag v-if="member.role != null" :type="DICT_TYPE.IM_GROUP_MEMBER_ROLE" :value="member.role" />
         </view>
       </wd-cell-group>
     </view>
@@ -111,7 +143,7 @@ import type { ImManagerGroupMemberVO, ImManagerGroupVO } from '@/api/im/manager/
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   dissolveManagerGroup,
   getManagerGroup,
@@ -120,7 +152,7 @@ import {
 } from '@/api/im/manager/group'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
@@ -139,7 +171,11 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<ImManagerGroupVO>() // 详情数据
 const members = ref<ImManagerGroupMemberVO[]>([]) // 群成员
+const memberScope = ref<'current' | 'all'>('current') // 成员查看范围
 const processing = ref(false) // 操作中状态
+const filteredMembers = computed(() => memberScope.value === 'current'
+  ? members.value.filter(item => !item.quitTime && item.status !== CommonStatusEnum.DISABLE)
+  : members.value) // 当前展示成员
 
 /** 返回上一页 */
 function handleBack() {

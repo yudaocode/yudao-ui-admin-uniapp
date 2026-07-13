@@ -14,74 +14,15 @@
   >
     <view class="yd-search-form-container">
       <UserSearchPicker ref="inviterPickerRef" v-model="formData.inviterUserId" label="发起人" placeholder="请选择发起人" />
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          会话类型
-        </view>
-        <wd-radio-group v-model="formData.conversationType" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_RTC_CALL_CONVERSATION_TYPE)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          媒体类型
-        </view>
-        <wd-radio-group v-model="formData.mediaType" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_RTC_CALL_MEDIA_TYPE)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          通话状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_RTC_CALL_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          结束原因
-        </view>
-        <wd-radio-group v-model="formData.endReason" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.IM_RTC_CALL_END_REASON)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker
+        v-model="formData.conversationType"
+        label="会话类型"
+        :dict-type="DICT_TYPE.IM_RTC_CALL_CONVERSATION_TYPE"
+        all-option
+      />
+      <yd-search-picker v-model="formData.mediaType" label="媒体类型" :dict-type="DICT_TYPE.IM_RTC_CALL_MEDIA_TYPE" all-option />
+      <yd-search-picker v-model="formData.status" label="通话状态" :dict-type="DICT_TYPE.IM_RTC_CALL_STATUS" all-option />
+      <yd-search-picker v-model="formData.endReason" label="结束原因" :dict-type="DICT_TYPE.IM_RTC_CALL_END_REASON" all-option />
       <yd-search-date-range v-model="formData.startTime" label="发起时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -98,7 +39,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -112,10 +53,10 @@ const visible = ref(false) // 搜索弹窗显示状态
 const inviterPickerRef = ref<any>() // 发起人选择器引用
 const formData = reactive({
   inviterUserId: undefined as number | undefined,
-  conversationType: -1, // -1 表示全部
-  mediaType: -1, // -1 表示全部
-  status: -1, // -1 表示全部
-  endReason: -1, // -1 表示全部
+  conversationType: undefined as number | undefined,
+  mediaType: undefined as number | undefined,
+  status: undefined as number | undefined,
+  endReason: undefined as number | undefined,
   startTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -125,16 +66,16 @@ const placeholder = computed(() => {
   if (formData.inviterUserId) {
     conditions.push(`发起人:${inviterPickerRef.value?.format(formData.inviterUserId) || formData.inviterUserId}`)
   }
-  if (formData.conversationType !== -1) {
+  if (formData.conversationType !== undefined) {
     conditions.push(`会话:${getDictLabel(DICT_TYPE.IM_RTC_CALL_CONVERSATION_TYPE, formData.conversationType)}`)
   }
-  if (formData.mediaType !== -1) {
+  if (formData.mediaType !== undefined) {
     conditions.push(`媒体:${getDictLabel(DICT_TYPE.IM_RTC_CALL_MEDIA_TYPE, formData.mediaType)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.IM_RTC_CALL_STATUS, formData.status)}`)
   }
-  if (formData.endReason !== -1) {
+  if (formData.endReason !== undefined) {
     conditions.push(`结束:${getDictLabel(DICT_TYPE.IM_RTC_CALL_END_REASON, formData.endReason)}`)
   }
   if (formData.startTime?.[0] && formData.startTime?.[1]) {
@@ -148,10 +89,10 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     inviterUserId: formData.inviterUserId,
-    conversationType: formData.conversationType === -1 ? undefined : formData.conversationType,
-    mediaType: formData.mediaType === -1 ? undefined : formData.mediaType,
-    status: formData.status === -1 ? undefined : formData.status,
-    endReason: formData.endReason === -1 ? undefined : formData.endReason,
+    conversationType: formData.conversationType,
+    mediaType: formData.mediaType,
+    status: formData.status,
+    endReason: formData.endReason,
     startTime: formatDateRange(formData.startTime),
   })
 }
@@ -159,10 +100,10 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.inviterUserId = undefined
-  formData.conversationType = -1
-  formData.mediaType = -1
-  formData.status = -1
-  formData.endReason = -1
+  formData.conversationType = undefined
+  formData.mediaType = undefined
+  formData.status = undefined
+  formData.endReason = undefined
   formData.startTime = [undefined, undefined]
   visible.value = false
   emit('reset')

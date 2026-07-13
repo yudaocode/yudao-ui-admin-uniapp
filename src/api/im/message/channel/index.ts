@@ -9,6 +9,7 @@ export interface ImChannelMessageRespVO {
   type: number
   content: string
   status?: number
+  receiptStatus?: number
   sendTime: string
 }
 

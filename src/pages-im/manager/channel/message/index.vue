@@ -11,7 +11,6 @@
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
     <!-- 消息列表 -->
-    <!-- TODO @AI：频道消息，是不是也要有个详情；至少推送给谁之类的，还是需要的呀！ -->
     <z-paging
       ref="pagingRef"
       v-model="list"
@@ -29,6 +28,7 @@
           v-for="item in list"
           :key="item.id"
           class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+          @click="handleDetail(item)"
           @longpress="handleLongPress(item)"
         >
           <view class="flex gap-20rpx p-24rpx">
@@ -144,6 +144,11 @@ function handleSend() {
   })
 }
 
+/** 查看频道消息详情 */
+function handleDetail(item: ImManagerChannelMessageVO) {
+  uni.navigateTo({ url: `/pages-im/manager/channel/message/detail/index?id=${item.id}` })
+}
+
 /** 长按删除 */
 async function handleLongPress(item: ImManagerChannelMessageVO) {
   if (!hasAccessByCodes(['im:manager:channel-message:delete'])) {
@@ -162,12 +167,12 @@ async function handleLongPress(item: ImManagerChannelMessageVO) {
   reload()
 }
 
-/** 初始化 */
+/** 注册频道消息变更监听 */
 onMounted(() => {
   uni.$on('im:manager:channel-message:reload', reload)
 })
 
-/** 卸载 */
+/** 移除频道消息变更监听 */
 onUnload(() => {
   uni.$off('im:manager:channel-message:reload', reload)
 })

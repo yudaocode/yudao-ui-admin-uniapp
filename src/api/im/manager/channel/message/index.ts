@@ -16,14 +16,14 @@ export interface ImManagerChannelMessageVO {
 }
 
 /** IM 频道消息推送 */
-export interface ImManagerChannelMessageSendReqVO {
+export interface ImManagerChannelMessageSendReq {
   materialId: number
   receiverUserIds?: number[]
 }
 
 /** 立即推送频道消息 */
-export function sendManagerChannelMessage(data: ImManagerChannelMessageSendReqVO) {
-  return http.post<boolean>('/im/manager/channel-message/send', data)
+export function sendManagerChannelMessage(data: ImManagerChannelMessageSendReq) {
+  return http.post<number>('/im/manager/channel-message/send', data)
 }
 
 /** 删除频道消息 */

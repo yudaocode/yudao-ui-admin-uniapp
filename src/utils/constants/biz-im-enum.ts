@@ -61,6 +61,28 @@ export const ImMessageStatus = {
   READ: 3,
 } as const
 
+/** IM 消息回执状态 */
+export const ImMessageReceiptStatus = {
+  NO_RECEIPT: 0,
+  PENDING: 1,
+  DONE: 2,
+} as const
+
+/** IM 频道素材类型 */
+export const ImChannelMaterialType = {
+  CONTENT: 1,
+  LINK: 2,
+} as const
+
+/** IM 频道消息接收范围 */
+export const ImChannelMessageReceiverType = {
+  ALL: 'all',
+  USERS: 'users',
+} as const
+
+export type ImChannelMessageReceiverTypeValue
+  = (typeof ImChannelMessageReceiverType)[keyof typeof ImChannelMessageReceiverType]
+
 /** IM 会话类型枚举 */
 export const ImConversationType = {
   PRIVATE: 1,

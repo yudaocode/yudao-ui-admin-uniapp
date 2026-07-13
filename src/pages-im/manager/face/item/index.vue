@@ -8,7 +8,11 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm @search="handleQuery" @reset="handleReset" />
+    <SearchForm
+      :pack-id="props.packId ? Number(props.packId) : undefined"
+      @search="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 表情列表 -->
     <z-paging
@@ -88,11 +92,13 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const list = ref<ImManagerFacePackItemVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({}) // 查询参数
+const queryParams = ref<Record<string, any>>({ // 查询参数
+  packId: props.packId ? Number(props.packId) : undefined,
+})
 
 /** 返回上一页 */
 function handleBack() {
-  navigateBackPlus()
+  navigateBackPlus('/pages-im/manager/face/pack/index')
 }
 
 /** 查询表情列表 */
@@ -100,7 +106,6 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getManagerFacePackItemPage({
       ...queryParams.value,
-      packId: props.packId,
       pageNo,
       pageSize,
     })
@@ -118,7 +123,7 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery()
+  handleQuery({ packId: props.packId ? Number(props.packId) : undefined })
 }
 
 /** 重新加载 */
@@ -128,24 +133,23 @@ function reload() {
 
 /** 新增表情 */
 function handleAdd() {
-  uni.navigateTo({
-    url: `/pages-im/manager/face/item/form/index?packId=${props.packId || ''}`,
-  })
+  const query = props.packId ? `?packId=${props.packId}` : ''
+  uni.navigateTo({ url: `/pages-im/manager/face/item/form/index${query}` })
 }
 
-/** 查看详情 */
+/** 查看表情详情 */
 function handleDetail(item: ImManagerFacePackItemVO) {
   uni.navigateTo({
     url: `/pages-im/manager/face/item/detail/index?id=${item.id}`,
   })
 }
 
-/** 初始化 */
+/** 注册表情变更监听 */
 onMounted(() => {
   uni.$on('im:manager:face-pack-item:reload', reload)
 })
 
-/** 卸载 */
+/** 移除表情变更监听 */
 onUnload(() => {
   uni.$off('im:manager:face-pack-item:reload', reload)
 })

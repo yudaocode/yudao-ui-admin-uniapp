@@ -199,6 +199,7 @@ export const useTokenStore = defineStore(
         console.log('退出登录-清除用户信息')
         tokenInfo.value = { ...tokenInfoState }
         uni.removeStorageSync('token')
+        uni.$emit('auth:logout')
         const userStore = useUserStore()
         userStore.clearUserInfo()
         // add by 芋艿：清空字典缓存

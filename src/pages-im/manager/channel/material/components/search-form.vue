@@ -20,6 +20,8 @@
         </view>
         <wd-input v-model="formData.title" placeholder="请输入素材标题" clearable />
       </view>
+      <yd-search-picker v-model="formData.type" label="素材类型" :dict-type="DICT_TYPE.IM_CHANNEL_MATERIAL_TYPE" all-option />
+      <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -34,7 +36,10 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
+import { DICT_TYPE } from '@/utils/constants'
+import { formatDate, formatDateRange } from '@/utils/date'
 import ChannelSearchPicker from '../../components/channel-search-picker.vue'
 
 const emit = defineEmits<{
@@ -47,6 +52,8 @@ const channelPickerRef = ref<InstanceType<typeof ChannelSearchPicker>>() // 频�
 const formData = reactive({
   channelId: undefined as number | undefined,
   title: undefined as string | undefined,
+  type: undefined as number | undefined,
+  createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -58,6 +65,12 @@ const placeholder = computed(() => {
   if (formData.title) {
     conditions.push(`标题:${formData.title}`)
   }
+  if (formData.type !== undefined) {
+    conditions.push(`类型:${getDictLabel(DICT_TYPE.IM_CHANNEL_MATERIAL_TYPE, formData.type)}`)
+  }
+  if (formData.createTime?.[0] && formData.createTime?.[1]) {
+    conditions.push(`创建时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
+  }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索素材'
 })
 
@@ -66,7 +79,9 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     channelId: formData.channelId,
-    title: formData.title,
+    title: formData.title || undefined,
+    type: formData.type,
+    createTime: formatDateRange(formData.createTime),
   })
 }
 
@@ -74,6 +89,8 @@ function handleSearch() {
 function handleReset() {
   formData.channelId = undefined
   formData.title = undefined
+  formData.type = undefined
+  formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')
 }
