@@ -26,7 +26,7 @@
             class="h-104rpx flex items-center justify-center rounded-12rpx bg-[#f7f8fa]"
             @click="emit('select', item)"
           >
-            <image :src="item.url" class="max-h-84rpx max-w-84rpx" mode="aspectFit" />
+            <wd-img :src="item.url" width="84rpx" height="84rpx" mode="aspectFit" />
           </view>
         </view>
         <wd-empty v-if="!loading && currentItems.length === 0" icon="content" tip="暂无表情" />

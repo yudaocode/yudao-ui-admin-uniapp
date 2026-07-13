@@ -191,3 +191,20 @@ export function isFriendChatTip(type: number): boolean {
 export function isRtcCallTip(type: number): boolean {
   return type === ImMessageType.RTC_CALL_START || type === ImMessageType.RTC_CALL_END
 }
+
+const IM_NORMAL_MESSAGE_TYPES: number[] = [ // 用户主动发送、需要计入未读的普通消息类型
+  ImMessageType.TEXT,
+  ImMessageType.IMAGE,
+  ImMessageType.VOICE,
+  ImMessageType.VIDEO,
+  ImMessageType.FILE,
+  ImMessageType.MERGE,
+  ImMessageType.CARD,
+  ImMessageType.FACE,
+  ImMessageType.MATERIAL,
+]
+
+/** 判断是否普通消息 */
+export function isNormalMessage(type: number): boolean {
+  return IM_NORMAL_MESSAGE_TYPES.includes(type)
+}

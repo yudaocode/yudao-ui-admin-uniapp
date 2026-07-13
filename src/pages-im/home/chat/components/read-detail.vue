@@ -21,8 +21,8 @@
           :key="member.userId"
           class="flex items-center gap-20rpx px-24rpx py-16rpx"
         >
-          <ImAvatar :src="member.avatar" :name="getMemberName(member)" :round="false" size="76rpx" />
-          <text class="min-w-0 flex-1 truncate text-30rpx text-[#333]">{{ getMemberName(member) }}</text>
+          <ImAvatar :src="member.avatar" :name="getMemberDisplayName(member)" :round="false" size="76rpx" />
+          <text class="min-w-0 flex-1 truncate text-30rpx text-[#333]">{{ getMemberDisplayName(member) }}</text>
         </view>
         <wd-empty v-if="currentList.length === 0" icon="user" :tip="tab === 0 ? '暂无已读成员' : '全部已读'" />
       </scroll-view>
@@ -32,6 +32,7 @@
 
 <script lang="ts" setup>
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
+import { getMemberDisplayName } from '@/pages-im/utils/user'
 import { computed, ref, watch } from 'vue'
 import ImAvatar from '../../components/im-avatar.vue'
 
@@ -54,11 +55,6 @@ const tab = ref(0) // 0=已读 1=未读
 
 /** 当前 tab 成员 */
 const currentList = computed(() => (tab.value === 0 ? props.readMembers : props.unreadMembers))
-
-/** 获取成员名称 */
-function getMemberName(item: ImGroupMemberRespVO) {
-  return item.displayUserName || item.nickname || `用户 ${item.userId}`
-}
 
 /** 每次打开重置到已读 tab */
 watch(visible, (value) => {

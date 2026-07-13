@@ -1,8 +1,11 @@
 <template>
   <view class="h-full flex flex-col bg-white">
     <!-- 搜索 -->
-    <view class="px-24rpx pb-8rpx pt-12rpx">
-      <wd-search v-model="keyword" placeholder="搜索好友" hide-cancel />
+    <view class="friend-search-wrap">
+      <wd-search v-model="keyword" custom-class="friend-search" placeholder="搜索好友" hide-cancel />
+      <view class="search-add-button" @click="handleAdd">
+        <wd-icon name="plus" size="40rpx" color="#333" />
+      </view>
     </view>
 
     <view class="relative min-h-0 flex-1">
@@ -79,23 +82,22 @@
 
 <script lang="ts" setup>
 import type { ImFriendRespVO } from '@/api/im/friend'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getMyFriendList } from '@/api/im/friend'
+import { getFriendDisplayName as getFriendName } from '@/pages-im/utils/user'
 import ImAvatar from '../../components/im-avatar.vue'
 
 const props = defineProps<{
   active?: boolean
+}>()
+const emit = defineEmits<{
+  add: []
 }>()
 
 const keyword = ref('') // 搜索关键词
 const loading = ref(false) // 加载状态
 const friendList = ref<ImFriendRespVO[]>([]) // 好友列表
 const scrollTarget = ref('') // 滚动锚点
-
-/** 好友显示名 */
-function getFriendName(item: ImFriendRespVO) {
-  return item.displayName || item.nickname || `用户 ${item.friendUserId}`
-}
 
 /** 好友首字母（取拼音首字母，非字母归入 #） */
 function getFriendLetter(item: ImFriendRespVO): string {
@@ -152,6 +154,11 @@ const indexLetters = computed(() => displayGroups.value.map(group => group.lette
 /** 好友总数 */
 const totalCount = computed(() => filteredFriends.value.length)
 
+/** 打开新增操作 */
+function handleAdd() {
+  emit('add')
+}
+
 /** 新的朋友 */
 function goRequests() {
   uni.navigateTo({ url: '/pages-im/home/request/index?tab=friend' })
@@ -193,9 +200,51 @@ watch(() => props.active, (val) => {
     load()
   }
 }, { immediate: true })
+
+/** 订阅好友关系变化 */
+onMounted(() => uni.$on('im:friends:reload', load))
+
+/** 释放好友关系订阅 */
+onUnmounted(() => uni.$off('im:friends:reload', load))
 </script>
 
 <style lang="scss" scoped>
+.friend-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  background: #ededed;
+}
+
+:deep(.friend-search) {
+  min-width: 0;
+  flex: 1;
+  --wot-search-padding: 0;
+  --wot-search-bg: transparent;
+  --wot-search-input-bg: #fff;
+  --wot-search-cover-bg: #fff;
+  --wot-search-input-height: 64rpx;
+  --wot-search-input-radius: 10rpx;
+  --wot-search-input-font-size: 28rpx;
+  --wot-search-placeholder-font-size: 28rpx;
+}
+
+.search-add-button {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10rpx;
+  background: #fff;
+
+  &:active {
+    background: #e2e2e2;
+  }
+}
+
 .index-bar {
   position: absolute;
   top: 50%;

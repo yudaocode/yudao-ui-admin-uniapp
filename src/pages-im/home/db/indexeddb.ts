@@ -23,15 +23,12 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
 }
 
 /** 初始化/升级表结构 */
-function upgradeSchema(db: IDBDatabase) {
+function upgradeSchema(db: IDBDatabase, transaction: IDBTransaction) {
   (Object.keys(STORE_SCHEMA) as DbStoreName[]).forEach((name) => {
     const schema = STORE_SCHEMA[name]
     const store = db.objectStoreNames.contains(name)
-      ? null
+      ? transaction.objectStore(name)
       : db.createObjectStore(name, { keyPath: schema.keyPath })
-    if (!store) {
-      return
-    }
     schema.indexes.forEach((index) => {
       if (!store.indexNames.contains(index.name)) {
         store.createIndex(index.name, index.keyPath, { unique: index.unique })
@@ -52,9 +49,13 @@ export class IndexedDbClient implements ImDbClient {
     this.userId = userId
     this.db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(`im:${userId}`, DB_SCHEMA_VERSION)
-      request.onupgradeneeded = () => upgradeSchema(request.result)
-      request.onsuccess = () => resolve(request.result)
+      request.onupgradeneeded = () => upgradeSchema(request.result, request.transaction!)
+      request.onsuccess = () => {
+        request.result.onversionchange = () => request.result.close()
+        resolve(request.result)
+      }
       request.onerror = () => reject(request.error)
+      request.onblocked = () => reject(new Error('IM IndexedDB 升级被其他页面阻塞，请关闭其他页面后重试'))
     })
   }
 

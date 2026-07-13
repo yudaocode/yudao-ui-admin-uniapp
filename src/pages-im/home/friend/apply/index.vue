@@ -61,6 +61,11 @@ import { delay, navigateBackPlus } from '@/utils'
 import { ImFriendAddSource } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
+const props = defineProps<{
+  toUserId?: number | string
+  source?: number | string
+}>()
+
 definePage({
   style: {
     navigationBarTitleText: '',
@@ -72,7 +77,7 @@ const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
 const formData = ref({
-  toUserId: undefined as number | undefined,
+  toUserId: props.toUserId ? Number(props.toUserId) : undefined as number | undefined,
   displayName: '',
   applyContent: '你好，我想添加你为好友',
 }) // 表单数据
@@ -97,7 +102,7 @@ async function handleSubmit() {
       toUserId: formData.value.toUserId,
       displayName: formData.value.displayName,
       applyContent: formData.value.applyContent,
-      addSource: ImFriendAddSource.SEARCH,
+      addSource: props.source ? Number(props.source) : ImFriendAddSource.SEARCH,
     })
     toast.success('申请已发送')
     delay(handleBack)

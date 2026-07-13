@@ -48,6 +48,18 @@
           </view>
         </view>
         <wd-empty v-if="!loading && friendRequests.length === 0" icon="content" tip="暂无好友申请" />
+        <view v-if="friendRequests.length > 0" class="pb-24rpx pt-8rpx text-center">
+          <wd-button
+            v-if="friendRequestHasMore"
+            size="small"
+            variant="plain"
+            :loading="friendRequestLoadingMore"
+            @click="loadMoreFriendRequests"
+          >
+            加载更多
+          </wd-button>
+          <text v-else class="text-24rpx text-[#aaa]">没有更早的申请了</text>
+        </view>
       </view>
     </scroll-view>
 
@@ -100,7 +112,7 @@ import type { ImGroupRequestRespVO } from '@/api/im/group/request'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import {
   agreeFriendRequest,
   getMyFriendRequestList,
@@ -134,7 +146,10 @@ const toast = useToast()
 const activeTab = ref(props.tab === 'group' ? 1 : 0) // 当前申请类型
 const loading = ref(false) // 加载状态
 const friendRequests = ref<ImFriendRequestRespVO[]>([]) // 好友申请
+const friendRequestHasMore = ref(true) // 是否还有更早的好友申请
+const friendRequestLoadingMore = ref(false) // 好友申请加载更多状态
 const groupRequests = ref<ImGroupRequestRespVO[]>([]) // 加群申请
+const FRIEND_REQUEST_PAGE_SIZE = 50 // 好友申请每页数量
 
 /** 返回上一页 */
 function handleBack() {
@@ -203,7 +218,9 @@ async function loadData() {
   loading.value = true
   try {
     if (activeTab.value === 0) {
-      friendRequests.value = await getMyFriendRequestList(50)
+      const rows = await getMyFriendRequestList(FRIEND_REQUEST_PAGE_SIZE)
+      friendRequests.value = rows
+      friendRequestHasMore.value = rows.length === FRIEND_REQUEST_PAGE_SIZE
     } else {
       groupRequests.value = await getUnhandledRequestList()
     }
@@ -212,9 +229,36 @@ async function loadData() {
   }
 }
 
+/** 加载更早的好友申请 */
+async function loadMoreFriendRequests() {
+  if (friendRequestLoadingMore.value || !friendRequestHasMore.value) {
+    return
+  }
+  const maxId = friendRequests.value.at(-1)?.id
+  if (!maxId) {
+    friendRequestHasMore.value = false
+    return
+  }
+  friendRequestLoadingMore.value = true
+  try {
+    const rows = await getMyFriendRequestList(FRIEND_REQUEST_PAGE_SIZE, maxId)
+    const merged = [...friendRequests.value, ...rows]
+    friendRequests.value = merged.filter((item, index) => merged.findIndex(row => row.id === item.id) === index)
+    friendRequestHasMore.value = rows.length === FRIEND_REQUEST_PAGE_SIZE
+  } finally {
+    friendRequestLoadingMore.value = false
+  }
+}
+
 /** 初始化 */
 onShow(() => {
   activeTab.value = props.tab === 'group' ? 1 : activeTab.value
   loadData()
 })
+
+/** 订阅好友与加群申请实时变化 */
+onMounted(() => uni.$on('im:requests:reload', loadData))
+
+/** 释放申请刷新订阅 */
+onUnmounted(() => uni.$off('im:requests:reload', loadData))
 </script>

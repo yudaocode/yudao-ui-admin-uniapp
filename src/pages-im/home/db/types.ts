@@ -1,7 +1,8 @@
 // IM 本地数据库：表结构、存储 key、记录类型
 // 平台无关定义，H5(IndexedDB) 与 小程序/App(storage) 适配层共用
+// TODO @AI：App 是不是使用 sqlite？？
 
-/** DB schema 版本（uniapp 端独立维护，与 PC 端无关） */
+/** DB schema 版本（各端独立演进） */
 export const DB_SCHEMA_VERSION = 1
 
 /** 数据表名 */
@@ -98,6 +99,9 @@ export const ImSettingKeys = {
   conversationReadPullCursor: 'conversationReadPullCursor',
   /** 好友关系增量拉取游标 */
   friendPullCursor: 'friendPullCursor',
+  /** 单会话本地清理边界前缀，后接 clientConversationId */
+  conversationClearBeforePrefix: 'conversationClearBefore:',
+  conversationDeletedMessagesPrefix: 'conversationDeletedMessages:',
 } as const
 
 /** 设置记录 */
@@ -140,6 +144,8 @@ export interface ConversationDO {
   silent?: boolean
   atMe?: boolean
   atAll?: boolean
+  atMessageId?: number
+  atAllMessageId?: number
   draft?: { html?: string, plain?: string, reply?: any }
 }
 

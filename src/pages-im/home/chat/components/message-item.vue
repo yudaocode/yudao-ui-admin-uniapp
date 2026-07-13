@@ -46,6 +46,7 @@
               :content="message.content"
               @material-click="emit('material-click', $event)"
               @merge-click="emit('merge-click', $event)"
+              @card-click="emit('card-click', $event)"
             />
           </view>
           <!-- 发送状态 -->
@@ -66,11 +67,17 @@
 <script lang="ts" setup>
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
-import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
-import type { ImQuoteMessage } from '@/pages-im/utils/message'
+import type {
+  ImCardMessage,
+  ImMaterialMessage,
+  ImMergeMessage,
+  ImQuoteMessage,
+} from '@/pages-im/utils/message'
+import type { ChatMessage } from '../../types'
 import { computed } from 'vue'
 import {
   ImConversationType,
+  ImMessageReceiptStatus,
   ImMessageStatus,
   ImMessageType,
   isFriendChatTip,
@@ -79,11 +86,11 @@ import {
 } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import MessageContent from '@/pages-im/components/message-content.vue'
-import { getMessageSummary, getQuoteFromMessage } from '@/pages-im/utils/message'
+import { getMessageSummary } from '@/pages-im/utils/conversation'
+import { getQuoteFromMessage } from '@/pages-im/utils/message'
+import { getMemberDisplayName } from '@/pages-im/utils/user'
 import ImAvatar from '../../components/im-avatar.vue'
 import MessageQuote from './message-quote.vue'
-
-type ChatMessage = ImPrivateMessageRespVO | ImGroupMessageRespVO
 
 const props = defineProps<{
   message: ChatMessage // 消息数据
@@ -103,22 +110,31 @@ const props = defineProps<{
 const emit = defineEmits<{
   'longpress': [message: ChatMessage] // 长按消息
   'scroll-to-quote': [content: string] // 点击引用滚动到原消息
-  'material-click': [payload: any] // 点击频道素材
-  'merge-click': [payload: any] // 点击合并转发
+  'material-click': [payload: ImMaterialMessage] // 点击频道素材
+  'merge-click': [payload: ImMergeMessage] // 点击合并转发
+  'card-click': [payload: ImCardMessage] // 点击名片
   'toggle-select': [message: ChatMessage] // 多选切换
   'show-readers': [message: ChatMessage] // 查看群已读成员
+  'retry': [message: ChatMessage] // 重试失败消息
 }>()
 
 // 媒体类型不套气泡背景（图片 / 表情 / 视频，仿微信直显）
-const PLAIN_TYPES = [ImMessageType.IMAGE, ImMessageType.FACE, ImMessageType.VIDEO]
+const PLAIN_TYPES: number[] = [ImMessageType.IMAGE, ImMessageType.FACE, ImMessageType.VIDEO]
 
 /** 点击发送状态：群聊自己消息查看已读成员 */
 function onStatusClick() {
   if (props.selectMode) {
     return
   }
+  if (props.message.status === ImMessageStatus.FAILED) {
+    emit('retry', props.message)
+    return
+  }
   const message = props.message as ImGroupMessageRespVO
-  if (props.conversationType === ImConversationType.GROUP && message.senderId === props.selfUserId && message.readCount) {
+  if (props.conversationType === ImConversationType.GROUP
+    && message.senderId === props.selfUserId
+    && message.receiptStatus !== undefined
+    && message.receiptStatus !== ImMessageReceiptStatus.NO_RECEIPT) {
     emit('show-readers', props.message)
   }
 }
@@ -153,15 +169,10 @@ const isSystemTip = computed(() => {
 const systemTipText = computed(() => getMessageSummary(props.message.type, props.message.content))
 
 /** 是否媒体类型（不套气泡） */
-const plain = computed(() => PLAIN_TYPES.includes(props.message.type as any))
+const plain = computed(() => PLAIN_TYPES.includes(props.message.type))
 
 /** 是否展示发送人昵称（群聊对方） */
 const showSenderName = computed(() => isGroup.value && !isSelf.value)
-
-/** 获取群成员名称 */
-function getMemberName(member?: ImGroupMemberRespVO) {
-  return member?.displayUserName || member?.nickname || `用户 ${member?.userId}`
-}
 
 /** 发送人名称 */
 const senderName = computed(() => {
@@ -169,7 +180,7 @@ const senderName = computed(() => {
     return props.selfName || '我'
   }
   if (isGroup.value) {
-    return getMemberName(props.groupMembers?.find(member => member.userId === props.message.senderId))
+    return getMemberDisplayName(props.groupMembers?.find(member => member.userId === props.message.senderId))
   }
   return props.peerName || `用户 ${props.message.senderId}`
 })
@@ -191,7 +202,7 @@ function getQuoteSenderName(quote: ImQuoteMessage) {
     return '我'
   }
   if (isGroup.value) {
-    return getMemberName(props.groupMembers?.find(member => member.userId === quote.senderId))
+    return getMemberDisplayName(props.groupMembers?.find(member => member.userId === quote.senderId))
   }
   return props.peerName || `用户 ${quote.senderId}`
 }
@@ -221,8 +232,13 @@ const statusText = computed(() => {
     return message.id && props.privateMaxReadMessageId && message.id <= props.privateMaxReadMessageId ? '已读' : '已发送'
   }
   if (isGroup.value) {
-    const readCount = (message as ImGroupMessageRespVO).readCount
-    return readCount ? `${readCount} 人已读` : ''
+    const groupMessage = message as ImGroupMessageRespVO
+    if (groupMessage.receiptStatus === ImMessageReceiptStatus.DONE) {
+      return '全部已读'
+    }
+    if (groupMessage.receiptStatus === ImMessageReceiptStatus.PENDING) {
+      return groupMessage.readCount ? `${groupMessage.readCount} 人已读` : '未读'
+    }
   }
   return ''
 })

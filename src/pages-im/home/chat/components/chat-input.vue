@@ -1,72 +1,106 @@
 <template>
   <view class="shrink-0 border-t border-t-[#eee] bg-white p-16rpx pb-[calc(16rpx+env(safe-area-inset-bottom))]">
-    <!-- 回复预览 -->
-    <view
-      v-if="replyTitle"
-      class="mb-14rpx flex items-center gap-12rpx rounded-12rpx bg-[#f7f8fa] px-18rpx py-12rpx"
-    >
-      <view class="min-w-0 flex-1 text-24rpx text-[#666] leading-34rpx">
-        <text selectable>{{ replyTitle }}</text>
-      </view>
-      <wd-icon name="close" size="28rpx" @click="emit('clear-reply')" />
+    <!-- 禁言 / 退群 / 封禁提示 -->
+    <view v-if="disabledTip" class="py-20rpx text-center text-27rpx text-[#999]">
+      {{ disabledTip }}
     </view>
-    <!-- 输入栏（微信式：输入框占主，图标在两侧） -->
-    <view class="flex items-end gap-16rpx">
-      <view class="shrink-0 pb-12rpx" @click="faceVisible = true">
-        <wd-icon name="face-smile-fill" size="48rpx" color="#7d7d7d" />
+    <template v-else>
+      <!-- 回复预览 -->
+      <view
+        v-if="replyTitle"
+        class="mb-14rpx flex items-center gap-12rpx rounded-12rpx bg-[#f7f8fa] px-18rpx py-12rpx"
+      >
+        <view class="min-w-0 flex-1 text-24rpx text-[#666] leading-34rpx">
+          <text selectable>{{ replyTitle }}</text>
+        </view>
+        <wd-icon name="close" size="28rpx" @click="emit('clear-reply')" />
       </view>
-      <view class="min-w-0 flex-1 rounded-12rpx bg-[#f7f8fa] px-20rpx py-12rpx">
-        <wd-textarea
-          v-model="inputContent"
-          placeholder="输入消息"
-          :maxlength="1000"
-          auto-height
-          no-border
-        />
+      <!-- 输入栏（微信式：输入框占主，图标在两侧） -->
+      <view class="flex items-end gap-16rpx">
+        <view class="shrink-0 pb-12rpx" @click="voiceMode = !voiceMode">
+          <wd-icon :name="voiceMode ? 'keyboard' : 'mic'" size="48rpx" color="#7d7d7d" />
+        </view>
+        <view v-if="!voiceMode" class="min-w-0 flex-1 rounded-12rpx bg-[#f7f8fa] px-20rpx py-12rpx">
+          <wd-textarea
+            v-model="inputContent"
+            placeholder="输入消息"
+            :maxlength="1000"
+            auto-height
+            no-border
+          />
+        </view>
+        <VoiceRecorder v-else @send="handleSendVoice" />
+        <view class="shrink-0 pb-12rpx" @click="faceVisible = true">
+          <wd-icon name="face-smile-fill" size="48rpx" color="#7d7d7d" />
+        </view>
+        <view v-if="voiceMode || !inputContent.trim()" class="shrink-0 pb-12rpx" @click="moreVisible = true">
+          <wd-icon name="plus" size="48rpx" color="#7d7d7d" />
+        </view>
+        <wd-button v-else class="shrink-0" type="primary" size="small" @click="handleSendText()">
+          发送
+        </wd-button>
       </view>
-      <view class="shrink-0 pb-12rpx" @click="handleSendImage">
-        <wd-icon name="image" size="48rpx" color="#7d7d7d" />
-      </view>
-      <view v-if="!inputContent.trim()" class="shrink-0 pb-12rpx" @click="moreVisible = true">
-        <wd-icon name="plus" size="48rpx" color="#7d7d7d" />
-      </view>
-      <wd-button v-else class="shrink-0" type="primary" size="small" @click="handleSendText()">
-        发送
-      </wd-button>
-    </view>
 
-    <!-- 更多发送方式 -->
-    <wd-popup v-model="moreVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
-      <view class="grid grid-cols-2 gap-20rpx p-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))]">
-        <wd-button v-if="isGroup" block variant="plain" @click="openMention">
-          @成员
-        </wd-button>
-        <wd-button v-if="isGroup" block variant="plain" @click="handleSendText({ receipt: true })">
-          回执消息
-        </wd-button>
-        <wd-button block variant="plain" :loading="fileSending" @click="handleSendFile">
-          文件
-        </wd-button>
-        <wd-button block variant="plain" :loading="videoSending" @click="handleSendVideo">
-          视频
-        </wd-button>
-        <wd-button block variant="plain" :loading="voiceSending" @click="handleVoiceRecord">
-          {{ voiceRecording ? '停止录音' : '语音' }}
-        </wd-button>
-      </view>
-    </wd-popup>
+      <!-- 更多发送方式 -->
+      <wd-popup v-model="moreVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
+        <view class="grid grid-cols-4 gap-x-18rpx gap-y-30rpx bg-[#f5f5f5] p-28rpx pb-[calc(32rpx+env(safe-area-inset-bottom))]">
+          <view class="im-tool-item" @click="handleSendImage(['album'])">
+            <view class="im-tool-icon">
+              <wd-icon name="image" size="52rpx" color="#555" />
+            </view>
+            <text>照片</text>
+          </view>
+          <view class="im-tool-item" @click="handleSendImage(['camera'])">
+            <view class="im-tool-icon">
+              <wd-icon name="camera" size="52rpx" color="#555" />
+            </view>
+            <text>拍摄</text>
+          </view>
+          <view class="im-tool-item" @click="handleSendVideo">
+            <view class="im-tool-icon">
+              <wd-icon name="video-camera" size="52rpx" color="#555" />
+            </view>
+            <text>{{ videoSending ? '发送中' : '视频' }}</text>
+          </view>
+          <view class="im-tool-item" @click="handleSendFile">
+            <view class="im-tool-icon">
+              <wd-icon name="folder" size="52rpx" color="#555" />
+            </view>
+            <text>{{ fileSending ? '发送中' : '文件' }}</text>
+          </view>
+          <view v-if="isGroup" class="im-tool-item" @click="openMention">
+            <view class="im-tool-icon">
+              <text class="text-42rpx text-[#555]">@</text>
+            </view>
+            <text>提醒成员</text>
+          </view>
+          <view v-if="isGroup" class="im-tool-item" @click="handleSendText({ receipt: true })">
+            <view class="im-tool-icon">
+              <wd-icon name="check-circle" size="52rpx" color="#555" />
+            </view>
+            <text>回执消息</text>
+          </view>
+          <view class="im-tool-item" @click="voiceMode = true; moreVisible = false">
+            <view class="im-tool-icon">
+              <wd-icon name="mic" size="52rpx" color="#555" />
+            </view>
+            <text>语音输入</text>
+          </view>
+        </view>
+      </wd-popup>
 
-    <!-- 表情面板 -->
-    <FacePicker v-model="faceVisible" @select="handleSelectFace" />
+      <!-- 表情面板 -->
+      <FacePicker v-model="faceVisible" @select="handleSelectFace" />
 
-    <!-- @ 成员面板 -->
-    <MentionPicker
-      v-model="mentionVisible"
-      :members="mentionMembers"
-      :can-mention-all="canMentionAll"
-      @select="handleSelectMention"
-      @select-all="handleSelectMentionAll"
-    />
+      <!-- @ 成员面板 -->
+      <MentionPicker
+        v-model="mentionVisible"
+        :members="mentionMembers"
+        :can-mention-all="canMentionAll"
+        @select="handleSelectMention"
+        @select-all="handleSelectMentionAll"
+      />
+    </template>
   </view>
 </template>
 
@@ -75,9 +109,14 @@ import type { ImFacePackUserItemVO } from '@/api/im/face/pack'
 import type { ImFaceUserItemVO } from '@/api/im/face/useritem'
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
 import type { ImFaceMessage, ImFileMessage, ImImageMessage, ImMediaMessage } from '@/pages-im/utils/message'
+import type { SendRawOptions } from '../../types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { uploadFile } from '@/api/infra/file'
+import {
+  DANGEROUS_FILE_EXTENSIONS,
+  MESSAGE_MEDIA_MAX_BYTES,
+} from '@/pages-im/utils/config'
+import { getMemberDisplayName } from '@/pages-im/utils/user'
 import {
   IM_AT_ALL_NICKNAME,
   IM_AT_ALL_USER_ID,
@@ -85,18 +124,15 @@ import {
   ImGroupMemberRole,
   ImMessageType,
 } from '@/utils/constants'
+import { useMediaUploader } from '../../composables/useMediaUploader'
 import FacePicker from './face-picker.vue'
 import MentionPicker from './mention-picker.vue'
-
-interface SendOptions {
-  atUserIds?: number[] // @ 用户编号
-  receipt?: boolean // 是否回执消息
-}
+import VoiceRecorder from './voice-recorder.vue'
 
 interface SendPayload {
   type: number // 消息类型 ImMessageType
   payload: Record<string, any> // 消息内容对象
-  options?: SendOptions // 额外选项
+  options?: SendRawOptions // 额外选项
 }
 
 const props = defineProps<{
@@ -104,6 +140,7 @@ const props = defineProps<{
   groupMembers: ImGroupMemberRespVO[] // 群成员
   selfUserId?: number // 当前用户编号
   replyTitle?: string // 回复预览文案（为空表示无回复）
+  disabledTip?: string // 不可发送提示
 }>()
 
 const emit = defineEmits<{
@@ -112,7 +149,8 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
-const inputContent = ref('') // 输入内容
+const { chooseChatFile, validateFileSize, uploadLocalFile, uploadBlob, getLocalImageInfo } = useMediaUploader()
+const inputContent = defineModel<string>({ default: '' }) // 输入内容
 const mentionUserIds = ref<number[]>([]) // 本次文本 @ 的用户
 const faceVisible = ref(false) // 表情面板
 const mentionVisible = ref(false) // @ 成员面板
@@ -120,13 +158,7 @@ const moreVisible = ref(false) // 更多发送方式
 const imageSending = ref(false) // 图片发送中
 const fileSending = ref(false) // 文件发送中
 const videoSending = ref(false) // 视频发送中
-const voiceSending = ref(false) // 语音发送中
-const voiceRecording = ref(false) // 语音录制中
-// 录音管理器（仅小程序 / App 支持；H5 不支持，降级为 null）
-let recorderManager: UniApp.RecorderManager | null = null
-// #ifndef H5
-recorderManager = uni.getRecorderManager()
-// #endif
+const voiceMode = ref(false) // 是否语音输入模式
 
 const isGroup = computed(() => props.conversationType === ImConversationType.GROUP) // 是否群聊
 
@@ -141,13 +173,8 @@ const canMentionAll = computed(() => {
   return member?.role === ImGroupMemberRole.OWNER || member?.role === ImGroupMemberRole.ADMIN
 })
 
-/** 获取成员名称 */
-function getMemberName(item: ImGroupMemberRespVO) {
-  return item.displayUserName || item.nickname || `用户 ${item.userId}`
-}
-
 /** 发送文本消息 */
-function handleSendText(options: SendOptions = {}) {
+function handleSendText(options: SendRawOptions = {}) {
   const content = inputContent.value.trim()
   if (!content) {
     return
@@ -186,7 +213,7 @@ function insertMentionText(name: string, userId: number) {
 
 /** 选中 @ 成员 */
 function handleSelectMention(item: ImGroupMemberRespVO) {
-  insertMentionText(getMemberName(item), item.userId)
+  insertMentionText(getMemberDisplayName(item), item.userId)
 }
 
 /** 选中 @ 所有人 */
@@ -201,25 +228,32 @@ function getValidMentionUserIds(content: string) {
       return content.includes(`@${IM_AT_ALL_NICKNAME}`)
     }
     const member = props.groupMembers.find(member => member.userId === userId)
-    return member ? content.includes(`@${getMemberName(member)}`) : true
+    return member ? content.includes(`@${getMemberDisplayName(member)}`) : true
   })
 }
 
 /** 发送图片消息 */
-function handleSendImage() {
+function handleSendImage(sourceType: Array<'album' | 'camera'> = ['album', 'camera']) {
   if (imageSending.value) {
     return
   }
   uni.chooseImage({
     count: 1,
+    sourceType,
     success: async (res) => {
       const filePath = res.tempFilePaths?.[0]
       if (!filePath) {
         return
       }
+      if (!validateFileSize(res.tempFiles?.[0]?.size, MESSAGE_MEDIA_MAX_BYTES)) {
+        return
+      }
       imageSending.value = true
       try {
-        const [url, imageInfo] = await Promise.all([uploadFile(filePath, 'im/message'), getLocalImageInfo(filePath)])
+        const [url, imageInfo] = await Promise.all([
+          uploadLocalFile(filePath, 'im/message'),
+          getLocalImageInfo(filePath),
+        ])
         const payload: ImImageMessage = {
           url,
           width: imageInfo?.width,
@@ -235,33 +269,31 @@ function handleSendImage() {
 }
 
 /** 发送文件消息 */
-function handleSendFile() {
+async function handleSendFile() {
   if (fileSending.value) {
     return
   }
-  const chooseFile = (uni as any).chooseFile
-  if (typeof chooseFile !== 'function') {
-    toast.show('当前端暂不支持选择文件')
+  const file = await chooseChatFile()
+  if (!file?.path) {
     return
   }
-  chooseFile({
-    count: 1,
-    success: async (res: { tempFiles?: Array<{ name?: string, path?: string, size?: number, type?: string }> }) => {
-      const file = res.tempFiles?.[0]
-      if (!file?.path) {
-        return
-      }
-      fileSending.value = true
-      try {
-        const url = await uploadFile(file.path, 'im/file')
-        const payload: ImFileMessage = { url, name: file.name || '文件', size: file.size, type: file.type }
-        emit('send', { type: ImMessageType.FILE, payload })
-        moreVisible.value = false
-      } finally {
-        fileSending.value = false
-      }
-    },
-  })
+  const extension = file.name?.split('.').pop()?.toLowerCase() || ''
+  if (extension && DANGEROUS_FILE_EXTENSIONS.has(extension)) {
+    toast.show(`不允许发送 .${extension} 类型文件`)
+    return
+  }
+  if (!validateFileSize(file.size, MESSAGE_MEDIA_MAX_BYTES)) {
+    return
+  }
+  fileSending.value = true
+  try {
+    const url = await uploadLocalFile(file.path, 'im/file')
+    const payload: ImFileMessage = { url, name: file.name || '文件', size: file.size, type: file.type }
+    emit('send', { type: ImMessageType.FILE, payload })
+    moreVisible.value = false
+  } finally {
+    fileSending.value = false
+  }
 }
 
 /** 发送视频消息 */
@@ -276,9 +308,12 @@ function handleSendVideo() {
       if (!res.tempFilePath) {
         return
       }
+      if (!validateFileSize(res.size, MESSAGE_MEDIA_MAX_BYTES)) {
+        return
+      }
       videoSending.value = true
       try {
-        const url = await uploadFile(res.tempFilePath, 'im/video')
+        const url = await uploadLocalFile(res.tempFilePath, 'im/video')
         const payload: ImMediaMessage = { url, duration: Math.round(res.duration || 0), size: res.size }
         emit('send', { type: ImMessageType.VIDEO, payload })
         moreVisible.value = false
@@ -289,66 +324,73 @@ function handleSendVideo() {
   })
 }
 
-/** 录制语音 */
-function handleVoiceRecord() {
-  if (voiceSending.value) {
+/** 发送录音组件产出的语音 */
+function handleSendVoice(payload: ImMediaMessage) {
+  emit('send', { type: ImMessageType.VOICE, payload })
+  moreVisible.value = false
+}
+
+// #ifdef H5
+/** H5 粘贴图片直接发送 */
+async function handleH5Paste(event: ClipboardEvent) {
+  const image = Array.from(event.clipboardData?.items || [])
+    .find(item => item.kind === 'file' && item.type.startsWith('image/'))
+    ?.getAsFile()
+  if (!image || imageSending.value) {
     return
   }
-  if (!recorderManager) {
-    toast.show('当前端暂不支持录音')
+  if (!validateFileSize(image.size, MESSAGE_MEDIA_MAX_BYTES)) {
     return
   }
-  if (voiceRecording.value) {
-    recorderManager.stop()
-    return
-  }
+  event.preventDefault()
+  imageSending.value = true
   try {
-    recorderManager.start({ duration: 60000, format: 'mp3' })
-    voiceRecording.value = true
-    toast.show('开始录音')
+    const extension = image.type.split('/')[1] || 'png'
+    const url = await uploadBlob(image, `paste-${Date.now()}.${extension}`, 'im/message')
+    emit('send', {
+      type: ImMessageType.IMAGE,
+      payload: { url, size: image.size } satisfies ImImageMessage,
+    })
   } catch {
-    toast.error('当前端暂不支持录音')
+    toast.error('粘贴图片发送失败')
+  } finally {
+    imageSending.value = false
   }
 }
+// #endif
 
-/** 获取本地图片信息 */
-function getLocalImageInfo(src: string) {
-  return new Promise<UniApp.GetImageInfoSuccessData | null>((resolve) => {
-    uni.getImageInfo({ src, success: resolve, fail: () => resolve(null) })
-  })
-}
-
-/** 录音监听 */
+/** 监听 H5 粘贴图片 */
 onMounted(() => {
-  if (!recorderManager) {
-    return
-  }
-  recorderManager.onStop(async (res) => {
-    voiceRecording.value = false
-    if (!res.tempFilePath) {
-      return
-    }
-    voiceSending.value = true
-    try {
-      const url = await uploadFile(res.tempFilePath, 'im/voice')
-      const payload: ImMediaMessage = { url, duration: Math.round((res.duration || 0) / 1000), size: res.fileSize }
-      emit('send', { type: ImMessageType.VOICE, payload })
-      moreVisible.value = false
-    } finally {
-      voiceSending.value = false
-    }
-  })
-  recorderManager.onError(() => {
-    voiceRecording.value = false
-    voiceSending.value = false
-    toast.error('录音失败')
-  })
+  // #ifdef H5
+  document.addEventListener('paste', handleH5Paste)
+  // #endif
 })
 
-/** 卸载时停止录音 */
+/** 移除 H5 粘贴图片监听 */
 onUnmounted(() => {
-  if (recorderManager && voiceRecording.value) {
-    recorderManager.stop()
-  }
+  // #ifdef H5
+  document.removeEventListener('paste', handleH5Paste)
+  // #endif
 })
 </script>
+
+<style lang="scss" scoped>
+.im-tool-item {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12rpx;
+  color: #777;
+  font-size: 23rpx;
+}
+
+.im-tool-icon {
+  width: 112rpx;
+  height: 112rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  background: #fff;
+}
+</style>

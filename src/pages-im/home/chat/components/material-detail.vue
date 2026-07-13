@@ -13,10 +13,13 @@
         <view class="p-24rpx">
           <wd-loading v-if="loading" />
           <template v-else>
-            <image
+            <wd-img
               v-if="(detail?.coverUrl || payload?.coverUrl)"
               :src="detail?.coverUrl || payload?.coverUrl"
-              class="mb-24rpx h-320rpx w-full rounded-12rpx bg-[#f2f3f5]"
+              custom-class="mb-24rpx bg-[#f2f3f5]"
+              width="100%"
+              height="320rpx"
+              radius="12rpx"
               mode="aspectFill"
             />
             <view class="mb-16rpx text-36rpx text-[#333] font-semibold leading-48rpx">

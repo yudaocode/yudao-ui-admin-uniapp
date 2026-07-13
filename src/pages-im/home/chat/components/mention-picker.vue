@@ -29,10 +29,10 @@
           class="mention-member"
           @click="emit('select', item)"
         >
-          <ImAvatar :src="item.avatar" :name="getMemberName(item)" size="72rpx" />
+          <ImAvatar :src="item.avatar" :name="getMemberDisplayName(item)" size="72rpx" />
           <view class="min-w-0 flex-1">
             <view class="truncate text-30rpx text-[#333]">
-              {{ getMemberName(item) }}
+              {{ getMemberDisplayName(item) }}
             </view>
             <view class="mt-4rpx text-24rpx text-[#999]">
               用户编号：{{ item.userId }}
@@ -47,6 +47,7 @@
 
 <script lang="ts" setup>
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
+import { getMemberDisplayName } from '@/pages-im/utils/user'
 import { computed } from 'vue'
 import { IM_AT_ALL_NICKNAME } from '@/utils/constants'
 import ImAvatar from '../../components/im-avatar.vue'
@@ -67,11 +68,6 @@ const visible = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
 })
-
-/** 获取成员名称 */
-function getMemberName(item: ImGroupMemberRespVO) {
-  return item.displayUserName || item.nickname || `用户 ${item.userId}`
-}
 </script>
 
 <style lang="scss" scoped>

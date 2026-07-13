@@ -10,6 +10,7 @@
     <scroll-view class="min-h-0 flex-1 bg-[#ededed]" scroll-y>
       <!-- 群成员九宫格 -->
       <view class="bg-white px-24rpx pb-12rpx pt-24rpx">
+        <wd-search v-model="memberKeyword" placeholder="搜索群成员" hide-cancel />
         <view class="grid grid-cols-5 gap-y-24rpx">
           <view
             v-for="item in displayMembers"
@@ -24,6 +25,12 @@
           <view class="flex flex-col items-center gap-8rpx" @click="inviteVisible = true">
             <view class="h-96rpx w-96rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed">
               <wd-icon name="plus" size="48rpx" color="#bbb" />
+            </view>
+          </view>
+          <!-- 管理成员 -->
+          <view v-if="canManageGroup" class="flex flex-col items-center gap-8rpx" @click="openMemberManage">
+            <view class="h-96rpx w-96rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed">
+              <wd-icon name="minus" size="48rpx" color="#bbb" />
             </view>
           </view>
         </view>
@@ -43,6 +50,25 @@
           <wd-cell title="群聊名称" :value="formData?.name || '-'" :is-link="canManageGroup" center @click="editGroupInfo" />
           <wd-cell title="群公告" :value="formData?.notice || '未设置'" :is-link="canManageGroup" center @click="editGroupInfo" />
           <wd-cell title="我在本群的昵称" :value="myGroupNick || '未设置'" is-link center @click="editMyNick" />
+          <wd-cell title="群聊备注" :value="myGroupRemark || '未设置'" is-link center @click="editGroupRemark" />
+        </wd-cell-group>
+      </view>
+
+      <!-- 群通话 -->
+      <!-- #ifdef H5 -->
+      <view class="mt-20rpx">
+        <wd-cell-group border>
+          <wd-cell title="音视频通话" label="可邀请群成员加入" is-link center @click="openCallMenu" />
+        </wd-cell-group>
+      </view>
+      <!-- #endif -->
+
+      <!-- 聊天记录与推荐 -->
+      <view class="mt-20rpx">
+        <wd-cell-group border>
+          <wd-cell title="查找聊天内容" is-link center @click="goHistory" />
+          <wd-cell title="推荐群聊给朋友" is-link center @click="recommendVisible = true" />
+          <wd-cell title="清空聊天记录" is-link center @click="clearHistory" />
         </wd-cell-group>
       </view>
 
@@ -104,16 +130,28 @@
         </view>
       </view>
     </wd-popup>
+
+    <!-- 推荐群名片 -->
+    <RecommendCardPicker v-model="recommendVisible" :card="groupCard" />
+
+    <!-- 通话方式菜单 -->
+    <!-- #ifdef H5 -->
+    <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
+    <!-- #endif -->
+
+    <!-- 成员管理菜单 -->
+    <wd-action-sheet v-model="memberActionVisible" :actions="memberActions" @select="handleMemberActionSelect" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { ImGroupRespVO } from '@/api/im/group'
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
+import type { ImCardMessage } from '@/pages-im/utils/message'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   addGroupAdmin,
   cancelMuteMember,
@@ -133,10 +171,15 @@ import {
   updateGroupMember,
 } from '@/api/im/group/member'
 import { UserFormPicker } from '@/components/system-select'
+import { getClientConversationId } from '@/pages-im/home/db'
+import { getMemberDisplayName as getMemberName } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
-import { ImGroupMemberRole } from '@/utils/constants'
+import { ImConversationType, ImGroupMemberRole, ImRtcCallMediaType } from '@/utils/constants'
+import { useImRtc } from '../../composables/useImRtc'
+import { useImConversations } from '../../composables/useImConversations'
 import ImAvatar from '../../components/im-avatar.vue'
+import RecommendCardPicker from '../../components/recommend-card-picker.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -159,10 +202,22 @@ const members = ref<ImGroupMemberRespVO[]>([]) // 群成员
 const inviteVisible = ref(false) // 邀请成员弹窗
 const inviting = ref(false) // 邀请提交状态
 const inviteUserIds = ref<number[]>([]) // 邀请用户编号
+const recommendVisible = ref(false) // 推荐群名片弹窗
+const callActionVisible = ref(false) // 通话方式菜单显示状态
+const callActions = [ // 通话方式菜单项
+  { name: '语音通话', value: ImRtcCallMediaType.VOICE },
+  { name: '视频通话', value: ImRtcCallMediaType.VIDEO },
+]
+const memberActionVisible = ref(false) // 成员管理菜单显示状态
+const actionMember = ref<ImGroupMemberRespVO>() // 当前操作的群成员
+const memberActions = ref<Array<{ name: string, value: string, mutedSeconds?: number, color?: string }>>([]) // 成员管理菜单项
 const showAllMembers = ref(false) // 是否展开全部成员
+const memberKeyword = ref('') // 群成员关键词
 const mutedAll = ref(false) // 全员禁言
 const joinApproval = ref(false) // 进群审批
 const mySilent = ref(false) // 我的群免打扰
+const { start: startRtcCall } = useImRtc()
+const { clearConversationMessages, removeConversation } = useImConversations()
 
 /** 当前用户群成员 */
 const currentMember = computed(() => members.value.find(item => item.userId === userStore.userInfo.userId))
@@ -177,18 +232,29 @@ const isOwner = computed(() => currentMember.value?.role === ImGroupMemberRole.O
 
 /** 我在本群的昵称 */
 const myGroupNick = computed(() => currentMember.value?.displayUserName || '')
+const myGroupRemark = computed(() => currentMember.value?.groupRemark || '') // 群聊备注
+const groupCard = computed<ImCardMessage>(() => ({ // 群名片
+  targetType: ImConversationType.GROUP,
+  targetId: Number(props.id),
+  name: formData.value?.name || '群聊',
+  avatar: formData.value?.avatar,
+  memberCount: members.value.filter(item => !item.quitTime).length,
+}))
 
 /** 折叠展示的成员 */
-const displayMembers = computed(() => (showAllMembers.value ? members.value : members.value.slice(0, MEMBER_LIMIT)))
+const filteredMembers = computed(() => { // 搜索后的群成员
+  const keyword = memberKeyword.value.trim().toLowerCase()
+  return keyword
+    ? members.value.filter(item => getMemberName(item).toLowerCase().includes(keyword))
+    : members.value
+})
+const displayMembers = computed(() => (showAllMembers.value || memberKeyword.value
+  ? filteredMembers.value
+  : filteredMembers.value.slice(0, MEMBER_LIMIT))) // 展示的群成员
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-im/home/index/index')
-}
-
-/** 获取成员显示名 */
-function getMemberName(item: ImGroupMemberRespVO) {
-  return item.displayUserName || item.nickname || `用户 ${item.userId}`
 }
 
 /** 是否可管理成员 */
@@ -197,6 +263,11 @@ function canManageMember(item: ImGroupMemberRespVO) {
     return false
   }
   return isOwner.value || item.role === ImGroupMemberRole.NORMAL
+}
+
+/** 打开成员管理提示 */
+function openMemberManage() {
+  toast.show('点击成员头像可设置角色、禁言或移出群聊')
 }
 
 /** 点击成员：可管理则弹管理菜单 */
@@ -215,24 +286,101 @@ function editGroupInfo() {
 }
 
 /** 编辑我在本群的昵称 */
-function editMyNick() {
+async function editMyNick() {
   if (!formData.value?.id) {
     return
   }
-  uni.showModal({
-    title: '我在本群的昵称',
-    editable: true,
-    content: myGroupNick.value,
-    placeholderText: '请输入昵称',
-    success: async ({ confirm, content }) => {
-      if (!confirm) {
-        return
-      }
-      await updateGroupMember({ groupId: formData.value!.id, displayUserName: content || '' })
-      await getDetail()
-      toast.success('已保存')
-    },
+  const groupId = formData.value.id
+  let value: string | number | undefined
+  try {
+    const result = await dialog.prompt({
+      title: '我在本群的昵称',
+      inputValue: myGroupNick.value,
+      inputProps: { placeholder: '请输入昵称' },
+    })
+    value = result.value
+  } catch {
+    return
+  }
+  await updateGroupMember({ groupId, displayUserName: String(value || '') })
+  await getDetail()
+  toast.success('已保存')
+}
+
+/** 编辑仅自己可见的群聊备注 */
+async function editGroupRemark() {
+  if (!formData.value?.id) {
+    return
+  }
+  const groupId = formData.value.id
+  let value: string | number | undefined
+  try {
+    const result = await dialog.prompt({
+      title: '群聊备注',
+      inputValue: myGroupRemark.value,
+      inputProps: { placeholder: '备注仅自己可见' },
+    })
+    value = result.value
+  } catch {
+    return
+  }
+  await updateGroupMember({ groupId, groupRemark: String(value || '') })
+  await getDetail()
+  toast.success('已保存')
+}
+
+/** 发起群音视频通话 */
+function openCallMenu() {
+  const inviteeIds = members.value
+    .filter(item => item.userId !== userStore.userInfo.userId && !item.quitTime)
+    .map(item => item.userId)
+  if (inviteeIds.length === 0 || !formData.value?.id) {
+    toast.show('暂无可邀请成员')
+    return
+  }
+  callActionVisible.value = true
+}
+
+/** 发起指定方式的群通话 */
+function handleCallAction({ item }: { item: { value: number } }) {
+  if (!formData.value?.id) {
+    return
+  }
+  const inviteeIds = members.value
+    .filter(member => member.userId !== userStore.userInfo.userId && !member.quitTime)
+    .map(member => member.userId)
+  startRtcCall({
+    conversationType: ImConversationType.GROUP,
+    mediaType: item.value,
+    groupId: formData.value.id,
+    inviteeIds,
+    name: formData.value.name,
+    avatar: formData.value.avatar,
   })
+}
+
+/** 查找聊天内容 */
+function goHistory() {
+  if (!formData.value?.id) {
+    return
+  }
+  uni.navigateTo({
+    url: `/pages-im/home/history/index?type=${ImConversationType.GROUP}&targetId=${formData.value.id}&title=${encodeURIComponent(formData.value.name)}`,
+  })
+}
+
+/** 清空当前群的本地聊天记录 */
+async function clearHistory() {
+  if (!formData.value?.id) {
+    return
+  }
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定清空本机中的群聊记录吗？该操作不可恢复。' })
+  } catch {
+    return
+  }
+  await clearConversationMessages(getClientConversationId(ImConversationType.GROUP, formData.value.id))
+  toast.success('聊天记录已清空')
 }
 
 /** 进群申请 */
@@ -273,7 +421,7 @@ function handleMemberMore(item: ImGroupMemberRespVO) {
   if (!formData.value?.id) {
     return
   }
-  const actions: Array<{ name: string, value: string, mutedSeconds?: number }> = []
+  const actions: Array<{ name: string, value: string, mutedSeconds?: number, color?: string }> = []
   if (isOwner.value) {
     actions.push(item.role === ImGroupMemberRole.ADMIN
       ? { name: '撤销管理员', value: 'removeAdmin' }
@@ -286,11 +434,17 @@ function handleMemberMore(item: ImGroupMemberRespVO) {
     actions.push({ name: '禁言 10 分钟', value: 'mute', mutedSeconds: 600 })
     actions.push({ name: '禁言 1 小时', value: 'mute', mutedSeconds: 3600 })
   }
-  actions.push({ name: '移出群聊', value: 'remove' })
-  uni.showActionSheet({
-    itemList: actions.map(action => action.name),
-    success: ({ tapIndex }) => handleMemberAction(item, actions[tapIndex]),
-  })
+  actions.push({ name: '移出群聊', value: 'remove', color: '#fa5151' })
+  actionMember.value = item
+  memberActions.value = actions
+  memberActionVisible.value = true
+}
+
+/** 处理成员菜单操作 */
+function handleMemberActionSelect({ item }: { item: { value: string, mutedSeconds?: number } }) {
+  if (actionMember.value) {
+    handleMemberAction(actionMember.value, item)
+  }
 }
 
 /** 执行成员管理 */
@@ -369,6 +523,7 @@ async function handleQuit() {
     return
   }
   await quitGroup(formData.value.id)
+  await removeConversation(getClientConversationId(ImConversationType.GROUP, formData.value.id))
   toast.success('已退出群聊')
   delay(handleBack)
 }
@@ -384,6 +539,7 @@ async function handleDissolve() {
     return
   }
   await dissolveGroup(formData.value.id)
+  await removeConversation(getClientConversationId(ImConversationType.GROUP, formData.value.id))
   toast.success('已解散群聊')
   delay(handleBack)
 }
@@ -409,4 +565,17 @@ async function getDetail() {
 onShow(() => {
   getDetail()
 })
+
+/** 当前群关系变化时刷新详情 */
+function handleGroupReload(groupId?: number) {
+  if (!groupId || groupId === Number(props.id)) {
+    getDetail()
+  }
+}
+
+/** 订阅群详情实时变化 */
+onMounted(() => uni.$on('im:group-detail:reload', handleGroupReload))
+
+/** 释放群详情订阅 */
+onUnmounted(() => uni.$off('im:group-detail:reload', handleGroupReload))
 </script>

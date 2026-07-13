@@ -17,11 +17,11 @@
         @click="openChat(item)"
       >
         <view class="py-16rpx">
-          <ImAvatar :src="item.avatar" :name="item.name" :round="false" size="84rpx" />
+          <ImAvatar :src="item.avatar" :name="getGroupName(item)" :round="false" size="84rpx" />
         </view>
         <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-16rpx">
           <view class="flex items-center gap-10rpx">
-            <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ item.name }}</text>
+            <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ getGroupName(item) }}</text>
             <wd-tag v-if="item.banned" type="danger" plain custom-class="scale-90">
               已封禁
             </wd-tag>
@@ -43,8 +43,9 @@
 <script lang="ts" setup>
 import type { ImGroupRespVO } from '@/api/im/group'
 import { onShow } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getMyGroupList } from '@/api/im/group'
+import { getGroupDisplayName as getGroupName } from '@/pages-im/utils/user'
 import { navigateBackPlus } from '@/utils'
 import { ImConversationType } from '@/utils/constants'
 import ImAvatar from '../../components/im-avatar.vue'
@@ -64,12 +65,12 @@ const groupList = ref<ImGroupRespVO[]>([]) // 群聊列表
 const filteredGroups = computed(() => {
   const word = keyword.value.trim().toLowerCase()
   return groupList.value
-    .filter(item => item.status !== 1)
+    .filter(item => item.joinStatus !== 1)
     .filter((item) => {
       if (!word) {
         return true
       }
-      return [item.name, item.notice, item.id].some(value => String(value || '').toLowerCase().includes(word))
+      return [item.groupRemark, item.name, item.notice, item.id].some(value => String(value || '').toLowerCase().includes(word))
     })
 })
 
@@ -81,7 +82,7 @@ function handleBack() {
 /** 打开群聊 */
 function openChat(item: ImGroupRespVO) {
   uni.navigateTo({
-    url: `/pages-im/home/chat/index?type=${ImConversationType.GROUP}&targetId=${item.id}&title=${encodeURIComponent(item.name)}`,
+    url: `/pages-im/home/chat/index?type=${ImConversationType.GROUP}&targetId=${item.id}&title=${encodeURIComponent(getGroupName(item))}`,
   })
 }
 
@@ -98,4 +99,10 @@ async function load() {
 onShow(() => {
   load()
 })
+
+/** 订阅群关系变化 */
+onMounted(() => uni.$on('im:groups:reload', load))
+
+/** 释放群关系订阅 */
+onUnmounted(() => uni.$off('im:groups:reload', load))
 </script>

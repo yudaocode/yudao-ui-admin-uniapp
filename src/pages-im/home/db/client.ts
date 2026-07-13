@@ -41,6 +41,7 @@ export function getClientConversationId(type: number, targetId: number): string 
   return `${type}:${targetId}`
 }
 
+// TODO @AI：这个没有被使用，需要保留么？
 /** 解析会话主键 */
 export function parseClientConversationId(
   clientConversationId: string,
@@ -65,6 +66,7 @@ export function getClientMessageKey(clientMessageId: string): string {
 }
 
 /** 解析消息主键 */
+// TODO @AI：这个没有被使用，需要保留么？
 export function parseMessageKey(
   messageKey: string,
 ):

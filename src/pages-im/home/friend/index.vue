@@ -63,11 +63,11 @@
           class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
         >
           <view class="flex items-center gap-20rpx">
-            <ImAvatar :src="item.avatar" :name="item.name" :round="false" />
+            <ImAvatar :src="item.avatar" :name="getGroupName(item)" :round="false" />
             <view class="min-w-0 flex-1" @click="handleGroupDetail(item)">
               <view class="flex items-center gap-10rpx">
                 <view class="truncate text-32rpx text-[#333] font-semibold">
-                  {{ item.name }}
+                  {{ getGroupName(item) }}
                 </view>
                 <wd-tag v-if="item.banned" type="danger" plain>
                   已封禁
@@ -99,6 +99,9 @@
       :expandable="false"
       @click="handleCreate"
     />
+
+    <!-- 好友操作菜单 -->
+    <wd-action-sheet v-model="friendActionVisible" :actions="friendActions" @select="handleFriendAction" />
   </view>
 </template>
 
@@ -108,7 +111,7 @@ import type { ImGroupRespVO } from '@/api/im/group'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   blockFriend,
   deleteFriend,
@@ -117,6 +120,10 @@ import {
   updateFriend,
 } from '@/api/im/friend'
 import { getMyGroupList } from '@/api/im/group'
+import {
+  getFriendDisplayName as getFriendName,
+  getGroupDisplayName as getGroupName,
+} from '@/pages-im/utils/user'
 import { navigateBackPlus } from '@/utils'
 import { ImConversationType } from '@/utils/constants'
 import ImAvatar from '../components/im-avatar.vue'
@@ -139,6 +146,9 @@ const keyword = ref('') // 搜索关键词
 const loading = ref(false) // 列表加载状态
 const friendList = ref<ImFriendRespVO[]>([]) // 好友列表
 const groupList = ref<ImGroupRespVO[]>([]) // 群聊列表
+const friendActionVisible = ref(false) // 好友操作菜单显示状态
+const actionFriend = ref<ImFriendRespVO>() // 当前操作的好友
+const friendActions = ref<Array<{ name: string, value: string, color?: string }>>([]) // 好友操作菜单项
 
 /** 好友过滤列表 */
 const filteredFriends = computed(() => {
@@ -157,12 +167,12 @@ const filteredFriends = computed(() => {
 const filteredGroups = computed(() => {
   const word = keyword.value.trim().toLowerCase()
   return groupList.value
-    .filter(item => item.status !== 1)
+    .filter(item => item.joinStatus !== 1)
     .filter((item) => {
       if (!word) {
         return true
       }
-      return [item.name, item.notice, item.id].some(value => String(value || '').toLowerCase().includes(word))
+      return [item.groupRemark, item.name, item.notice, item.id].some(value => String(value || '').toLowerCase().includes(word))
     })
 })
 
@@ -183,11 +193,6 @@ function handleCreate() {
   })
 }
 
-/** 获取好友显示名 */
-function getFriendName(item: ImFriendRespVO) {
-  return item.displayName || item.nickname || `用户 ${item.friendUserId}`
-}
-
 /** 打开好友聊天 */
 function handleFriendChat(item: ImFriendRespVO) {
   uni.navigateTo({
@@ -198,7 +203,7 @@ function handleFriendChat(item: ImFriendRespVO) {
 /** 打开群聊 */
 function handleGroupChat(item: ImGroupRespVO) {
   uni.navigateTo({
-    url: `/pages-im/home/chat/index?type=${ImConversationType.GROUP}&targetId=${item.id}&title=${encodeURIComponent(item.name)}`,
+    url: `/pages-im/home/chat/index?type=${ImConversationType.GROUP}&targetId=${item.id}&title=${encodeURIComponent(getGroupName(item))}`,
   })
 }
 
@@ -211,40 +216,44 @@ function handleGroupDetail(item: ImGroupRespVO) {
 
 /** 好友更多操作 */
 function handleFriendMore(item: ImFriendRespVO) {
-  const actions = [
-    '复制用户编号',
-    item.pinned ? '取消置顶' : '置顶联系人',
-    item.silent ? '取消免打扰' : '设置免打扰',
-    item.blocked ? '移出黑名单' : '拉黑好友',
-    '删除好友',
+  actionFriend.value = item
+  friendActions.value = [
+    { name: '复制用户编号', value: 'copy' },
+    { name: item.pinned ? '取消置顶' : '置顶联系人', value: 'pin' },
+    { name: item.silent ? '取消免打扰' : '设置免打扰', value: 'silent' },
+    { name: item.blocked ? '移出黑名单' : '拉黑好友', value: 'block', color: item.blocked ? undefined : '#fa5151' },
+    { name: '删除好友', value: 'delete', color: '#fa5151' },
   ]
-  uni.showActionSheet({
-    itemList: actions,
-    success: async ({ tapIndex }) => {
-      const action = actions[tapIndex]
-      if (action === '复制用户编号') {
-        uni.setClipboardData({ data: String(item.friendUserId) })
-      } else if (action.includes('置顶')) {
-        await updateFriend({ friendUserId: item.friendUserId, pinned: !item.pinned })
-        toast.success('更新成功')
-        loadData()
-      } else if (action.includes('免打扰')) {
-        await updateFriend({ friendUserId: item.friendUserId, silent: !item.silent })
-        toast.success('更新成功')
-        loadData()
-      } else if (action.includes('黑名单') || action.includes('拉黑')) {
-        if (item.blocked) {
-          await unblockFriend(item.friendUserId)
-        } else {
-          await blockFriend(item.friendUserId)
-        }
-        toast.success('更新成功')
-        loadData()
-      } else if (action === '删除好友') {
-        await handleDeleteFriend(item)
-      }
-    },
-  })
+  friendActionVisible.value = true
+}
+
+/** 处理好友操作 */
+async function handleFriendAction({ item: action }: { item: { value: string } }) {
+  const item = actionFriend.value
+  if (!item) {
+    return
+  }
+  if (action.value === 'copy') {
+    uni.setClipboardData({ data: String(item.friendUserId) })
+  } else if (action.value === 'pin') {
+    await updateFriend({ friendUserId: item.friendUserId, pinned: !item.pinned })
+    toast.success('更新成功')
+    loadData()
+  } else if (action.value === 'silent') {
+    await updateFriend({ friendUserId: item.friendUserId, silent: !item.silent })
+    toast.success('更新成功')
+    loadData()
+  } else if (action.value === 'block') {
+    if (item.blocked) {
+      await unblockFriend(item.friendUserId)
+    } else {
+      await blockFriend(item.friendUserId)
+    }
+    toast.success('更新成功')
+    loadData()
+  } else if (action.value === 'delete') {
+    await handleDeleteFriend(item)
+  }
 }
 
 /** 删除好友 */
@@ -278,5 +287,17 @@ async function loadData() {
 onShow(() => {
   activeTab.value = props.tab === 'group' ? 1 : activeTab.value
   loadData()
+})
+
+/** 订阅多端好友与群关系变化 */
+onMounted(() => {
+  uni.$on('im:friends:reload', loadData)
+  uni.$on('im:groups:reload', loadData)
+})
+
+/** 释放实时刷新订阅 */
+onUnmounted(() => {
+  uni.$off('im:friends:reload', loadData)
+  uni.$off('im:groups:reload', loadData)
 })
 </script>

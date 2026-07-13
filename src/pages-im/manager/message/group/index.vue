@@ -64,7 +64,7 @@ import { getDictLabel } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { getMessageSummary } from '@/pages-im/utils/message'
+import { getMessageSummary } from '@/pages-im/utils/conversation'
 import SearchForm from './components/search-form.vue'
 
 const props = defineProps<{

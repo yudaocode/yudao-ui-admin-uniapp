@@ -1,18 +1,21 @@
 <template>
   <!-- 图片 -->
-  <image
+  <wd-img
     v-if="type === ImMessageType.IMAGE && imageUrl"
     :src="imageUrl"
-    class="max-h-360rpx max-w-420rpx rounded-8rpx"
-    mode="widthFix"
+    width="420rpx"
+    height="360rpx"
+    radius="8rpx"
+    mode="aspectFit"
     @click="previewImage"
   />
   <!-- 表情 -->
-  <image
+  <wd-img
     v-else-if="type === ImMessageType.FACE && faceUrl"
     :src="faceUrl"
-    class="max-h-240rpx max-w-240rpx"
-    mode="widthFix"
+    width="240rpx"
+    height="240rpx"
+    mode="aspectFit"
     @click="previewFace"
   />
   <!-- 文件 -->
@@ -28,7 +31,7 @@
       {{ formatFileSize(filePayload.size) }}
     </view>
     <view class="mt-12rpx border-t border-t-[#f2f3f5] pt-10rpx text-22rpx text-[#999]">
-      点击复制文件链接
+      点击查看文件
     </view>
   </view>
   <!-- 语音 -->
@@ -54,10 +57,13 @@
     class="w-460rpx"
     @click="emit('material-click', materialPayload)"
   >
-    <image
+    <wd-img
       v-if="materialPayload.coverUrl"
       :src="materialPayload.coverUrl"
-      class="mb-12rpx h-220rpx w-full rounded-8rpx bg-[#f2f3f5]"
+      custom-class="mb-12rpx bg-[#f2f3f5]"
+      width="100%"
+      height="220rpx"
+      radius="8rpx"
       mode="aspectFill"
     />
     <view class="text-30rpx text-[#333] font-semibold leading-40rpx">
@@ -89,12 +95,15 @@
     </view>
   </view>
   <!-- 名片 -->
-  <view v-else-if="type === ImMessageType.CARD && cardPayload" class="w-380rpx">
+  <view v-else-if="type === ImMessageType.CARD && cardPayload" class="w-380rpx" @click="emit('card-click', cardPayload)">
     <view class="flex items-center gap-16rpx">
-      <image
+      <wd-img
         v-if="cardPayload.avatar"
         :src="cardPayload.avatar"
-        class="h-80rpx w-80rpx shrink-0 rounded-8rpx bg-[#f2f3f5]"
+        custom-class="shrink-0 bg-[#f2f3f5]"
+        width="80rpx"
+        height="80rpx"
+        radius="8rpx"
         mode="aspectFill"
       />
       <view
@@ -131,9 +140,13 @@
 
 <script lang="ts" setup>
 import type { ImCardMessage, ImFaceMessage, ImFileMessage, ImMaterialMessage, ImMediaMessage, ImMergeMessage } from '@/pages-im/utils/message'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onUnmounted, ref } from 'vue'
 import { ImConversationType, ImMessageType } from '@/utils/constants'
-import { getImageUrl, getMessageSummary, parseMessage } from '@/pages-im/utils/message'
+import { getMessageSummary } from '@/pages-im/utils/conversation'
+import { getImageUrl } from '@/pages-im/utils/image'
+import { parseMessage } from '@/pages-im/utils/message'
+import { openAttachment } from '@/utils/download'
 
 const props = defineProps<{
   type?: number // 消息类型 ImMessageType
@@ -143,7 +156,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   'material-click': [payload: ImMaterialMessage] // 点击频道素材
   'merge-click': [payload: ImMergeMessage] // 点击合并转发
+  'card-click': [payload: ImCardMessage] // 点击名片
 }>()
+const toast = useToast()
 
 interface TextSegment {
   type: 'text' | 'mention' | 'link' // 段类型
@@ -193,7 +208,7 @@ function parseTextSegments(text: string): TextSegment[] {
 /** 点击段：链接复制 */
 function onSegmentTap(seg: TextSegment) {
   if (seg.type === 'link') {
-    uni.setClipboardData({ data: seg.text, success: () => uni.showToast({ title: '链接已复制', icon: 'none' }) })
+    uni.setClipboardData({ data: seg.text, success: () => toast.show('链接已复制') })
   }
 }
 
@@ -223,15 +238,15 @@ function previewFace() {
   }
 }
 
-/** 复制文件链接 */
+/** 打开文件 */
 function handleFile() {
   if (filePayload.value?.url) {
-    uni.setClipboardData({ data: filePayload.value.url })
+    openAttachment(filePayload.value.url)
   }
 }
 
 const voicePlaying = ref(false) // 语音播放状态
-let audioContext: UniApp.InnerAudioContext | null = null // 语音播放器
+let audioContext: UniApp.InnerAudioContext | null = null // 当前组件语音播放器引用
 
 /** 播放/停止语音 */
 function playVoice() {
@@ -249,13 +264,22 @@ function playVoice() {
     audioContext.stop()
     return
   }
+  if (activeVoiceContext && activeVoiceContext !== audioContext) {
+    activeVoiceContext.stop()
+  }
   audioContext.src = url
   audioContext.play()
+  activeVoiceContext = audioContext
+  activeVoiceUrl = url
   voicePlaying.value = true
 }
 
 /** 卸载时销毁播放器 */
 onUnmounted(() => {
+  if (activeVoiceContext === audioContext && activeVoiceUrl === mediaPayload.value?.url) {
+    activeVoiceContext = null
+    activeVoiceUrl = ''
+  }
   audioContext?.destroy()
   audioContext = null
 })
@@ -273,4 +297,9 @@ function formatFileSize(size?: number) {
   }
   return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
+</script>
+
+<script lang="ts">
+let activeVoiceContext: UniApp.InnerAudioContext | null = null // 全局正在播放的语音
+let activeVoiceUrl = '' // 全局正在播放的语音地址
 </script>

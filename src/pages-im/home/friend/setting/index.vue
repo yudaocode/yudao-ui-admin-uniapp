@@ -32,6 +32,13 @@
         </wd-cell-group>
       </view>
 
+      <!-- 本地聊天记录 -->
+      <view class="mt-20rpx">
+        <wd-cell-group border>
+          <wd-cell title="清空聊天记录" is-link center @click="clearHistory" />
+        </wd-cell-group>
+      </view>
+
       <!-- 删除好友 -->
       <view class="mt-20rpx bg-white">
         <view class="py-30rpx text-center text-32rpx text-[#fa5151]" @click="handleDelete">
@@ -44,10 +51,14 @@
 
 <script lang="ts" setup>
 import type { ImFriendRespVO } from '@/api/im/friend'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { blockFriend, deleteFriend, getFriend, unblockFriend, updateFriend } from '@/api/im/friend'
+import { getClientConversationId } from '@/pages-im/home/db'
 import { delay, navigateBackPlus } from '@/utils'
+import { ImConversationType } from '@/utils/constants'
+import { useImConversations } from '../../composables/useImConversations'
 
 const props = defineProps<{
   friendUserId?: number | string
@@ -61,6 +72,8 @@ definePage({
 })
 
 const toast = useToast()
+const dialog = useDialog()
+const { clearConversationMessages } = useImConversations()
 const friend = ref<ImFriendRespVO>() // 好友资料
 const silent = ref(false) // 消息免打扰
 const pinned = ref(false) // 置顶
@@ -86,21 +99,21 @@ function handleBack() {
 }
 
 /** 编辑备注 */
-function editRemark() {
-  uni.showModal({
-    title: '编辑备注',
-    editable: true,
-    content: friend.value?.displayName || '',
-    placeholderText: '请输入备注名',
-    success: async ({ confirm, content }) => {
-      if (!confirm) {
-        return
-      }
-      await updateFriend({ friendUserId: friendUserId.value, displayName: content || '' })
-      await loadFriend()
-      toast.success('已保存')
-    },
-  })
+async function editRemark() {
+  let value: string | number | undefined
+  try {
+    const result = await dialog.prompt({
+      title: '编辑备注',
+      inputValue: friend.value?.displayName || '',
+      inputProps: { placeholder: '请输入备注名' },
+    })
+    value = result.value
+  } catch {
+    return
+  }
+  await updateFriend({ friendUserId: friendUserId.value, displayName: String(value || '') })
+  await loadFriend()
+  toast.success('已保存')
 }
 
 /** 切换免打扰 */
@@ -130,20 +143,27 @@ async function onBlockedChange() {
   }
 }
 
+/** 清空当前私聊的本地聊天记录 */
+async function clearHistory() {
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定清空本机中的聊天记录吗？该操作不可恢复。' })
+  } catch {
+    return
+  }
+  await clearConversationMessages(getClientConversationId(ImConversationType.PRIVATE, friendUserId.value))
+  toast.success('聊天记录已清空')
+}
+
 /** 删除好友 */
-function handleDelete() {
-  uni.showModal({
-    title: '提示',
-    content: '确定删除该好友吗？',
-    success: async ({ confirm }) => {
-      if (!confirm) {
-        return
-      }
-      await deleteFriend(friendUserId.value, false)
-      toast.success('已删除')
-      delay(() => navigateBackPlus('/pages-im/home/friend/index'))
-    },
-  })
+async function handleDelete() {
+  try {
+    await dialog.confirm({ title: '提示', msg: '确定删除该好友吗？' })
+  } catch {
+    return
+  }
+  await deleteFriend(friendUserId.value, false)
+  toast.success('已删除')
+  delay(() => navigateBackPlus('/pages-im/home/friend/index'))
 }
 
 onMounted(() => {

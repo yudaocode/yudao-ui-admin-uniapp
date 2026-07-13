@@ -70,6 +70,8 @@ import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string
+  memberUserIds?: string
+  forward?: boolean | number | string
 }>()
 
 definePage({
@@ -93,6 +95,10 @@ const formData = ref({
 const formSchema = createFormSchema({
   name: [{ required: true, message: '群名称不能为空' }],
 })
+const lockedMemberUserIds = computed(() => (props.memberUserIds || '') // 从好友资料进入时固定包含的成员
+  .split(',')
+  .map(Number)
+  .filter(item => Number.isFinite(item) && item > 0))
 
 /** 表单标题 */
 const getTitle = computed(() => props.id ? '编辑群资料' : '创建群聊')
@@ -138,7 +144,7 @@ async function handleSubmit() {
     } else {
       const group = await createGroup({
         name: formData.value.name,
-        memberUserIds: formData.value.memberUserIds,
+        memberUserIds: Array.from(new Set([...formData.value.memberUserIds, ...lockedMemberUserIds.value])),
         joinApproval: formData.value.joinApproval,
       })
       if (group?.id && (formData.value.avatar || formData.value.notice)) {
@@ -151,6 +157,13 @@ async function handleSubmit() {
         })
       }
       toast.success('创建成功')
+      if (props.forward && group?.id) {
+        uni.$emit('im:forward-group-created', {
+          id: group.id,
+          name: formData.value.name,
+          avatar: formData.value.avatar,
+        })
+      }
     }
     delay(handleBack)
   } finally {
@@ -160,6 +173,9 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
+  if (!props.id && props.memberUserIds) {
+    formData.value.memberUserIds = lockedMemberUserIds.value
+  }
   getDetail()
 })
 </script>
