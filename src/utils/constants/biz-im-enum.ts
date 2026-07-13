@@ -96,6 +96,16 @@ export const ImRtcCallMediaType = {
   VIDEO: 2,
 } as const
 
+/** IM 通话结束原因 */
+export const ImRtcCallEndReason = {
+  HANGUP: 1,
+  REJECT: 2,
+  CANCEL: 3,
+  NO_ANSWER: 4,
+  BUSY: 5,
+  ERROR: 9,
+} as const
+
 /** IM 通话状态 */
 export const ImRtcCallStatus = {
   CREATED: 10,

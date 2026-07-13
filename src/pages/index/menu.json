@@ -2526,7 +2526,7 @@
         },
         {
           "key": "channel",
-          "name": "拼单管理",
+          "name": "频道管理",
           "menus": [
             {
               "key": "imChannel",

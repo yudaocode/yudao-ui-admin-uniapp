@@ -25,7 +25,7 @@
         </wd-cell>
         <wd-cell title="群名称" :value="formData?.name || '-'" />
         <wd-cell title="群主" :value="formData?.ownerNickname || (formData ? `用户 ${formData.ownerUserId}` : '-')" />
-        <wd-cell title="成员数" :value="`${formData?.memberCount ?? 0} 人`" />
+        <wd-cell title="成员数" :value="`${currentMembers.length} 人`" />
         <wd-cell title="群状态">
           <dict-tag v-if="formData?.status != null" :type="DICT_TYPE.IM_GROUP_STATUS" :value="formData.status" />
           <text v-else>-</text>
@@ -173,8 +173,11 @@ const formData = ref<ImManagerGroupVO>() // 详情数据
 const members = ref<ImManagerGroupMemberVO[]>([]) // 群成员
 const memberScope = ref<'current' | 'all'>('current') // 成员查看范围
 const processing = ref(false) // 操作中状态
+const currentMembers = computed(() => members.value.filter(
+  item => !item.quitTime && item.status !== CommonStatusEnum.DISABLE,
+)) // 当前群成员
 const filteredMembers = computed(() => memberScope.value === 'current'
-  ? members.value.filter(item => !item.quitTime && item.status !== CommonStatusEnum.DISABLE)
+  ? currentMembers.value
   : members.value) // 当前展示成员
 
 /** 返回上一页 */

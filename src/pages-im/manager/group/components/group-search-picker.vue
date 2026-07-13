@@ -98,10 +98,17 @@ const selected = ref<ImManagerGroupVO>() // 当前选择
 const displayValue = ref('') // 已选群名称
 
 /** 打开群聊选择器 */
-function open() {
-  selected.value = props.modelValue
-    ? list.value.find(item => item.id === props.modelValue)
-    : undefined
+async function open() {
+  if (!props.modelValue) {
+    selected.value = undefined
+  } else {
+    const cached = list.value.find(item => item.id === props.modelValue)
+    if (cached) {
+      selected.value = cached
+    } else if (selected.value?.id !== props.modelValue) {
+      await loadSelected()
+    }
+  }
   visible.value = true
 }
 
