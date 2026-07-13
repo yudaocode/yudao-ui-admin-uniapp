@@ -12,12 +12,12 @@ export interface ImManagerChannelVO {
   createTime?: string
 }
 
-/** 获得频道分页 */
+/** 获取频道分页 */
 export function getManagerChannelPage(params: PageParam) {
   return http.get<PageResult<ImManagerChannelVO>>('/im/manager/channel/page', params)
 }
 
-/** 获得频道详情 */
+/** 获取频道详情 */
 export function getManagerChannel(id: number) {
   return http.get<ImManagerChannelVO>('/im/manager/channel/get', { id })
 }
@@ -37,7 +37,7 @@ export function deleteManagerChannel(id: number) {
   return http.delete<boolean>('/im/manager/channel/delete', undefined, { id })
 }
 
-/** 获得启用的频道精简列表 */
+/** 获取启用的频道精简列表 */
 export function getSimpleChannelList() {
   return http.get<ImManagerChannelVO[]>('/im/manager/channel/simple-list')
 }

@@ -11,12 +11,12 @@ export interface ImManagerFacePackVO {
   createTime?: string
 }
 
-/** 获得表情包分页 */
+/** 获取表情包分页 */
 export function getManagerFacePackPage(params: PageParam) {
   return http.get<PageResult<ImManagerFacePackVO>>('/im/manager/face-pack/page', params)
 }
 
-/** 获得表情包详情 */
+/** 获取表情包详情 */
 export function getManagerFacePack(id: number) {
   return http.get<ImManagerFacePackVO>('/im/manager/face-pack/get', { id })
 }

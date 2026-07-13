@@ -32,12 +32,17 @@ export interface ImManagerRtcParticipantVO {
   leaveTime?: string
 }
 
-/** 获得通话记录分页 */
+/** 获取通话记录分页 */
 export function getManagerRtcCallPage(params: PageParam) {
   return http.get<PageResult<ImManagerRtcCallVO>>('/im/manager/rtc/page', params)
 }
 
-/** 获得通话参与者列表 */
+/** 获取通话记录详情 */
+export function getManagerRtcCall(id: number) {
+  return http.get<ImManagerRtcCallVO>('/im/manager/rtc/get', { id })
+}
+
+/** 获取通话参与者列表 */
 export function getManagerRtcCallParticipantList(id: number) {
   return http.get<ImManagerRtcParticipantVO[]>('/im/manager/rtc/participant-list', { id })
 }

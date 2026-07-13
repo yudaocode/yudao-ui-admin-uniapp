@@ -19,7 +19,7 @@ export interface ImManagerFriendVO {
   createTime: string
 }
 
-/** 获得好友关系分页 */
+/** 获取好友关系分页 */
 export function getManagerFriendPage(params: PageParam) {
   return http.get<PageResult<ImManagerFriendVO>>('/im/manager/friend/page', params)
 }

@@ -13,7 +13,7 @@ export interface ImManagerFaceUserItemVO {
   createTime?: string
 }
 
-/** 获得用户表情分页 */
+/** 获取用户表情分页 */
 export function getManagerFaceUserItemPage(params: PageParam) {
   return http.get<PageResult<ImManagerFaceUserItemVO>>('/im/manager/face-user-item/page', params)
 }

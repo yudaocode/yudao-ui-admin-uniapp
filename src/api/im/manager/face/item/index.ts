@@ -14,12 +14,12 @@ export interface ImManagerFacePackItemVO {
   createTime?: string
 }
 
-/** 获得表情分页 */
+/** 获取表情分页 */
 export function getManagerFacePackItemPage(params: PageParam) {
   return http.get<PageResult<ImManagerFacePackItemVO>>('/im/manager/face-pack-item/page', params)
 }
 
-/** 获得表情详情 */
+/** 获取表情详情 */
 export function getManagerFacePackItem(id: number) {
   return http.get<ImManagerFacePackItemVO>('/im/manager/face-pack-item/get', { id })
 }

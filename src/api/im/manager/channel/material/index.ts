@@ -15,17 +15,17 @@ export interface ImManagerChannelMaterialVO {
   createTime?: string
 }
 
-/** 获得素材分页 */
+/** 获取素材分页 */
 export function getManagerChannelMaterialPage(params: PageParam) {
   return http.get<PageResult<ImManagerChannelMaterialVO>>('/im/manager/channel-material/page', params)
 }
 
-/** 获得指定频道下的素材精简列表 */
+/** 获取指定频道下的素材精简列表 */
 export function getSimpleManagerChannelMaterialList(channelId: number) {
   return http.get<ImManagerChannelMaterialVO[]>('/im/manager/channel-material/simple-list', { channelId })
 }
 
-/** 获得素材详情 */
+/** 获取素材详情 */
 export function getManagerChannelMaterial(id: number) {
   return http.get<ImManagerChannelMaterialVO>('/im/manager/channel-material/get', { id })
 }

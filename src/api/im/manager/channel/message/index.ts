@@ -31,7 +31,12 @@ export function deleteManagerChannelMessage(id: number) {
   return http.delete<boolean>('/im/manager/channel-message/delete', undefined, { id })
 }
 
-/** 获得频道消息分页 */
+/** 获取频道消息分页 */
 export function getManagerChannelMessagePage(params: PageParam) {
   return http.get<PageResult<ImManagerChannelMessageVO>>('/im/manager/channel-message/page', params)
+}
+
+/** 获取频道消息详情 */
+export function getManagerChannelMessage(id: number) {
+  return http.get<ImManagerChannelMessageVO>(`/im/manager/channel-message/get?id=${id}`)
 }

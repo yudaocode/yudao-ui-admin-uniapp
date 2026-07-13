@@ -34,12 +34,12 @@ export interface ImManagerGroupMemberVO {
   muteEndTime?: string
 }
 
-/** 获得群分页 */
+/** 获取群分页 */
 export function getManagerGroupPage(params: PageParam) {
   return http.get<PageResult<ImManagerGroupVO>>('/im/manager/group/page', params)
 }
 
-/** 获得群详情 */
+/** 获取群详情 */
 export function getManagerGroup(id: number) {
   return http.get<ImManagerGroupVO>('/im/manager/group/get', { id })
 }
@@ -59,7 +59,7 @@ export function dissolveManagerGroup(id: number) {
   return http.delete<boolean>('/im/manager/group/dissolve', undefined, { id })
 }
 
-/** 获得群成员列表 */
+/** 获取群成员列表 */
 export function getManagerGroupMemberList(groupId: number) {
   return http.get<ImManagerGroupMemberVO[]>('/im/manager/group/member/list', { groupId })
 }

@@ -19,12 +19,12 @@ export interface ImManagerGroupMessageVO {
   createTime: string
 }
 
-/** 获得群聊消息分页 */
+/** 获取群聊消息分页 */
 export function getManagerGroupMessagePage(params: PageParam) {
   return http.get<PageResult<ImManagerGroupMessageVO>>('/im/manager/message/group/page', params)
 }
 
-/** 获得群聊消息详情 */
+/** 获取群聊消息详情 */
 export function getManagerGroupMessage(id: number) {
   return http.get<ImManagerGroupMessageVO>('/im/manager/message/group/get', { id })
 }

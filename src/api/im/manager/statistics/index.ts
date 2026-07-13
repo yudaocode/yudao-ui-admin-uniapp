@@ -40,32 +40,32 @@ export interface ImStatisticsTopSenderVO {
   messageCount: number
 }
 
-/** 获得 KPI 概览 */
+/** 获取 KPI 概览 */
 export function getStatisticsOverview() {
   return http.get<ImStatisticsOverviewVO>('/im/manager/statistics/overview')
 }
 
-/** 获得消息趋势 */
+/** 获取消息趋势 */
 export function getMessageTrend(days: number) {
   return http.get<ImStatisticsTrendVO>('/im/manager/statistics/message-trend', { days })
 }
 
-/** 获得用户趋势 */
+/** 获取用户趋势 */
 export function getUserTrend(days: number) {
   return http.get<ImStatisticsTrendVO>('/im/manager/statistics/user-trend', { days })
 }
 
-/** 获得消息类型分布 */
+/** 获取消息类型分布 */
 export function getMessageTypeDistribution() {
   return http.get<ImStatisticsMessageTypeVO[]>('/im/manager/statistics/message-type-distribution')
 }
 
-/** 获得群规模分布 */
+/** 获取群规模分布 */
 export function getGroupSizeDistribution() {
   return http.get<ImStatisticsGroupSizeVO[]>('/im/manager/statistics/group-size-distribution')
 }
 
-/** 获得消息 TOP 发送者 */
+/** 获取消息 TOP 发送者 */
 export function getTopSenders() {
   return http.get<ImStatisticsTopSenderVO[]>('/im/manager/statistics/top-senders')
 }

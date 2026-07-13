@@ -11,12 +11,12 @@ export interface ImManagerSensitiveWordVO {
   createTime?: string
 }
 
-/** 获得敏感词分页 */
+/** 获取敏感词分页 */
 export function getManagerSensitiveWordPage(params: PageParam) {
   return http.get<PageResult<ImManagerSensitiveWordVO>>('/im/manager/sensitive-word/page', params)
 }
 
-/** 获得敏感词详情 */
+/** 获取敏感词详情 */
 export function getManagerSensitiveWord(id: number) {
   return http.get<ImManagerSensitiveWordVO>('/im/manager/sensitive-word/get', { id })
 }
