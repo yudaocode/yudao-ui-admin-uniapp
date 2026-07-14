@@ -70,3 +70,8 @@ export function assignUserRole(userId: number, roleIds: number[]) {
 export function getSimpleUserList() {
   return http.get<User[]>('/system/user/simple-list')
 }
+
+/** 获取用户精简信息 */
+export function getSimpleUser(id: number | string) {
+  return http.get<User>(`/system/user/get-simple?id=${id}`)
+}

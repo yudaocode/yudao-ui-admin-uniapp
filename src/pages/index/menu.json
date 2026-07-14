@@ -2466,7 +2466,7 @@
               "name": "聊天",
               "icon": "message",
               "iconColor": "#1677ff",
-              "url": "/pages-im/home/index/index"
+              "url": "/pages-im/home/conversation/index"
             }
           ]
         },

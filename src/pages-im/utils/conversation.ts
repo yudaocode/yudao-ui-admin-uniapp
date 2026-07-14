@@ -1,85 +1,141 @@
 import type {
-  ImCardMessage,
-  ImFaceMessage,
-  ImFileMessage,
-  ImMaterialMessage,
-  ImMediaMessage,
-  ImMergeMessage,
-  ImRtcCallTipMessage,
-  ImTextMessage,
+  CardMessage,
+  FaceMessage,
+  FileMessage,
+  MaterialMessage,
+  TextMessage,
+  TipSegment,
 } from './message'
+import type { Message } from '@/pages-im/home/types'
 import {
   ImConversationType,
   ImMessageType,
-  ImRtcCallEndReason,
-  ImRtcCallMediaType,
   isFriendChatTip,
   isGroupNotification,
-} from '@/utils/constants'
-import { parseMessage } from './message'
+  isRtcCallTip,
+} from './constants'
+import {
+  getCardLabelInfo,
+  parseMessage,
+  parseRtcCallPayload,
+  resolveFriendNotificationText,
+  resolveGroupNotificationText,
+  resolveRtcCallLastContent,
+  resolveRtcCallPrivateBubbleText,
+  resolveRtcCallTipSegments,
+  segmentsToText,
+  tipMention,
+  tipText,
+} from './message'
+import { getSenderDisplayName } from './user'
 
-const RTC_END_REASON_TEXT: Record<number, string> = { // 通话结束原因文案
-  [ImRtcCallEndReason.HANGUP]: '通话结束',
-  [ImRtcCallEndReason.REJECT]: '已拒绝',
-  [ImRtcCallEndReason.CANCEL]: '已取消',
-  [ImRtcCallEndReason.NO_ANSWER]: '无人接听',
-  [ImRtcCallEndReason.BUSY]: '对方正忙',
-  [ImRtcCallEndReason.ERROR]: '通话异常',
+/** 获取会话稳定主键 */
+export function getConversationKey(conversation: { type: number, targetId: number }) {
+  return `${conversation.type}-${conversation.targetId}`
 }
 
-/** 获取 RTC 通话摘要 */
-function getRtcMessageSummary(type: number, content?: string) {
-  const rtc = parseMessage<ImRtcCallTipMessage>(content)
-  const mediaName = rtc?.mediaType === ImRtcCallMediaType.VIDEO ? '视频' : '语音'
-  if (type === ImMessageType.RTC_CALL_START) {
-    return `${mediaName}通话`
+/** 按会话名称模糊过滤 */
+export function filterConversationsByKeyword<T extends { name?: string }>(
+  list: T[],
+  keyword: string,
+): T[] {
+  const trimmed = keyword.trim().toLowerCase()
+  if (!trimmed) {
+    return list
   }
-  if (rtc?.conversationType === ImConversationType.GROUP) {
-    return `${mediaName}通话已结束`
+  return list.filter(item => (item.name || '').toLowerCase().includes(trimmed))
+}
+
+/** 获取表情消息预览文案 */
+export function buildFacePreviewText(facePayload: { name?: string } | null | undefined): string {
+  return facePayload?.name ? `[表情] ${facePayload.name}` : '[表情]'
+}
+
+/** 获取撤回提示分段 */
+export function buildRecallTipSegments(
+  senderId: number,
+  selfSend: boolean,
+  conversationType: number,
+  conversationTargetId: number,
+  fallbackName?: string,
+): TipSegment[] {
+  if (selfSend) {
+    return [tipText('你撤回了一条消息')]
   }
-  if (rtc?.durationSeconds != null) {
-    const minutes = Math.floor(rtc.durationSeconds / 60)
-    const seconds = rtc.durationSeconds % 60
-    return `通话时长 ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  const senderDisplayName = getSenderDisplayName(
+    senderId,
+    conversationType,
+    conversationTargetId,
+    fallbackName,
+  )
+  if (!senderId) {
+    return [tipText(`${senderDisplayName || '对方'} 撤回了一条消息`)]
   }
-  return RTC_END_REASON_TEXT[rtc?.endReason || 0] || '通话已结束'
+  return [tipMention(senderId, senderDisplayName || '对方'), tipText(' 撤回了一条消息')]
+}
+
+/** 获取撤回提示文案 */
+export function buildRecallTip(
+  senderId: number,
+  selfSend: boolean,
+  conversationType: number,
+  conversationTargetId: number,
+  fallbackName?: string,
+) {
+  return segmentsToText(buildRecallTipSegments(
+    senderId,
+    selfSend,
+    conversationType,
+    conversationTargetId,
+    fallbackName,
+  ))
 }
 
 /** 获取消息纯文本摘要 */
-export function getMessageSummary(type?: number, content?: string) {
-  if (type === ImMessageType.TEXT) {
-    return parseMessage<ImTextMessage>(content)?.content || content || ''
+export function summarizeMessageContent(
+  message: Pick<Message, 'type' | 'content'>,
+  opts?: { withFileName?: boolean },
+): string {
+  switch (message.type) {
+    case ImMessageType.TEXT:
+      return parseMessage<TextMessage>(message.content)?.content ?? ''
+    case ImMessageType.IMAGE:
+      return '[图片]'
+    case ImMessageType.VOICE:
+      return '[语音]'
+    case ImMessageType.VIDEO:
+      return '[视频]'
+    case ImMessageType.FILE: {
+      if (opts?.withFileName) {
+        const file = parseMessage<FileMessage>(message.content)
+        return file?.name ? `[文件] ${file.name}` : '[文件]'
+      }
+      return '[文件]'
+    }
+    case ImMessageType.CARD:
+      return `[${getCardLabelInfo(parseMessage<CardMessage>(message.content)).label}]`
+    case ImMessageType.FACE:
+      return buildFacePreviewText(parseMessage<FaceMessage>(message.content))
+    case ImMessageType.MERGE:
+      return '[聊天记录]'
+    case ImMessageType.MATERIAL: {
+      const material = parseMessage<MaterialMessage>(message.content)
+      return material?.title ? `[频道] ${material.title}` : '[频道]'
+    }
+    case ImMessageType.RTC_CALL_START:
+    case ImMessageType.RTC_CALL_END:
+      return '[语音通话]'
+    default:
+      return ''
   }
-  if (type === ImMessageType.IMAGE) {
-    return '[图片]'
-  }
-  if (type === ImMessageType.VOICE) {
-    const voice = parseMessage<ImMediaMessage>(content)
-    return voice?.duration ? `[语音] ${voice.duration} 秒` : '[语音]'
-  }
-  if (type === ImMessageType.VIDEO) {
-    return '[视频]'
-  }
-  if (type === ImMessageType.FILE) {
-    const file = parseMessage<ImFileMessage>(content)
-    return file?.name ? `[文件] ${file.name}` : '[文件]'
-  }
-  if (type === ImMessageType.CARD) {
-    const card = parseMessage<ImCardMessage>(content)
-    return card?.name ? `[名片] ${card.name}` : '[名片]'
-  }
-  if (type === ImMessageType.FACE) {
-    const face = parseMessage<ImFaceMessage>(content)
-    return face?.name ? `[表情] ${face.name}` : '[表情]'
-  }
-  if (type === ImMessageType.MERGE) {
-    const merge = parseMessage<ImMergeMessage>(content)
-    return merge?.title ? `[聊天记录] ${merge.title}` : '[聊天记录]'
-  }
-  if (type === ImMessageType.MATERIAL) {
-    const material = parseMessage<ImMaterialMessage>(content)
-    return material?.title ? `[频道] ${material.title}` : '[频道消息]'
-  }
+}
+
+/** 获取消息纯文本摘要 */
+export function getMessageSummary(
+  type?: number,
+  content?: string,
+  resolveName?: (userId: number) => string,
+) {
   if (type === ImMessageType.RECALL) {
     return '[消息已撤回]'
   }
@@ -90,14 +146,52 @@ export function getMessageSummary(type?: number, content?: string) {
     return '[回执]'
   }
   if (isFriendChatTip(type ?? -1)) {
-    return type === ImMessageType.FRIEND_ADD ? '你们已经是好友了，开始聊天吧' : '好友关系已变更'
+    return resolveFriendNotificationText({ type })
   }
   if (isGroupNotification(type ?? -1)) {
-    return '[群通知]'
+    return resolveGroupNotificationText(
+      { type, content },
+      resolveName || (userId => `用户 ${userId}`),
+    ) || '[群通知]'
   }
-  if (type === ImMessageType.RTC_CALL_START || type === ImMessageType.RTC_CALL_END) {
-    return getRtcMessageSummary(type, content)
+  if (isRtcCallTip(type ?? -1)) {
+    const payload = parseRtcCallPayload(content)
+    if (type === ImMessageType.RTC_CALL_END
+      && payload?.conversationType === ImConversationType.PRIVATE) {
+      return resolveRtcCallPrivateBubbleText(payload)
+    }
+    return segmentsToText(resolveRtcCallTipSegments({ type, content })) || '[语音通话]'
   }
-  const payload = parseMessage<Record<string, any>>(content)
-  return payload?.content ? String(payload.content) : content || ''
+  return summarizeMessageContent({ type: type ?? 0, content: content || '' })
+}
+
+/** 获取会话列表最后一条消息摘要 */
+export function resolveConversationLastContent(
+  message: Message,
+  conversationType: number,
+  conversationTargetId: number,
+  fallbackName?: string,
+) {
+  if (message.type === ImMessageType.RECALL) {
+    return buildRecallTip(
+      message.senderId,
+      message.selfSend,
+      conversationType,
+      conversationTargetId,
+      fallbackName,
+    )
+  }
+  if (isFriendChatTip(message.type)) {
+    return resolveFriendNotificationText(message)
+  }
+  if (isGroupNotification(message.type)) {
+    return resolveGroupNotificationText(
+      message,
+      userId => getSenderDisplayName(userId, ImConversationType.GROUP, message.targetId),
+    )
+  }
+  if (isRtcCallTip(message.type)) {
+    return resolveRtcCallLastContent(message, conversationType)
+  }
+  return summarizeMessageContent(message)
 }

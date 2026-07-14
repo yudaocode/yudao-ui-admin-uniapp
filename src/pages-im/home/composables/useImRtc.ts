@@ -1,264 +1,272 @@
-import type { ImRtcCallRespVO } from '@/api/im/rtc'
-import type { ImRtcCallStageValue } from '@/utils/constants'
+import type {
+  ImRtcCallNotification,
+  ImRtcParticipantConnectedNotification,
+  ImRtcParticipantDisconnectedNotification,
+} from '../store/rtcStore'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, getCurrentInstance, ref } from 'vue'
-import { acceptCall, cancelCall, createCall, inviteCall, joinCall, leaveCall, rejectCall } from '@/api/im/rtc'
-import { useUserStore } from '@/store/user'
+import { storeToRefs } from 'pinia'
+import { getCurrentInstance } from 'vue'
+import {
+  acceptCall,
+  cancelCall,
+  createCall,
+  inviteCall,
+  joinCall,
+  leaveCall,
+  rejectCall,
+} from '@/api/im/rtc'
 import {
   ImConversationType,
   ImMessageType,
   ImRtcCallStage,
   ImRtcCallStatus,
   ImRtcParticipantStatus,
-} from '@/utils/constants'
+} from '@/pages-im/utils/constants'
+import { useUserStore } from '@/store/user'
+import { useRtcStore } from '../store/rtcStore'
 
-export interface ImRtcSignalPayload extends Partial<ImRtcCallRespVO> {
-  status: number
-  room: string
-  inviterId?: number
-  inviterUserId?: number
-  inviterNickname?: string
-  inviterAvatar?: string
-  operatorUserId?: number
-  userId?: number
-  participantUserId?: number
-}
+let openingPage = false // 通话页是否正在入栈
 
-const stage = ref<ImRtcCallStageValue>(ImRtcCallStage.IDLE) // 当前通话阶段
-const call = ref<ImRtcCallRespVO>() // 当前通话
-const incoming = ref<ImRtcSignalPayload>() // 当前来电
-const peerName = ref('') // 对端或群聊名称
-const peerAvatar = ref('') // 对端头像
-const startedAt = ref(0) // 通话开始时间
-let openingPage = false
-let showToast: ((message: string) => void) | undefined
+/** 移动端通话 API 与页面跳转适配 */
+export function useImRtc() {
+  const toast = getCurrentInstance() ? useToast() : undefined
+  const userStore = useUserStore()
+  const rtcStore = useRtcStore()
 
-/** 显示通话提示 */
-function showRtcTip(message: string) {
-  showToast?.(message)
-}
-
-/** 当前是否有通话 */
-const active = computed(() => stage.value !== ImRtcCallStage.IDLE)
-
-/** 当前平台是否支持 LiveKit 通话 */
-function supportsRtc() {
-  // #ifdef H5
-  return true
-  // #endif
-  // #ifndef H5
-  return false
-  // #endif
-}
-
-/** 打开通话页，避免重复入栈 */
-function openCallPage() {
-  if (openingPage || getCurrentPages().some(page => page.route === 'pages-im/home/rtc/call/index')) {
-    return
-  }
-  openingPage = true
-  uni.navigateTo({
-    url: '/pages-im/home/rtc/call/index',
-    complete: () => {
-      openingPage = false
-    },
-  })
-}
-
-/** 发起私聊或群聊通话 */
-async function start(options: {
-  conversationType: number
-  mediaType: number
-  inviteeIds: number[]
-  groupId?: number
-  name?: string
-  avatar?: string
-}) {
-  if (!supportsRtc()) {
-    showRtcTip('请在 H5 或 PC 端使用通话')
+  /** 当前平台是否支持 LiveKit 通话 */
+  function supportsRtc() {
+    // #ifdef H5
+    return true
+    // #endif
+    // #ifndef H5
     return false
+    // #endif
   }
-  if (active.value) {
-    showRtcTip('当前正在通话中')
-    return false
-  }
-  const data = await createCall({
-    conversationType: options.conversationType,
-    mediaType: options.mediaType,
-    groupId: options.groupId,
-    inviteeIds: options.inviteeIds,
-  })
-  if (data.status === ImRtcCallStatus.ENDED) {
-    showRtcTip('对方当前无法接听')
-    return false
-  }
-  call.value = data
-  peerName.value = options.name || (options.conversationType === ImConversationType.GROUP ? '群聊通话' : '好友')
-  peerAvatar.value = options.avatar || ''
-  stage.value = data.status === ImRtcCallStatus.RUNNING ? ImRtcCallStage.RUNNING : ImRtcCallStage.INVITING
-  if (stage.value === ImRtcCallStage.RUNNING) {
-    startedAt.value = Date.now()
-  }
-  openCallPage()
-  return true
-}
 
-/** 接收 RTC WebSocket 信令 */
-async function receiveSignal(payload: ImRtcSignalPayload, contentType: number = ImMessageType.RTC_CALL) {
-  if (contentType === ImMessageType.RTC_PARTICIPANT_CONNECTED
-    || contentType === ImMessageType.RTC_PARTICIPANT_DISCONNECTED) {
-    if (payload.room !== call.value?.room) {
+  /** 打开通话页 */
+  function openCallPage() {
+    if (openingPage
+      || getCurrentPages().some(page => page.route === 'pages-im/home/conversation/rtc/call/index')) {
       return
     }
-    const participantUserId = payload.participantUserId || payload.userId || payload.operatorUserId
-    if (participantUserId) {
-      syncParticipant(participantUserId, contentType === ImMessageType.RTC_PARTICIPANT_CONNECTED)
-    }
-    return
+    openingPage = true
+    uni.navigateTo({
+      url: '/pages-im/home/conversation/rtc/call/index',
+      complete: () => openingPage = false,
+    })
   }
-  const userId = useUserStore().userInfo.userId
-  if (payload.status === ImRtcParticipantStatus.INVITING) {
-    if (active.value || payload.inviterId === userId || payload.inviterUserId === userId) {
-      return
-    }
+
+  /** 发起私聊或群聊通话 */
+  async function start(options: {
+    conversationType: number
+    mediaType: number
+    inviteeIds: number[]
+    groupId?: number
+  }) {
     if (!supportsRtc()) {
-      await rejectCall(payload.room)
+      toast?.show('请在 H5 或 PC 端使用通话')
+      return false
+    }
+    if (rtcStore.isActive) {
+      toast?.show('当前正在通话中')
+      return false
+    }
+    const data = await createCall(options)
+    if (data.status === ImRtcCallStatus.ENDED) {
+      toast?.show('对方当前无法接听')
+      return false
+    }
+    rtcStore.startInviting(data)
+    openCallPage()
+    return true
+  }
+
+  /** 加入群通话 */
+  async function join(room: string) {
+    if (!supportsRtc()) {
+      toast?.show('请在 H5 或 PC 端使用通话')
+      return false
+    }
+    if (rtcStore.isActive) {
+      return false
+    }
+    rtcStore.enterRunning(await joinCall(room))
+    openCallPage()
+    return true
+  }
+
+  /** 接听来电 */
+  async function accept() {
+    const room = rtcStore.incomingPayload?.room
+    if (!room) {
       return
     }
-    incoming.value = payload
-    peerName.value = payload.inviterNickname || '收到新来电'
-    peerAvatar.value = payload.inviterAvatar || ''
-    stage.value = ImRtcCallStage.INCOMING
-    openCallPage()
-    return
+    rtcStore.enterRunning(await acceptCall(room))
   }
-  if (payload.room !== call.value?.room && payload.room !== incoming.value?.room) {
-    return
-  }
-  if (payload.status === ImRtcParticipantStatus.JOINED && stage.value === ImRtcCallStage.INVITING) {
-    stage.value = ImRtcCallStage.RUNNING
-    startedAt.value ||= Date.now()
-  }
-  if (payload.status === ImRtcParticipantStatus.REJECTED || payload.status === ImRtcParticipantStatus.NO_ANSWER) {
-    reset()
-  }
-}
 
-/** 同步通话参与成员 */
-function syncParticipant(userId: number, joined: boolean) {
-  if (!call.value) {
-    return
+  /** 拒绝来电 */
+  async function reject() {
+    const payload = rtcStore.incomingPayload
+    if (payload?.room) {
+      await rejectCall(payload.room)
+      rtcStore.applyParticipantRejected({
+        ...payload,
+        operatorUserId: userStore.userInfo.userId,
+      })
+    }
+    rtcStore.reset()
   }
-  const currentIds = call.value.joinedUserIds || []
-  call.value = {
-    ...call.value,
-    joinedUserIds: joined
-      ? Array.from(new Set([...currentIds, userId]))
-      : currentIds.filter(id => id !== userId),
-  }
-  if (joined && stage.value === ImRtcCallStage.INVITING) {
-    stage.value = ImRtcCallStage.RUNNING
-    startedAt.value ||= Date.now()
-  }
-}
 
-/** 通话中追加邀请群成员 */
-async function invite(userIds: number[]) {
-  if (!call.value?.room || userIds.length === 0) {
-    return false
-  }
-  await inviteCall({ room: call.value.room, inviteeIds: userIds })
-  call.value = {
-    ...call.value,
-    inviteeIds: Array.from(new Set([...(call.value.inviteeIds || []), ...userIds])),
-  }
-  return true
-}
-
-/** 接听来电 */
-async function accept() {
-  if (!incoming.value?.room) {
-    return
-  }
-  call.value = await acceptCall(incoming.value.room)
-  incoming.value = undefined
-  stage.value = ImRtcCallStage.RUNNING
-  startedAt.value = Date.now()
-}
-
-/** 加入群通话 */
-async function join(room: string, name?: string) {
-  if (!supportsRtc()) {
-    showRtcTip('请在 H5 或 PC 端使用通话')
-    return false
-  }
-  if (active.value) {
-    return false
-  }
-  call.value = await joinCall(room)
-  peerName.value = name || '群聊通话'
-  stage.value = ImRtcCallStage.RUNNING
-  startedAt.value = Date.now()
-  openCallPage()
-  return true
-}
-
-/** 拒绝来电 */
-async function reject() {
-  if (incoming.value?.room) {
-    await rejectCall(incoming.value.room)
-  }
-  reset()
-}
-
-/** 取消呼叫或离开通话 */
-async function hangup() {
-  const room = call.value?.room || incoming.value?.room
-  try {
-    if (room) {
-      if (stage.value === ImRtcCallStage.INVITING) {
+  /** 取消呼叫、拒绝来电或离开通话 */
+  async function hangup() {
+    const currentCall = rtcStore.call
+    const incomingPayload = rtcStore.incomingPayload
+    const currentStage = rtcStore.stage
+    const room = currentCall?.room || incomingPayload?.room
+    try {
+      if (!room) {
+        return
+      }
+      if (currentStage === ImRtcCallStage.INVITING) {
         await cancelCall(room)
-      } else if (stage.value === ImRtcCallStage.INCOMING) {
+      } else if (currentStage === ImRtcCallStage.INCOMING) {
         await rejectCall(room)
+        if (incomingPayload) {
+          rtcStore.applyParticipantRejected({
+            ...incomingPayload,
+            operatorUserId: userStore.userInfo.userId,
+          })
+        }
       } else {
         await leaveCall(room)
+        if (currentCall) {
+          rtcStore.applyParticipantDisconnected({
+            room,
+            conversationType: currentCall.conversationType,
+            groupId: currentCall.groupId,
+            userId: userStore.userInfo.userId,
+          })
+        }
       }
+    } finally {
+      rtcStore.reset()
     }
-  } finally {
-    reset()
   }
-}
 
-/** 通话结束通知 */
-function end(room?: string) {
-  if (!room || room === call.value?.room || room === incoming.value?.room) {
-    reset()
+  /** 通话中追加邀请成员 */
+  async function invite(userIds: number[]) {
+    if (!rtcStore.call?.room || userIds.length === 0) {
+      return false
+    }
+    await inviteCall({ room: rtcStore.call.room, inviteeIds: userIds })
+    rtcStore.appendInvitees(userIds)
+    return true
   }
-}
 
-/** 清理本地通话状态 */
-function reset() {
-  stage.value = ImRtcCallStage.IDLE
-  call.value = undefined
-  incoming.value = undefined
-  peerName.value = ''
-  peerAvatar.value = ''
-  startedAt.value = 0
-  uni.$emit('im:rtc-ended')
-}
-
-export function useImRtc() {
-  if (getCurrentInstance()) {
-    showToast = useToast().show
+  /** 同步 LiveKit 本地参与成员 */
+  function syncParticipant(userId: number, joined: boolean) {
+    const currentCall = rtcStore.call
+    if (!currentCall) {
+      return
+    }
+    const currentIds = currentCall.joinedUserIds || []
+    const data = {
+      ...currentCall,
+      joinedUserIds: joined
+        ? Array.from(new Set([...currentIds, userId]))
+        : currentIds.filter(id => id !== userId),
+    }
+    rtcStore.call = data
+    if (data.conversationType === ImConversationType.GROUP && data.groupId) {
+      rtcStore.setGroupCall({
+        room: data.room,
+        groupId: data.groupId,
+        mediaType: data.mediaType,
+        inviterId: data.inviterId,
+        joinedUserIds: data.joinedUserIds,
+        inviteeIds: data.inviteeIds,
+      })
+    }
+    if (joined && rtcStore.stage === ImRtcCallStage.INVITING) {
+      rtcStore.enterRunning(data)
+    }
   }
+
+  /** 接收 RTC 信令 */
+  async function receiveSignal(
+    payload: ImRtcCallNotification
+      | ImRtcParticipantConnectedNotification
+      | ImRtcParticipantDisconnectedNotification,
+    contentType: number = ImMessageType.RTC_CALL,
+  ) {
+    if (contentType === ImMessageType.RTC_PARTICIPANT_CONNECTED) {
+      const participant = payload as ImRtcParticipantConnectedNotification
+      rtcStore.applyParticipantConnected(participant)
+      if (participant.room === rtcStore.call?.room) {
+        syncParticipant(participant.userId, true)
+      }
+      return
+    }
+    if (contentType === ImMessageType.RTC_PARTICIPANT_DISCONNECTED) {
+      const participant = payload as ImRtcParticipantDisconnectedNotification
+      rtcStore.applyParticipantDisconnected(participant)
+      if (participant.room === rtcStore.call?.room) {
+        syncParticipant(participant.userId, false)
+      }
+      return
+    }
+    const notification = payload as ImRtcCallNotification
+    if (notification.status === ImRtcParticipantStatus.INVITING) {
+      if (rtcStore.isActive || notification.inviterUserId === userStore.userInfo.userId) {
+        return
+      }
+      if (!supportsRtc()) {
+        await rejectCall(notification.room)
+        return
+      }
+      rtcStore.showIncoming(notification)
+      openCallPage()
+      return
+    }
+    if (notification.status === ImRtcParticipantStatus.REJECTED) {
+      rtcStore.applyParticipantRejected(notification)
+      if (notification.conversationType !== ImConversationType.GROUP
+        && (notification.room === rtcStore.call?.room
+          || notification.room === rtcStore.incomingPayload?.room)) {
+        rtcStore.reset()
+      }
+      return
+    }
+    if (notification.status === ImRtcParticipantStatus.NO_ANSWER) {
+      rtcStore.applyParticipantNoAnswer(notification)
+      if (notification.conversationType !== ImConversationType.GROUP
+        && (notification.room === rtcStore.call?.room
+          || notification.room === rtcStore.incomingPayload?.room)) {
+        rtcStore.reset()
+      }
+      return
+    }
+    if (notification.room === rtcStore.call?.room
+      && notification.status === ImRtcParticipantStatus.JOINED
+      && rtcStore.stage === ImRtcCallStage.INVITING
+      && rtcStore.call) {
+      rtcStore.enterRunning(rtcStore.call)
+    }
+  }
+
+  /** 应用通话结束通知 */
+  function end(room?: string, groupId?: number) {
+    if (groupId) {
+      rtcStore.removeGroupCall(groupId, room)
+    }
+    if (!room || room === rtcStore.call?.room || room === rtcStore.incomingPayload?.room) {
+      rtcStore.reset()
+    }
+  }
+
   return {
-    stage,
-    call,
-    incoming,
-    peerName,
-    peerAvatar,
-    startedAt,
-    active,
+    ...storeToRefs(rtcStore),
+    supportsRtc, // TODO @AI：这个可以删除么？
     start,
     join,
     accept,
@@ -268,6 +276,6 @@ export function useImRtc() {
     syncParticipant,
     receiveSignal,
     end,
-    reset,
+    reset: rtcStore.reset,
   }
 }

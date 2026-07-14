@@ -56,9 +56,8 @@ export const ImMessageType = {
 export const ImMessageStatus = {
   FAILED: -2,
   SENDING: -1,
-  UNREAD: 0,
+  NORMAL: 0,
   RECALL: 2,
-  READ: 3,
 } as const
 
 /** IM 消息回执状态 */
@@ -85,6 +84,7 @@ export type ImChannelMessageReceiverTypeValue
 
 /** IM 会话类型枚举 */
 export const ImConversationType = {
+  NONE: 0,
   PRIVATE: 1,
   GROUP: 2,
   CHANNEL: 3,

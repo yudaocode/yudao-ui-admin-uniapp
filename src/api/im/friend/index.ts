@@ -13,6 +13,7 @@ export interface ImFriendRespVO {
   status?: number
   addTime?: string
   deleteTime?: string
+  updateTime?: number
   nickname?: string
   nicknamePinyin?: string
   avatar?: string
@@ -29,6 +30,11 @@ export interface ImFriendUpdateReq {
 /** 获得当前登录用户的好友列表 */
 export function getMyFriendList() {
   return http.get<ImFriendRespVO[]>('/im/friend/list')
+}
+
+/** 增量拉取当前用户的好友关系 */
+export function pullMyFriendList(params: { lastUpdateTime?: number, lastId?: number, limit: number }) {
+  return http.get<ImFriendRespVO[]>('/im/friend/pull', params)
 }
 
 /** 获得好友详情 */

@@ -11,6 +11,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { getAvatarBgColor, getAvatarText } from '@/pages-im/utils/user'
 
 const props = withDefaults(defineProps<{
   name?: string
@@ -24,20 +25,15 @@ const props = withDefaults(defineProps<{
   src: '',
 })
 
-const letter = computed(() => (props.name || '?').charAt(0))
-const fallbackStyle = computed(() => { // 无头像时按名称稳定分配柔和底色
+const letter = computed(() => getAvatarText(props.name))
+const fallbackStyle = computed(() => { // 无头像时按 PC 规则稳定分配底色
   if (props.src) {
     return {}
   }
-  const palettes = [
-    { backgroundColor: '#dceeff', color: '#1677ff' },
-    { backgroundColor: '#dff4e8', color: '#32965d' },
-    { backgroundColor: '#fff0d8', color: '#c97812' },
-    { backgroundColor: '#eee7ff', color: '#7457c8' },
-    { backgroundColor: '#ffe5e7', color: '#d64f5f' },
-  ]
-  const hash = Array.from(props.name || '?').reduce((sum, char) => sum + (char.codePointAt(0) || 0), 0)
-  return palettes[hash % palettes.length]
+  return {
+    backgroundColor: getAvatarBgColor(props.name),
+    color: '#fff',
+  }
 })
 const fontSize = computed(() => {
   const value = Number.parseInt(props.size)

@@ -1,3 +1,4 @@
+<!-- TODO @AI：可以挪到 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-im/home/components 里么？ -->
 <template>
   <!-- 图片 -->
   <wd-img
@@ -36,18 +37,18 @@
   </view>
   <!-- 语音 -->
   <view
-    v-else-if="type === ImMessageType.VOICE && mediaPayload"
+    v-else-if="type === ImMessageType.VOICE && audioPayload"
     class="min-w-160rpx flex items-center gap-14rpx"
     @click="playVoice"
   >
     <wd-icon :name="voicePlaying ? 'sound-fill' : 'sound'" size="38rpx" custom-class="text-[#576b95]" />
-    <text>{{ mediaPayload.duration || 0 }}″</text>
+    <text>{{ audioPayload.duration || 0 }}″</text>
   </view>
   <!-- 视频 -->
   <video
-    v-else-if="type === ImMessageType.VIDEO && mediaPayload?.url"
-    :src="mediaPayload.url"
-    :poster="mediaPayload.coverUrl"
+    v-else-if="type === ImMessageType.VIDEO && videoPayload?.url"
+    :src="videoPayload.url"
+    :poster="videoPayload.coverUrl"
     class="h-320rpx w-460rpx rounded-8rpx bg-black"
     controls
   />
@@ -139,76 +140,69 @@
 </template>
 
 <script lang="ts" setup>
-import type { ImCardMessage, ImFaceMessage, ImFileMessage, ImMaterialMessage, ImMediaMessage, ImMergeMessage } from '@/pages-im/utils/message'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onUnmounted, ref } from 'vue'
-import { ImConversationType, ImMessageType } from '@/utils/constants'
+import type {
+  AudioMessage,
+  CardMessage,
+  FaceMessage,
+  FileMessage,
+  MaterialMessage,
+  MentionCandidate,
+  MergeMessage,
+  TipSegment,
+  VideoMessage,
+} from '@/pages-im/utils/message'
+import { computed, onUnmounted } from 'vue'
+import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { getImageUrl } from '@/pages-im/utils/image'
-import { parseMessage } from '@/pages-im/utils/message'
+import { parseMessage, parseTextSegments } from '@/pages-im/utils/message'
 import { openAttachment } from '@/utils/download'
+import { openUrl } from '@/utils/url'
+import { MESSAGE_MERGE_PREVIEW_LINES } from '@/pages-im/utils/config'
+import { useVoicePlayer } from '@/pages-im/home/composables/useVoicePlayer'
 
 const props = defineProps<{
   type?: number // 消息类型 ImMessageType
   content: string // 消息内容（JSON 字符串）
+  mentions?: MentionCandidate[] // 文本中的 @ 候选
 }>()
 
 const emit = defineEmits<{
-  'material-click': [payload: ImMaterialMessage] // 点击频道素材
-  'merge-click': [payload: ImMergeMessage] // 点击合并转发
-  'card-click': [payload: ImCardMessage] // 点击名片
+  'material-click': [payload: MaterialMessage] // 点击频道素材
+  'merge-click': [payload: MergeMessage] // 点击合并转发
+  'card-click': [payload: CardMessage] // 点击名片
+  'mention-click': [userId: number] // 点击 @ 用户
 }>()
-const toast = useToast()
-
-interface TextSegment {
-  type: 'text' | 'mention' | 'link' // 段类型
-  text: string // 段文本
-}
 
 const imageUrl = computed(() => getImageUrl(props.content)) // 图片地址
-const faceUrl = computed(() => parseMessage<ImFaceMessage>(props.content)?.url || '') // 表情地址
-const filePayload = computed(() => parseMessage<ImFileMessage>(props.content)) // 文件内容
-const mediaPayload = computed(() => parseMessage<ImMediaMessage>(props.content)) // 语音/视频内容
-const materialPayload = computed(() => parseMessage<ImMaterialMessage>(props.content)) // 频道素材内容
-const cardPayload = computed(() => parseMessage<ImCardMessage>(props.content)) // 名片内容
-const mergePayload = computed(() => parseMessage<ImMergeMessage>(props.content)) // 合并转发内容
+const faceUrl = computed(() => parseMessage<FaceMessage>(props.content)?.url || '') // 表情地址
+const filePayload = computed(() => parseMessage<FileMessage>(props.content)) // 文件内容
+const audioPayload = computed(() => parseMessage<AudioMessage>(props.content)) // 语音内容
+const videoPayload = computed(() => parseMessage<VideoMessage>(props.content)) // 视频内容
+const materialPayload = computed(() => parseMessage<MaterialMessage>(props.content)) // 频道素材内容
+const cardPayload = computed(() => parseMessage<CardMessage>(props.content)) // 名片内容
+const mergePayload = computed(() => parseMessage<MergeMessage>(props.content)) // 合并转发内容
 const summary = computed(() => getMessageSummary(props.type, props.content)) // 文本/兜底摘要
 
-/** 合并转发预览（前 4 条） */
+/** 合并转发预览 */
 const mergePreview = computed(() =>
   (mergePayload.value?.messages || [])
-    .slice(0, 4)
+    .slice(0, MESSAGE_MERGE_PREVIEW_LINES)
     .map(item => `${item.senderNickname || ''}：${getMessageSummary(item.type, item.content)}`),
 )
 
 /** 文本分段：@ 与链接高亮 */
-const textSegments = computed(() => parseTextSegments(summary.value))
+const textSegments = computed(() => parseTextSegments(summary.value, props.mentions)) // 文本中的 @ 和链接分段
+const voiceKey = Symbol('im-voice')
+const voicePlayer = useVoicePlayer()
+const voicePlaying = computed(() => voicePlayer.isPlaying(voiceKey)) // 当前语音是否播放中
 
-/** 解析文本为段（普通 / @提及 / 链接） */
-function parseTextSegments(text: string): TextSegment[] {
-  const segments: TextSegment[] = []
-  const regex = /(@\S+|https?:\/\/\S+)/g
-  let lastIndex = 0
-  let match = regex.exec(text)
-  while (match) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', text: text.slice(lastIndex, match.index) })
-    }
-    const token = match[0]
-    segments.push({ type: token.startsWith('@') ? 'mention' : 'link', text: token })
-    lastIndex = regex.lastIndex
-    match = regex.exec(text)
-  }
-  if (lastIndex < text.length) {
-    segments.push({ type: 'text', text: text.slice(lastIndex) })
-  }
-  return segments
-}
-
-/** 点击段：链接复制 */
-function onSegmentTap(seg: TextSegment) {
+/** 点击文本分段 */
+function onSegmentTap(seg: TipSegment) {
   if (seg.type === 'link') {
-    uni.setClipboardData({ data: seg.text, success: () => toast.show('链接已复制') })
+    openUrl(seg.href)
+  } else if (seg.type === 'mention') {
+    emit('mention-click', seg.userId)
   }
 }
 
@@ -232,6 +226,7 @@ function previewImage() {
 }
 
 /** 预览表情 */
+// TODO @AI：使用 wt-image 简化掉？
 function previewFace() {
   if (faceUrl.value) {
     uni.previewImage({ urls: [faceUrl.value], current: faceUrl.value })
@@ -239,51 +234,25 @@ function previewFace() {
 }
 
 /** 打开文件 */
+// TODO @AI：全局有可替代的方法么？
 function handleFile() {
   if (filePayload.value?.url) {
     openAttachment(filePayload.value.url)
   }
 }
 
-const voicePlaying = ref(false) // 语音播放状态
-let audioContext: UniApp.InnerAudioContext | null = null // 当前组件语音播放器引用
-
 /** 播放/停止语音 */
 function playVoice() {
-  const url = mediaPayload.value?.url
-  if (!url) {
-    return
-  }
-  if (!audioContext) {
-    audioContext = uni.createInnerAudioContext()
-    audioContext.onEnded(() => (voicePlaying.value = false))
-    audioContext.onStop(() => (voicePlaying.value = false))
-    audioContext.onError(() => (voicePlaying.value = false))
-  }
-  if (voicePlaying.value) {
-    audioContext.stop()
-    return
-  }
-  if (activeVoiceContext && activeVoiceContext !== audioContext) {
-    activeVoiceContext.stop()
-  }
-  audioContext.src = url
-  audioContext.play()
-  activeVoiceContext = audioContext
-  activeVoiceUrl = url
-  voicePlaying.value = true
+  const url = audioPayload.value?.url
+  voicePlayer.play(voiceKey, url || '')
 }
 
-/** 卸载时销毁播放器 */
+/** 卸载时停止当前实例 */
 onUnmounted(() => {
-  if (activeVoiceContext === audioContext && activeVoiceUrl === mediaPayload.value?.url) {
-    activeVoiceContext = null
-    activeVoiceUrl = ''
-  }
-  audioContext?.destroy()
-  audioContext = null
+  voicePlayer.stop(voiceKey)
 })
 
+// TODO @AI：全局有可替代的方法么？
 /** 格式化文件大小 */
 function formatFileSize(size?: number) {
   if (!size) {
@@ -297,9 +266,4 @@ function formatFileSize(size?: number) {
   }
   return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
-</script>
-
-<script lang="ts">
-let activeVoiceContext: UniApp.InnerAudioContext | null = null // 全局正在播放的语音
-let activeVoiceUrl = '' // 全局正在播放的语音地址
 </script>

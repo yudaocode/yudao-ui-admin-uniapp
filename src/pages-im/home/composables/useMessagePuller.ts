@@ -1,183 +1,97 @@
-import type { MessageDO } from '@/pages-im/home/db'
+import { useChannelStore } from '../store/channelStore'
+import { useFriendStore } from '../store/friendStore'
+import { useGroupStore } from '../store/groupStore'
+import { buildMessageFromDO, useMessageStore } from '../store/messageStore'
 import type { ImChannelMessageRespVO } from '@/api/im/message/channel'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
-import { pullChannelMessages } from '@/api/im/message/channel'
-import { pullGroupMessages } from '@/api/im/message/group'
-import { pullPrivateMessages } from '@/api/im/message/private'
-import {
-  getClientConversationId,
-  getClientMessageKey,
-  getImDb,
-  getServerMessageKey,
-  ImSettingKeys,
-} from '@/pages-im/home/db'
-import { MESSAGE_PULL_PAGE_SIZE } from '@/pages-im/utils/config'
-import { parseRecallMessageId } from '@/pages-im/utils/message'
-import { runMinIdPull } from '@/pages-im/utils/pull'
-import { toTimestamp } from '@/pages-im/utils/time'
-import { ImConversationType, ImMessageStatus, ImMessageType } from '@/utils/constants'
+import type { ConversationDO } from '../types'
+import { ImConversationType } from '@/pages-im/utils/constants'
+import { getPrivateMaxReadMessageId } from '@/api/im/message/private'
+import { MESSAGE_PRIVATE_READ_ENABLED } from '@/pages-im/utils/config'
 
-/** 消息增量拉取与服务端 VO 转换 */
-export function useMessagePuller(getCurrentUserId: () => number) {
-  /** 私聊消息 VO 转本地消息 */
-  function mapPrivateMessage(vo: ImPrivateMessageRespVO, currentUserId = getCurrentUserId()): MessageDO {
-    const self = currentUserId
-    const selfSend = vo.senderId === self
-    const targetId = selfSend ? vo.receiverId : vo.senderId
-    const clientConversationId = getClientConversationId(ImConversationType.PRIVATE, targetId)
-    return {
-      messageKey: vo.id
-        ? getServerMessageKey(ImConversationType.PRIVATE, vo.id)
-        : getClientMessageKey(vo.clientMessageId),
-      clientConversationId,
-      conversationType: ImConversationType.PRIVATE,
-      id: vo.id,
-      clientMessageId: vo.clientMessageId,
-      type: vo.type,
-      content: vo.content,
-      status: vo.status,
-      sendTime: toTimestamp(vo.sendTime),
-      senderId: vo.senderId,
-      targetId,
-      selfSend,
-    }
+/** 编排 IM 消息、关系元数据与已读位置补拉 */
+export function useMessagePuller(options?: {
+  pullConversationReads: (isActive: () => boolean) => Promise<void>
+  getActiveConversation: () => ConversationDO | undefined
+}) {
+  const friendStore = useFriendStore()
+  const groupStore = useGroupStore()
+  const channelStore = useChannelStore()
+  const messageStore = useMessageStore()
+  let pullEpoch = 0 // 拉取轮次；账号切换后旧任务失效
+
+  /** 私聊消息响应转前端消息 */
+  function convertPrivateMessage(message: ImPrivateMessageRespVO, currentUserId?: number) {
+    const record = messageStore.buildIncomingMessage(ImConversationType.PRIVATE, message, currentUserId)
+    return record ? buildMessageFromDO(record) : null
   }
 
-  /** 群聊消息 VO 转本地消息 */
-  function mapGroupMessage(vo: ImGroupMessageRespVO, currentUserId = getCurrentUserId()): MessageDO {
-    const clientConversationId = getClientConversationId(ImConversationType.GROUP, vo.groupId)
-    return {
-      messageKey: vo.id
-        ? getServerMessageKey(ImConversationType.GROUP, vo.id)
-        : getClientMessageKey(vo.clientMessageId),
-      clientConversationId,
-      conversationType: ImConversationType.GROUP,
-      id: vo.id,
-      clientMessageId: vo.clientMessageId,
-      type: vo.type,
-      content: vo.content,
-      status: vo.status,
-      sendTime: toTimestamp(vo.sendTime),
-      senderId: vo.senderId,
-      targetId: vo.groupId,
-      selfSend: vo.senderId === currentUserId,
-      atUserIds: vo.atUserIds,
-      receiverUserIds: vo.receiverUserIds,
-      receiptStatus: vo.receiptStatus,
-      readCount: vo.readCount,
-    }
+  /** 群聊消息响应转前端消息 */
+  function convertGroupMessage(message: ImGroupMessageRespVO, currentUserId?: number) {
+    const record = messageStore.buildIncomingMessage(ImConversationType.GROUP, message, currentUserId)
+    return record ? buildMessageFromDO(record) : null
   }
 
-  /** 频道消息 VO 转本地消息 */
-  function mapChannelMessage(vo: ImChannelMessageRespVO): MessageDO {
-    const clientConversationId = getClientConversationId(ImConversationType.CHANNEL, vo.channelId)
-    return {
-      messageKey: vo.id
-        ? getServerMessageKey(ImConversationType.CHANNEL, vo.id)
-        : getClientMessageKey(vo.clientMessageId),
-      clientConversationId,
-      conversationType: ImConversationType.CHANNEL,
-      id: vo.id,
-      clientMessageId: vo.clientMessageId || `channel-${vo.id}`,
-      type: vo.type,
-      content: vo.content,
-      status: vo.status ?? ImMessageStatus.UNREAD,
-      sendTime: toTimestamp(vo.sendTime),
-      senderId: 0,
-      targetId: vo.channelId,
-      selfSend: false,
-      materialId: vo.materialId,
-      receiptStatus: vo.receiptStatus,
-    }
+  /** 频道消息响应转前端消息 */
+  function convertChannelMessage(message: ImChannelMessageRespVO) {
+    const record = messageStore.buildIncomingMessage(ImConversationType.CHANNEL, message)
+    return record ? buildMessageFromDO(record) : null
   }
 
-  /** 拉取一类消息并持久化 */
-  async function pullMessages<T extends { id: number, type: number, content: string }>(
-    cursorKey: string,
-    fetchPage: (minId: number) => Promise<T[]>,
-    mapper: (vo: T) => MessageDO,
-    isActive: () => boolean,
-  ) {
-    const db = getImDb()
-    const initialMinId = (await db.getSetting<number>(cursorKey)) || 0
-    await runMinIdPull({
-      initialMinId,
-      pageSize: MESSAGE_PULL_PAGE_SIZE,
-      fetchPage,
-      persistPage: async (list) => {
-        const messages = list.filter(item => item.type !== ImMessageType.RECALL).map(mapper)
-        await Promise.all(messages
-          .filter(message => !!message.id && !!message.clientMessageId)
-          .map(message => db.delete('messages', getClientMessageKey(message.clientMessageId))))
-        await db.bulkPut<MessageDO>('messages', messages)
-        for (const signal of list.filter(item => item.type === ImMessageType.RECALL)) {
-          const messageId = parseRecallMessageId(signal.content)
-          if (!messageId) {
-            continue
-          }
-          const messageKey = getServerMessageKey(mapper(signal).conversationType, messageId)
-          const original = await db.get<MessageDO>('messages', messageKey)
-          if (original) {
-            await db.put<MessageDO>('messages', {
-              ...original,
-              type: ImMessageType.RECALL,
-              content: '',
-              status: ImMessageStatus.RECALL,
-            })
-          }
-        }
-      },
-      persistCursor: minId => db.setSetting(cursorKey, minId),
-      isActive,
+  /** 执行一轮消息与状态补拉 */
+  async function pullOnce(forceMetadata: boolean, isActive: () => boolean) {
+    const startEpoch = pullEpoch
+    const isCurrentPull = () => startEpoch === pullEpoch && isActive()
+    await channelStore.loadChannelList()
+    const [friends, groups] = await Promise.all([
+      forceMetadata ? friendStore.pullFriends() : friendStore.fetchFriendList(),
+      groupStore.fetchGroupList(forceMetadata),
+      channelStore.fetchChannelList(forceMetadata),
+    ])
+    if (!isCurrentPull()) {
+      return
+    }
+    await messageStore.pullAllMessages(isCurrentPull)
+    if (!isCurrentPull()) {
+      return
+    }
+    await options?.pullConversationReads(isCurrentPull).catch((error) => {
+      if (isCurrentPull()) {
+        console.warn('[IM] 拉取会话读位置失败', error)
+      }
     })
-  }
-
-  /** 依次拉取私聊、群聊和频道消息 */
-  async function pullAllMessages(isActive: () => boolean) {
-    await pullMessages(
-      ImSettingKeys.privateMessageMaxId,
-      minId => pullPrivateMessages({ minId, size: MESSAGE_PULL_PAGE_SIZE }),
-      mapPrivateMessage,
-      isActive,
-    )
-    if (!isActive()) {
+    if (!isCurrentPull()) {
       return
     }
-    await pullMessages(
-      ImSettingKeys.groupMessageMaxId,
-      minId => pullGroupMessages({ minId, size: MESSAGE_PULL_PAGE_SIZE }),
-      mapGroupMessage,
-      isActive,
-    )
-    if (!isActive()) {
-      return
+    const active = options?.getActiveConversation()
+    if (MESSAGE_PRIVATE_READ_ENABLED && active?.type === ImConversationType.PRIVATE) {
+      const maxReadId = await getPrivateMaxReadMessageId(active.targetId)
+      if (!isCurrentPull()) {
+        return
+      }
+      messageStore.updatePrivateReadMaxId(active.targetId, maxReadId)
+      if (maxReadId) {
+        await messageStore.applyMessageReadReceipt({
+          conversationType: ImConversationType.PRIVATE,
+          targetId: active.targetId,
+          privateReadMaxId: maxReadId,
+        })
+      }
     }
-    await pullMessages(
-      ImSettingKeys.channelMessageMaxId,
-      minId => pullChannelMessages({ minId, size: MESSAGE_PULL_PAGE_SIZE }),
-      mapChannelMessage,
-      isActive,
-    )
+    return { friends, groups, channels: channelStore.channels }
   }
 
-  /** 把 WebSocket 通知转换为本地消息 */
-  function buildIncomingMessage(
-    conversationType: number,
-    payload: ImPrivateMessageRespVO | ImGroupMessageRespVO | ImChannelMessageRespVO,
-    currentUserId = getCurrentUserId(),
-  ): MessageDO | null {
-    if (conversationType === ImConversationType.PRIVATE) {
-      return mapPrivateMessage(payload as ImPrivateMessageRespVO, currentUserId)
-    }
-    if (conversationType === ImConversationType.GROUP) {
-      return mapGroupMessage(payload as ImGroupMessageRespVO, currentUserId)
-    }
-    if (conversationType === ImConversationType.CHANNEL) {
-      return mapChannelMessage(payload as ImChannelMessageRespVO)
-    }
-    return null
+  /** 取消当前消息拉取 */
+  function cancelPull() {
+    pullEpoch++
   }
 
-  return { pullAllMessages, buildIncomingMessage }
+  return {
+    pullOnce,
+    cancelPull,
+    convertPrivateMessage,
+    convertGroupMessage,
+    convertChannelMessage, // TODO @AI：貌似这个方法没被使用？
+  }
 }
