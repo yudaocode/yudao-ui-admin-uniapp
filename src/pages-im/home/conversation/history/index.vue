@@ -147,7 +147,11 @@ import {
   isGroupNotification,
   isRtcCallTip,
 } from '@/pages-im/utils/constants'
-import { buildRecallTip, getMessageSummary } from '@/pages-im/utils/conversation'
+import {
+  buildConversationMessageUrl,
+  buildRecallTip,
+  getMessageSummary,
+} from '@/pages-im/utils/conversation'
 import { parseRecallMessageId } from '@/pages-im/utils/message'
 import { formatHistoryTime } from '@/pages-im/utils/time'
 import {
@@ -440,7 +444,11 @@ function getHistorySummary(item: Message) {
 /** 定位到聊天消息 */
 function locateMessage(item: Message) {
   uni.navigateTo({
-    url: `/pages-im/home/conversation/message/index?type=${conversationType.value}&targetId=${targetId.value}&title=${encodeURIComponent(pageTitle.value)}&locateMessageId=${item.id}`,
+    url: buildConversationMessageUrl({
+      type: conversationType.value,
+      targetId: targetId.value,
+      locateMessageId: item.id,
+    }),
   })
 }
 

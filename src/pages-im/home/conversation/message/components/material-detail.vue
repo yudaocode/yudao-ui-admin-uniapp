@@ -71,12 +71,9 @@ const visible = computed({
 
 const loading = ref(false) // 详情加载状态
 const detail = ref<ImChannelMaterialRespVO>() // 素材完整详情
-let requestSeq = 0 // 素材详情请求序号
 
 /** 打开素材时拉取完整详情 */
 watch([visible, () => props.payload?.materialId], async ([isVisible, materialId]) => {
-  // TODO @AI：seq 这种会不会过度了？只要判断 id 想同，是不是足够了？另外，还有没类似的，也清理下，不要过度封装噢；
-  const seq = ++requestSeq
   detail.value = undefined
   if (!isVisible || !materialId) {
     loading.value = false
@@ -85,11 +82,11 @@ watch([visible, () => props.payload?.materialId], async ([isVisible, materialId]
   loading.value = true
   try {
     const data = await getChannelMaterial(materialId)
-    if (seq === requestSeq && visible.value) {
+    if (visible.value && props.payload?.materialId === materialId) {
       detail.value = data
     }
   } finally {
-    if (seq === requestSeq) {
+    if (!visible.value || props.payload?.materialId === materialId) {
       loading.value = false
     }
   }

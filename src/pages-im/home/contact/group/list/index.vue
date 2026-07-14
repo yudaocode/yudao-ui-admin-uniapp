@@ -46,6 +46,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { getGroupDisplayName as getGroupName, isGroupQuit } from '@/pages-im/utils/user'
+import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { navigateBackPlus } from '@/utils'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { useGroupStore } from '../../../store/groupStore'
@@ -84,7 +85,10 @@ function handleBack() {
 /** 打开群聊 */
 function openChat(item: Group) {
   uni.navigateTo({
-    url: `/pages-im/home/conversation/message/index?type=${ImConversationType.GROUP}&targetId=${item.id}&title=${encodeURIComponent(getGroupName(item))}`,
+    url: buildConversationMessageUrl({
+      type: ImConversationType.GROUP,
+      targetId: item.id,
+    }),
   })
 }
 

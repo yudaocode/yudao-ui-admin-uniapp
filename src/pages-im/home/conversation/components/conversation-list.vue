@@ -82,7 +82,7 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { formatConversationTime } from '@/pages-im/utils/time'
-import { filterConversationsByKeyword } from '@/pages-im/utils/conversation'
+import { buildConversationMessageUrl, filterConversationsByKeyword } from '@/pages-im/utils/conversation'
 import { getFriendDisplayName, getMemberDisplayName } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
 import { ImConversationType, ImMessageType, isNormalMessage } from '@/pages-im/utils/constants'
@@ -190,11 +190,12 @@ function handleAdd() {
 
 /** 打开会话 */
 function openChat(item: ConversationDO) {
-  const mentionMessageId = item.atMessageId || item.atAllMessageId
-  const query = mentionMessageId ? `&mentionMessageId=${mentionMessageId}` : ''
-  // TODO @AI：为什么要带 name？
   uni.navigateTo({
-    url: `/pages-im/home/conversation/message/index?type=${item.type}&targetId=${item.targetId}&title=${encodeURIComponent(item.name || '')}${query}`,
+    url: buildConversationMessageUrl({
+      type: item.type,
+      targetId: item.targetId,
+      mentionMessageId: item.atMessageId || item.atAllMessageId,
+    }),
   })
 }
 
@@ -219,8 +220,7 @@ async function handleConversationAction({ item: action }: { item: { value: 'top'
     return
   }
   if (action.value === 'top') {
-    // TODO @AI：linter 报错，是不是要 await？
-    setConversationTop(item.type, item.targetId, !item.top)
+    await setConversationTop(item.type, item.targetId, !item.top)
   } else if (action.value === 'silent') {
     const silent = !item.silent
     if (item.type === ImConversationType.GROUP) {

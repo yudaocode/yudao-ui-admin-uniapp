@@ -94,6 +94,7 @@ import { computed, ref } from 'vue'
 import type { User } from '@/api/system/user'
 import { getSimpleUser } from '@/api/system/user'
 import { toUserCardTarget } from '@/pages-im/utils/message'
+import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { navigateBackPlus } from '@/utils'
 import { formatDate } from '@/utils/date'
@@ -173,7 +174,10 @@ function goSetting() {
 /** 发消息 */
 function sendMessage() {
   uni.navigateTo({
-    url: `/pages-im/home/conversation/message/index?type=${ImConversationType.PRIVATE}&targetId=${friendUserId.value}&title=${encodeURIComponent(displayName.value)}`,
+    url: buildConversationMessageUrl({
+      type: ImConversationType.PRIVATE,
+      targetId: friendUserId.value,
+    }),
   })
 }
 

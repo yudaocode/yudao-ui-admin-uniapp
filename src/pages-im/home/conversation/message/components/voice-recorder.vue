@@ -39,10 +39,8 @@ async function handleRecord() {
   if (sending.value) {
     return
   }
-  // TODO @AI：linter 报错，TS7027: Unreachable code detected.
   // #ifdef H5
   await handleH5Record()
-  return
   // #endif
   // #ifndef H5
   if (recording.value) {

@@ -34,6 +34,22 @@ export function getConversationKey(conversation: { type: number, targetId: numbe
   return `${conversation.type}-${conversation.targetId}`
 }
 
+/** 构建聊天页地址；页面标题由聊天页根据会话资料计算 */
+export function buildConversationMessageUrl(options: {
+  type: number
+  targetId: number
+  locateMessageId?: number
+  mentionMessageId?: number
+}) {
+  const query = [
+    `type=${options.type}`,
+    `targetId=${options.targetId}`,
+    options.locateMessageId ? `locateMessageId=${options.locateMessageId}` : '',
+    options.mentionMessageId ? `mentionMessageId=${options.mentionMessageId}` : '',
+  ].filter(Boolean).join('&')
+  return `/pages-im/home/conversation/message/index?${query}`
+}
+
 /** 按会话名称模糊过滤 */
 export function filterConversationsByKeyword<T extends { name?: string }>(
   list: T[],

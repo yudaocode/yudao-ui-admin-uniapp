@@ -23,7 +23,6 @@ export class StorageDbClient implements ImDbClient {
 
   async open(userId: number): Promise<void> {
     this.prefix = `im:${userId}:`
-    this.migrateLegacyMessages()
     this.pruneMessagePages()
   }
 
@@ -34,11 +33,6 @@ export class StorageDbClient implements ImDbClient {
   /** 普通表的存储 key */
   private storeKey(store: DbStoreName): string {
     return `${this.prefix}${store}`
-  }
-
-  /** 旧版 messages 按会话单 Key */
-  private legacyMessageKey(clientConversationId: string): string {
-    return `${this.prefix}messages:${clientConversationId}`
   }
 
   /** messages 会话元数据 key */
@@ -152,21 +146,6 @@ export class StorageDbClient implements ImDbClient {
       uni.removeStorageSync(this.messagePageKey(clientConversationId, page.id))
     }
     this.writeMessageMeta(meta)
-  }
-
-  /** 迁移旧版「单会话单 Key」消息 */
-  private migrateLegacyMessages(): void {
-    const prefix = `${this.prefix}messages:`
-    this.storageKeys()
-      .filter(key => key.startsWith(prefix) && !key.endsWith(':meta') && !key.includes(':page:'))
-      .forEach((key) => {
-        const clientConversationId = key.slice(prefix.length)
-        const records = Object.values(this.readMap(key)) as AnyRecord[]
-        if (records.length) {
-          this.putMessages(clientConversationId, records)
-        }
-        uni.removeStorageSync(key)
-      })
   }
 
   /** 限制全局消息分页数量；容量异常时额外释放四分之一 */

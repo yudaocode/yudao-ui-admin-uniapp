@@ -7,7 +7,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getGroup as getGroupApi, getMyGroupList } from '@/api/im/group'
 import { getGroupMember, getGroupMemberList, updateGroupMember } from '@/api/im/group/member'
-import { getDb, initDb } from '@/pages-im/utils/db'
+import { getDb, getDbSession, initDb, isCurrentDbSession } from '@/pages-im/utils/db'
 import { getGroupDisplayName } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
 import {
@@ -38,11 +38,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   const detailReloadQueued = new Set<number>() // 当前详情加载完成后需刷新的群
   let groupMembersExpired = false // 进入 IM / 重连后置位，成员桶下次访问时刷新
 
-  /** 群成员 userId 索引 */
-  function getGroupMemberMap(groupId: number): Map<number, GroupMember> {
-    return new Map((getGroup(groupId)?.members || []).map(member => [member.userId, member]))
-  }
-
   /** 从本地库恢复群列表 */
   async function loadGroupList(): Promise<boolean> {
     try {
@@ -51,12 +46,22 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         clear()
         stateUserId = userId
       }
+      const epoch = loadEpoch
       await initDb()
+      if (epoch !== loadEpoch || useUserStore().userInfo.userId !== userId) {
+        return false
+      }
+      const session = getDbSession()
       const cached = await getDb().getAll<GroupDO>('groups')
+      if (epoch !== loadEpoch
+        || useUserStore().userInfo.userId !== userId
+        || !isCurrentDbSession(session)) {
+        return false
+      }
       if (!cached || cached.length === 0) {
         return false
       }
-      groups.value = cached.map(normalizeCachedGroup)
+      groups.value = cached
       return true
     } catch (error) {
       console.warn('[IM groupStore] 本地群缓存读取失败', error)
@@ -109,7 +114,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       if (!cached || cached.length === 0) {
         return null
       }
-      const members = cached.map(normalizeCachedGroupMember)
+      const members = cached
       const group = getGroup(groupId)
       if (!group) {
         groups.value.push({
@@ -414,12 +419,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     group.activeCallLoaded = true
     group.activeCallExpired = false
-  }
-
-  /** 判断群通话是否需要重新探测 */
-  function isGroupActiveCallExpired(groupId: number): boolean {
-    const group = getGroup(groupId)
-    return !group?.activeCallLoaded || !!group.activeCallExpired
   }
 
   /** 标记指定群成员缓存过期 */
@@ -802,7 +801,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   }
 
   /** 接收并归约群广播事件 */
-  function applyGroupNotification(groupId: number, type: number, content?: string) {
+  async function applyGroupNotification(groupId: number, type: number, content?: string) {
     if (!groupId) {
       return
     }
@@ -819,8 +818,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     switch (type) {
       case ImMessageType.GROUP_CREATE:
-        // TODO @AI：这里有 linter 报错；
-        applyGroupCreateNotification(groupId, payload)
+        await applyGroupCreateNotification(groupId, payload)
         break
       case ImMessageType.GROUP_NAME_UPDATE:
         applyGroupNameUpdateNotification(groupId, payload)
@@ -835,12 +833,10 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         removeGroup(groupId)
         break
       case ImMessageType.GROUP_MEMBER_INVITE:
-        // TODO @AI：这里有 linter 报错；
-        applyGroupMemberInviteNotification(groupId, payload)
+        await applyGroupMemberInviteNotification(groupId, payload)
         break
       case ImMessageType.GROUP_MEMBER_ENTER:
-        // TODO @AI：这里有 linter 报错；
-        applyGroupMemberEnterNotification(groupId, payload)
+        await applyGroupMemberEnterNotification(groupId, payload)
         break
       case ImMessageType.GROUP_MEMBER_QUIT:
         applyGroupMemberQuitNotification(groupId, payload)
@@ -942,45 +938,11 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   uni.$on('auth:logout', clear)
 
   return {
-    // TODO @AI：看看这些方法没在使用，是因为功能没迁移么？getGroupMemberMap,    loadGroupList,
-    //     saveGroupList,
-    //     saveGroupRecord,
-    //     saveGroup,    saveGroupMemberList,
-    // isGroupActiveCallExpired,
-    // markGroupMembersExpired,    upsertGroupAndSave,
-    // updateGroupMemberRoleList,
-    // transferGroupOwner,
-    // removeLocalGroupMemberList,
-    // updateGroupMemberStatus,
-    // updateGroupMemberDisplayUserName,
-    // updateGroupMemberRoleList,
-    // transferGroupOwner,
-    // removeLocalGroupMemberList,
-    // updateGroupMemberStatus,
-    // updateGroupMemberDisplayUserName,    applyGroupCreateNotification,
-    //     applyGroupNameUpdateNotification,
-    //     applyGroupNoticeUpdateNotification,
-    //     applyGroupInfoUpdateNotification,
-    //     applyGroupMemberInviteNotification,
-    //     applyGroupMemberEnterNotification,
-    //     applyGroupMemberQuitNotification,
-    //     applyGroupMemberKickNotification,
-    //     applyGroupMemberNicknameUpdateNotification,
-    //     applyGroupOwnerTransferNotification,
-    //     applyGroupMessagePinNotification,
-    //     applyGroupMessageUnpinNotification,
-    //     applyGroupMemberMutedNotification,
-    //     applyGroupMemberCancelMutedNotification,
     groups,
     loaded,
-    getGroupMemberMap,
     loading,
     loadGroupList,
-    saveGroupList,
-    saveGroupRecord,
-    saveGroup,
     loadGroupMemberList,
-    saveGroupMemberList,
     fetchGroupList,
     fetchGroupInfo,
     fetchGroupMemberList,
@@ -990,34 +952,13 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     markAllGroupMembersExpired,
     markAllGroupActiveCallsExpired,
     markGroupActiveCallLoaded,
-    isGroupActiveCallExpired,
-    markGroupMembersExpired,
     upsertGroup,
-    upsertGroupAndSave,
     setGroupSilent,
     updateMyGroupMember,
-    updateGroupMemberRoleList,
     transferGroupOwner,
-    removeLocalGroupMemberList,
-    updateGroupMemberStatus,
-    updateGroupMemberDisplayUserName,
     updateGroupFields,
     removeGroup,
     applyGroupNotification,
-    applyGroupCreateNotification,
-    applyGroupNameUpdateNotification,
-    applyGroupNoticeUpdateNotification,
-    applyGroupInfoUpdateNotification,
-    applyGroupMemberInviteNotification,
-    applyGroupMemberEnterNotification,
-    applyGroupMemberQuitNotification,
-    applyGroupMemberKickNotification,
-    applyGroupMemberNicknameUpdateNotification,
-    applyGroupOwnerTransferNotification,
-    applyGroupMessagePinNotification,
-    applyGroupMessageUnpinNotification,
-    applyGroupMemberMutedNotification,
-    applyGroupMemberCancelMutedNotification,
     clear,
   }
 })
@@ -1060,21 +1001,6 @@ function convertGroupMessage(message: ImGroupMessageRespVO): Message {
   }
 }
 
-/** 兼容旧缓存里的字符串消息时间 */
-// TODO @AI：不用考虑旧缓存；
-function normalizeCachedGroup(group: Group): Group {
-  return {
-    ...group,
-    pinnedMessages: group.pinnedMessages?.map((message) => {
-      const sendTime = (message as Message & { sendTime: number | string }).sendTime
-      return {
-        ...message,
-        sendTime: typeof sendTime === 'number' ? sendTime : new Date(sendTime).getTime(),
-      }
-    }),
-  }
-}
-
 /** 构建群本地存储记录 */
 function buildGroupDO(group: Group): GroupDO {
   const {
@@ -1101,14 +1027,5 @@ function convertGroupMember(member: ImGroupMemberRespVO, groupId: number): Group
     status: member.status,
     role: member.role,
     muteEndTime: member.muteEndTime,
-  }
-}
-
-/** 兼容旧缓存中缺失的成员昵称 */
-// TODO @AI：不用考虑旧缓存；
-function normalizeCachedGroupMember(member: GroupMember): GroupMember {
-  return {
-    ...member,
-    nickname: member.nickname || String(member.userId),
   }
 }

@@ -110,7 +110,7 @@ import {
   isNormalMessage,
   isRtcCallTip,
 } from '@/pages-im/utils/constants'
-import MessageContent from '@/pages-im/components/message-content.vue'
+import MessageContent from '@/pages-im/home/components/message-content.vue'
 import { buildRecallTipSegments, getMessageSummary } from '@/pages-im/utils/conversation'
 import {
   getQuoteFromMessage,

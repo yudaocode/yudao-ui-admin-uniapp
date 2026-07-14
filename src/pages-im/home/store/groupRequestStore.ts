@@ -9,7 +9,7 @@ import {
   pullMyGroupRequestList as apiPullMyGroupRequestList,
   refuseGroupRequest as apiRefuseGroupRequest,
 } from '@/api/im/group/request'
-import { getDb, initDb, StorageKeys } from '@/pages-im/utils/db'
+import { getDb, getDbSession, initDb, isCurrentDbSession, StorageKeys } from '@/pages-im/utils/db'
 import { runIncrementalPull } from '@/pages-im/utils/pull'
 import { useUserStore } from '@/store/user'
 import { ImGroupRequestHandleResult } from '@/pages-im/utils/constants'
@@ -42,16 +42,22 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
     return getUnhandledGroupRequestCountMap.value.get(groupId) ?? 0
   }
 
-  /** 获取指定群的未处理申请列表 */
-  function getUnhandledGroupRequestListByGroupId(groupId: number) {
-    return unhandledList.value.filter(request => request.groupId === groupId)
-  }
-
   /** 从本地库恢复加群申请 */
   async function loadGroupRequestList(): Promise<boolean> {
     try {
+      const requestEpoch = storeEpoch
+      const requestUserId = useUserStore().userInfo.userId
       await initDb()
+      if (requestEpoch !== storeEpoch || useUserStore().userInfo.userId !== requestUserId) {
+        return false
+      }
+      const session = getDbSession()
       const cached = await getDb().getAll<GroupRequestDO>('groupRequests')
+      if (requestEpoch !== storeEpoch
+        || useUserStore().userInfo.userId !== requestUserId
+        || !isCurrentDbSession(session)) {
+        return false
+      }
       if (!cached || cached.length === 0) {
         return false
       }
@@ -79,12 +85,6 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
   async function saveGroupRequestRecord(request: ImGroupRequestRespVO): Promise<void> {
     await initDb()
     await getDb().put('groupRequests', request)
-  }
-
-  /** 异步保存单条加群申请 */
-  function saveGroupRequest(request: ImGroupRequestRespVO): void {
-    void saveGroupRequestRecord(request).catch(error =>
-      console.warn('[IM groupRequestStore] 本地加群申请写入失败', error))
   }
 
   /** 拉取我管理群下的未处理申请 */
@@ -218,22 +218,13 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
   uni.$on('auth:logout', clear)
 
   return {
-    // TODO @AI：有一些方法没在用，是因为没迁移么？    getUnhandledGroupRequestListByGroupId,
-    //     loadGroupRequestList,
-    //     saveGroupRequestList,
-    //     saveGroupRequest,    upsertGroupRequest,
     unhandledList,
     loaded,
     loading,
-    getUnhandledGroupRequestCountMap,
     getUnhandledGroupRequestCount,
-    getUnhandledGroupRequestListByGroupId,
     loadGroupRequestList,
-    saveGroupRequestList,
-    saveGroupRequest,
     fetchUnhandledGroupRequestList,
     addGroupRequestById,
-    upsertGroupRequest,
     pullGroupRequests,
     removeGroupRequestById,
     agreeGroupRequest,

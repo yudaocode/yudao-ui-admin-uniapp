@@ -1,4 +1,9 @@
 import type { FriendNotificationPayload } from './friendStore'
+import type { ImNotificationWebSocketDTO, WebSocketFrame } from '../types'
+import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
+import type { ImGroupMessageRespVO } from '@/api/im/message/group'
+import type { ImChannelMessageRespVO } from '@/api/im/message/channel'
+import type { ImRtcCallNotification } from './rtcStore'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
 import { defineStore } from 'pinia'
@@ -97,11 +102,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (!isActive() || !data || data === 'pong') {
       return
     }
-    const frame = safeParse(data)
+    const frame = safeParse<WebSocketFrame>(data)
     if (frame?.type !== ImWebSocketMessageType.NOTIFICATION || !frame.content) {
       return
     }
-    const notification = safeParse(frame.content)
+    const notification = safeParse<ImNotificationWebSocketDTO>(frame.content)
     if (!notification?.payload
       || notification.contentType == null
       || notification.conversationType == null) {
@@ -112,7 +117,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 按会话类型分发通知 */
   async function dispatchFrame(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
     currentUserId: number,
   ) {
@@ -131,7 +136,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 分发无会话 RTC 通知 */
   async function dispatchNoConversationFrame(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
   ) {
     const { conversationType, contentType, payload } = notification
     if (isFriendNotification(contentType)) {
@@ -151,7 +156,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
         ...payload,
         conversationType: payload.conversationType ?? conversationType,
         inviterUserId: payload.inviterUserId ?? payload.inviterId,
-      }, contentType)
+      } as ImRtcCallNotification, contentType)
       return
     }
     if (contentType === ImMessageType.RTC_PARTICIPANT_CONNECTED
@@ -170,7 +175,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 分发私聊通知 */
   async function dispatchPrivateFrame(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
     currentUserId: number,
   ) {
@@ -194,7 +199,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 分发群聊通知 */
   async function dispatchGroupFrame(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
     currentUserId: number,
   ) {
@@ -222,7 +227,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 分发频道通知 */
   async function dispatchChannelFrame(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
     currentUserId: number,
   ) {
@@ -328,7 +333,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 应用关系事件并写入可展示消息 */
   async function handleMessage(
-    notification: { conversationType: number, contentType: number, payload: any },
+    notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
     currentUserId: number,
   ) {
@@ -364,9 +369,13 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       }
     }
     const messageStore = useMessageStore()
+    const messagePayload = { ...payload, type: contentType } as
+      | ImPrivateMessageRespVO
+      | ImGroupMessageRespVO
+      | ImChannelMessageRespVO
     const message = messageStore.buildIncomingMessage(
       conversationType,
-      { ...payload, type: contentType },
+      messagePayload,
       currentUserId,
     )
     if (!message) {
@@ -482,11 +491,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   }
 
   /** 同步群成员昵称 */
-  function handleGroupMemberNicknameUpdate(
+  async function handleGroupMemberNicknameUpdate(
     groupId: number,
     content: string,
   ) {
-    useGroupStore().applyGroupNotification(
+    await useGroupStore().applyGroupNotification(
       groupId,
       ImMessageType.GROUP_MEMBER_NICKNAME_UPDATE,
       content,
@@ -528,9 +537,9 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (contentType === ImMessageType.GROUP_MEMBER_SETTING_UPDATE) {
       handleGroupMemberSettingUpdate(groupId, eventContent)
     } else if (contentType === ImMessageType.GROUP_MEMBER_NICKNAME_UPDATE) {
-      handleGroupMemberNicknameUpdate(groupId, groupEventContent)
+      await handleGroupMemberNicknameUpdate(groupId, groupEventContent)
     } else {
-      useGroupStore().applyGroupNotification(groupId, contentType, groupEventContent)
+      await useGroupStore().applyGroupNotification(groupId, contentType, groupEventContent)
     }
     if (contentType === ImMessageType.GROUP_REQUEST_RECEIVED
       || contentType === ImMessageType.GROUP_REQUEST_APPROVED
@@ -556,15 +565,15 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   }
 
   /** 安全解析 JSON */
-  function safeParse(content: unknown) {
+  function safeParse<T = Record<string, any>>(content: unknown): T | undefined {
     if (!content) {
       return undefined
     }
     if (typeof content === 'object') {
-      return content as Record<string, any>
+      return content as T
     }
     try {
-      return JSON.parse(content as string)
+      return JSON.parse(content as string) as T
     } catch {
       return undefined
     }
@@ -691,8 +700,6 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 暴露连接状态与动作 */
   return {
-    isConnected,
-    isConnecting,
     connect,
     disconnect,
   }

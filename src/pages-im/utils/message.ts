@@ -8,11 +8,14 @@ import type {
 } from '@/pages-im/home/types'
 import {
   ImConversationType,
+  ImMessageStatus,
   ImMessageType,
   ImRtcCallEndReason,
+  isNormalMessage,
 } from './constants'
 import type { ImConversationTypeValue } from './constants'
-import { formatCallDuration } from './time'
+import { MESSAGE_RECALL_WINDOW_MS } from './config'
+import { formatCallDuration, toTimestamp } from './time'
 import { useFriendStore } from '@/pages-im/home/store/friendStore'
 import { useGroupStore } from '@/pages-im/home/store/groupStore'
 
@@ -156,6 +159,25 @@ const URL_PREFIX_REGEX = /^(?:https?:\/\/[^\s\u4E00-\u9FA5@<>"']+|www\.[^\s\u4E0
 const URL_TRAILING_PUNCTUATION = /[.,!?;:)\]、，。！？；：）】]+$/ // URL 末尾标点
 const URL_MIN_LENGTH = 6 // 最短可识别 URL
 
+/** 是否可转发或参与普通消息操作 */
+export function canForwardMessage(message: Pick<Message, 'id' | 'type' | 'status'>) {
+  return !!message.id
+    && isNormalMessage(message.type)
+    && message.status !== ImMessageStatus.RECALL
+}
+
+/** 是否可撤回 */
+export function canRecallMessage(
+  message: Pick<Message, 'id' | 'type' | 'status' | 'senderId' | 'sendTime'>,
+  conversationType: number,
+  currentUserId: number,
+) {
+  return conversationType !== ImConversationType.CHANNEL
+    && canForwardMessage(message)
+    && message.senderId === currentUserId
+    && Date.now() - toTimestamp(message.sendTime) <= MESSAGE_RECALL_WINDOW_MS
+}
+
 /** 私聊消息所属的对端用户编号 */
 export function getPrivateMessagePeerId(
   message: { senderId: number, receiverId: number },
@@ -292,6 +314,17 @@ export function toGroupCardTarget(group: GroupLite | null | undefined): CardTarg
 export function generateClientMessageId() {
   const random = Math.random().toString(16).slice(2)
   return `${Date.now().toString(36)}-${random}`
+}
+
+/** 获取会话内消息标识 */
+export function getMessageIdentityKey(message: Pick<Message, 'id' | 'clientMessageId'>) {
+  return message.id ? `id:${message.id}` : `client:${message.clientMessageId}`
+}
+
+/** 判断会话内是否为同一条消息 */
+export function isSameConversationMessage(left: Message, right: Message) {
+  return !!((left.id && right.id && left.id === right.id)
+    || (left.clientMessageId && left.clientMessageId === right.clientMessageId))
 }
 
 /** 解析消息内容 */

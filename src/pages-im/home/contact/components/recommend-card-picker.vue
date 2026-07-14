@@ -18,8 +18,8 @@
 import type { ConversationDO } from '@/pages-im/utils/db'
 import type { CardMessage } from '@/pages-im/utils/message'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { generateClientMessageId, serializeMessage } from '@/pages-im/utils/message'
+import { computed, ref, watch } from 'vue'
+import { serializeMessage } from '@/pages-im/utils/message'
 import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { getClientConversationId } from '@/pages-im/utils/db'
 import { useUserStore } from '@/store/user'
@@ -48,12 +48,10 @@ const excludedKeys = computed(() => [
 ]) // 名片所属对象的原会话不作为推荐目标
 const waitingCreatedGroup = ref(false) // 是否等待新群创建完成
 const leaveMessage = ref('') // 推荐留言
-let createdGroupToken = '' // 新建群结果关联标识
 
 /** 发送名片到选中会话 */
 async function handleConfirm(targets: ConversationDO[]) {
   waitingCreatedGroup.value = false
-  createdGroupToken = ''
   const expectedUserId = userStore.userInfo.userId
   const isActive = () => expectedUserId > 0 && userStore.userInfo.userId === expectedUserId
   if (!isActive()) {
@@ -114,19 +112,20 @@ async function handleConfirm(targets: ConversationDO[]) {
 function createGroupAndRecommend() {
   leaveMessage.value = ''
   waitingCreatedGroup.value = true
-  createdGroupToken = generateClientMessageId()
   uni.navigateTo({
-    url: `/pages-im/home/contact/group/form/index?forward=1&forwardToken=${encodeURIComponent(createdGroupToken)}`,
+    url: '/pages-im/home/contact/group/form/index',
+    events: {
+      created: handleGroupCreated,
+    },
   })
 }
 
 /** 向刚创建的群推荐名片 */
-function handleGroupCreated(group: { id: number, name?: string, avatar?: string, token?: string }) {
-  if (!waitingCreatedGroup.value || !createdGroupToken || group.token !== createdGroupToken) {
+function handleGroupCreated(group: { id: number, name?: string, avatar?: string }) {
+  if (!waitingCreatedGroup.value || !group.id) {
     return
   }
   waitingCreatedGroup.value = false
-  createdGroupToken = ''
   void handleConfirm([{
     clientConversationId: getClientConversationId(ImConversationType.GROUP, group.id),
     type: ImConversationType.GROUP,
@@ -139,16 +138,10 @@ function handleGroupCreated(group: { id: number, name?: string, avatar?: string,
   }])
 }
 
-/** 订阅新群创建结果 */
-onMounted(() => uni.$on('im:forward-group-created', handleGroupCreated))
-
 /** 每次打开时重置推荐留言 */
 watch(visible, (value) => {
   if (value) {
     leaveMessage.value = ''
   }
 })
-
-/** 释放新群创建订阅 */
-onUnmounted(() => uni.$off('im:forward-group-created', handleGroupCreated))
 </script>

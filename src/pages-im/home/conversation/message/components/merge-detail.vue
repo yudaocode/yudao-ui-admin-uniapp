@@ -43,7 +43,7 @@
 import type { PropType } from 'vue'
 import type { CardMessage, MaterialMessage, MergeMessage } from '@/pages-im/utils/message'
 import { computed, ref, watch } from 'vue'
-import MessageContent from '@/pages-im/components/message-content.vue'
+import MessageContent from '@/pages-im/home/components/message-content.vue'
 import { formatMergeItemTime } from '@/pages-im/utils/time'
 import ImAvatar from '../../../components/im-avatar.vue'
 

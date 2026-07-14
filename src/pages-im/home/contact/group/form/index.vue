@@ -62,7 +62,7 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, ref } from 'vue'
+import { computed, getCurrentInstance, onMounted, ref } from 'vue'
 import { createGroup, getGroup, updateGroup } from '@/api/im/group'
 import { GROUP_MAX_MEMBER } from '@/pages-im/utils/config'
 import { buildDefaultGroupName } from '@/pages-im/utils/group'
@@ -76,8 +76,6 @@ import FriendFormPicker from '../../components/friend-form-picker.vue'
 const props = defineProps<{
   id?: number | string
   memberUserIds?: string
-  forward?: boolean | number | string
-  forwardToken?: string
 }>()
 
 definePage({
@@ -88,6 +86,9 @@ definePage({
 })
 
 const toast = useToast()
+const pageProxy = getCurrentInstance()?.proxy as {
+  getOpenerEventChannel?: () => UniNamespace.EventChannel | undefined
+} | null
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
 const formData = ref({
@@ -186,12 +187,11 @@ async function handleSubmit() {
         joinApproval: group.joinApproval,
       })
       toast.success('创建成功')
-      if (props.forward && group?.id) {
-        uni.$emit('im:forward-group-created', {
+      if (group?.id) {
+        pageProxy?.getOpenerEventChannel?.()?.emit('created', {
           id: group.id,
           name: formData.value.name,
           avatar: group.avatar,
-          token: props.forwardToken ? decodeURIComponent(props.forwardToken) : undefined,
         })
       }
     }

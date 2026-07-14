@@ -102,9 +102,6 @@ export const StorageKeys = {
   },
 } as const
 
-/** 兼容现有调用，后续 Store 逐文件改用 PC 的 StorageKeys.settings */
-export const ImSettingKeys = StorageKeys.settings
-
 export type {
   ChannelDO,
   ConversationDO,

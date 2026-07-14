@@ -127,6 +127,7 @@ import { useImRtc } from '../../../composables/useImRtc'
 import { useLiveKitRoom } from '../../../composables/useLiveKitRoom'
 import { useGroupCallMembers } from '../../../composables/useGroupCallMembers'
 import { useGroupStore } from '../../../store/groupStore'
+import { useRtcStore } from '../../../store/rtcStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
 import { CommonStatusEnum, ImConversationType, ImRtcCallMediaType, ImRtcCallStage } from '@/pages-im/utils/constants'
 import ImAvatar from '../../../components/im-avatar.vue'
@@ -139,6 +140,7 @@ definePage({
 })
 
 const toast = useToast()
+const rtcStore = useRtcStore()
 const {
   stage,
   call,
@@ -187,7 +189,8 @@ const participantUserIds = computed(() => participantMembers.value.map(item => i
 const inviteCandidates = computed(() => groupMembers.value
   .filter(item => item.status !== CommonStatusEnum.DISABLE
     && item.userId !== currentUserId.value
-    && !participantUserIds.value.includes(item.userId))
+    && !participantUserIds.value.includes(item.userId)
+    && !rtcStore.isUserLeft(call.value?.room || '', item.userId))
   .map(item => ({ ...item, displayUserName: getMemberName(item) }))) // 可追加邀请成员
 
 /** 通话状态文案 */

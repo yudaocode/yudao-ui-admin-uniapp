@@ -2,7 +2,6 @@ import { useChannelStore } from '../store/channelStore'
 import { useFriendStore } from '../store/friendStore'
 import { useGroupStore } from '../store/groupStore'
 import { buildMessageFromDO, useMessageStore } from '../store/messageStore'
-import type { ImChannelMessageRespVO } from '@/api/im/message/channel'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
 import type { ConversationDO } from '../types'
@@ -30,12 +29,6 @@ export function useMessagePuller(options?: {
   /** 群聊消息响应转前端消息 */
   function convertGroupMessage(message: ImGroupMessageRespVO, currentUserId?: number) {
     const record = messageStore.buildIncomingMessage(ImConversationType.GROUP, message, currentUserId)
-    return record ? buildMessageFromDO(record) : null
-  }
-
-  /** 频道消息响应转前端消息 */
-  function convertChannelMessage(message: ImChannelMessageRespVO) {
-    const record = messageStore.buildIncomingMessage(ImConversationType.CHANNEL, message)
     return record ? buildMessageFromDO(record) : null
   }
 
@@ -92,6 +85,5 @@ export function useMessagePuller(options?: {
     cancelPull,
     convertPrivateMessage,
     convertGroupMessage,
-    convertChannelMessage, // TODO @AI：貌似这个方法没被使用？
   }
 }

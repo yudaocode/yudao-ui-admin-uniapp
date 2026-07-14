@@ -4,7 +4,7 @@
 import type { ImManagerChannelVO } from '@/api/im/manager/channel'
 import type { ImConversationReadRespVO } from '@/api/im/conversation/read'
 import type { ConversationDO, ConversationReadDO, MessageDO } from '@/pages-im/utils/db'
-import type { Friend, Group, QuoteMessage } from '../types'
+import type { Friend, Group } from '../types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { pullMyConversationReadList } from '@/api/im/conversation/read'
@@ -14,8 +14,8 @@ import {
   getClientMessageKey,
   getImDb,
   getServerMessageKey,
-  ImSettingKeys,
   initImDb,
+  StorageKeys,
 } from '@/pages-im/utils/db'
 import { useUserStore } from '@/store/user'
 import {
@@ -44,7 +44,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   const conversationReads = ref<Record<string, ConversationReadDO>>({}) // 会话读位置
   const recentForwardConversationKeys = ref<string[]>([]) // 最近转发会话主键
   const loading = ref(false) // 加载状态
-  const getSortedConversationList = computed(() => conversations.value) // 已排序的可见会话
   const getTotalUnreadCount = computed(() => conversations.value
     .filter(item => !item.silent)
     .reduce((sum, item) => sum + (item.unreadCount || 0), 0)) // 非免打扰会话未读总数
@@ -56,6 +55,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   let replayingIncoming = false // 是否正在回放拉取期间的实时消息
   const pendingIncomingMessages: MessageDO[] = [] // 拉取期间暂存的实时消息
   const pendingRecallSignals: Array<{ conversationType: number, targetId: number, content: string }> = [] // 拉取期间暂存的撤回信号
+  const pendingRecallMessageKeys = new Set<string>() // 原消息未到达时暂存的撤回终态
   const pendingIncomingWaiters = new Map<string, Array<(message?: MessageDO) => void>>() // 等待回放最终状态的实时消息
   const conversationOperationQueues = new Map<string, Promise<void>>() // 按账号和会话串行执行消息状态变更
 
@@ -288,7 +288,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       const [cachedConversations, cachedReads, recentForwardKeys] = await Promise.all([
         db.getAll<ConversationDO>('conversations'),
         db.getAll<ConversationReadDO>('conversationReads'),
-        db.getSetting<string[]>(ImSettingKeys.recentForwardConversationKeys),
+        db.getSetting<string[]>(StorageKeys.settings.recentForwardConversationKeys),
       ])
       if (isActive()) {
         conversationReads.value = Object.fromEntries(cachedReads.map(record => [
@@ -378,18 +378,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     return conversationReads.value[getClientConversationId(type, targetId)]
   }
 
-  /** 持久化会话读位置 */
-  async function saveConversationReadRecord(
-    target: ConversationReadDO | ConversationReadDO[] | null | undefined,
-  ): Promise<void> {
-    const records = Array.isArray(target) ? target : target ? [target] : []
-    if (records.length === 0) {
-      return
-    }
-    await initImDb()
-    await getImDb().bulkPut('conversationReads', records)
-  }
-
   /** 应用读位置到会话 */
   function applyReadToConversation(conversation: ConversationDO, messageId: number): boolean {
     if (!conversation.lastMessageId || conversation.lastMessageId > messageId) {
@@ -439,14 +427,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (changed.length > 0) {
       await saveConversationRecord(changed)
     }
-  }
-
-  /** 判断消息是否已被会话读位置覆盖 */
-  function isMessageCoveredByReadPosition(
-    conversation: Pick<ConversationDO, 'type' | 'targetId'>,
-    message?: { id?: number } | null,
-  ): boolean {
-    return !!message?.id && isReadPositionCovered(conversation.type, conversation.targetId, message.id)
   }
 
   /** 判断会话读位置是否覆盖消息编号 */
@@ -512,8 +492,14 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (expectedUserId !== selfUserId()) {
       return
     }
-    const incomingMessage = message.status === ImMessageStatus.RECALL
-      ? { ...message, type: ImMessageType.RECALL, content: '' }
+    const recalledBeforeArrival = pendingRecallMessageKeys.has(message.messageKey)
+    const incomingMessage = recalledBeforeArrival || message.status === ImMessageStatus.RECALL
+      ? {
+          ...message,
+          type: ImMessageType.RECALL,
+          content: '',
+          status: ImMessageStatus.RECALL,
+        }
       : message
     let clientMessage: MessageDO | undefined
     if (incomingMessage.id && incomingMessage.clientMessageId) {
@@ -532,6 +518,9 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     await db.put<MessageDO>('messages', appliedMessage)
     if (expectedUserId !== selfUserId()) {
       return
+    }
+    if (recalledBeforeArrival) {
+      pendingRecallMessageKeys.delete(message.messageKey)
     }
     const ccid = appliedMessage.clientConversationId
     let conv = conversations.value.find(item => item.clientConversationId === ccid)
@@ -670,7 +659,11 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     const db = getImDb()
     const messageKey = getServerMessageKey(conversationType, messageId)
     const original = await db.get<MessageDO>('messages', messageKey)
-    if (!original || expectedUserId !== selfUserId()) {
+    if (expectedUserId !== selfUserId()) {
+      return
+    }
+    if (!original) {
+      pendingRecallMessageKeys.add(messageKey)
       return
     }
     const recalled = {
@@ -846,7 +839,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   /** 增量拉取多端会话读位置 */
   async function pullConversationReads(isActive: () => boolean = () => true) {
     await runIncrementalPull(
-      ImSettingKeys.conversationReadPullCursor,
+      StorageKeys.settings.conversationReadPullCursor,
       params => pullMyConversationReadList(params),
       async (list) => {
         await applyConversationReadList(list, isActive)
@@ -1028,31 +1021,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     return conversation
   }
 
-  /** 创建空会话 */
-  function createEmptyConversation(
-    type: number,
-    targetId: number,
-    name: string,
-    avatar: string,
-    silent = false,
-  ): ConversationDO {
-    return {
-      clientConversationId: getClientConversationId(type, targetId),
-      targetId,
-      type,
-      name,
-      avatar,
-      lastContent: '',
-      lastSendTime: 0,
-      unreadCount: 0,
-      deleted: false,
-      top: false,
-      silent,
-      atMe: false,
-      atAll: false,
-    }
-  }
-
   /** 同步会话展示元数据 */
   function updateConversation(
     type: number,
@@ -1084,11 +1052,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   /** 置顶 / 取消置顶 */
   async function setConversationTop(type: number, targetId: number, top: boolean) {
     await updateConversationLocal(getClientConversationId(type, targetId), { top })
-  }
-
-  /** 免打扰 / 取消免打扰 */
-  async function setConversationSilent(type: number, targetId: number, silent: boolean) {
-    await updateConversationLocal(getClientConversationId(type, targetId), { silent })
   }
 
   /** 删除会话及其本地消息；再来新消息时恢复会话 */
@@ -1255,29 +1218,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     return getConversation(conversation.type, conversation.targetId)?.draft
   }
 
-  /** 清空会话草稿 */
-  function clearConversationDraft(conversation: Pick<ConversationDO, 'type' | 'targetId'>) {
-    return setConversationDraft(conversation)
-  }
-
-  /** 设置会话回复草稿 */
-  function setConversationReplyDraft(
-    conversation: Pick<ConversationDO, 'type' | 'targetId'>,
-    reply?: QuoteMessage,
-  ) {
-    const draft = getConversationDraft(conversation)
-    return setConversationDraft(conversation, {
-      plain: draft?.plain || '',
-      html: draft?.html || '',
-      reply,
-    })
-  }
-
-  /** 清空会话回复草稿 */
-  function clearConversationReplyDraft(conversation: Pick<ConversationDO, 'type' | 'targetId'>) {
-    return setConversationReplyDraft(conversation)
-  }
-
   /** 记录最近转发会话 */
   async function pushRecentForwardConversationKeyList(keys: string[], expectedUserId = selfUserId()) {
     if (expectedUserId <= 0 || selfUserId() !== expectedUserId) {
@@ -1313,15 +1253,9 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   async function saveRecentForwardConversationKeyList() {
     await initImDb()
     await getImDb().setSetting(
-      ImSettingKeys.recentForwardConversationKeys,
+      StorageKeys.settings.recentForwardConversationKeys,
       recentForwardConversationKeys.value.slice(0, CONVERSATION_RECENT_FORWARD_MAX),
     )
-  }
-
-  /** 重排会话 */
-  function sortConversationList() {
-    conversations.value = sortConversations([...conversations.value])
-    saveConversationList(conversations.value)
   }
 
   /** 清理当前账号的 IM 运行态；本地历史库按用户保留 */
@@ -1340,6 +1274,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     reloadQueued = false
     pendingIncomingMessages.length = 0
     pendingRecallSignals.length = 0
+    pendingRecallMessageKeys.clear()
     pendingIncomingWaiters.forEach(waiters => waiters.forEach(resolve => resolve()))
     pendingIncomingWaiters.clear()
     conversationOperationQueues.clear()
@@ -1349,51 +1284,26 @@ export const useConversationStore = defineStore('imConversationStore', () => {
 
   /** 暴露会话状态与动作 */
   return {
-    // TODO @AI：这些功能，是没迁移么？所以没用？？？
-    // TODO @AI：    saveConversationReadRecord,
-    //     applyLocalConversationReads,
-    //     isMessageCoveredByReadPosition,
-    //     isReadPositionCovered,
-    //     applyReadToConversation,貌似没使用？？？
-    //     getConversationRead,    saveConversationRecord,
-    //     saveConversation,
-    //     saveConversationList,    createEmptyConversation,    setConversationSilent,    clearConversationDraft,
-    //     setConversationReplyDraft,
-    //     clearConversationReplyDraft,    saveRecentForwardConversationKeyList,
-    //     sortConversationList,
     conversations,
-    conversationReads,
     recentForwardConversationKeys,
     activeConversation,
-    getSortedConversationList,
     getTotalUnreadCount,
     loading,
     isLoaded: () => loadedUserId === selfUserId(),
     loadConversationList,
-    saveConversationReadRecord,
-    applyLocalConversationReads,
-    isMessageCoveredByReadPosition,
-    isReadPositionCovered,
-    applyReadToConversation,
     markConversationRead,
     isReportedReadPositionCovered,
     markConversationReadReported,
     getConversation,
-    getConversationRead,
     setActiveConversation,
     isActiveConversation,
     applyIncomingMessage,
     applyRecallMessage,
     applyConversationReadList,
     pullConversationReads,
-    saveConversationRecord,
-    saveConversation,
-    saveConversationList,
     ensureConversation,
-    createEmptyConversation,
     updateConversation,
     setConversationTop,
-    setConversationSilent,
     removeConversation,
     removePrivateConversation,
     removeGroupConversation,
@@ -1401,13 +1311,8 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     recomputeConversationFromStoredMessages,
     setConversationDraft,
     getConversationDraft,
-    clearConversationDraft,
-    setConversationReplyDraft,
-    clearConversationReplyDraft,
     pushRecentForwardConversationKeyList,
     removeRecentForwardConversationKey,
-    saveRecentForwardConversationKeyList,
-    sortConversationList,
     clear,
   }
 })

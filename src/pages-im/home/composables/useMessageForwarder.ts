@@ -4,7 +4,6 @@ import type { Message } from '../types'
 import { getClientConversationId } from '@/pages-im/utils/db'
 import {
   buildMergeMessagePayload,
-  generateClientMessageId,
   removeQuotePayload,
   serializeMessage,
 } from '@/pages-im/utils/message'
@@ -30,7 +29,6 @@ export function useMessageForwarder(options: {
   const forwardLeaveMessage = ref('') // 转发留言
   const forwardActionVisible = ref(false) // 转发方式菜单显示状态
   let forwardUserId = 0 // 当前转发任务所属用户
-  let forwardGroupToken = '' // 新建群结果关联标识
   let forwardSourceConversation: ConversationDO | undefined // 打开转发时的源会话快照
   const forwardActions = [ // 转发方式菜单项
     { name: '逐条转发', value: ImForwardMode.SINGLE },
@@ -81,17 +79,17 @@ export function useMessageForwarder(options: {
   /** 打开新建群聊页，创建成功后继续转发 */
   function createGroupAndForward() {
     forwardLeaveMessage.value = ''
-    forwardGroupToken = generateClientMessageId()
-    // TODO @AI：这里的 forwardToken 作用是啥？
     uni.navigateTo({
-      url: `/pages-im/home/contact/group/form/index?forward=1&forwardToken=${encodeURIComponent(forwardGroupToken)}`,
+      url: '/pages-im/home/contact/group/form/index',
+      events: {
+        created: onForwardGroupCreated,
+      },
     })
   }
 
   /** 接收新建群聊结果并完成转发 */
-  async function onForwardGroupCreated(groupInfo: { id: number, name?: string, avatar?: string, token?: string }) {
-    if (!groupInfo?.id || !forwardGroupToken || groupInfo.token !== forwardGroupToken
-      || forwardMessages.value.length === 0
+  async function onForwardGroupCreated(groupInfo: { id: number, name?: string, avatar?: string }) {
+    if (!groupInfo?.id || forwardMessages.value.length === 0
       || forwardUserId !== userStore.userInfo.userId) {
       return
     }
@@ -185,7 +183,6 @@ export function useMessageForwarder(options: {
     forwardVisible.value = false
     forwardLeaveMessage.value = ''
     forwardUserId = 0
-    forwardGroupToken = ''
     forwardSourceConversation = undefined
   }
 
@@ -198,7 +195,6 @@ export function useMessageForwarder(options: {
     forwardSelected,
     handleForwardAction,
     createGroupAndForward,
-    onForwardGroupCreated,
     handleForwardConfirm,
   }
 }

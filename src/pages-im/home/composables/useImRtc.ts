@@ -170,6 +170,9 @@ export function useImRtc() {
       return
     }
     const currentIds = currentCall.joinedUserIds || []
+    if (!joined) {
+      rtcStore.markUserLeft(currentCall.room, userId)
+    }
     const data = {
       ...currentCall,
       joinedUserIds: joined
@@ -266,7 +269,6 @@ export function useImRtc() {
 
   return {
     ...storeToRefs(rtcStore),
-    supportsRtc, // TODO @AI：这个可以删除么？
     start,
     join,
     accept,

@@ -1,4 +1,3 @@
-// TODO @AI：这个最好说明下！
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { useUserStore } from '@/store/user'
@@ -11,7 +10,7 @@ import { useImWebSocketStore } from './websocketStore'
 import { useMessageStore } from './messageStore'
 import { useRtcStore } from './rtcStore'
 
-/** IM 分包运行时 Store */
+/** IM 分包运行时 Store：跨多个页面 URL 复用单一 WebSocket，并统一初始化关系与会话状态 */
 export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
   let runtimeUserId = 0 // 当前运行时所属用户编号
   let initialization: Promise<void> | undefined // 当前初始化任务
@@ -22,7 +21,6 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
     friendStore.getUnhandledRequestCount + groupRequestStore.unhandledList.length)
 
   /** 刷新通讯录申请数 */
-  // TODO @AI：这里有 linter 报错；refreshContactUnread
   function refreshContactUnread() {
     if (useUserStore().userInfo.userId <= 0) {
       return Promise.resolve()
@@ -71,12 +69,23 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
     if (initialization && initializationUserId === userId) {
       return initialization
     }
-    const { isLoaded, loadConversationList } = useConversationStore()
-    const tasks = [refreshContactUnread()]
-    if (!isLoaded()) {
-      tasks.push(loadConversationList())
-    }
-    const task = Promise.allSettled(tasks).then(() => undefined).finally(() => {
+    const conversationStore = useConversationStore()
+    const groupStore = useGroupStore()
+    const task = (async () => {
+      await Promise.allSettled([
+        friendStore.loadFriendData(),
+        groupStore.loadGroupList(),
+        groupRequestStore.loadGroupRequestList(),
+      ])
+      if (useUserStore().userInfo.userId !== userId) {
+        return
+      }
+      const tasks = [refreshContactUnread()]
+      if (!conversationStore.isLoaded()) {
+        tasks.push(conversationStore.loadConversationList())
+      }
+      await Promise.allSettled(tasks)
+    })().finally(() => {
       if (initialization === task) {
         initialization = undefined
         initializationUserId = 0
@@ -99,12 +108,8 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
 
   /** 暴露运行时状态与动作 */
   return {
-    // TODO @AI：refreshContactUnread,
-    //     resyncState, 没在用
     contactUnread,
     ensure,
-    refreshContactUnread,
-    resyncState,
     reset,
   }
 })

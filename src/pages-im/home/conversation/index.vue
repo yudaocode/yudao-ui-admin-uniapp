@@ -25,7 +25,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { ref, watch } from 'vue'
 import { navigateBackPlus } from '@/utils'
-import { getConversationKey } from '@/pages-im/utils/conversation'
+import { buildConversationMessageUrl, getConversationKey } from '@/pages-im/utils/conversation'
 import ImTabbar from '../components/im-tabbar.vue'
 import { useConversationStore } from '../store/conversationStore'
 import { useImRuntimeStore } from '../store/runtimeStore'
@@ -76,11 +76,12 @@ function openNextUnread() {
     : -1
   const target = unreadList[(previousIndex + 1) % unreadList.length]
   lastJumpedConversationKey = getConversationKey(target)
-  const mentionMessageId = target.atMessageId || target.atAllMessageId
-  const query = mentionMessageId ? `&mentionMessageId=${mentionMessageId}` : ''
-  // TODO @AI：这里为什么通过 name 获取？
   uni.navigateTo({
-    url: `/pages-im/home/conversation/message/index?type=${target.type}&targetId=${target.targetId}&title=${encodeURIComponent(target.name || '')}${query}`,
+    url: buildConversationMessageUrl({
+      type: target.type,
+      targetId: target.targetId,
+      mentionMessageId: target.atMessageId || target.atAllMessageId,
+    }),
   })
 }
 

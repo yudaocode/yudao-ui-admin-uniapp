@@ -25,10 +25,8 @@ export function useMediaUploader() {
         success: res => resolve(res.tempFiles?.[0] as SelectedChatFile | undefined),
         fail: () => resolve(undefined),
       })
-      return
       // #endif
 
-      // TODO @AI：这里有个 Unreachable code 的 linter 报错，怎么优化下？
       // #ifdef H5 || APP-PLUS
       const chooseFile = (uni as any).chooseFile
       if (typeof chooseFile !== 'function') {

@@ -1,4 +1,3 @@
-<!-- TODO @AI：可以挪到 /Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-im/home/components 里么？ -->
 <template>
   <!-- 图片 -->
   <wd-img
@@ -8,7 +7,7 @@
     height="360rpx"
     radius="8rpx"
     mode="aspectFit"
-    @click="previewImage"
+    enable-preview
   />
   <!-- 表情 -->
   <wd-img
@@ -17,7 +16,7 @@
     width="240rpx"
     height="240rpx"
     mode="aspectFit"
-    @click="previewFace"
+    enable-preview
   />
   <!-- 文件 -->
   <view
@@ -156,7 +155,7 @@ import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { getImageUrl } from '@/pages-im/utils/image'
 import { parseMessage, parseTextSegments } from '@/pages-im/utils/message'
-import { openAttachment } from '@/utils/download'
+import { formatFileSize, openAttachment } from '@/utils/download'
 import { openUrl } from '@/utils/url'
 import { MESSAGE_MERGE_PREVIEW_LINES } from '@/pages-im/utils/config'
 import { useVoicePlayer } from '@/pages-im/home/composables/useVoicePlayer'
@@ -218,23 +217,7 @@ const cardSubtitle = computed(() => {
   return '个人名片'
 })
 
-/** 预览图片 */
-function previewImage() {
-  if (imageUrl.value) {
-    uni.previewImage({ urls: [imageUrl.value], current: imageUrl.value })
-  }
-}
-
-/** 预览表情 */
-// TODO @AI：使用 wt-image 简化掉？
-function previewFace() {
-  if (faceUrl.value) {
-    uni.previewImage({ urls: [faceUrl.value], current: faceUrl.value })
-  }
-}
-
 /** 打开文件 */
-// TODO @AI：全局有可替代的方法么？
 function handleFile() {
   if (filePayload.value?.url) {
     openAttachment(filePayload.value.url)
@@ -251,19 +234,4 @@ function playVoice() {
 onUnmounted(() => {
   voicePlayer.stop(voiceKey)
 })
-
-// TODO @AI：全局有可替代的方法么？
-/** 格式化文件大小 */
-function formatFileSize(size?: number) {
-  if (!size) {
-    return '-'
-  }
-  if (size < 1024) {
-    return `${size} B`
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`
-  }
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
-}
 </script>

@@ -12,12 +12,9 @@ import {
   ImRtcCallStatus,
 } from '@/pages-im/utils/constants'
 import { useUserStore } from '@/store/user'
+import { isSameArray } from '@/utils/is'
 import { useFriendStore } from './friendStore'
 import { useGroupStore } from './groupStore'
-
-type GroupActiveCallCache = ImRtcGroupCallRespVO & {
-  participantsLoaded?: boolean
-}
 
 /** RTC_CALL 通话信令载荷 */
 export interface ImRtcCallNotification {
@@ -73,8 +70,8 @@ export const useRtcStore = defineStore('imRtc', () => {
   const call = ref<ImRtcCallRespVO | null>(null) // 当前通话
   const incomingPayload = ref<ImRtcCallNotification | null>(null) // 当前来电载荷
   const startedAt = ref(0) // 进入通话中的时间戳
-  const groupActiveCalls = ref<Map<number, GroupActiveCallCache>>(new Map()) // 群活跃通话缓存
-  const leftUserIds = ref<Set<number>>(new Set()) // 已退出或拒绝的参与者
+  const groupActiveCalls = ref<Map<number, ImRtcGroupCallRespVO>>(new Map()) // 群活跃通话缓存
+  const leftUserIdsByRoom = ref<Map<string, Set<number>>>(new Map()) // 各房间已退出或拒绝的参与者
 
   const isActive = computed(() => stage.value !== ImRtcCallStage.IDLE) // 是否处于通话阶段
   const peerNickname = computed(() => { // 对端或群聊显示名
@@ -114,6 +111,7 @@ export const useRtcStore = defineStore('imRtc', () => {
 
   /** 主叫进入邀请阶段 */
   function startInviting(data: ImRtcCallRespVO) {
+    clearLeftUsers(data.room)
     call.value = data
     syncGroupActiveCall(data)
     if (data.conversationType === ImConversationType.GROUP) {
@@ -133,6 +131,7 @@ export const useRtcStore = defineStore('imRtc', () => {
     if (isActive.value) {
       return
     }
+    clearLeftUsers(payload.room)
     incomingPayload.value = payload
     stage.value = ImRtcCallStage.INCOMING
     syncGroupActiveCall({
@@ -157,11 +156,14 @@ export const useRtcStore = defineStore('imRtc', () => {
 
   /** 重置当前通话 */
   function reset() {
+    const room = call.value?.room || incomingPayload.value?.room
     stage.value = ImRtcCallStage.IDLE
     call.value = null
     incomingPayload.value = null
     startedAt.value = 0
-    leftUserIds.value = new Set()
+    if (room) {
+      clearLeftUsers(room)
+    }
     uni.$emit('im:rtc-ended')
   }
 
@@ -203,21 +205,20 @@ export const useRtcStore = defineStore('imRtc', () => {
   }
 
   /** 写入群活跃通话 */
-  function setGroupCall(payload: ImRtcGroupCallRespVO, participantsLoaded?: boolean) {
+  function setGroupCall(payload: ImRtcGroupCallRespVO) {
     if (!payload.groupId) {
       return
     }
     useGroupStore().markGroupActiveCallLoaded(payload.groupId)
     const existing = groupActiveCalls.value.get(payload.groupId)
-    const nextParticipantsLoaded = participantsLoaded
-      ?? (existing?.room === payload.room && !!existing.participantsLoaded)
-    if (existing
-      && isSameGroupCall(existing, payload)
-      && !!existing.participantsLoaded === nextParticipantsLoaded) {
+    if (existing?.room && existing.room !== payload.room) {
+      clearLeftUsers(existing.room)
+    }
+    if (existing && isSameGroupCall(existing, payload)) {
       return
     }
     const next = new Map(groupActiveCalls.value)
-    next.set(payload.groupId, { ...payload, participantsLoaded: nextParticipantsLoaded })
+    next.set(payload.groupId, payload)
     groupActiveCalls.value = next
   }
 
@@ -232,20 +233,13 @@ export const useRtcStore = defineStore('imRtc', () => {
     groupActiveCalls.value = next
   }
 
-  /** 判断群通话参与者是否已完整拉取 */
-  function isGroupCallParticipantsLoaded(groupId: number, room?: string): boolean {
-    const currentCall = groupActiveCalls.value.get(groupId)
-    return !!groupId && !!room && !!currentCall
-      && currentCall.room === room && !!currentCall.participantsLoaded
-  }
-
   /** 判断两条群通话摘要是否一致 */
   function isSameGroupCall(left: ImRtcGroupCallRespVO, right: ImRtcGroupCallRespVO): boolean {
     return left.room === right.room
       && left.mediaType === right.mediaType
       && left.inviterId === right.inviterId
-      && isSameNumberList(left.joinedUserIds, right.joinedUserIds)
-      && isSameNumberList(left.inviteeIds, right.inviteeIds)
+      && isSameArray(left.joinedUserIds, right.joinedUserIds)
+      && isSameArray(left.inviteeIds, right.inviteeIds)
   }
 
   /** 移除已结束的群通话 */
@@ -254,8 +248,12 @@ export const useRtcStore = defineStore('imRtc', () => {
       return
     }
     const existing = groupActiveCalls.value.get(groupId)
-    if (room && existing?.room !== room) {
+    if (room && existing && existing.room !== room) {
       return
+    }
+    const targetRoom = room || existing?.room
+    if (targetRoom) {
+      clearLeftUsers(targetRoom)
     }
     clearGroupCallCache(groupId)
     useGroupStore().markGroupActiveCallLoaded(groupId)
@@ -266,21 +264,58 @@ export const useRtcStore = defineStore('imRtc', () => {
     return groupActiveCalls.value.get(groupId)
   }
 
-  /** 标记参与者已退出或拒绝 */
-  function markUserLeft(userId: number) {
-    if (!userId || leftUserIds.value.has(userId)) {
+  /** 标记指定房间的参与者已退出或拒绝 */
+  function markUserLeft(room: string, userId: number) {
+    if (!room || !userId) {
       return
     }
-    leftUserIds.value = new Set([...Array.from(leftUserIds.value), userId])
+    const userIds = leftUserIdsByRoom.value.get(room) || new Set<number>()
+    if (userIds.has(userId)) {
+      return
+    }
+    const next = new Map(leftUserIdsByRoom.value)
+    next.set(room, new Set([...Array.from(userIds), userId]))
+    leftUserIdsByRoom.value = next
   }
 
-  /** 判断参与者是否已退出或拒绝 */
-  function isUserLeft(userId: number) {
-    return leftUserIds.value.has(userId)
+  /** 恢复指定房间重新加入的参与者 */
+  function restoreUser(room: string, userId: number) {
+    const userIds = leftUserIdsByRoom.value.get(room)
+    if (!room || !userId || !userIds?.has(userId)) {
+      return
+    }
+    const next = new Map(leftUserIdsByRoom.value)
+    const remaining = new Set([...Array.from(userIds)].filter(id => id !== userId))
+    if (remaining.size > 0) {
+      next.set(room, remaining)
+    } else {
+      next.delete(room)
+    }
+    leftUserIdsByRoom.value = next
+  }
+
+  /** 清理指定房间或全部房间的退出状态 */
+  function clearLeftUsers(room?: string) {
+    if (!room) {
+      leftUserIdsByRoom.value = new Map()
+      return
+    }
+    if (!leftUserIdsByRoom.value.has(room)) {
+      return
+    }
+    const next = new Map(leftUserIdsByRoom.value)
+    next.delete(room)
+    leftUserIdsByRoom.value = next
+  }
+
+  /** 判断指定房间的参与者是否已退出或拒绝 */
+  function isUserLeft(room: string, userId: number) {
+    return !!room && leftUserIdsByRoom.value.get(room)?.has(userId) === true
   }
 
   /** 应用参与者加入通知 */
   function applyParticipantConnected(payload: ImRtcParticipantConnectedNotification) {
+    restoreUser(payload.room, payload.userId)
     if (payload.conversationType !== ImConversationType.GROUP || !payload.groupId) {
       return
     }
@@ -307,7 +342,7 @@ export const useRtcStore = defineStore('imRtc', () => {
 
   /** 应用参与者离开通知 */
   function applyParticipantDisconnected(payload: ImRtcParticipantDisconnectedNotification) {
-    markUserLeft(payload.userId)
+    markUserLeft(payload.room, payload.userId)
     if (payload.conversationType === ImConversationType.GROUP && payload.groupId) {
       dropFromGroupActiveCall(payload.groupId, payload.room, payload.userId)
     }
@@ -320,7 +355,7 @@ export const useRtcStore = defineStore('imRtc', () => {
     if (!payload.operatorUserId) {
       return
     }
-    markUserLeft(payload.operatorUserId)
+    markUserLeft(payload.room, payload.operatorUserId)
     if (payload.conversationType === ImConversationType.GROUP && payload.groupId) {
       dropFromGroupActiveCall(payload.groupId, payload.room, payload.operatorUserId)
     }
@@ -355,6 +390,7 @@ export const useRtcStore = defineStore('imRtc', () => {
   /** 退出登录时清理全部通话状态 */
   function handleLogout() {
     reset()
+    clearLeftUsers()
     clearGroupCallCache()
   }
 
@@ -373,15 +409,11 @@ export const useRtcStore = defineStore('imRtc', () => {
     enterRunning,
     reset,
     appendInvitees,
-    // TODO @AI：是因为功能没迁移么？
-    //     markUserLeft,
-    //     isUserLeft,    isGroupCallParticipantsLoaded,
     markUserLeft,
     isUserLeft,
     setGroupCall,
     removeGroupCall,
     getGroupCall,
-    isGroupCallParticipantsLoaded,
     clearGroupCallCache,
     applyParticipantConnected,
     applyParticipantDisconnected,
@@ -389,9 +421,3 @@ export const useRtcStore = defineStore('imRtc', () => {
     applyParticipantNoAnswer,
   }
 })
-
-/** 判断两个用户编号数组是否一致 */
-// TODO @AI：是不是应该全局方法？
-function isSameNumberList(left: number[] = [], right: number[] = []) {
-  return left.length === right.length && left.every((item, index) => item === right[index])
-}

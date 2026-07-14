@@ -218,24 +218,20 @@ import type {
 } from '@/pages-im/utils/message'
 import {
   buildQuoteFromMessage,
+  canForwardMessage,
+  canRecallMessage,
   extractAddableFace,
   getQuoteFromMessage,
   parseMessage,
   parseRecallMessageId,
 } from '@/pages-im/utils/message'
 import { getMessageSummary } from '@/pages-im/utils/conversation'
-import {
-  MESSAGE_CHAT_PAGE_SIZE,
-  MESSAGE_RECALL_WINDOW_MS,
-  MESSAGE_TIME_TIP_GAP_MS,
-} from '@/pages-im/utils/config'
+import { MESSAGE_CHAT_PAGE_SIZE } from '@/pages-im/utils/config'
 import { toTimestamp } from '@/pages-im/utils/time'
 import {
   getFriendDisplayName,
   getGroupDisplayName,
   getMemberDisplayName,
-  getSenderAvatar,
-  getSenderDisplayName,
   isGroupQuit,
 } from '@/pages-im/utils/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -252,13 +248,7 @@ import {
 import { removeGroupMember } from '@/api/im/group/member'
 import { getActiveCall } from '@/api/im/rtc'
 import { applyJoinGroup } from '@/api/im/group/request'
-import {
-  getGroupMessageList,
-  getGroupReadUsers,
-} from '@/api/im/message/group'
-import {
-  getPrivateMessageList,
-} from '@/api/im/message/private'
+import { getGroupReadUsers } from '@/api/im/message/group'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import {
@@ -268,26 +258,26 @@ import {
   ImFriendAddSource,
   ImGroupAddSource,
   ImGroupMemberRole,
-  ImMessageStatus,
   ImMessageType,
   ImRtcCallMediaType,
-  isNormalMessage,
 } from '@/pages-im/utils/constants'
 import { useImRtc } from '../../composables/useImRtc'
 import { useMessageForwarder } from '../../composables/useMessageForwarder'
 import { useMessageMultiSelect } from '../../composables/useMessageMultiSelect'
+import { useMessageList } from '../../composables/useMessageList'
 import { useMessagePuller } from '../../composables/useMessagePuller'
 import { useRtcStore } from '../../store/rtcStore'
 import { useMessageSender } from '../../composables/useMessageSender'
 import { useMediaUploader } from '../../composables/useMediaUploader'
 import { useMuteOverlay } from '../../composables/useMuteOverlay'
 import { useConversationStore } from '../../store/conversationStore'
+import { useChannelStore } from '../../store/channelStore'
 import { useFaceStore } from '../../store/faceStore'
 import { useFriendStore } from '../../store/friendStore'
 import { useGroupRequestStore } from '../../store/groupRequestStore'
 import { useGroupStore } from '../../store/groupStore'
 import { useImRuntimeStore } from '../../store/runtimeStore'
-import { buildMessageFromDO, useMessageStore } from '../../store/messageStore'
+import { useMessageStore } from '../../store/messageStore'
 import ChatInput from './components/chat-input.vue'
 import ForwardPicker from './components/forward-picker.vue'
 import GroupPinnedMessage from './components/group-pinned-message.vue'
@@ -297,8 +287,6 @@ import MergeDetail from './components/merge-detail.vue'
 import MessageItem from './components/message-item.vue'
 import ReadDetail from './components/read-detail.vue'
 import RtcGroupCallBanner from './components/rtc-group-call-banner.vue'
-
-// TODO @AI：这个界面的代码量很大？我看 vue3 + ep 代码量不会这么多噢？看看是不是参考 vue3 + ep 对齐拆分下这个 vue 的代码量？
 
 interface SendExtOptions {
   atUserIds?: number[] // 群聊 @ 的用户编号列表
@@ -315,7 +303,6 @@ interface SendData {
 
 const props = defineProps<{
   targetId?: number | string
-  title?: string
   type?: number | string
   locateMessageId?: number | string
   mentionMessageId?: number | string
@@ -334,6 +321,7 @@ const userStore = useUserStore()
 const faceStore = useFaceStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
+const channelStore = useChannelStore()
 const rtcStore = useRtcStore()
 const messageStore = useMessageStore()
 const {
@@ -342,12 +330,7 @@ const {
 } = useMessagePuller()
 const { getLocalImageInfo } = useMediaUploader()
 const pagingRef = ref<any>() // 分页组件引用
-const messageList = ref<Message[]>([]) // 消息列表（最新在前）
-const firstPageLoading = ref(false) // 首屏消息加载状态
-const pendingLatestMessages = ref<Message[]>([]) // 首屏加载期间待追加消息
 const cellStyle = ref<Record<string, string>>({ transform: 'scaleY(-1)' }) // 聊天记录模式单元格倒置样式
-const historyMaxId = ref<number>() // 历史消息游标（已加载最早消息编号）
-const historyLoadFailed = ref(false) // 删除清空后的历史补拉失败状态
 const groupMembers = ref<GroupMember[]>([]) // 群成员
 const pendingGroupRequestCount = ref(0) // 当前群待处理申请数
 const materialVisible = ref(false) // 素材详情弹窗
@@ -376,10 +359,6 @@ const {
   ensureConversation,
 } = conversationStore
 const {
-  getConversationClearBefore,
-  getConversationDeletedMessageKeys,
-  getConversationPendingMessages,
-  getConversationStoredMessages,
   removeMessageList,
 } = messageStore
 const {
@@ -393,17 +372,8 @@ const selectMode = computed(() => messageMultiSelectState.active) // 消息多�
 const selectedIds = computed(() => messageMultiSelectState.selectedClientMessageIds) // 已选消息编号
 const chatVisible = ref(false) // 当前聊天页是否可见
 const draftContent = ref('') // 当前输入草稿
-const highlightMessageId = ref<number>() // 当前定位高亮的消息
-const clearBeforeMessageId = ref(0) // 本地清理的历史边界
-const deletedMessageKeys = ref(new Set<string>()) // 本地已删除消息标识
-const recalledMessageIds = new Set<number>() // 分页期间已收到的撤回原消息编号
-const isNearBottom = ref(true) // 是否停留在最新消息附近
-const newMessageCount = ref(0) // 未自动滚动的新消息数
-const mentionPromptVisible = ref(!!Number(props.mentionMessageId)) // @我定位提示
 const friendLoaded = ref(false) // 好友关系是否加载完成
 let draftTimer: ReturnType<typeof setTimeout> | undefined
-let locateConsumed = false
-let deletedKeysLoaded = false
 const { start: startRtcCall, join: joinRtcCall } = useImRtc()
 
 const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 当前会话类型
@@ -415,6 +385,7 @@ const privateFriend = computed(() => { // 当前有效私聊好友
 })
 const isFriend = computed(() => friendStore.isActiveFriend(targetId.value)) // 私聊对象是否仍为好友
 const group = computed(() => groupStore.getGroup(targetId.value)) // 当前群聊资料
+const channel = computed(() => channelStore.getChannel(targetId.value)) // 当前频道资料
 const isQuitGroupConversation = computed(() => conversationType.value === ImConversationType.GROUP
   && isGroupQuit(group.value)) // 是否历史退群群聊
 const privateMaxReadMessageId = computed(() => // 私聊对方已读位置
@@ -423,15 +394,17 @@ const privateMaxReadMessageId = computed(() => // 私聊对方已读位置
     : undefined)
 const activeGroupCall = computed(() => rtcStore.getGroupCall(targetId.value)) // 当前群活跃通话
 const currentCcid = computed(() => getClientConversationId(conversationType.value, targetId.value)) // 当前会话主键
-const routeTitle = computed(() => props.title ? decodeURIComponent(props.title) : '聊天') // 路由传入标题
 const pageTitle = computed(() => { // 页面标题
   if (conversationType.value === ImConversationType.GROUP && group.value) {
-    return getGroupDisplayName(group.value) || routeTitle.value
+    return getGroupDisplayName(group.value) || '群聊'
   }
   if (conversationType.value === ImConversationType.PRIVATE && privateFriend.value) {
     return getFriendDisplayName(privateFriend.value)
   }
-  return routeTitle.value
+  if (conversationType.value === ImConversationType.CHANNEL) {
+    return channel.value?.name || '频道'
+  }
+  return conversationStore.getConversation(conversationType.value, targetId.value)?.name || '聊天'
 })
 
 /** 获取消息唯一标识 */
@@ -439,12 +412,6 @@ function messageKey(item: Message) {
   return item.clientMessageId
 }
 
-/** 获取当前选中的消息，并恢复为正序 */
-function getSelectedMessages() {
-  return messageList.value
-    .filter(item => selectedIdSet.value.has(item.clientMessageId))
-    .reverse()
-}
 const navbarTitle = computed(() => conversationType.value === ImConversationType.GROUP && groupMembers.value.length
   ? `${pageTitle.value} (${groupMembers.value.filter(item => item.status !== CommonStatusEnum.DISABLE).length})`
   : pageTitle.value) // 导航栏标题
@@ -478,6 +445,44 @@ function isPageContextActive(context: ReturnType<typeof getPageContext>) {
     && context.targetId === targetId.value
 }
 const {
+  messageList,
+  historyLoadFailed,
+  highlightMessageId,
+  isNearBottom,
+  newMessageCount,
+  mentionPromptVisible,
+  queryList,
+  loadOlderMessagesAfterClear,
+  locateMentionMessage,
+  handleChatScroll,
+  backToLatest,
+  shouldShowTime,
+  addLatestMessage,
+  addStoredMessage,
+  replaceLocalMessage,
+  markMessageRecalled,
+  updateMessageReceipt,
+  removeDeletedMessages,
+  resetAfterConversationClear,
+} = useMessageList({
+  pagingRef,
+  getPageContext,
+  isPageContextActive,
+  getLocateMessageId: () => Number(props.locateMessageId),
+  getMentionMessageId: () => Number(props.mentionMessageId),
+  convertGroupMessage,
+  convertPrivateMessage,
+  markRead,
+  syncPrivateReadStatus: syncPrivateReadStatusForList,
+})
+
+/** 获取当前选中的消息，并恢复为正序 */
+function getSelectedMessages() {
+  return messageList.value
+    .filter(item => selectedIdSet.value.has(item.clientMessageId))
+    .reverse()
+}
+const {
   forwardVisible,
   forwardLeaveMessage,
   forwardActionVisible,
@@ -486,7 +491,6 @@ const {
   forwardSelected,
   handleForwardAction,
   createGroupAndForward,
-  onForwardGroupCreated,
   handleForwardConfirm,
 } = useMessageForwarder({
   getSelectedMessages,
@@ -507,6 +511,11 @@ const {
   replaceLocalMessage,
   clearReplyTarget,
 })
+
+/** 同步私聊读位置给消息列表首屏流程 */
+async function syncPrivateReadStatusForList() {
+  await syncPrivateReadStatus()
+}
 
 /** 返回上一页 */
 function handleBack() {
@@ -539,19 +548,27 @@ async function loadFriendRelation() {
   if (conversationType.value !== ImConversationType.PRIVATE) {
     return
   }
+  const context = getPageContext()
   try {
     const friends = await useFriendStore().fetchFriendList()
-    const friend = friends.find(item => item.friendUserId === targetId.value
+    if (!isPageContextActive(context)) {
+      return
+    }
+    const friend = friends.find(item => item.friendUserId === context.targetId
       && item.status !== CommonStatusEnum.DISABLE)
     await ensureConversation({
-      type: ImConversationType.PRIVATE,
-      targetId: targetId.value,
-      name: friend ? getFriendDisplayName(friend) : routeTitle.value,
+      type: context.conversationType,
+      targetId: context.targetId,
+      name: friend
+        ? getFriendDisplayName(friend)
+        : conversationStore.getConversation(context.conversationType, context.targetId)?.name || '聊天',
       avatar: friend?.avatar || '',
       silent: friend?.silent,
     })
   } finally {
-    friendLoaded.value = true
+    if (isPageContextActive(context)) {
+      friendLoaded.value = true
+    }
   }
 }
 
@@ -778,37 +795,6 @@ function handleRtcRedial(mediaType: number) {
   })
 }
 
-/** 本地删除消息的持久标识 */
-// TODO @AI：这种逻辑，是不是应该放到全局里噢？看看 vue3 + ep 怎么处理的？
-function deletedMessageKey(item: Message) {
-  return item.id ? `id:${item.id}` : `client:${item.clientMessageId}`
-}
-
-/** 是否已在当前设备删除 */
-// TODO @AI：这种逻辑，是不是应该放到全局里噢？看看 vue3 + ep 怎么处理的？
-function isLocallyDeleted(item: Message) {
-  return deletedMessageKeys.value.has(deletedMessageKey(item))
-}
-
-/** 获取消息发送人名称 */
-// TODO @AI：貌似没用到噢
-function getMessageSenderName(message: Message) {
-  return getSenderDisplayName(
-    message.senderId,
-    conversationType.value,
-    targetId.value,
-    pageTitle.value,
-  )
-}
-
-/** 获取消息发送人头像 */
-// TODO @AI：貌似没用到噢
-function getMessageSenderAvatar(message: Message) {
-  return getSenderAvatar(message.senderId, conversationType.value, targetId.value)
-    || privateFriend.value?.avatar
-    || ''
-}
-
 /** 删除选中消息（当前设备持久移除） */
 async function confirmDelete(messages: Message[]) {
   if (messages.length === 0) {
@@ -820,13 +806,8 @@ async function confirmDelete(messages: Message[]) {
     return
   }
   await removeMessageList(currentCcid.value, messages)
-  messages.forEach(item => deletedMessageKeys.value.add(deletedMessageKey(item)))
-  const keys = new Set(messages.map(messageKey))
-  const nextMessages = messageList.value.filter(item => !keys.has(messageKey(item)))
-  pagingRef.value?.resetTotalData(nextMessages)
-  if (nextMessages.length === 0) {
-    // TODO @AI：报错了；void 还是那个？
-    loadOlderMessagesAfterClear()
+  if (removeDeletedMessages(messages) === 0) {
+    await loadOlderMessagesAfterClear()
   }
   exitSelectMode()
 }
@@ -864,226 +845,6 @@ async function handleShowReaders(message: Message) {
   }
 }
 
-/** 查询历史消息 */
-async function queryMessages(
-  context: ReturnType<typeof getPageContext>,
-  maxId?: number,
-  limit = MESSAGE_CHAT_PAGE_SIZE,
-): Promise<Message[]> {
-  if (context.conversationType === ImConversationType.CHANNEL) {
-    const clientConversationId = getClientConversationId(context.conversationType, context.targetId)
-    const stored = await getConversationStoredMessages(clientConversationId, 5000)
-    return stored
-      .filter(item => !maxId || (item.id || 0) < maxId)
-      .slice(-limit)
-      .map(mapStoredMessage)
-  }
-  if (context.conversationType === ImConversationType.GROUP) {
-    const list = await getGroupMessageList({ groupId: context.targetId, maxId, limit })
-    return list
-      .map(message => convertGroupMessage(message, context.userId))
-      .filter((message): message is Message => !!message)
-  }
-  const list = await getPrivateMessageList({ receiverId: context.targetId, maxId, limit })
-  return list
-    .map(message => convertPrivateMessage(message, context.userId))
-    .filter((message): message is Message => !!message)
-}
-
-/** 删除清空后继续加载更早消息 */
-async function loadOlderMessagesAfterClear() {
-  if (!historyMaxId.value) {
-    return
-  }
-  const context = getPageContext()
-  historyLoadFailed.value = false
-  try {
-    const response = await queryMessages(context, historyMaxId.value, MESSAGE_CHAT_PAGE_SIZE)
-    if (!isPageContextActive(context)) {
-      return
-    }
-    const messages = normalizeMessages(normalizeRecallMessages(response)).filter(item => !isLocallyDeleted(item))
-    const nextHistoryId = Math.min(...response.map(item => item.id || Number.MAX_SAFE_INTEGER))
-    if (Number.isFinite(nextHistoryId)) {
-      historyMaxId.value = nextHistoryId
-    }
-    const mergedMessages = normalizeMessages([...messageList.value, ...messages])
-      .filter((message, index, rows) => rows.findIndex(item => isSameMessage(item, message)) === index)
-    pagingRef.value?.resetTotalData(mergedMessages)
-  } catch {
-    historyLoadFailed.value = true
-  }
-}
-
-/** 分页查询：第一页加载最新消息，后续按最早消息编号向前加载 */
-async function queryList(pageNo: number, pageSize: number) {
-  const context = getPageContext()
-  const clientConversationId = getClientConversationId(context.conversationType, context.targetId)
-  const isFirstPage = pageNo === 1
-  let querySucceeded = false
-  if (isFirstPage) {
-    firstPageLoading.value = true
-  }
-  if (!targetId.value) {
-    await pagingRef.value?.complete([])
-    if (isFirstPage) {
-      flushPendingLatestMessages()
-    }
-    return
-  }
-  try {
-    await loadDeletedMessageKeys(context, clientConversationId)
-    if (!isPageContextActive(context)) {
-      return
-    }
-    const clearBefore = clearBeforeMessageId.value
-      || await getConversationClearBefore(clientConversationId)
-    if (!isPageContextActive(context)) {
-      return
-    }
-    clearBeforeMessageId.value = clearBefore
-    const maxId = isFirstPage ? undefined : historyMaxId.value
-    const firstResponse = await queryMessages(context, maxId, pageSize)
-    if (!isPageContextActive(context)) {
-      return
-    }
-    let rawResponses = [...firstResponse]
-    let responseCount = firstResponse.length
-    let reachedClearBoundary = firstResponse.some(item => item.id <= clearBeforeMessageId.value)
-    let data: Message[] = firstResponse.filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
-    const locateMessageId = Number(props.locateMessageId || props.mentionMessageId)
-    if (isFirstPage && locateMessageId && !locateConsumed) {
-      locateConsumed = true
-      for (let guard = 0; guard < 50 && !data.some(item => item.id === locateMessageId); guard++) {
-        const nextMaxId = Math.min(...rawResponses.map(item => item.id || Number.MAX_SAFE_INTEGER))
-        if (!Number.isFinite(nextMaxId) || nextMaxId === Number.MAX_SAFE_INTEGER
-          || responseCount < pageSize || reachedClearBoundary) {
-          break
-        }
-        const earlierResponse = await queryMessages(context, nextMaxId, pageSize)
-        if (!isPageContextActive(context)) {
-          return
-        }
-        const earlier = earlierResponse.filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
-        rawResponses = [...rawResponses, ...earlierResponse]
-        responseCount = earlierResponse.length
-        reachedClearBoundary ||= earlierResponse.some(item => item.id <= clearBeforeMessageId.value)
-        data = [...data, ...earlier]
-        if (earlierResponse.length < pageSize || reachedClearBoundary) {
-          break
-        }
-      }
-    }
-    let messages = normalizeMessages(normalizeRecallMessages(data))
-    if (isFirstPage) {
-      const pendingMessages = (await getConversationPendingMessages(clientConversationId)).map(mapStoredMessage)
-      if (!isPageContextActive(context)) {
-        return
-      }
-      messages = normalizeMessages([...pendingMessages, ...messages])
-        .filter((message, index, rows) => rows.findIndex(item => isSameMessage(item, message)) === index)
-    }
-    const nextHistoryId = Math.min(...rawResponses.map(item => item.id || Number.MAX_SAFE_INTEGER))
-    if (Number.isFinite(nextHistoryId)) {
-      historyMaxId.value = nextHistoryId
-    }
-    await pagingRef.value?.completeByNoMore(messages, responseCount < pageSize || reachedClearBoundary)
-    querySucceeded = true
-  } catch {
-    if (!isPageContextActive(context)) {
-      return
-    }
-    if (isFirstPage) {
-      const cachedMessages = (await getConversationStoredMessages(clientConversationId, pageSize))
-        .map(mapStoredMessage)
-        .filter(item => (!item.id || item.id > clearBeforeMessageId.value) && !isLocallyDeleted(item))
-      if (!isPageContextActive(context)) {
-        return
-      }
-      await pagingRef.value?.complete(normalizeMessages(normalizeRecallMessages(cachedMessages)))
-      flushPendingLatestMessages()
-      return
-    }
-    await pagingRef.value?.complete(false).catch(() => undefined)
-    return
-  } finally {
-    if (isFirstPage && querySucceeded && isPageContextActive(context)) {
-      flushPendingLatestMessages()
-    }
-  }
-  if (isFirstPage && isPageContextActive(context)) {
-    await markRead()
-    await syncPrivateReadStatus()
-    await locateInitialMessage()
-  }
-}
-
-/** 加载当前设备已删除的消息标识 */
-async function loadDeletedMessageKeys(
-  context: ReturnType<typeof getPageContext>,
-  clientConversationId: string,
-) {
-  if (deletedKeysLoaded) {
-    return
-  }
-  const keys = await getConversationDeletedMessageKeys(clientConversationId)
-  if (!isPageContextActive(context)) {
-    return
-  }
-  deletedMessageKeys.value = new Set(keys)
-  deletedKeysLoaded = true
-}
-
-/** 定位从聊天记录搜索进入的消息 */
-async function locateInitialMessage() {
-  const messageId = Number(props.locateMessageId)
-  if (!messageId || !messageList.value.some(item => item.id === messageId)) {
-    return
-  }
-  highlightMessageId.value = messageId
-  await nextTick()
-  pagingRef.value?.scrollIntoViewById(`msg-${messageId}`, 0, true)
-  setTimeout(() => {
-    if (highlightMessageId.value === messageId) {
-      highlightMessageId.value = undefined
-    }
-  }, 1800)
-}
-
-/** 定位 @我的消息 */
-async function locateMentionMessage() {
-  const messageId = Number(props.mentionMessageId)
-  mentionPromptVisible.value = false
-  if (!messageId || !messageList.value.some(item => item.id === messageId)) {
-    toast.show('该提醒消息已不在聊天记录中')
-    return
-  }
-  highlightMessageId.value = messageId
-  await nextTick()
-  pagingRef.value?.scrollIntoViewById(`msg-${messageId}`, 0, true)
-  setTimeout(() => {
-    if (highlightMessageId.value === messageId) {
-      highlightMessageId.value = undefined
-    }
-  }, 1800)
-}
-
-/** 记录聊天滚动位置 */
-function handleChatScroll(event: any) {
-  isNearBottom.value = Number(event.detail?.scrollTop ?? event.scrollTop ?? 0) < 80
-  if (isNearBottom.value) {
-    newMessageCount.value = 0
-  }
-}
-
-/** 回到最新消息 */
-async function backToLatest() {
-  newMessageCount.value = 0
-  isNearBottom.value = true
-  pagingRef.value?.scrollToBottom(true)
-  await markRead()
-}
-
 /** 加载群成员 */
 async function loadGroupMembers() {
   if (conversationType.value !== ImConversationType.GROUP || !targetId.value) {
@@ -1108,7 +869,7 @@ async function loadGroupMembers() {
   }
   groupMembers.value = memberList
   if (activeCall) {
-    rtcStore.setGroupCall(activeCall, true)
+    rtcStore.setGroupCall(activeCall)
   } else {
     rtcStore.removeGroupCall(targetId.value)
   }
@@ -1148,7 +909,7 @@ async function loadGroupState() {
     return
   }
   if (activeCall) {
-    rtcStore.setGroupCall(activeCall, true)
+    rtcStore.setGroupCall(activeCall)
   } else {
     rtcStore.removeGroupCall(targetId.value)
   }
@@ -1181,7 +942,7 @@ function handleMessageMore(item: Message) {
   if (canForward) {
     actions.push({ name: '转发', value: 'forward' })
   }
-  if (canRecallMessage(item)) {
+  if (canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
     actions.push({ name: '撤回', value: 'recall' })
   }
   if (conversationType.value === ImConversationType.GROUP
@@ -1209,7 +970,7 @@ function handleMessageMore(item: Message) {
   if (!isChannel.value && canForward) {
     actions.push({ name: '多选', value: 'multiSelect' })
   }
-  if (!canRecallMessage(item)) {
+  if (!canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
     actions.push({ name: '删除', value: 'delete', color: '#fa5151' })
   }
   if (actions.length === 0) {
@@ -1225,21 +986,6 @@ async function handleMessageActionSelect({ item }: { item: { value: string } }) 
   if (actionMessage.value) {
     await handleMessageAction(actionMessage.value, item.value)
   }
-}
-
-/** 是否可撤回 */
-function canRecallMessage(item: Message) {
-  return !isChannel.value
-    && canForwardMessage(item)
-    && isSelfMessage(item)
-    && Date.now() - toTimestamp(item.sendTime) <= MESSAGE_RECALL_WINDOW_MS
-}
-
-/** 是否可转发或参与普通消息操作 */
-function canForwardMessage(item: Message) {
-  return !!item.id
-    && isNormalMessage(item.type)
-    && item.status !== ImMessageStatus.RECALL
 }
 
 /** 执行消息操作 */
@@ -1373,7 +1119,7 @@ async function handlePinMessage(item: Message) {
 
 /** 撤回消息 */
 async function handleRecallMessage(item: Message) {
-  if (!item.id || !canRecallMessage(item)) {
+  if (!item.id || !canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
     return
   }
   try {
@@ -1384,38 +1130,8 @@ async function handleRecallMessage(item: Message) {
   if (!await recallMessage(item)) {
     return
   }
-  recalledMessageIds.add(item.id)
-  const index = messageList.value.findIndex(message => message.id === item.id)
-  if (index >= 0) {
-    const nextMessages = [...messageList.value]
-    nextMessages[index] = {
-      ...nextMessages[index],
-      type: ImMessageType.RECALL,
-      content: '',
-      status: ImMessageStatus.RECALL,
-    } as Message
-    pagingRef.value?.resetTotalData(nextMessages)
-  }
+  markMessageRecalled(item.id)
   toast.success('已撤回')
-}
-
-/** 替换本地发送占位消息 */
-function replaceLocalMessage(clientMessageId: string, message: Message) {
-  const pendingIndex = pendingLatestMessages.value.findIndex(item => item.clientMessageId === clientMessageId)
-  if (pendingIndex >= 0) {
-    const nextMessages = [...pendingLatestMessages.value]
-    nextMessages[pendingIndex] = message
-    pendingLatestMessages.value = nextMessages
-    return
-  }
-  const index = messageList.value.findIndex(item => item.clientMessageId === clientMessageId)
-  if (index < 0) {
-    addLatestMessage(message, true)
-    return
-  }
-  const nextMessages = [...messageList.value]
-  nextMessages[index] = message
-  pagingRef.value?.resetTotalData(nextMessages)
 }
 
 /** 输入区发送：转发给 sendRawMessage */
@@ -1454,95 +1170,14 @@ watch([draftContent, replyTarget], () => {
   }, 250)
 }, { deep: true })
 
-/** 规范化聊天记录顺序：最新消息在前 */
-function normalizeMessages(data: Message[]) {
-  return [...data].sort((a, b) => {
-    if (a.id && b.id) {
-      return b.id - a.id
-    }
-    return toTimestamp(b.sendTime) - toTimestamp(a.sendTime)
-  })
-}
-
-/** 把撤回信号归一化到原消息，并移除信号消息 */
-function normalizeRecallMessages(data: Message[]) {
-  data.forEach((message) => {
-    const messageId = message.type === ImMessageType.RECALL
-      ? parseRecallMessageId(message.content)
-      : 0
-    if (messageId) {
-      recalledMessageIds.add(messageId)
-    }
-  })
-  return data
-    .filter(message => message.type !== ImMessageType.RECALL || !parseRecallMessageId(message.content))
-    .map(message => message.status === ImMessageStatus.RECALL || (!!message.id && recalledMessageIds.has(message.id))
-      ? {
-          ...message,
-          type: ImMessageType.RECALL,
-          content: '',
-          status: ImMessageStatus.RECALL,
-        } as Message
-      : message)
-}
-
-/** 本地消息记录转前端消息 */
-function mapStoredMessage(message: MessageDO): Message {
-  return buildMessageFromDO(message)
-}
-
-/** 是否展示时间分隔（最早一条或与更早消息间隔超过 10 分钟） */
-function shouldShowTime(index: number) {
-  const current = messageList.value[index]
-  const older = messageList.value[index + 1]
-  return !older || toTimestamp(current.sendTime) - toTimestamp(older.sendTime) > MESSAGE_TIME_TIP_GAP_MS
-}
-
-/** 是否为同一条消息 */
-// TODO @AI：貌似也适合放到 im 全局的一些 utils？看看现在的 vue 代码里，还有没类似的情况？
-function isSameMessage(left: Message, right: Message) {
-  return !!((right.id && left.id === right.id)
-    || (right.clientMessageId && left.clientMessageId === right.clientMessageId))
-}
-
-/** 去重后追加最新消息 */
-function addLatestMessage(message: Message, forceBottom = false) {
-  if (messageList.value.some(item => isSameMessage(item, message))
-    || pendingLatestMessages.value.some(item => isSameMessage(item, message))) {
-    return false
-  }
-  if (firstPageLoading.value) {
-    pendingLatestMessages.value.push(message)
-    return true
-  }
-  const toBottom = forceBottom || isNearBottom.value
-  if (pagingRef.value) {
-    pagingRef.value.addChatRecordData(message, toBottom, true)
-  } else {
-    messageList.value = [message, ...messageList.value]
-  }
-  if (!toBottom && message.senderId !== userStore.userInfo.userId) {
-    newMessageCount.value += 1
-  }
-  return true
-}
-
-/** 追加首屏加载期间收到的新消息 */
-function flushPendingLatestMessages() {
-  firstPageLoading.value = false
-  const messages = normalizeMessages(normalizeRecallMessages(pendingLatestMessages.value)).reverse()
-  pendingLatestMessages.value = []
-  messages.forEach(message => addLatestMessage(message, true))
-}
-
 /** 收到实时消息：属于当前会话且页面可见时追加气泡 */
 function onIncoming(data: { message?: MessageDO }) {
   const message = data?.message
   if (!chatVisible.value || !message || message.clientConversationId !== currentCcid.value) {
     return
   }
-  const payload = mapStoredMessage(message)
-  if (!addLatestMessage(payload)) {
+  const payload = addStoredMessage(message)
+  if (!payload) {
     return
   }
   if (isNearBottom.value) {
@@ -1578,41 +1213,15 @@ function onImEvent(data: { conversationType?: number, contentType?: number, payl
   }
   if (data.contentType === ImMessageType.RECALL) {
     const messageId = parseRecallMessageId(payload.content) || Number(payload.messageId)
-    if (messageId) {
-      recalledMessageIds.add(messageId)
-      pendingLatestMessages.value = pendingLatestMessages.value.map(message => message.id === messageId
-        ? {
-            ...message,
-            type: ImMessageType.RECALL,
-            content: '',
-            status: ImMessageStatus.RECALL,
-          } as Message
-        : message)
-    }
-    const index = messageList.value.findIndex(item => item.id === messageId)
-    if (index >= 0) {
-      const nextMessages = [...messageList.value]
-      nextMessages[index] = {
-        ...nextMessages[index],
-        type: ImMessageType.RECALL,
-        content: '',
-        status: ImMessageStatus.RECALL,
-      } as Message
-      pagingRef.value?.resetTotalData(nextMessages)
-    }
+    markMessageRecalled(messageId)
   } else if (data.contentType === ImMessageType.RECEIPT && conversationType.value === ImConversationType.PRIVATE) {
     return
   } else if (data.contentType === ImMessageType.RECEIPT) {
-    const index = messageList.value.findIndex(item => item.id === Number(payload.messageId || payload.id))
-    if (index >= 0) {
-      const nextMessages = [...messageList.value]
-      nextMessages[index] = {
-        ...nextMessages[index],
-        readCount: payload.readCount,
-        receiptStatus: payload.receiptStatus,
-      } as Message
-      pagingRef.value?.resetTotalData(nextMessages)
-    }
+    updateMessageReceipt(
+      Number(payload.messageId || payload.id),
+      payload.readCount,
+      payload.receiptStatus,
+    )
   } else if (data.contentType && data.contentType >= ImMessageType.GROUP_CREATE && data.contentType <= ImMessageType.GROUP_BANNED) {
     loadGroupMembers()
   } else if (data.contentType === ImMessageType.RTC_CALL_START || data.contentType === ImMessageType.RTC_CALL_END) {
@@ -1627,10 +1236,7 @@ function onConversationCleared(clientConversationId: string) {
   }
   draftContent.value = ''
   replyTarget.value = undefined
-  historyMaxId.value = undefined
-  clearBeforeMessageId.value = messageList.value[0]?.id || 0
-  messageList.value = []
-  pagingRef.value?.reload()
+  resetAfterConversationClear()
 }
 
 /** 初始化 */
@@ -1642,7 +1248,6 @@ onMounted(() => {
   uni.$on('im:message', onIncoming)
   uni.$on('im:event', onImEvent)
   uni.$on('im:conversation-cleared', onConversationCleared)
-  uni.$on('im:forward-group-created', onForwardGroupCreated)
   uni.$on('im:state:resync', onStateResync)
   const draft = getConversationDraft({ type: conversationType.value, targetId: targetId.value })
   draftContent.value = draft?.plain || ''
@@ -1652,21 +1257,29 @@ onMounted(() => {
 /** 进入页面：标记活跃会话并确保 IM 运行时已启动 */
 onShow(async () => {
   chatVisible.value = true
-  if (userStore.userInfo.userId <= 0) {
+  const context = getPageContext()
+  if (context.userId <= 0) {
     return
   }
-  setActiveConversation({ type: conversationType.value, targetId: targetId.value })
+  setActiveConversation({ type: context.conversationType, targetId: context.targetId })
   await useImRuntimeStore().ensure()
-  if (conversationType.value === ImConversationType.GROUP) {
+  if (!isPageContextActive(context)) {
+    return
+  }
+  if (context.conversationType === ImConversationType.GROUP) {
     await loadGroupMembers()
-  } else if (conversationType.value === ImConversationType.PRIVATE) {
+  } else if (context.conversationType === ImConversationType.PRIVATE) {
     await loadFriendRelation()
-  } else if (conversationType.value === ImConversationType.CHANNEL) {
+  } else if (context.conversationType === ImConversationType.CHANNEL) {
+    await channelStore.fetchChannelList()
+    if (!isPageContextActive(context)) {
+      return
+    }
     await ensureConversation({
-      type: conversationType.value,
-      targetId: targetId.value,
-      name: routeTitle.value,
-      avatar: '',
+      type: context.conversationType,
+      targetId: context.targetId,
+      name: channel.value?.name || '频道',
+      avatar: channel.value?.avatar || '',
     })
   }
 })
@@ -1682,7 +1295,6 @@ onUnmounted(() => {
   uni.$off('im:message', onIncoming)
   uni.$off('im:event', onImEvent)
   uni.$off('im:conversation-cleared', onConversationCleared)
-  uni.$off('im:forward-group-created', onForwardGroupCreated)
   uni.$off('im:state:resync', onStateResync)
   if (draftTimer) {
     clearTimeout(draftTimer)

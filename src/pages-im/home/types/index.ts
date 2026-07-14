@@ -1,5 +1,4 @@
 // ==================== WebSocket 帧 / 事件 ====================
-// TODO @AI：为什么下面的使用，都没被使用？？？WebSocketFrame、ImNotificationWebSocketDTO？？？
 
 /** 后端 WebSocket 统一帧结构 */
 export interface WebSocketFrame {

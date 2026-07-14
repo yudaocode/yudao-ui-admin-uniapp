@@ -21,7 +21,7 @@ import {
   pullMyFriendRequestList,
 } from '@/api/im/friend/request'
 import { FRIEND_REQUEST_PAGE_SIZE } from '@/pages-im/utils/config'
-import { getDb, initDb, StorageKeys } from '@/pages-im/utils/db'
+import { getDb, getDbSession, initDb, isCurrentDbSession, StorageKeys } from '@/pages-im/utils/db'
 import { runIncrementalPull } from '@/pages-im/utils/pull'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
@@ -77,8 +77,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     displayName: friend.displayName,
     displayNamePinyin: friend.displayNamePinyin,
   })))
-  const getBlockedFriendList = computed(() => friends.value.filter(friend => // 当前黑名单
-    friend.status !== CommonStatusEnum.DISABLE && friend.blocked === true))
   const getUnhandledRequestCount = computed(() => { // 当前收到的未处理好友申请数
     const userId = useUserStore().userInfo.userId
     return friendRequests.value.filter(request =>
@@ -93,17 +91,26 @@ export const useFriendStore = defineStore('imFriendStore', () => {
         clear()
         stateUserId = userId
       }
+      const epoch = loadEpoch
       await initDb()
+      if (epoch !== loadEpoch || useUserStore().userInfo.userId !== userId) {
+        return false
+      }
+      const session = getDbSession()
       const [cachedFriends, cachedRequests] = await Promise.all([
         getDb().getAll<FriendDO>('friends'),
         getDb().getAll<FriendRequestDO>('friendRequests'),
       ])
+      if (epoch !== loadEpoch
+        || useUserStore().userInfo.userId !== userId
+        || !isCurrentDbSession(session)) {
+        return false
+      }
       if (cachedFriends.length > 0) {
-        friends.value = cachedFriends.map(normalizeCachedFriend)
+        friends.value = cachedFriends
       }
       if (cachedRequests.length > 0) {
         friendRequests.value = cachedRequests
-          .map(normalizeCachedFriendRequest)
           .sort((left, right) => right.id - left.id)
         hasMoreFriendRequests.value = cachedRequests.length >= FRIEND_REQUEST_PAGE_SIZE
       }
@@ -334,22 +341,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     if (friend) {
       friend.silent = silent
       useConversationStore().updateConversation(ImConversationType.PRIVATE, friendUserId, { silent })
-      saveFriend(friend)
-    }
-    return true
-  }
-
-  /** 切换联系人置顶 */
-  async function setFriendPinned(friendUserId: number, pinned: boolean) {
-    const userId = useUserStore().userInfo.userId
-    const epoch = loadEpoch
-    await updateFriendApi({ friendUserId, pinned })
-    if (epoch !== loadEpoch || useUserStore().userInfo.userId !== userId) {
-      return false
-    }
-    const friend = getFriend(friendUserId)
-    if (friend) {
-      friend.pinned = pinned
       saveFriend(friend)
     }
     return true
@@ -636,12 +627,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   }
 
   /** 本地合并好友关系 */
-  function upsertFriend(friend: Friend) {
-    void upsertFriendForPull(friend).catch(error =>
-      console.warn('[IM friendStore] 本地好友写入失败', error))
-  }
-
-  /** 本地合并好友关系 */
   async function upsertFriendForPull(friend: Friend): Promise<void> {
     const index = friends.value.findIndex(item => item.friendUserId === friend.friendUserId)
     const next = {
@@ -819,63 +804,33 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   uni.$on('auth:logout', clear)
 
   return {
-    // TODO @AI：有一些方法没在用，是因为没迁移么？
-    //     loadFriendData,
-    //     saveFriendList,
-    //     saveFriendRecord,
-    //     saveFriend,
-    //     saveFriendRequestList,
-    //     saveFriendRequestRecord,
-    //     saveFriendRequest,    setFriendPinned,    getFriendRequest,
-    //     fetchFriendRequest,
-    //     upsertFriendRequest,
-    //     upsertFriendRequestForPull,    upsertFriend,
-    //     upsertFriendForPull,
-    //     removeFriend,    applyHandleResult,
     friends,
     loaded,
     friendRequests,
-    getFriendMap,
     getActiveFriendList,
     getActiveFriendLiteList,
-    getBlockedFriendList,
     getUnhandledRequestCount,
     loading,
     requestLoading,
     requestLoadingMore,
     hasMoreFriendRequests,
     loadFriendData,
-    saveFriendList,
-    saveFriendRecord,
-    saveFriend,
-    saveFriendRequestList,
-    saveFriendRequestRecord,
-    saveFriendRequest,
     fetchFriendList,
     applyFriendRequest,
     pullFriends,
     fetchFriendInfo,
     setFriendSilent,
-    setFriendPinned,
     setFriendDisplayName,
     blockFriend,
     unblockFriend,
     deleteFriend,
     fetchFriendRequestList,
     loadMoreFriendRequestList,
-    getFriendRequest,
-    fetchFriendRequest,
-    upsertFriendRequest,
-    upsertFriendRequestForPull,
     pullFriendRequests,
     agreeFriendRequest,
     refuseFriendRequest,
-    applyHandleResult,
     getFriend,
     isActiveFriend,
-    upsertFriend,
-    upsertFriendForPull,
-    removeFriend,
     applyFriendRequestReceivedNotification,
     applyFriendRequestApprovedNotification,
     applyFriendRequestRejectedNotification,
@@ -909,18 +864,6 @@ function convertFriend(friend: ImFriendRespVO): Friend {
   }
 }
 
-/** 兼容旧缓存里的字符串时间和缺失昵称 */
-// TODO @AI：是不是不用考虑旧缓存？因为还没上线。可以都处理掉；
-function normalizeCachedFriend(friend: Friend): Friend {
-  const cached = friend as Friend & { addTime?: number | string, deleteTime?: number | string }
-  return {
-    ...friend,
-    nickname: friend.nickname || String(friend.friendUserId),
-    addTime: toLocalTime(cached.addTime),
-    deleteTime: toLocalTime(cached.deleteTime),
-  }
-}
-
 /** 后端好友申请响应转换为本地域模型 */
 function convertFriendRequest(request: ImFriendRequestRespVO): FriendRequest {
   return {
@@ -938,24 +881,4 @@ function convertFriendRequest(request: ImFriendRequestRespVO): FriendRequest {
     toNickname: request.toNickname,
     toAvatar: request.toAvatar,
   }
-}
-
-/** 兼容旧缓存里的字符串申请时间 */
-// TODO @AI：是不是不用考虑旧缓存？因为还没上线。可以都处理掉；
-function normalizeCachedFriendRequest(request: FriendRequest): FriendRequest {
-  const cached = request as FriendRequest & {
-    handleTime?: number | string
-    createTime: number | string
-  }
-  return {
-    ...request,
-    handleTime: toLocalTime(cached.handleTime),
-    createTime: toLocalTime(cached.createTime) || 0,
-  }
-}
-
-// TODO @AI：是不是应该使用全局的方法；如果没有，感觉要封装下；
-/** 接口时间或旧缓存时间转换为毫秒时间戳 */
-function toLocalTime(value?: number | string) {
-  return typeof value === 'number' ? value : value ? new Date(value).getTime() : undefined
 }

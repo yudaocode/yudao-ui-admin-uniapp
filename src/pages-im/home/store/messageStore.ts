@@ -14,10 +14,9 @@ import {
   getDbSession,
   getImDb,
   getServerMessageKey,
-  ImSettingKeys,
   initImDb,
   isCurrentDbSession,
-  setMessageMaxId,
+  StorageKeys,
 } from '@/pages-im/utils/db'
 import {
   MESSAGE_GROUP_PULL_SIZE,
@@ -95,9 +94,9 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     const session = getDbSession()
     const db = getImDb()
     const [privateMaxId, groupMaxId, channelMaxId] = await Promise.all([
-      db.getSetting<number>(ImSettingKeys.privateMessageMaxId),
-      db.getSetting<number>(ImSettingKeys.groupMessageMaxId),
-      db.getSetting<number>(ImSettingKeys.channelMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.privateMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.groupMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.channelMessageMaxId),
     ])
     if (getCurrentUserId() !== expectedUserId
       || !isCurrentDbSession(session)
@@ -122,27 +121,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     } else if (conversationType === ImConversationType.CHANNEL) {
       channelMessageMaxId.value = Math.max(channelMessageMaxId.value, messageId)
     }
-  }
-
-  /** 保存消息游标 */
-  async function saveMessageCursor(conversationType: number, messageId?: number) {
-    if (!messageId) {
-      return
-    }
-    const expectedUserId = getCurrentUserId()
-    if (expectedUserId <= 0) {
-      return
-    }
-    await initImDb()
-    if (getCurrentUserId() !== expectedUserId) {
-      return
-    }
-    const session = getDbSession()
-    await setMessageMaxId(conversationType, messageId)
-    if (getCurrentUserId() !== expectedUserId || !isCurrentDbSession(session)) {
-      return
-    }
-    updateMessageCursor(conversationType, messageId)
   }
 
   /** 算出末条消息发送人快照，群成员缺失时按需补拉 */
@@ -278,21 +256,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     }
   }
 
-  /** 持久化单条消息 */
-  async function saveMessageRecord(
-    message: Message | MessageDO,
-    conversationType: number,
-    options?: { mergeClientRecord?: boolean },
-  ) {
-    await initImDb()
-    const db = getImDb()
-    const record = 'messageKey' in message ? message : buildMessageDO(message, conversationType)
-    if (options?.mergeClientRecord && record.id && record.clientMessageId) {
-      await db.delete('messages', getClientMessageKey(record.clientMessageId))
-    }
-    await db.put<MessageDO>('messages', record)
-  }
-
   /** 拉取一类消息并持久化 */
   async function pullMessages<T extends { id: number, type: number, content: string }>(
     conversationType: number,
@@ -397,21 +360,21 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     await Promise.all([
       pullMessages(
         ImConversationType.PRIVATE,
-        ImSettingKeys.privateMessageMaxId,
+        StorageKeys.settings.privateMessageMaxId,
         minId => pullPrivateMessages({ minId, size: MESSAGE_PRIVATE_PULL_SIZE }),
         mapPrivateMessage,
         isActive,
       ),
       pullMessages(
         ImConversationType.GROUP,
-        ImSettingKeys.groupMessageMaxId,
+        StorageKeys.settings.groupMessageMaxId,
         minId => pullGroupMessages({ minId, size: MESSAGE_GROUP_PULL_SIZE }),
         mapGroupMessage,
         isActive,
       ),
       pullMessages(
         ImConversationType.CHANNEL,
-        ImSettingKeys.channelMessageMaxId,
+        StorageKeys.settings.channelMessageMaxId,
         minId => pullChannelMessages({ minId, size: MESSAGE_GROUP_PULL_SIZE }),
         mapChannelMessage,
         isActive,
@@ -499,7 +462,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   async function getConversationClearBefore(clientConversationId: string) {
     await initImDb()
     return (await getImDb().getSetting<number>(
-      `${ImSettingKeys.conversationClearBeforePrefix}${clientConversationId}`,
+      `${StorageKeys.settings.conversationClearBeforePrefix}${clientConversationId}`,
     )) || 0
   }
 
@@ -507,7 +470,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   async function getConversationDeletedMessageKeys(clientConversationId: string) {
     await initImDb()
     return (await getImDb().getSetting<string[]>(
-      `${ImSettingKeys.conversationDeletedMessagesPrefix}${clientConversationId}`,
+      `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`,
     )) || []
   }
 
@@ -539,7 +502,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     )
     await Promise.all([
       db.setSetting(
-        `${ImSettingKeys.conversationClearBeforePrefix}${clientConversationId}`,
+        `${StorageKeys.settings.conversationClearBeforePrefix}${clientConversationId}`,
         clearBeforeMessageId,
       ),
       db.removeWhere<MessageDO>('messages', item =>
@@ -564,7 +527,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     }
     const db = getImDb()
     const oldKeys = (await db.getSetting<string[]>(
-      `${ImSettingKeys.conversationDeletedMessagesPrefix}${clientConversationId}`,
+      `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`,
     )) || []
     if (getCurrentUserId() !== expectedUserId) {
       return
@@ -582,7 +545,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     const keys = Array.from(new Set([...oldKeys, ...deletedKeys])).slice(-2000)
     const keySet = new Set(keys)
     await Promise.all([
-      db.setSetting(`${ImSettingKeys.conversationDeletedMessagesPrefix}${clientConversationId}`, keys),
+      db.setSetting(`${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`, keys),
       db.removeWhere<MessageDO>('messages', item => item.clientConversationId === clientConversationId
         && ((item.id && keySet.has(`id:${item.id}`))
           || keySet.has(`client:${item.clientMessageId}`))),
@@ -651,20 +614,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   uni.$on('auth:logout', clear)
 
   return {
-    privateReadMaxIds,
-    privateMessageMaxId,
-    groupMessageMaxId,
-    channelMessageMaxId,
     clear,
-    // TODO @AI：有一些方法没在用，是因为没迁移么？
-    //     loadMessageCursorList,
-    //     updateMessageCursor,
-    //     saveMessageCursor,
-    //     saveMessageRecord,
-    loadMessageCursorList,
-    updateMessageCursor,
-    saveMessageCursor,
-    saveMessageRecord,
     pullAllMessages,
     buildIncomingMessage,
     insertMessage,

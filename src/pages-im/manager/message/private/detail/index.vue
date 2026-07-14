@@ -59,7 +59,7 @@ import type { ImManagerPrivateMessageVO } from '@/api/im/manager/message/private
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getManagerPrivateMessage } from '@/api/im/manager/message/private'
-import MessageContent from '@/pages-im/components/message-content.vue'
+import MessageContent from '@/pages-im/home/components/message-content.vue'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

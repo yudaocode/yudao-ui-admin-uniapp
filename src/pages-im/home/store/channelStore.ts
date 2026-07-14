@@ -127,13 +127,10 @@ export const useChannelStore = defineStore('imChannelStore', () => {
   uni.$on('auth:logout', clear)
 
   return {
-    // TODO @AI：这些功能，是没迁移么？所以没用？？？
     channels,
     getChannel,
     loadChannelList,
-    saveChannelList, // TODO @AI：saveChannelList、syncChannelConversationMetadata 貌似没使用？？？
     fetchChannelList,
-    syncChannelConversationMetadata,
     clear,
   }
 })
