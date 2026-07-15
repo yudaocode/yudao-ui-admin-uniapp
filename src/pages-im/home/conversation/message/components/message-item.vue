@@ -55,35 +55,33 @@
             {{ senderName }}
           </view>
           <!-- 气泡 -->
-          <view
-            class="im-bubble"
-            :class="[isSelf ? 'im-bubble--self' : 'im-bubble--other', plain ? 'im-bubble--plain' : '']"
+          <MessageBubble
+            :message="message"
+            :is-self="isSelf"
+            :quote-title="quoteTitle"
+            :mentions="mentionCandidates"
             @longpress="onBubbleLongpress"
-          >
-            <MessageQuote
-              v-if="quoteTitle"
-              :title="quoteTitle"
-              class="mb-12rpx"
-              @click="emit('scroll-to-quote', message.content)"
-            />
-            <MessageContent
-              :type="message.type"
-              :content="message.content"
-              :mentions="mentionCandidates"
-              @material-click="emit('material-click', $event)"
-              @merge-click="emit('merge-click', $event)"
-              @card-click="emit('card-click', $event)"
-              @mention-click="onMentionClick"
-            />
-          </view>
+            @scroll-to-quote="emit('scroll-to-quote', $event)"
+            @material-click="emit('material-click', $event)"
+            @merge-click="emit('merge-click', $event)"
+            @card-click="emit('card-click', $event)"
+            @mention-click="onMentionClick"
+          />
           <!-- 发送状态 -->
           <view
-            v-if="statusText"
+            v-if="statusText || showGroupReadStatus"
             class="mt-8rpx text-22rpx text-[#bbb]"
             :class="isSelf ? 'text-right' : 'text-left'"
             @click="onStatusClick"
           >
-            {{ statusText }}
+            <MessageReadStatus
+              v-if="showGroupReadStatus"
+              :message="message"
+              :group-id="targetId"
+              :group-members="groupMembers"
+              @receipt="onReceipt"
+            />
+            <text v-else>{{ statusText }}</text>
           </view>
         </view>
       </view>
@@ -98,7 +96,7 @@ import type {
   MergeMessage,
   QuoteMessage,
 } from '@/pages-im/utils/message'
-import type { Message } from '../../../types'
+import type { GroupMember, Message } from '../../../types'
 import { computed } from 'vue'
 import {
   ImConversationType,
@@ -110,7 +108,6 @@ import {
   isNormalMessage,
   isRtcCallTip,
 } from '@/pages-im/utils/constants'
-import MessageContent from '@/pages-im/home/components/message-content.vue'
 import { buildRecallTipSegments, getMessageSummary } from '@/pages-im/utils/conversation'
 import {
   getQuoteFromMessage,
@@ -129,7 +126,8 @@ import {
 import { MESSAGE_GROUP_READ_ENABLED, MESSAGE_PRIVATE_READ_ENABLED } from '@/pages-im/utils/config'
 import { formatTimeTip, toTimestamp } from '@/pages-im/utils/time'
 import ImAvatar from '../../../components/im-avatar.vue'
-import MessageQuote from './message-quote.vue'
+import MessageBubble from './message-bubble.vue'
+import MessageReadStatus from './message-read-status.vue'
 import MessageTipSegments from './message-tip-segments.vue'
 
 const props = defineProps<{
@@ -141,6 +139,7 @@ const props = defineProps<{
   selfAvatar?: string // 当前用户头像
   peerName?: string // 私聊对方昵称
   peerAvatar?: string // 私聊对方头像
+  groupMembers: GroupMember[] // 当前群成员
   privateMaxReadMessageId?: number // 私聊对方已读位置
   showTime?: boolean // 是否展示时间分隔
   selectMode?: boolean // 多选模式
@@ -156,13 +155,11 @@ const emit = defineEmits<{
   'mention-click': [userId: number] // 点击 @ 用户
   'rtc-redial': [mediaType: number] // 重拨私聊通话
   'toggle-select': [message: Message] // 多选切换
-  'show-readers': [message: Message] // 查看群已读成员
+  'receipt': [messageId: number, readCount?: number, receiptStatus?: number] // 更新消息回执
   'retry': [message: Message] // 重试失败消息
   'avatar-click': [userId: number] // 点击发送人头像
 }>()
 
-// 媒体类型不套气泡背景（图片 / 表情 / 视频，仿微信直显）
-const PLAIN_TYPES: number[] = [ImMessageType.IMAGE, ImMessageType.FACE, ImMessageType.VIDEO]
 const canMultiSelect = computed(() => !!props.message.id
   && isNormalMessage(props.message.type)
   && props.message.status !== ImMessageStatus.RECALL) // 是否允许加入消息多选
@@ -176,13 +173,11 @@ function onStatusClick() {
     emit('retry', props.message)
     return
   }
-  const message = props.message
-  if (props.conversationType === ImConversationType.GROUP
-    && message.senderId === props.selfUserId
-    && message.receiptStatus !== undefined
-    && message.receiptStatus !== ImMessageReceiptStatus.NO_RECEIPT) {
-    emit('show-readers', props.message)
-  }
+}
+
+/** 更新群消息回执 */
+function onReceipt(messageId: number, readCount: number, receiptStatus?: number) {
+  emit('receipt', messageId, readCount, receiptStatus)
 }
 
 /** 根节点点击：多选模式下切换选中 */
@@ -252,9 +247,6 @@ function getGroupUserName(userId: number) {
   }
   return getSenderDisplayName(userId, props.conversationType, props.targetId)
 }
-
-/** 是否媒体类型（不套气泡） */
-const plain = computed(() => PLAIN_TYPES.includes(props.message.type))
 
 /** 是否展示发送人昵称（群聊对方） */
 const showSenderName = computed(() => isGroup.value && !isSelf.value)
@@ -361,6 +353,13 @@ const quoteTitle = computed(() => {
   return `${getQuoteSenderName(quote)}：${getMessageSummary(quote.type, quote.content)}`
 })
 
+/** 是否展示群消息已读状态 */
+const showGroupReadStatus = computed(() => isSelf.value
+  && isGroup.value
+  && MESSAGE_GROUP_READ_ENABLED
+  && props.message.receiptStatus !== undefined
+  && props.message.receiptStatus !== ImMessageReceiptStatus.NO_RECEIPT)
+
 /** 发送状态文案 */
 const statusText = computed(() => {
   const message = props.message
@@ -383,69 +382,6 @@ const statusText = computed(() => {
     }
     return message.receiptStatus === ImMessageReceiptStatus.PENDING ? '未读' : ''
   }
-  if (isGroup.value) {
-    if (!MESSAGE_GROUP_READ_ENABLED) {
-      return ''
-    }
-    if (message.receiptStatus === ImMessageReceiptStatus.DONE) {
-      return '全部已读'
-    }
-    if (message.receiptStatus === ImMessageReceiptStatus.PENDING) {
-      return message.readCount ? `${message.readCount} 人已读` : '未读'
-    }
-  }
   return ''
 })
 </script>
-
-<style lang="scss" scoped>
-.im-bubble {
-  position: relative;
-  border-radius: 8rpx;
-  padding: 18rpx 24rpx;
-  font-size: 30rpx;
-  line-height: 44rpx;
-  word-break: break-all;
-}
-
-// 自己：微信绿 + 右侧小三角
-.im-bubble--self {
-  background: #95ec69;
-  color: #1f1f1f;
-
-  &::after {
-    position: absolute;
-    top: 20rpx;
-    right: -8rpx;
-    content: '';
-    border: 9rpx solid transparent;
-    border-left-color: #95ec69;
-  }
-}
-
-// 对方：白底 + 左侧小三角
-.im-bubble--other {
-  background: #fff;
-  color: #333;
-
-  &::after {
-    position: absolute;
-    top: 20rpx;
-    left: -8rpx;
-    content: '';
-    border: 9rpx solid transparent;
-    border-right-color: #fff;
-  }
-}
-
-// 媒体类型：去气泡背景与三角
-.im-bubble--plain {
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-
-  &::after {
-    display: none;
-  }
-}
-</style>

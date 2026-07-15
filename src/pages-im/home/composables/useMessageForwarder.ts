@@ -8,7 +8,7 @@ import {
   serializeMessage,
 } from '@/pages-im/utils/message'
 import { useUserStore } from '@/store/user'
-import { ImConversationType, ImForwardMode, ImMessageType } from '@/pages-im/utils/constants'
+import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
 import { useConversationStore } from '../store/conversationStore'
@@ -16,7 +16,6 @@ import { sendMessageToConversation } from './useMessageSender'
 
 /** 管理消息逐条转发、合并转发及新建群聊后续转发 */
 export function useMessageForwarder(options: {
-  getSelectedMessages: () => Message[]
   exitSelectMode: () => void
   pageTitle: Readonly<Ref<string>>
 }) {
@@ -27,13 +26,8 @@ export function useMessageForwarder(options: {
   const forwardMessages = ref<Message[]>([]) // 待转发消息
   const forwardMerge = ref(false) // 是否合并转发
   const forwardLeaveMessage = ref('') // 转发留言
-  const forwardActionVisible = ref(false) // 转发方式菜单显示状态
   let forwardUserId = 0 // 当前转发任务所属用户
   let forwardSourceConversation: ConversationDO | undefined // 打开转发时的源会话快照
-  const forwardActions = [ // 转发方式菜单项
-    { name: '逐条转发', value: ImForwardMode.SINGLE },
-    { name: '合并转发', value: ImForwardMode.MERGE },
-  ]
 
   /** 发送一条转发消息到受支持的会话 */
   function sendForwardMessage(
@@ -59,21 +53,6 @@ export function useMessageForwarder(options: {
       ? { ...activeConversation, name: options.pageTitle.value || activeConversation.name }
       : undefined
     forwardVisible.value = true
-  }
-
-  /** 转发当前选中的消息 */
-  function forwardSelected() {
-    const messages = options.getSelectedMessages()
-    if (messages.length <= 1) {
-      openForward(messages)
-      return
-    }
-    forwardActionVisible.value = true
-  }
-
-  /** 处理转发方式 */
-  function handleForwardAction({ item }: { item: { value: string } }) {
-    openForward(options.getSelectedMessages(), item.value === ImForwardMode.MERGE)
   }
 
   /** 打开新建群聊页，创建成功后继续转发 */
@@ -189,11 +168,7 @@ export function useMessageForwarder(options: {
   return {
     forwardVisible,
     forwardLeaveMessage,
-    forwardActionVisible,
-    forwardActions,
     openForward,
-    forwardSelected,
-    handleForwardAction,
     createGroupAndForward,
     handleForwardConfirm,
   }

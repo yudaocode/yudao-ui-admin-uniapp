@@ -231,7 +231,7 @@ export function useMessageSender(options: {
   }
 
   /** 发送原始消息，并在失败后保留可重试占位 */
-  async function sendRawMessage(type: number, payload: Record<string, any>, sendOptions: SendExtOptions = {}) {
+  async function sendRaw(type: number, payload: Record<string, any>, sendOptions: SendExtOptions = {}) {
     const context = getSendContext()
     if (!isSendContextActive(context)) {
       return false
@@ -422,7 +422,7 @@ export function useMessageSender(options: {
   }
 
   /** 撤回消息并同步本地终态 */
-  async function recallMessage(item: Message) {
+  async function recall(item: Message) {
     if (!item.id) {
       return false
     }
@@ -446,10 +446,10 @@ export function useMessageSender(options: {
   }
 
   return {
-    sendRawMessage,
+    sendRaw,
     retryMessage,
     readActive,
     syncPrivateReadStatus,
-    recallMessage,
+    recall,
   }
 }

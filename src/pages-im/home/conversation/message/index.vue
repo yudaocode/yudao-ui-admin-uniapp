@@ -86,11 +86,12 @@
             :self-avatar="userStore.userInfo.avatar"
             :peer-name="pageTitle"
             :peer-avatar="privateFriend?.avatar"
+            :group-members="groupMembers"
             :private-max-read-message-id="privateMaxReadMessageId"
             :show-time="shouldShowTime(index)"
             :select-mode="selectMode"
             :selected="selectedIdSet.has(messageKey(item))"
-            @longpress="handleMessageMore"
+            @longpress="messageActionRef?.open($event)"
             @scroll-to-quote="scrollToQuote"
             @material-click="handleMaterialClick"
             @merge-click="handleMergeClick"
@@ -98,7 +99,7 @@
             @mention-click="handleAvatarClick"
             @rtc-redial="handleRtcRedial"
             @toggle-select="toggleSelect"
-            @show-readers="handleShowReaders"
+            @receipt="updateMessageReceipt"
             @retry="handleRetryMessage"
             @avatar-click="handleAvatarClick"
           />
@@ -113,7 +114,7 @@
 
       <!-- 输入区域 -->
       <template #bottom>
-        <ChatInput
+        <MessageInput
           v-if="!selectMode && !isChannel"
           v-model="draftContent"
           :conversation-type="conversationType"
@@ -132,19 +133,12 @@
         >
           频道消息仅由管理员发布
         </view>
-        <!-- 多选操作栏 -->
-        <view
+        <MessageMultiSelectBar
           v-else
-          class="flex shrink-0 items-center justify-around border-t border-t-[#eee] bg-white py-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))]"
-        >
-          <text class="text-28rpx text-[#666]" @click="exitSelectMode">取消</text>
-          <text class="text-28rpx" :class="selectedIds.length ? 'text-[#1677ff]' : 'text-[#ccc]'" @click="forwardSelected">
-            转发{{ selectedIds.length ? `(${selectedIds.length})` : '' }}
-          </text>
-          <text class="text-28rpx" :class="selectedIds.length ? 'text-[#fa5151]' : 'text-[#ccc]'" @click="deleteSelected">
-            删除
-          </text>
-        </view>
+          :messages="messageList"
+          @forward="openForward"
+          @delete="confirmDelete"
+        />
       </template>
     </z-paging>
 
@@ -191,17 +185,34 @@
       </template>
     </ForwardPicker>
 
-    <!-- 群已读情况弹窗 -->
-    <ReadDetail v-model="readDetailVisible" :read-members="readMembers" :unread-members="unreadMembers" />
-
     <!-- 通话方式菜单 -->
     <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
 
-    <!-- 转发方式菜单 -->
-    <wd-action-sheet v-model="forwardActionVisible" :actions="forwardActions" @select="handleForwardAction" />
-
     <!-- 消息操作菜单 -->
-    <wd-action-sheet v-model="messageActionVisible" :actions="messageActions" @select="handleMessageActionSelect" />
+    <MessageActionSheet
+      ref="messageActionRef"
+      :conversation-type="conversationType"
+      :target-id="targetId"
+      :group-members="groupMembers"
+      :recall-message="recall"
+      @reply="handleReplyMessage"
+      @forward="openForward"
+      @enter-select="enterSelectMode"
+      @delete="confirmDelete"
+      @recalled="markMessageRecalled"
+      @reload-group-members="loadGroupMembers"
+      @reload-group-state="loadGroupState"
+    />
+
+    <!-- 发起群通话成员选择 -->
+    <GroupMemberPicker
+      ref="callMemberPickerRef"
+      v-model="callInviteUserIds"
+      title="选择通话成员"
+      :members="groupMembers"
+      :hide-ids="[userStore.userInfo.userId]"
+      @confirm="handleCallMemberConfirm"
+    />
   </view>
 </template>
 
@@ -210,24 +221,17 @@ import type { MessageDO } from '@/pages-im/utils/db'
 import type { GroupMember, Message } from '../../types'
 import type {
   CardMessage,
-  FileMessage,
   MaterialMessage,
   MergeMessage,
   QuoteMessage,
-  TextMessage,
 } from '@/pages-im/utils/message'
 import {
   buildQuoteFromMessage,
-  canForwardMessage,
-  canRecallMessage,
-  extractAddableFace,
   getQuoteFromMessage,
-  parseMessage,
   parseRecallMessageId,
 } from '@/pages-im/utils/message'
 import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { MESSAGE_CHAT_PAGE_SIZE } from '@/pages-im/utils/config'
-import { toTimestamp } from '@/pages-im/utils/time'
 import {
   getFriendDisplayName,
   getGroupDisplayName,
@@ -239,16 +243,9 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getClientConversationId } from '@/pages-im/utils/db'
-import {
-  cancelMuteMember,
-  muteMember,
-  pinGroupMessage,
-  unpinGroupMessage,
-} from '@/api/im/group'
-import { removeGroupMember } from '@/api/im/group/member'
+import { unpinGroupMessage } from '@/api/im/group'
 import { getActiveCall } from '@/api/im/rtc'
 import { applyJoinGroup } from '@/api/im/group/request'
-import { getGroupReadUsers } from '@/api/im/message/group'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
 import {
@@ -268,25 +265,25 @@ import { useMessageList } from '../../composables/useMessageList'
 import { useMessagePuller } from '../../composables/useMessagePuller'
 import { useRtcStore } from '../../store/rtcStore'
 import { useMessageSender } from '../../composables/useMessageSender'
-import { useMediaUploader } from '../../composables/useMediaUploader'
 import { useMuteOverlay } from '../../composables/useMuteOverlay'
 import { useConversationStore } from '../../store/conversationStore'
 import { useChannelStore } from '../../store/channelStore'
-import { useFaceStore } from '../../store/faceStore'
 import { useFriendStore } from '../../store/friendStore'
 import { useGroupRequestStore } from '../../store/groupRequestStore'
 import { useGroupStore } from '../../store/groupStore'
 import { useImRuntimeStore } from '../../store/runtimeStore'
 import { useMessageStore } from '../../store/messageStore'
-import ChatInput from './components/chat-input.vue'
+import MessageInput from './components/message-input.vue'
 import ForwardPicker from './components/forward-picker.vue'
 import GroupPinnedMessage from './components/group-pinned-message.vue'
 import GroupRequestPending from './components/group-request-pending.vue'
 import MaterialDetail from './components/material-detail.vue'
 import MergeDetail from './components/merge-detail.vue'
+import MessageActionSheet from './components/message-action-sheet.vue'
 import MessageItem from './components/message-item.vue'
-import ReadDetail from './components/read-detail.vue'
+import MessageMultiSelectBar from './components/message-multi-select-bar.vue'
 import RtcGroupCallBanner from './components/rtc-group-call-banner.vue'
+import GroupMemberPicker from '../../contact/group/components/group-member-picker.vue'
 
 interface SendExtOptions {
   atUserIds?: number[] // 群聊 @ 的用户编号列表
@@ -318,7 +315,6 @@ definePage({
 const toast = useToast()
 const dialog = useDialog()
 const userStore = useUserStore()
-const faceStore = useFaceStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
 const channelStore = useChannelStore()
@@ -328,8 +324,8 @@ const {
   convertGroupMessage,
   convertPrivateMessage,
 } = useMessagePuller()
-const { getLocalImageInfo } = useMediaUploader()
 const pagingRef = ref<any>() // 分页组件引用
+const messageActionRef = ref<InstanceType<typeof MessageActionSheet>>() // 消息操作菜单引用
 const cellStyle = ref<Record<string, string>>({ transform: 'scaleY(-1)' }) // 聊天记录模式单元格倒置样式
 const groupMembers = ref<GroupMember[]>([]) // 群成员
 const pendingGroupRequestCount = ref(0) // 当前群待处理申请数
@@ -338,18 +334,14 @@ const materialPayload = ref<MaterialMessage>() // 素材消息内容
 const mergeVisible = ref(false) // 合并转发详情弹窗
 const mergePayload = ref<MergeMessage>() // 合并转发内容
 const callActionVisible = ref(false) // 通话方式菜单显示状态
+const callMemberPickerRef = ref<InstanceType<typeof GroupMemberPicker>>() // 群通话成员选择器引用
+const callInviteUserIds = ref<number[]>([]) // 群通话邀请成员编号
+const callMediaType = ref<number>() // 待发起的群通话媒体类型
 const callActions = [ // 通话方式菜单项
   { name: '语音通话', value: ImRtcCallMediaType.VOICE },
   { name: '视频通话', value: ImRtcCallMediaType.VIDEO },
 ]
-const messageActionVisible = ref(false) // 消息操作菜单显示状态
-const actionMessage = ref<Message>() // 当前操作的消息
-const messageActions = ref<Array<{ name: string, value: string, color?: string }>>([]) // 消息操作菜单项
 const pinningMessageId = ref<number>() // 正在变更置顶状态的消息编号
-const readDetailVisible = ref(false) // 群已读弹窗
-const readMembers = ref<GroupMember[]>([]) // 已读成员
-const unreadMembers = ref<GroupMember[]>([]) // 未读成员
-const readLoadingMessageId = ref<number>() // 正在查询已读成员的消息编号
 const replyTarget = ref<QuoteMessage>() // 回复目标
 const conversationStore = useConversationStore()
 const {
@@ -369,7 +361,6 @@ const {
   exit: exitSelectMode,
 } = useMessageMultiSelect()
 const selectMode = computed(() => messageMultiSelectState.active) // 消息多选模式
-const selectedIds = computed(() => messageMultiSelectState.selectedClientMessageIds) // 已选消息编号
 const chatVisible = ref(false) // 当前聊天页是否可见
 const draftContent = ref('') // 当前输入草稿
 const friendLoaded = ref(false) // 好友关系是否加载完成
@@ -476,33 +467,22 @@ const {
   syncPrivateReadStatus: syncPrivateReadStatusForList,
 })
 
-/** 获取当前选中的消息，并恢复为正序 */
-function getSelectedMessages() {
-  return messageList.value
-    .filter(item => selectedIdSet.value.has(item.clientMessageId))
-    .reverse()
-}
 const {
   forwardVisible,
   forwardLeaveMessage,
-  forwardActionVisible,
-  forwardActions,
   openForward,
-  forwardSelected,
-  handleForwardAction,
   createGroupAndForward,
   handleForwardConfirm,
 } = useMessageForwarder({
-  getSelectedMessages,
   exitSelectMode,
   pageTitle,
 })
 const {
-  sendRawMessage,
+  sendRaw,
   retryMessage,
   readActive,
   syncPrivateReadStatus,
-  recallMessage,
+  recall,
 } = useMessageSender({
   conversationType,
   targetId,
@@ -550,7 +530,7 @@ async function loadFriendRelation() {
   }
   const context = getPageContext()
   try {
-    const friends = await useFriendStore().fetchFriendList()
+    const friends = await friendStore.fetchFriendList()
     if (!isPageContextActive(context)) {
       return
     }
@@ -578,22 +558,28 @@ function openCallMenu() {
     toast.show('你已退出群聊，无法发起通话')
     return
   }
+  if (conversationType.value === ImConversationType.GROUP
+    && !groupMembers.value.some(item => item.userId !== userStore.userInfo.userId
+      && item.status !== CommonStatusEnum.DISABLE)) {
+    toast.show('暂无可邀请成员')
+    return
+  }
   callActionVisible.value = true
 }
 
 /** 发起指定方式的通话 */
 function handleCallAction({ item }: { item: { value: number } }) {
-  startCall(item.value)
+  if (conversationType.value === ImConversationType.GROUP) {
+    callMediaType.value = item.value
+    callInviteUserIds.value = []
+    callMemberPickerRef.value?.open([])
+    return
+  }
+  startCall(item.value, [targetId.value])
 }
 
 /** 发起音视频通话 */
-async function startCall(mediaType: number) {
-  const inviteeIds = conversationType.value === ImConversationType.GROUP
-    ? groupMembers.value
-        .filter(item => item.userId !== userStore.userInfo.userId
-          && item.status !== CommonStatusEnum.DISABLE)
-        .map(item => item.userId)
-    : [targetId.value]
+async function startCall(mediaType: number, inviteeIds: number[]) {
   if (inviteeIds.length === 0) {
     toast.show('暂无可邀请成员')
     return
@@ -604,6 +590,14 @@ async function startCall(mediaType: number) {
     groupId: conversationType.value === ImConversationType.GROUP ? targetId.value : undefined,
     inviteeIds,
   })
+}
+
+/** 选择成员后发起群通话 */
+function handleCallMemberConfirm(inviteeIds: number[]) {
+  if (callMediaType.value == null || inviteeIds.length === 0) {
+    return
+  }
+  startCall(callMediaType.value, inviteeIds)
 }
 
 /** 加入正在进行的群通话 */
@@ -649,11 +643,6 @@ function openGroupRequests() {
   uni.navigateTo({ url: `/pages-im/home/contact/request/index?tab=group&groupId=${targetId.value}` })
 }
 
-/** 是否自己发送 */
-function isSelfMessage(item: Message) {
-  return item.senderId === userStore.userInfo.userId
-}
-
 /** 获取引用发送人名称 */
 function getQuoteSenderName(quote: QuoteMessage) {
   if (quote.senderId === userStore.userInfo.userId) {
@@ -696,11 +685,6 @@ function clearReplyTarget() {
 /** 回复消息 */
 function handleReplyMessage(item: Message) {
   replyTarget.value = buildQuoteFromMessage(item)
-}
-
-/** 获取文本内容 */
-function getTextContent(content: string) {
-  return parseMessage<TextMessage>(content)?.content || content || ''
 }
 
 /** 点击频道素材：打开详情 */
@@ -812,56 +796,23 @@ async function confirmDelete(messages: Message[]) {
   exitSelectMode()
 }
 
-/** 删除选中消息 */
-function deleteSelected() {
-  confirmDelete(getSelectedMessages())
-}
-
-/** 查看群消息已读成员 */
-async function handleShowReaders(message: Message) {
-  if (!message.id || readLoadingMessageId.value != null) {
-    return
-  }
-  const context = getPageContext()
-  readLoadingMessageId.value = message.id
-  try {
-    const readIds = await getGroupReadUsers({ groupId: targetId.value, messageId: message.id })
-    if (!isPageContextActive(context)) {
-      return
-    }
-    const readSet = new Set(readIds)
-    const receiverIds = message.receiverUserIds
-    const receiverSet = receiverIds?.length ? new Set(receiverIds) : undefined
-    const others = groupMembers.value.filter(item => item.userId !== message.senderId
-      && item.status !== CommonStatusEnum.DISABLE
-      && (!receiverSet || receiverSet.has(item.userId)))
-    readMembers.value = others.filter(item => readSet.has(item.userId))
-    unreadMembers.value = others.filter(item => !readSet.has(item.userId))
-    readDetailVisible.value = true
-  } finally {
-    if (readLoadingMessageId.value === message.id) {
-      readLoadingMessageId.value = undefined
-    }
-  }
-}
-
 /** 加载群成员 */
 async function loadGroupMembers() {
   if (conversationType.value !== ImConversationType.GROUP || !targetId.value) {
     return
   }
   const context = getPageContext()
-  await useGroupStore().loadGroupMemberList(targetId.value)
+  await groupStore.loadGroupMemberList(targetId.value)
   if (!isPageContextActive(context)) {
     return
   }
-  const cachedGroup = useGroupStore().getGroup(targetId.value)
+  const cachedGroup = groupStore.getGroup(targetId.value)
   groupMembers.value = cachedGroup?.members || []
   const [memberList, groupDetail, activeCall] = await Promise.all([
     !cachedGroup?.membersLoaded || cachedGroup.membersExpired
-      ? useGroupStore().fetchGroupMemberList(targetId.value)
+      ? groupStore.fetchGroupMemberList(targetId.value)
       : Promise.resolve(cachedGroup.members || []),
-    useGroupStore().fetchGroupInfo(targetId.value, true),
+    groupStore.fetchGroupInfo(targetId.value, true),
     getActiveCall(targetId.value),
   ])
   if (!isPageContextActive(context)) {
@@ -902,7 +853,7 @@ async function loadGroupState() {
   }
   const context = getPageContext()
   const [groupDetail, activeCall] = await Promise.all([
-    useGroupStore().fetchGroupInfo(targetId.value, true),
+    groupStore.fetchGroupInfo(targetId.value, true),
     getActiveCall(targetId.value),
   ])
   if (!isPageContextActive(context)) {
@@ -929,218 +880,13 @@ async function markRead(latest = messageList.value[0]) {
   await readActive(latest?.id || 0)
 }
 
-/** 消息更多操作 */
-function handleMessageMore(item: Message) {
-  const actions: Array<{ name: string, value: string, color?: string }> = []
-  const canForward = canForwardMessage(item)
-  if (!isChannel.value && canForward && item.type !== ImMessageType.MERGE) {
-    actions.push({ name: '引用', value: 'reply' })
-  }
-  if (!isChannel.value && item.type === ImMessageType.TEXT) {
-    actions.push({ name: '复制', value: 'copy' })
-  }
-  if (canForward) {
-    actions.push({ name: '转发', value: 'forward' })
-  }
-  if (canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
-    actions.push({ name: '撤回', value: 'recall' })
-  }
-  if (conversationType.value === ImConversationType.GROUP
-    && canManageGroup.value
-    && canForward
-    && !isPinnedMessage(item.id)) {
-    actions.push({ name: '置顶', value: 'pin' })
-  }
-  if (!isChannel.value && item.type === ImMessageType.FILE) {
-    actions.push({ name: '复制文件链接', value: 'copyFileUrl' })
-  }
-  if (!isChannel.value && canForward && (item.type === ImMessageType.IMAGE || item.type === ImMessageType.FACE)) {
-    actions.push({ name: '添加到表情', value: 'addFace' })
-  }
-  const senderMember = getManageableSender(item)
-  if (senderMember) {
-    if (toTimestamp(senderMember.muteEndTime) > Date.now()) {
-      actions.push({ name: '解除禁言', value: 'unmuteSender' })
-    } else {
-      actions.push({ name: '禁言 10 分钟', value: 'muteSender10' })
-      actions.push({ name: '禁言 1 小时', value: 'muteSender60' })
-    }
-    actions.push({ name: '移出群聊', value: 'removeSender', color: '#fa5151' })
-  }
-  if (!isChannel.value && canForward) {
-    actions.push({ name: '多选', value: 'multiSelect' })
-  }
-  if (!canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
-    actions.push({ name: '删除', value: 'delete', color: '#fa5151' })
-  }
-  if (actions.length === 0) {
-    return
-  }
-  actionMessage.value = item
-  messageActions.value = actions
-  messageActionVisible.value = true
-}
-
-/** 处理消息菜单操作 */
-async function handleMessageActionSelect({ item }: { item: { value: string } }) {
-  if (actionMessage.value) {
-    await handleMessageAction(actionMessage.value, item.value)
-  }
-}
-
-/** 执行消息操作 */
-async function handleMessageAction(item: Message, action: string) {
-  if (action === 'reply') {
-    handleReplyMessage(item)
-  } else if (action === 'copy') {
-    uni.setClipboardData({ data: getTextContent(item.content) })
-  } else if (action === 'copyFileUrl') {
-    const file = parseMessage<FileMessage>(item.content)
-    if (file?.url) {
-      uni.setClipboardData({ data: file.url })
-    }
-  } else if (action === 'addFace') {
-    await handleAddFace(item)
-  } else if (action === 'muteSender10' || action === 'muteSender60') {
-    await handleMuteSender(item, action === 'muteSender60' ? 3600 : 600)
-  } else if (action === 'unmuteSender') {
-    await handleUnmuteSender(item)
-  } else if (action === 'removeSender') {
-    await handleRemoveSender(item)
-  } else if (action === 'recall') {
-    await handleRecallMessage(item)
-  } else if (action === 'pin') {
-    await handlePinMessage(item)
-  } else if (action === 'forward') {
-    openForward([item])
-  } else if (action === 'multiSelect') {
-    enterSelectMode(item)
-  } else if (action === 'delete') {
-    await confirmDelete([item])
-  }
-}
-
-/** 获取当前用户可管理的消息发送成员 */
-function getManageableSender(item: Message) {
-  if (conversationType.value !== ImConversationType.GROUP || isSelfMessage(item) || !currentGroupMember.value) {
-    return undefined
-  }
-  const sender = groupMembers.value.find(member =>
-    member.userId === item.senderId
-    && member.status !== CommonStatusEnum.DISABLE)
-  if (!sender?.role || !currentGroupMember.value.role || currentGroupMember.value.role >= sender.role) {
-    return undefined
-  }
-  return sender
-}
-
-/** 禁言消息发送成员 */
-async function handleMuteSender(item: Message, mutedSeconds: number) {
-  if (!group.value?.id || !getManageableSender(item)) {
-    return
-  }
-  await muteMember({ id: group.value.id, userId: item.senderId, mutedSeconds })
-  toast.success('已禁言')
-  await loadGroupMembers()
-}
-
-/** 解除消息发送成员的禁言 */
-async function handleUnmuteSender(item: Message) {
-  if (!group.value?.id || !getManageableSender(item)) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '解除禁言', msg: '确定解除该成员的禁言吗？' })
-  } catch {
-    return
-  }
-  await cancelMuteMember({ id: group.value.id, userId: item.senderId })
-  toast.success('已解除禁言')
-  await loadGroupMembers()
-}
-
-/** 将消息发送成员移出群聊 */
-async function handleRemoveSender(item: Message) {
-  const sender = getManageableSender(item)
-  if (!group.value?.id || !sender) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '移出群聊', msg: `确定将“${getMemberDisplayName(sender)}”移出群聊吗？` })
-  } catch {
-    return
-  }
-  await removeGroupMember({ groupId: group.value.id, memberUserIds: [item.senderId] })
-  toast.success('已移出群聊')
-  await loadGroupMembers()
-}
-
-/** 将图片或表情消息添加到个人收藏 */
-async function handleAddFace(item: Message) {
-  const payload = extractAddableFace(item)
-  if (!payload?.url) {
-    return
-  }
-  const imageInfo = payload.width && payload.height ? undefined : await getLocalImageInfo(payload.url)
-  if (await faceStore.addFaceUserItem({
-    url: payload.url,
-    name: payload.name,
-    width: payload.width || imageInfo?.width || 0,
-    height: payload.height || imageInfo?.height || 0,
-  })) {
-    toast.success('已添加到表情')
-  }
-}
-
-/** 是否为群置顶消息 */
-function isPinnedMessage(messageId: number) {
-  return !!group.value?.pinnedMessages?.some(item => item.id === messageId)
-}
-
-/** 置顶群消息 */
-async function handlePinMessage(item: Message) {
-  if (!item.id || !group.value?.id || isPinnedMessage(item.id) || pinningMessageId.value != null) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '置顶消息', msg: '将在当前群成员的聊天中置顶' })
-  } catch {
-    return
-  }
-  pinningMessageId.value = item.id
-  try {
-    await pinGroupMessage({ id: group.value.id, messageId: item.id })
-    toast.success('已置顶')
-    await loadGroupState()
-  } finally {
-    pinningMessageId.value = undefined
-  }
-}
-
-/** 撤回消息 */
-async function handleRecallMessage(item: Message) {
-  if (!item.id || !canRecallMessage(item, conversationType.value, userStore.userInfo.userId)) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '撤回消息', msg: '确定撤回该消息吗？' })
-  } catch {
-    return
-  }
-  if (!await recallMessage(item)) {
-    return
-  }
-  markMessageRecalled(item.id)
-  toast.success('已撤回')
-}
-
-/** 输入区发送：转发给 sendRawMessage */
+/** 输入区发送：转发给 sendRaw */
 function handleSend(data: SendData) {
   if (inputDisabledTip.value) {
     toast.show(inputDisabledTip.value)
     return false
   }
-  return sendRawMessage(data.type, data.payload, data.options)
+  return sendRaw(data.type, data.payload, data.options)
 }
 
 /** 重试失败消息 */

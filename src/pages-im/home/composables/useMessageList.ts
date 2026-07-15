@@ -414,7 +414,11 @@ export function useMessageList(options: {
       return
     }
     const nextMessages = [...messageList.value]
-    nextMessages[index] = { ...nextMessages[index], readCount, receiptStatus }
+    nextMessages[index] = {
+      ...nextMessages[index],
+      ...(readCount !== undefined ? { readCount } : {}),
+      ...(receiptStatus !== undefined ? { receiptStatus } : {}),
+    }
     options.pagingRef.value?.resetTotalData(nextMessages)
   }
 

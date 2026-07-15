@@ -6,15 +6,13 @@
     </view>
     <template v-else>
       <!-- 回复预览 -->
-      <view
+      <ReplyPreview
         v-if="replyTitle"
-        class="mb-14rpx flex items-center gap-12rpx rounded-12rpx bg-[#f7f8fa] px-18rpx py-12rpx"
-      >
-        <view class="min-w-0 flex-1 text-24rpx text-[#666] leading-34rpx">
-          <text selectable>{{ replyTitle }}</text>
-        </view>
-        <wd-icon name="close" size="28rpx" @click="emit('clear-reply')" />
-      </view>
+        :title="replyTitle"
+        closable
+        class="mb-14rpx"
+        @close="emit('clear-reply')"
+      />
       <!-- 输入栏（微信式：输入框占主，图标在两侧） -->
       <view class="flex items-end gap-16rpx">
         <view class="shrink-0 pb-12rpx" @click="voiceMode = !voiceMode">
@@ -135,6 +133,7 @@ import {
 import { useMediaUploader } from '../../../composables/useMediaUploader'
 import FacePicker from './face-picker.vue'
 import MentionPicker from './mention-picker.vue'
+import ReplyPreview from './reply-preview.vue'
 import VoiceRecorder from './voice-recorder.vue'
 
 interface SendExtOptions {

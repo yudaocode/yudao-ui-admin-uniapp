@@ -35,24 +35,12 @@
           <view v-if="group.letter" :id="`fl-${group.letter}`" class="bg-[#f7f8fa] px-24rpx py-8rpx text-24rpx text-[#999]">
             {{ group.letter }}
           </view>
-          <view
+          <FriendItem
             v-for="item in group.list"
             :key="item.id"
-            class="flex items-center gap-20rpx px-24rpx active:bg-[#f5f5f5]"
-            @click="openProfile(item)"
-          >
-            <view class="py-16rpx">
-              <ImAvatar :src="item.avatar" :name="item.nickname" size="84rpx" :round="false" />
-            </view>
-            <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-16rpx">
-              <view class="flex items-center gap-10rpx">
-                <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ item.displayName || item.nickname }}</text>
-              </view>
-              <view class="line-clamp-1 mt-4rpx text-24rpx text-[#999]">
-                昵称：{{ item.nickname || '-' }}
-              </view>
-            </view>
-          </view>
+            :friend="item"
+            @open="openProfile"
+          />
         </template>
 
         <wd-empty v-if="!loading && totalCount === 0" icon="content" tip="暂无好友" />
@@ -80,7 +68,7 @@ import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useFriendBuckets } from '../../composables/useFriendBuckets'
 import { useFriendStore } from '../../store/friendStore'
-import ImAvatar from '../../components/im-avatar.vue'
+import FriendItem from './friend-item.vue'
 
 const emit = defineEmits<{
   add: []

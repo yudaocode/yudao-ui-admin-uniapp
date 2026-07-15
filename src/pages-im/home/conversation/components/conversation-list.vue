@@ -32,43 +32,12 @@
         <wd-icon :name="topCollapsed ? 'arrow-down' : 'arrow-up'" size="28rpx" color="#aaa" />
       </view>
 
-      <view
+      <ConversationItem
         v-for="item in displayConversations"
         :key="item.clientConversationId"
-        class="conversation-row"
-        :class="item.top ? 'is-top' : ''"
-        @click="openChat(item)"
+        :conversation="item"
         @longpress="handleLongPress(item)"
-      >
-        <view class="relative py-22rpx">
-          <ImAvatar :src="item.avatar" :name="item.name" :round="false" size="96rpx" />
-          <view
-            v-if="item.unreadCount > 0"
-            class="unread-badge"
-            :class="item.silent ? 'is-dot' : ''"
-          >
-            {{ item.silent ? '' : item.unreadCount > 99 ? '99+' : item.unreadCount }}
-          </view>
-        </view>
-        <view class="conversation-content">
-          <view class="min-w-0 flex items-center justify-between">
-            <text class="conversation-name">{{ item.name || '未命名' }}</text>
-            <text class="conversation-time">{{ formatConversationTime(item.lastSendTime) }}</text>
-          </view>
-          <view class="mt-7rpx flex items-center gap-8rpx">
-            <view class="line-clamp-1 min-w-0 flex-1 text-27rpx text-[#999]">
-              <text v-if="hasDraft(item)" class="text-[#fa5151]">[草稿] </text>
-              <template v-else>
-                <text v-if="getGroupRequestText(item)" class="text-[#fa5151]">{{ getGroupRequestText(item) }} </text>
-                <text v-if="item.atMe" class="text-[#fa5151]">[有人@我] </text>
-                <text v-else-if="item.atAll" class="text-[#fa5151]">[@全体成员] </text>
-                <text v-if="getLastSenderText(item)">{{ getLastSenderText(item) }}: </text>
-              </template>{{ hasDraft(item) ? item.draft?.plain : getConversationContent(item) || ' ' }}
-            </view>
-            <wd-icon v-if="item.silent" name="notification-close" size="27rpx" color="#b2b2b2" />
-          </view>
-        </view>
-      </view>
+      />
     </scroll-view>
 
     <!-- 会话操作菜单 -->
@@ -81,16 +50,12 @@ import type { ConversationDO } from '@/pages-im/utils/db'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { formatConversationTime } from '@/pages-im/utils/time'
-import { buildConversationMessageUrl, filterConversationsByKeyword } from '@/pages-im/utils/conversation'
-import { getFriendDisplayName, getMemberDisplayName } from '@/pages-im/utils/user'
-import { useUserStore } from '@/store/user'
-import { ImConversationType, ImMessageType, isNormalMessage } from '@/pages-im/utils/constants'
+import { filterConversationsByKeyword } from '@/pages-im/utils/conversation'
+import { ImConversationType } from '@/pages-im/utils/constants'
 import { useConversationStore } from '../../store/conversationStore'
 import { useFriendStore } from '../../store/friendStore'
-import { useGroupRequestStore } from '../../store/groupRequestStore'
 import { useGroupStore } from '../../store/groupStore'
-import ImAvatar from '../../components/im-avatar.vue'
+import ConversationItem from './conversation-item.vue'
 
 const emit = defineEmits<{
   add: []
@@ -99,8 +64,6 @@ const emit = defineEmits<{
 const conversationStore = useConversationStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
-const groupRequestStore = useGroupRequestStore()
-const userStore = useUserStore()
 const { conversations, loading } = storeToRefs(conversationStore)
 const { loadConversationList, setConversationTop, removeConversation } = conversationStore
 const dialog = useDialog()
@@ -133,70 +96,9 @@ const displayConversations = computed(() => {
   return [...visibleTopConversations.value, ...normalConversations.value]
 }) // 当前展示会话
 
-/** 获取群聊未处理申请提示 */
-function getGroupRequestText(item: ConversationDO) {
-  if (item.type !== ImConversationType.GROUP) {
-    return ''
-  }
-  const count = groupRequestStore.getUnhandledGroupRequestCount(item.targetId)
-  return count > 0 ? `[${count}条进群申请]` : ''
-}
-
-/** 是否存在会话草稿 */
-function hasDraft(item: ConversationDO) {
-  return !!item.draft && (!!item.draft.plain.trim() || !!item.draft.reply)
-}
-
-/** 获取群聊最后发送人前缀 */
-function getLastSenderText(item: ConversationDO) {
-  if (item.type !== ImConversationType.GROUP
-    || !item.lastSenderId
-    || item.lastMessageType == null
-    || !isNormalMessage(item.lastMessageType)) {
-    return ''
-  }
-  return getSenderName(item)
-}
-
-/** 获取会话发送人名称 */
-function getSenderName(item: ConversationDO) {
-  if (!item.lastSenderId) {
-    return ''
-  }
-  if (item.lastSenderId === userStore.userInfo.userId) {
-    return '我'
-  }
-  const member = (groupStore.getGroup(item.targetId)?.members || [])
-    .find(candidate => candidate.userId === item.lastSenderId)
-  if (member) {
-    return getMemberDisplayName(member, friendStore.getFriend(item.lastSenderId))
-  }
-  const friend = friendStore.getFriend(item.lastSenderId)
-  return friend ? getFriendDisplayName(friend) : item.lastSenderDisplayName || `用户 ${item.lastSenderId}`
-}
-
-/** 获取会话摘要文案 */
-function getConversationContent(item: ConversationDO) {
-  if (item.lastMessageType === ImMessageType.RECALL) {
-    return item.lastSelfSend ? '你撤回了一条消息' : `${getSenderName(item) || '对方'} 撤回了一条消息`
-  }
-  return item.lastContent
-}
-
 /** 打开新增操作 */
 function handleAdd() {
   emit('add')
-}
-
-/** 打开会话 */
-function openChat(item: ConversationDO) {
-  uni.navigateTo({
-    url: buildConversationMessageUrl({
-      type: item.type,
-      targetId: item.targetId,
-      mentionMessageId: item.atMessageId || item.atAllMessageId,
-    }),
-  })
 }
 
 /** 长按会话：置顶 / 免打扰 / 删除 */
@@ -300,75 +202,5 @@ async function onRefresh() {
   background: #f7f7f7;
   color: #737373;
   font-size: 28rpx;
-}
-
-.conversation-row {
-  display: flex;
-  align-items: center;
-  gap: 22rpx;
-  padding-left: 28rpx;
-  background: #fff;
-
-  &:active {
-    background: #ececec;
-  }
-
-  &.is-top {
-    background: #f5f5f5;
-  }
-}
-
-.conversation-content {
-  min-width: 0;
-  flex: 1;
-  padding: 22rpx 28rpx 22rpx 0;
-  border-bottom: 1rpx solid #ededed;
-}
-
-.conversation-name {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  color: #191919;
-  font-size: 34rpx;
-  font-weight: 400;
-  line-height: 44rpx;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conversation-time {
-  flex-shrink: 0;
-  margin-left: 16rpx;
-  color: #b2b2b2;
-  font-size: 23rpx;
-  line-height: 34rpx;
-}
-
-.unread-badge {
-  position: absolute;
-  top: 13rpx;
-  right: -8rpx;
-  min-width: 34rpx;
-  height: 34rpx;
-  padding: 0 7rpx;
-  border: 2rpx solid #fff;
-  border-radius: 18rpx;
-  background: #fa5151;
-  color: #fff;
-  font-size: 20rpx;
-  line-height: 30rpx;
-  text-align: center;
-  box-sizing: border-box;
-
-  &.is-dot {
-    top: 16rpx;
-    right: -2rpx;
-    min-width: 18rpx;
-    width: 18rpx;
-    height: 18rpx;
-    padding: 0;
-    border-radius: 50%;
-  }
 }
 </style>

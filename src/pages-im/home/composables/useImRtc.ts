@@ -155,10 +155,15 @@ export function useImRtc() {
 
   /** 通话中追加邀请成员 */
   async function invite(userIds: number[]) {
-    if (!rtcStore.call?.room || userIds.length === 0) {
+    const room = rtcStore.call?.room
+    const userId = userStore.userInfo.userId
+    if (!room || userId <= 0 || userIds.length === 0) {
       return false
     }
-    await inviteCall({ room: rtcStore.call.room, inviteeIds: userIds })
+    await inviteCall({ room, inviteeIds: userIds })
+    if (userStore.userInfo.userId !== userId || rtcStore.call?.room !== room) {
+      return false
+    }
     rtcStore.appendInvitees(userIds)
     return true
   }

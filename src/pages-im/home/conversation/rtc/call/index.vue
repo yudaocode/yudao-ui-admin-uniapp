@@ -16,104 +16,38 @@
         网络重连中…
       </view>
 
-      <!-- 群通话成员 -->
-      <scroll-view v-if="isGroup && participantMembers.length" scroll-x class="mt-30rpx max-w-full whitespace-nowrap">
-        <view class="inline-flex gap-22rpx px-16rpx">
-          <view v-for="item in participantMembers" :key="item.userId" class="w-104rpx flex flex-col items-center">
-            <view class="relative">
-              <ImAvatar :src="item.avatar" :name="item.nickname" size="76rpx" />
-              <view
-                class="absolute bottom-0 right-0 h-18rpx w-18rpx border-3rpx border-[#263239] rounded-full"
-                :class="item.pending ? 'bg-[#f0ad4e]' : 'bg-[#07c160]'"
-              />
-            </view>
-            <text class="mt-8rpx w-full truncate text-center text-21rpx text-white/80">{{ item.nickname }}</text>
-          </view>
-        </view>
-      </scroll-view>
+      <RtcCallParticipantList v-if="isGroup" :members="participantMembers" />
     </view>
 
     <!-- 来电操作 -->
-    <view
+    <RtcCallIncoming
       v-if="stage === ImRtcCallStage.INCOMING"
-      class="relative z-2 grid grid-cols-2 gap-100rpx px-100rpx pb-[calc(100rpx+env(safe-area-inset-bottom))]"
-    >
-      <view class="flex flex-col items-center gap-18rpx" @click="handleReject">
-        <view class="rtc-action bg-[#fa5151]">
-          <wd-icon name="close" size="52rpx" color="#fff" />
-        </view>
-        <text class="text-26rpx text-white">拒绝</text>
-      </view>
-      <view class="flex flex-col items-center gap-18rpx" @click="handleAccept">
-        <view class="rtc-action bg-[#07c160]">
-          <wd-icon name="phone" size="52rpx" color="#fff" />
-        </view>
-        <text class="text-26rpx text-white">接听</text>
-      </view>
-    </view>
+      @accept="handleAccept"
+      @reject="handleReject"
+    />
 
     <!-- 呼叫中 / 通话中操作 -->
-    <view v-else class="relative z-2 pb-[calc(72rpx+env(safe-area-inset-bottom))]">
-      <view class="mb-56rpx flex flex-wrap justify-center gap-x-40rpx gap-y-28rpx px-32rpx">
-        <view class="flex flex-col items-center gap-14rpx" @click="toggleMic">
-          <view class="rtc-tool" :class="micEnabled ? 'bg-white/20' : 'bg-white text-[#222]'">
-            <wd-icon name="mic" size="44rpx" :color="micEnabled ? '#fff' : '#222'" />
-          </view>
-          <text class="text-24rpx text-white">{{ micEnabled ? '静音' : '取消静音' }}</text>
-        </view>
-        <view v-if="isVideo" class="flex flex-col items-center gap-14rpx" @click="toggleCamera">
-          <view class="rtc-tool" :class="cameraEnabled ? 'bg-white/20' : 'bg-white text-[#222]'">
-            <wd-icon name="camera" size="44rpx" :color="cameraEnabled ? '#fff' : '#222'" />
-          </view>
-          <text class="text-24rpx text-white">{{ cameraEnabled ? '关闭摄像头' : '打开摄像头' }}</text>
-        </view>
-        <view class="flex flex-col items-center gap-14rpx" @click="speakerEnabled = !speakerEnabled">
-          <view class="rtc-tool" :class="speakerEnabled ? 'bg-white/20' : 'bg-white text-[#222]'">
-            <wd-icon name="sound-fill" size="44rpx" :color="speakerEnabled ? '#fff' : '#222'" />
-          </view>
-          <text class="text-24rpx text-white">扬声器</text>
-        </view>
-        <view v-if="isGroup && stage === ImRtcCallStage.RUNNING" class="flex flex-col items-center gap-14rpx" @click="openInvitePicker">
-          <view class="rtc-tool bg-white/20">
-            <wd-icon name="add" size="44rpx" color="#fff" />
-          </view>
-          <text class="text-24rpx text-white">邀请成员</text>
-        </view>
-        <!-- #ifdef H5 -->
-        <view v-if="stage === ImRtcCallStage.RUNNING" class="flex flex-col items-center gap-14rpx" @click="toggleScreenShare">
-          <view class="rtc-tool" :class="screenShareEnabled ? 'bg-white text-[#222]' : 'bg-white/20'">
-            <wd-icon name="computer" size="44rpx" :color="screenShareEnabled ? '#222' : '#fff'" />
-          </view>
-          <text class="text-24rpx text-white">{{ screenShareEnabled ? '停止共享' : '共享屏幕' }}</text>
-        </view>
-        <!-- #endif -->
-      </view>
-      <view class="flex flex-col items-center gap-18rpx" @click="handleHangup">
-        <view class="rtc-action bg-[#fa5151]">
-          <wd-icon name="close" size="52rpx" color="#fff" />
-        </view>
-        <text class="text-26rpx text-white">{{ stage === ImRtcCallStage.INVITING ? '取消' : '挂断' }}</text>
-      </view>
-    </view>
-
-    <!-- 通话中邀请成员 -->
-    <wd-select-picker
-      ref="invitePickerRef"
-      :model-value="[]"
-      title="邀请群成员"
-      :columns="inviteCandidates"
-      value-key="userId"
-      label-key="displayUserName"
-      type="checkbox"
-      filterable
-      root-portal
-      @confirm="handleInviteConfirm"
+    <RtcCallControls
+      v-else
+      :stage="stage"
+      :is-group="isGroup"
+      :is-video="isVideo"
+      :mic-enabled="micEnabled"
+      :camera-enabled="cameraEnabled"
+      :speaker-enabled="speakerEnabled"
+      :screen-share-enabled="screenShareEnabled"
+      :invite-candidates="inviteCandidates"
+      @hangup="handleHangup"
+      @invite="handleInvite"
+      @toggle-mic="toggleMic"
+      @toggle-camera="toggleCamera"
+      @toggle-speaker="toggleSpeaker"
+      @toggle-screen-share="toggleScreenShare"
     />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { GroupMember } from '../../../types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
@@ -131,6 +65,9 @@ import { useRtcStore } from '../../../store/rtcStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
 import { CommonStatusEnum, ImConversationType, ImRtcCallMediaType, ImRtcCallStage } from '@/pages-im/utils/constants'
 import ImAvatar from '../../../components/im-avatar.vue'
+import RtcCallControls from './components/rtc-call-controls.vue'
+import RtcCallIncoming from './components/rtc-call-incoming.vue'
+import RtcCallParticipantList from './components/rtc-call-participant-list.vue'
 
 definePage({
   style: {
@@ -140,6 +77,8 @@ definePage({
 })
 
 const toast = useToast()
+const userStore = useUserStore()
+const groupStore = useGroupStore()
 const rtcStore = useRtcStore()
 const {
   stage,
@@ -154,7 +93,6 @@ const {
   invite,
 } = useImRtc()
 const groupMembers = ref<GroupMember[]>([]) // 群通话成员
-const invitePickerRef = ref<SelectPickerInstance>() // 邀请成员选择器
 const elapsed = ref(0) // 通话时长
 let durationTimer: ReturnType<typeof setInterval> | undefined
 let noAnswerTimer: ReturnType<typeof setInterval> | undefined
@@ -181,7 +119,7 @@ const {
   onRoomDisconnected: handleHangup,
 })
 const isGroup = computed(() => call.value?.conversationType === ImConversationType.GROUP) // 是否群通话
-const currentUserId = computed(() => useUserStore().userInfo.userId) // 当前用户编号
+const currentUserId = computed(() => userStore.userInfo.userId) // 当前用户编号
 const groupId = computed(() => call.value?.groupId) // 当前群编号
 const inviterId = computed(() => call.value?.inviterId) // 当前通话发起人
 const participantMembers = useGroupCallMembers(groupId, inviterId)
@@ -206,31 +144,34 @@ const statusText = computed(() => {
 
 /** 加载群通话成员 */
 async function loadGroupMembers() {
-  if (!call.value?.groupId) {
+  const currentCall = call.value
+  const currentGroupId = currentCall?.groupId
+  const currentRoom = currentCall?.room
+  const userId = userStore.userInfo.userId
+  if (!currentGroupId) {
     groupMembers.value = []
     return
   }
-  groupMembers.value = await useGroupStore().fetchGroupMemberList(call.value.groupId)
-}
-
-/** 打开追加邀请选择器 */
-function openInvitePicker() {
-  if (inviteCandidates.value.length === 0) {
-    toast.show('暂无可邀请成员')
+  const rows = await groupStore.fetchGroupMemberList(currentGroupId)
+  if (pageLeaving
+    || userStore.userInfo.userId !== userId
+    || call.value?.groupId !== currentGroupId
+    || call.value?.room !== currentRoom) {
     return
   }
-  invitePickerRef.value?.open()
+  groupMembers.value = rows
 }
 
-/** 确认追加邀请 */
-async function handleInviteConfirm({ value }: { value: number[] }) {
-  const userIds = Array.isArray(value) ? value : []
-  if (userIds.length === 0) {
-    toast.show('请选择成员')
-    return
+/** 追加邀请群成员 */
+async function handleInvite(userIds: number[]) {
+  if (await invite(userIds)) {
+    toast.success('已发出邀请')
   }
-  await invite(userIds)
-  toast.success('已发出邀请')
+}
+
+/** 切换扬声器 */
+function toggleSpeaker() {
+  speakerEnabled.value = !speakerEnabled.value
 }
 
 /** 接听 */
@@ -354,23 +295,5 @@ onUnmounted(() => {
 
 :global(.rtc-audio-track) {
   display: none;
-}
-
-.rtc-action {
-  width: 124rpx;
-  height: 124rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.rtc-tool {
-  width: 96rpx;
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
 }
 </style>

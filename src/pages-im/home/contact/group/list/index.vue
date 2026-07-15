@@ -10,30 +10,12 @@
 
     <scroll-view class="min-h-0 flex-1 bg-white" scroll-y>
       <!-- 群聊列表 -->
-      <view
+      <GroupItem
         v-for="item in filteredGroups"
         :key="item.id"
-        class="flex items-center gap-20rpx px-24rpx active:bg-[#f5f5f5]"
-        @click="openChat(item)"
-      >
-        <view class="py-16rpx">
-          <ImAvatar :src="item.avatar" :name="getGroupName(item)" :round="false" size="84rpx" />
-        </view>
-        <view class="min-w-0 flex-1 border-b border-b-[#f2f3f5] py-16rpx">
-          <view class="flex items-center gap-10rpx">
-            <text class="line-clamp-1 text-30rpx text-[#222] font-medium">{{ getGroupName(item) }}</text>
-            <wd-tag v-if="item.banned" type="danger" plain custom-class="scale-90">
-              已封禁
-            </wd-tag>
-            <wd-tag v-if="item.mutedAll" type="warning" plain custom-class="scale-90">
-              全员禁言
-            </wd-tag>
-          </view>
-          <view class="line-clamp-1 mt-4rpx text-24rpx text-[#999]">
-            {{ item.notice || '暂无群公告' }}
-          </view>
-        </view>
-      </view>
+        :group="item"
+        @open="openChat"
+      />
 
       <wd-empty v-if="!loading && filteredGroups.length === 0" icon="content" tip="暂无群聊" />
     </scroll-view>
@@ -51,7 +33,7 @@ import { navigateBackPlus } from '@/utils'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { useGroupStore } from '../../../store/groupStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
-import ImAvatar from '../../../components/im-avatar.vue'
+import GroupItem from '../components/group-item.vue'
 
 definePage({
   style: {

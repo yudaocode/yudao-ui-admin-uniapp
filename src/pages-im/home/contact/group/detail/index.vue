@@ -9,40 +9,14 @@
 
     <scroll-view class="min-h-0 flex-1 bg-[#ededed]" scroll-y>
       <!-- 群成员九宫格 -->
-      <view class="bg-white px-24rpx pb-12rpx pt-24rpx">
-        <wd-search v-model="memberKeyword" placeholder="搜索群成员" hide-cancel />
-        <view class="grid grid-cols-5 gap-y-24rpx">
-          <view
-            v-for="item in displayMembers"
-            :key="item.userId"
-            class="flex flex-col items-center gap-8rpx"
-            @click="onMemberTap(item)"
-          >
-            <ImAvatar :src="item.avatar" :name="item.nickname" :round="false" size="96rpx" />
-            <text class="w-96rpx truncate text-center text-22rpx text-[#666]">{{ getMemberName(item) }}</text>
-          </view>
-          <!-- 邀请成员 -->
-          <view v-if="!isQuitGroupDetail" class="flex flex-col items-center gap-8rpx" @click="openInvitePicker">
-            <view class="h-96rpx w-96rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed">
-              <wd-icon name="plus" size="48rpx" color="#bbb" />
-            </view>
-          </view>
-          <!-- 管理成员 -->
-          <view v-if="canManageGroup" class="flex flex-col items-center gap-8rpx" @click="openMemberManage">
-            <view class="h-96rpx w-96rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed">
-              <wd-icon name="minus" size="48rpx" color="#bbb" />
-            </view>
-          </view>
-        </view>
-        <view
-          v-if="currentMembers.length > MEMBER_LIMIT"
-          class="mt-16rpx py-8rpx text-center text-26rpx text-[#999]"
-          @click="showAllMembers = !showAllMembers"
-        >
-          {{ showAllMembers ? '收起' : `查看全部 ${currentMembers.length} 名成员` }}
-          <wd-icon :name="showAllMembers ? 'arrow-up' : 'arrow-down'" size="24rpx" />
-        </view>
-      </view>
+      <GroupMemberGrid
+        :members="currentMembers"
+        :can-invite="!isQuitGroupDetail"
+        :can-manage="removableMembers.length > 0"
+        @member-click="onMemberTap"
+        @invite="openInvitePicker"
+        @manage="openMemberManage"
+      />
 
       <!-- 群信息 -->
       <view class="mt-20rpx">
@@ -98,8 +72,8 @@
       <!-- 群主操作 -->
       <view v-if="isOwner" class="mt-20rpx">
         <wd-cell-group border>
-          <wd-cell title="群管理员设置" is-link center @click="openAdminTip" />
-          <wd-cell title="转让群主" is-link center @click="openTransferTip" />
+          <wd-cell title="群管理员设置" is-link center @click="openAdminPicker" />
+          <wd-cell title="转让群主" is-link center @click="openOwnerTransferPicker" />
         </wd-cell-group>
       </view>
 
@@ -122,12 +96,11 @@
     </scroll-view>
 
     <!-- 邀请成员 -->
-    <FriendFormPicker
+    <FriendPicker
       ref="invitePickerRef"
       v-model="inviteUserIds"
       :disabled-ids="currentMemberUserIds"
       :max-size="remainingMemberCount"
-      :show-cell="false"
       @confirm="handleInviteMembers"
     />
 
@@ -138,7 +111,48 @@
     <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
 
     <!-- 成员管理菜单 -->
-    <wd-action-sheet v-model="memberActionVisible" :actions="memberActions" @select="handleMemberActionSelect" />
+    <GroupMemberActionSheet
+      ref="memberActionRef"
+      :group-id="formData?.id || 0"
+      :members="currentMembers"
+      :is-owner="isOwner"
+      @reload="getDetail"
+    />
+
+    <!-- 批量移出成员 -->
+    <GroupMemberRemovePicker
+      ref="memberRemovePickerRef"
+      :group-id="formData?.id || 0"
+      :members="removableMembers"
+      @success="getDetail"
+    />
+
+    <!-- 设置群管理员 -->
+    <GroupAdminPicker
+      ref="adminPickerRef"
+      :group-id="formData?.id || 0"
+      :members="currentMembers"
+      @success="getDetail"
+    />
+
+    <!-- 转让群主 -->
+    <GroupOwnerTransferPicker
+      ref="ownerTransferPickerRef"
+      :group-id="formData?.id || 0"
+      :members="currentMembers"
+      :current-user-id="userStore.userInfo.userId"
+      @success="getDetail"
+    />
+
+    <!-- 发起群通话成员选择 -->
+    <GroupMemberPicker
+      ref="callMemberPickerRef"
+      v-model="callInviteUserIds"
+      title="选择通话成员"
+      :members="currentMembers"
+      :hide-ids="[userStore.userInfo.userId]"
+      @confirm="handleCallMemberConfirm"
+    />
   </view>
 </template>
 
@@ -150,24 +164,17 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
-  addGroupAdmin,
-  cancelMuteMember,
   dissolveGroup,
   muteAll,
-  muteMember,
-  removeGroupAdmin,
-  transferGroupOwner,
   updateGroup,
 } from '@/api/im/group'
 import {
   inviteGroupMember,
   quitGroup,
-  removeGroupMember,
 } from '@/api/im/group/member'
 import { getClientConversationId } from '@/pages-im/utils/db'
-import { GROUP_ADMIN_MAX_COUNT, GROUP_MAX_MEMBER } from '@/pages-im/utils/config'
-import { toTimestamp } from '@/pages-im/utils/time'
-import { getMemberDisplayName as getMemberName, isGroupQuit } from '@/pages-im/utils/user'
+import { GROUP_MAX_MEMBER } from '@/pages-im/utils/config'
+import { isGroupQuit } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
 import {
@@ -182,9 +189,14 @@ import { useConversationStore } from '../../../store/conversationStore'
 import { useFriendStore } from '../../../store/friendStore'
 import { useGroupStore } from '../../../store/groupStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
-import ImAvatar from '../../../components/im-avatar.vue'
-import FriendFormPicker from '../../components/friend-form-picker.vue'
+import FriendPicker from '../../components/friend-picker.vue'
 import RecommendCardPicker from '../../components/recommend-card-picker.vue'
+import GroupMemberActionSheet from './components/group-member-action-sheet.vue'
+import GroupMemberGrid from './components/group-member-grid.vue'
+import GroupAdminPicker from '../components/group-admin-picker.vue'
+import GroupMemberPicker from '../components/group-member-picker.vue'
+import GroupMemberRemovePicker from '../components/group-member-remove-picker.vue'
+import GroupOwnerTransferPicker from '../components/group-owner-transfer-picker.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -197,7 +209,6 @@ definePage({
   },
 })
 
-const MEMBER_LIMIT = 10 // 折叠时展示的成员数
 const userStore = useUserStore()
 const dialog = useDialog()
 const toast = useToast()
@@ -206,20 +217,22 @@ const groupStore = useGroupStore()
 const loading = ref(false) // 详情加载状态
 const formData = ref<Group>() // 群详情
 const members = ref<GroupMember[]>([]) // 群成员
-const invitePickerRef = ref<InstanceType<typeof FriendFormPicker>>() // 好友选择器引用
+const invitePickerRef = ref<InstanceType<typeof FriendPicker>>() // 好友选择器引用
+const memberActionRef = ref<InstanceType<typeof GroupMemberActionSheet>>() // 成员管理菜单引用
+const memberRemovePickerRef = ref<InstanceType<typeof GroupMemberRemovePicker>>() // 批量移出成员选择器引用
+const adminPickerRef = ref<InstanceType<typeof GroupAdminPicker>>() // 群管理员选择器引用
+const ownerTransferPickerRef = ref<InstanceType<typeof GroupOwnerTransferPicker>>() // 新群主选择器引用
+const callMemberPickerRef = ref<InstanceType<typeof GroupMemberPicker>>() // 群通话成员选择器引用
 const inviting = ref(false) // 邀请提交状态
 const inviteUserIds = ref<number[]>([]) // 邀请用户编号
 const recommendVisible = ref(false) // 推荐群名片弹窗
 const callActionVisible = ref(false) // 通话方式菜单显示状态
+const callInviteUserIds = ref<number[]>([]) // 群通话邀请成员编号
+const callMediaType = ref<number>() // 待发起的群通话媒体类型
 const callActions = [ // 通话方式菜单项
   { name: '语音通话', value: ImRtcCallMediaType.VOICE },
   { name: '视频通话', value: ImRtcCallMediaType.VIDEO },
 ]
-const memberActionVisible = ref(false) // 成员管理菜单显示状态
-const actionMember = ref<GroupMember>() // 当前操作的群成员
-const memberActions = ref<Array<{ name: string, value: string, mutedSeconds?: number, color?: string }>>([]) // 成员管理菜单项
-const showAllMembers = ref(false) // 是否展开全部成员
-const memberKeyword = ref('') // 群成员关键词
 const mutedAll = ref(false) // 全员禁言
 const joinApproval = ref(false) // 进群审批
 const mySilent = ref(false) // 我的群免打扰
@@ -246,6 +259,7 @@ const canManageGroup = computed(() =>
 
 /** 是否群主 */
 const isOwner = computed(() => currentMember.value?.role === ImGroupMemberRole.OWNER)
+const removableMembers = computed(() => currentMembers.value.filter(canManageMember)) // 当前可移出的群成员
 
 /** 我在本群的昵称 */
 const myGroupNick = computed(() => currentMember.value?.displayUserName || '')
@@ -256,17 +270,6 @@ const groupCard = computed(() => toGroupCardTarget({ // 群名片
   showImage: formData.value?.avatar,
   memberCount: currentMembers.value.length,
 }))
-
-/** 折叠展示的成员 */
-const filteredMembers = computed(() => { // 搜索后的群成员
-  const keyword = memberKeyword.value.trim().toLowerCase()
-  return keyword
-    ? currentMembers.value.filter(item => getMemberName(item).toLowerCase().includes(keyword))
-    : currentMembers.value
-})
-const displayMembers = computed(() => (showAllMembers.value || memberKeyword.value
-  ? filteredMembers.value
-  : filteredMembers.value.slice(0, MEMBER_LIMIT))) // 展示的群成员
 
 /** 返回上一页 */
 function handleBack() {
@@ -281,9 +284,9 @@ function canManageMember(item: GroupMember) {
   return isOwner.value || item.role === ImGroupMemberRole.NORMAL
 }
 
-/** 打开成员管理提示 */
+/** 打开批量移出成员选择 */
 function openMemberManage() {
-  toast.show('点击成员头像可设置角色、禁言或移出群聊')
+  memberRemovePickerRef.value?.open()
 }
 
 /** 打开好友邀请选择 */
@@ -304,7 +307,7 @@ function onMemberTap(item: GroupMember) {
     return
   }
   if (canManageMember(item)) {
-    handleMemberMore(item)
+    memberActionRef.value?.open(item)
     return
   }
   const friend = friendStore.getActiveFriendList.find(candidate => candidate.friendUserId === item.userId)
@@ -387,12 +390,19 @@ function handleCallAction({ item }: { item: { value: number } }) {
   if (!formData.value?.id) {
     return
   }
-  const inviteeIds = currentMembers.value
-    .filter(member => member.userId !== userStore.userInfo.userId)
-    .map(member => member.userId)
+  callMediaType.value = item.value
+  callInviteUserIds.value = []
+  callMemberPickerRef.value?.open([])
+}
+
+/** 选择成员后发起群通话 */
+function handleCallMemberConfirm(inviteeIds: number[]) {
+  if (!formData.value?.id || callMediaType.value == null || inviteeIds.length === 0) {
+    return
+  }
   startRtcCall({
     conversationType: ImConversationType.GROUP,
-    mediaType: item.value,
+    mediaType: callMediaType.value,
     groupId: formData.value.id,
     inviteeIds,
   })
@@ -430,14 +440,14 @@ function goGroupRequests() {
   uni.navigateTo({ url: `/pages-im/home/contact/request/index?tab=group&groupId=${formData.value.id}` })
 }
 
-/** 群管理员设置提示（点成员管理设置） */
-function openAdminTip() {
-  toast.show('点击下方成员头像可设/撤管理员')
+/** 打开群管理员设置 */
+function openAdminPicker() {
+  adminPickerRef.value?.open()
 }
 
-/** 转让群主提示 */
-function openTransferTip() {
-  toast.show('点击下方成员头像可转让群主')
+/** 打开群主转让选择 */
+function openOwnerTransferPicker() {
+  ownerTransferPickerRef.value?.open()
 }
 
 /** 邀请成员 */
@@ -461,80 +471,6 @@ async function handleInviteMembers(memberUserIds: number[]) {
   } finally {
     inviting.value = false
   }
-}
-
-/** 成员管理操作菜单 */
-function handleMemberMore(item: GroupMember) {
-  if (!formData.value?.id) {
-    return
-  }
-  const actions: Array<{ name: string, value: string, mutedSeconds?: number, color?: string }> = []
-  if (isOwner.value) {
-    actions.push(item.role === ImGroupMemberRole.ADMIN
-      ? { name: '撤销管理员', value: 'removeAdmin' }
-      : { name: '设为管理员', value: 'addAdmin' })
-    actions.push({ name: '转让群主', value: 'transferOwner' })
-  }
-  if (toTimestamp(item.muteEndTime) > Date.now()) {
-    actions.push({ name: '取消禁言', value: 'cancelMute' })
-  } else {
-    actions.push({ name: '禁言 10 分钟', value: 'mute', mutedSeconds: 600 })
-    actions.push({ name: '禁言 1 小时', value: 'mute', mutedSeconds: 3600 })
-  }
-  actions.push({ name: '移出群聊', value: 'remove', color: '#fa5151' })
-  actionMember.value = item
-  memberActions.value = actions
-  memberActionVisible.value = true
-}
-
-/** 处理成员菜单操作 */
-function handleMemberActionSelect({ item }: { item: { value: string, mutedSeconds?: number } }) {
-  if (actionMember.value) {
-    handleMemberAction(actionMember.value, item)
-  }
-}
-
-/** 执行成员管理 */
-async function handleMemberAction(member: GroupMember, action: { value: string, mutedSeconds?: number }) {
-  if (!formData.value?.id) {
-    return
-  }
-  const groupId = formData.value.id
-  if (action.value === 'addAdmin') {
-    const adminCount = currentMembers.value.filter(item => item.role === ImGroupMemberRole.ADMIN).length
-    if (adminCount >= GROUP_ADMIN_MAX_COUNT) {
-      toast.show(`群管理员上限为 ${GROUP_ADMIN_MAX_COUNT} 人`)
-      return
-    }
-    await addGroupAdmin({ id: groupId, userIds: [member.userId] })
-    toast.success('已设为管理员')
-  } else if (action.value === 'removeAdmin') {
-    await removeGroupAdmin({ id: groupId, userIds: [member.userId] })
-    toast.success('已撤销管理员')
-  } else if (action.value === 'transferOwner') {
-    try {
-      await dialog.confirm({ title: '提示', msg: `确定将群主转让给"${getMemberName(member)}"吗？` })
-    } catch {
-      return
-    }
-    await transferGroupOwner({ id: groupId, newOwnerUserId: member.userId })
-    toast.success('已转让群主')
-  } else if (action.value === 'mute') {
-    await muteMember({ id: groupId, userId: member.userId, mutedSeconds: action.mutedSeconds || 600 })
-    toast.success('已禁言')
-  } else if (action.value === 'cancelMute') {
-    await cancelMuteMember({ id: groupId, userId: member.userId })
-    toast.success('已取消禁言')
-  } else if (action.value === 'remove') {
-    try {
-      await dialog.confirm({ title: '提示', msg: `确定将"${getMemberName(member)}"移出群聊吗？` })
-    } catch {
-      return
-    }
-    await removeGroupMember({ groupId, memberUserIds: [member.userId] })
-    toast.success('已移出群聊')
-  }
-  await getDetail()
 }
 
 /** 全员禁言切换 */
@@ -616,8 +552,8 @@ async function getDetail() {
   loading.value = true
   try {
     const [group, memberList] = await Promise.all([
-      useGroupStore().fetchGroupInfo(Number(props.id), true),
-      useGroupStore().fetchGroupMemberList(Number(props.id), true),
+      groupStore.fetchGroupInfo(Number(props.id), true),
+      groupStore.fetchGroupMemberList(Number(props.id), true),
     ])
     if (!group) {
       return
