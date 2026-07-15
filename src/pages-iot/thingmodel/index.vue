@@ -1,6 +1,7 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
+    <!-- #ifndef MP-WEIXIN -->
     <wd-navbar
       title="产品物模型"
       left-arrow
@@ -11,6 +12,17 @@
       @click-left="handleBack"
       @click-right="handleTsl"
     />
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <wd-navbar title="产品物模型" placeholder safe-area-inset-top fixed>
+      <template #left>
+        <view class="flex items-center gap-24rpx pl-4rpx">
+          <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <text v-if="showTsl" class="text-28rpx text-[#333]" @click="handleTsl">TSL</text>
+        </view>
+      </template>
+    </wd-navbar>
+    <!-- #endif -->
 
     <!-- 搜索组件 -->
     <SearchForm :default-product-id="defaultProductId" @search="handleQuery" @reset="handleReset" />

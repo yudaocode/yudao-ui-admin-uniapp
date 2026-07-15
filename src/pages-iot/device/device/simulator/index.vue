@@ -1,6 +1,7 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
+    <!-- #ifndef MP-WEIXIN -->
     <wd-navbar
       title="模拟设备"
       right-text="设备消息"
@@ -8,6 +9,17 @@
       @click-left="handleBack"
       @click-right="handleDeviceMessage"
     />
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <wd-navbar title="模拟设备" placeholder safe-area-inset-top fixed>
+      <template #left>
+        <view class="flex items-center gap-26rpx pl-4rpx">
+          <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <wd-icon name="list" size="40rpx" color="#333" @click="handleDeviceMessage" />
+        </view>
+      </template>
+    </wd-navbar>
+    <!-- #endif -->
 
     <!-- 调试模式 -->
     <view class="bg-white">

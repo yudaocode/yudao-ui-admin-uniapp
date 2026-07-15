@@ -1,6 +1,7 @@
 <template>
   <view class="yd-page-container-paging">
     <!-- 顶部导航栏 -->
+    <!-- #ifndef MP-WEIXIN -->
     <wd-navbar title="" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack">
       <template #right>
         <view class="pr-8rpx" @click="goSetting">
@@ -8,6 +9,17 @@
         </view>
       </template>
     </wd-navbar>
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <wd-navbar title="" placeholder safe-area-inset-top fixed>
+      <template #left>
+        <view class="flex items-center gap-26rpx pl-4rpx">
+          <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <wd-icon name="more" size="42rpx" color="#333" @click="goSetting" />
+        </view>
+      </template>
+    </wd-navbar>
+    <!-- #endif -->
 
     <scroll-view class="min-h-0 flex-1 bg-[#ededed]" scroll-y>
       <!-- 资料卡 -->

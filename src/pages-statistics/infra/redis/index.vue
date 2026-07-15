@@ -1,6 +1,7 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
+    <!-- #ifndef MP-WEIXIN -->
     <wd-navbar
       title="Redis 监控"
       right-text="刷新"
@@ -8,6 +9,17 @@
       @click-left="handleBack"
       @click-right="loadData"
     />
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <wd-navbar title="Redis 监控" placeholder safe-area-inset-top fixed>
+      <template #left>
+        <view class="flex items-center gap-26rpx pl-4rpx">
+          <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <wd-icon name="refresh" size="40rpx" color="#333" @click="loadData" />
+        </view>
+      </template>
+    </wd-navbar>
+    <!-- #endif -->
 
     <scroll-view class="min-h-0 flex-1" scroll-y>
       <!-- 概览卡片 -->

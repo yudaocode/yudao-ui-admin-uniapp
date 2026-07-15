@@ -1,6 +1,7 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
+    <!-- #ifndef MP-WEIXIN -->
     <wd-navbar
       title="工作台"
       placeholder safe-area-inset-top fixed
@@ -11,6 +12,17 @@
         </view>
       </template>
     </wd-navbar>
+    <!-- #endif -->
+    <!-- #ifdef MP-WEIXIN -->
+    <wd-navbar title="工作台" placeholder safe-area-inset-top fixed>
+      <template #left>
+        <view class="pl-4rpx" @click="gotoSearch">
+          <wd-icon name="search-line" size="40rpx" color="#333" />
+        </view>
+      </template>
+    </wd-navbar>
+    <!-- #endif -->
+
     <!-- 用户信息头部 -->
     <UserHeader />
     <!-- Banner 轮播图 -->
