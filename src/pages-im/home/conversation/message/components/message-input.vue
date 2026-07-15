@@ -1,5 +1,5 @@
 <template>
-  <view class="shrink-0 border-t border-t-[#eee] bg-white p-16rpx pb-[calc(16rpx+env(safe-area-inset-bottom))]">
+  <view class="shrink-0 border-t border-t-[#ddd] bg-[#f7f7f7] px-12rpx py-16rpx pb-[calc(16rpx+env(safe-area-inset-bottom))]">
     <!-- 禁言 / 退群 / 封禁提示 -->
     <view v-if="disabledTip" class="py-20rpx text-center text-27rpx text-[#999]">
       {{ disabledTip }}
@@ -14,25 +14,44 @@
         @close="emit('clear-reply')"
       />
       <!-- 输入栏（微信式：输入框占主，图标在两侧） -->
-      <view class="flex items-end gap-16rpx">
-        <view class="shrink-0 pb-12rpx" @click="voiceMode = !voiceMode">
-          <wd-icon :name="voiceMode ? 'keyboard' : 'mic'" size="48rpx" color="#7d7d7d" />
+      <view class="flex items-end gap-12rpx">
+        <view
+          class="h-75rpx w-48rpx flex shrink-0 items-center justify-center"
+          @click="voiceMode = !voiceMode"
+        >
+          <view class="h-48rpx w-48rpx flex items-center justify-center border-3rpx border-[#333] rounded-full border-solid">
+            <view
+              class="h-32rpx w-32rpx text-[#333]"
+              :class="voiceMode ? 'i-carbon-keyboard' : 'i-carbon-volume-up-filled'"
+            />
+          </view>
         </view>
-        <view v-if="!voiceMode" class="min-w-0 flex-1 rounded-12rpx bg-[#f7f8fa] px-20rpx py-12rpx">
+        <view
+          class="max-h-225rpx min-h-75rpx min-w-0 w-0 flex flex-1 items-center overflow-hidden rounded-8rpx bg-white"
+        >
+          <!-- 两种输入组件保持常驻，避免模式切换中断录音落盘或上传 -->
           <wd-textarea
+            v-show="!voiceMode"
             v-model="inputContent"
-            placeholder="输入消息"
+            placeholder=""
             :maxlength="1000"
             auto-height
-            no-border
+            compact
+            disable-default-padding
+            custom-class="!w-full !box-border !px-24rpx !py-18rpx"
+            custom-textarea-class="!max-h-189rpx !min-h-39rpx !overflow-y-auto !text-30rpx !leading-39rpx !text-[#181818]"
           />
+          <VoiceRecorder v-show="voiceMode" @send="handleSendVoice" />
         </view>
-        <VoiceRecorder v-else @send="handleSendVoice" />
-        <view class="shrink-0 pb-12rpx" @click="faceVisible = true">
-          <wd-icon name="face-smile-fill" size="48rpx" color="#7d7d7d" />
+        <view class="h-75rpx w-48rpx flex shrink-0 items-center justify-center" @click="faceVisible = true">
+          <view class="i-carbon-face-satisfied h-48rpx w-48rpx text-[#333]" />
         </view>
-        <view v-if="voiceMode || !inputContent.trim()" class="shrink-0 pb-12rpx" @click="moreVisible = true">
-          <wd-icon name="plus" size="48rpx" color="#7d7d7d" />
+        <view
+          v-if="voiceMode || !inputContent.trim()"
+          class="h-75rpx w-48rpx flex shrink-0 items-center justify-center"
+          @click="moreVisible = true"
+        >
+          <view class="i-carbon-add-alt h-48rpx w-48rpx text-[#333]" />
         </view>
         <wd-button v-else class="shrink-0" type="primary" size="small" @click="handleSendText()">
           发送
@@ -80,7 +99,7 @@
           </view>
           <view class="im-tool-item" @click="voiceMode = true; moreVisible = false">
             <view class="im-tool-icon">
-              <wd-icon name="mic" size="52rpx" color="#555" />
+              <view class="i-carbon-microphone h-52rpx w-52rpx text-[#555]" />
             </view>
             <text>语音输入</text>
           </view>
