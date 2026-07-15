@@ -127,14 +127,8 @@
           @send="handleSend"
           @clear-reply="clearReplyTarget"
         />
-        <view
-          v-else-if="!selectMode"
-          class="shrink-0 border-t border-t-[#e5e5e5] bg-[#f7f7f7] px-24rpx py-24rpx pb-[calc(24rpx+env(safe-area-inset-bottom))] text-center text-26rpx text-[#888]"
-        >
-          频道消息仅由管理员发布
-        </view>
         <MessageMultiSelectBar
-          v-else
+          v-else-if="selectMode && !isChannel"
           :messages="messageList"
           @forward="openForward"
           @delete="confirmDelete"
@@ -159,9 +153,6 @@
         {{ newMessageCount }} 条新消息
       </view>
     </view>
-
-    <!-- 频道素材详情弹窗 -->
-    <MaterialDetail v-model="materialVisible" :payload="materialPayload" />
 
     <!-- 合并转发详情弹窗 -->
     <MergeDetail
@@ -248,6 +239,7 @@ import { getActiveCall } from '@/api/im/rtc'
 import { applyJoinGroup } from '@/api/im/group/request'
 import { useUserStore } from '@/store/user'
 import { navigateBackPlus } from '@/utils'
+import { openUrl } from '@/utils/url'
 import {
   CommonStatusEnum,
   IM_AT_ALL_USER_ID,
@@ -277,7 +269,6 @@ import MessageInput from './components/message-input.vue'
 import ForwardPicker from './components/forward-picker.vue'
 import GroupPinnedMessage from './components/group-pinned-message.vue'
 import GroupRequestPending from './components/group-request-pending.vue'
-import MaterialDetail from './components/material-detail.vue'
 import MergeDetail from './components/merge-detail.vue'
 import MessageActionSheet from './components/message-action-sheet.vue'
 import MessageItem from './components/message-item.vue'
@@ -329,8 +320,6 @@ const messageActionRef = ref<InstanceType<typeof MessageActionSheet>>() // 消�
 const cellStyle = ref<Record<string, string>>({ transform: 'scaleY(-1)' }) // 聊天记录模式单元格倒置样式
 const groupMembers = ref<GroupMember[]>([]) // 群成员
 const pendingGroupRequestCount = ref(0) // 当前群待处理申请数
-const materialVisible = ref(false) // 素材详情弹窗
-const materialPayload = ref<MaterialMessage>() // 素材消息内容
 const mergeVisible = ref(false) // 合并转发详情弹窗
 const mergePayload = ref<MergeMessage>() // 合并转发内容
 const callActionVisible = ref(false) // 通话方式菜单显示状态
@@ -687,13 +676,15 @@ function handleReplyMessage(item: Message) {
   replyTarget.value = buildQuoteFromMessage(item)
 }
 
-/** 点击频道素材：打开详情 */
+/** 点击频道素材：内部素材进入独立详情页，缺少素材编号时才直接打开外链 */
 function handleMaterialClick(payload: MaterialMessage) {
-  if (!payload) {
+  if (payload.materialId) {
+    uni.navigateTo({
+      url: `/pages-im/home/conversation/material/index?id=${payload.materialId}&type=${conversationType.value}&targetId=${targetId.value}`,
+    })
     return
   }
-  materialPayload.value = payload
-  materialVisible.value = true
+  openUrl(payload.url)
 }
 
 /** 点击合并转发：打开详情 */
