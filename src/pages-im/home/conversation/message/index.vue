@@ -41,7 +41,7 @@
     <RtcGroupCallBanner v-if="activeGroupCall" @join="joinActiveGroupCall" />
     <!-- #endif -->
     <GroupPinnedMessage
-      v-if="group?.pinnedMessages?.length"
+      v-if="!firstPageLoading && group?.pinnedMessages?.length"
       :messages="group.pinnedMessages"
       :can-manage="canManageGroup"
       @locate="scrollToPinnedMessage"
@@ -308,6 +308,7 @@ const dialog = useDialog()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
+const groupRequestStore = useGroupRequestStore()
 const channelStore = useChannelStore()
 const rtcStore = useRtcStore()
 const messageStore = useMessageStore()
@@ -319,7 +320,7 @@ const pagingRef = ref<any>() // 分页组件引用
 const messageActionRef = ref<InstanceType<typeof MessageActionSheet>>() // 消息操作菜单引用
 const cellStyle = ref<Record<string, string>>({ transform: 'scaleY(-1)' }) // 聊天记录模式单元格倒置样式
 const groupMembers = ref<GroupMember[]>([]) // 群成员
-const pendingGroupRequestCount = ref(0) // 当前群待处理申请数
+const groupMembersReady = ref(false) // 当前群成员权限是否已成功刷新
 const mergeVisible = ref(false) // 合并转发详情弹窗
 const mergePayload = ref<MergeMessage>() // 合并转发内容
 const callActionVisible = ref(false) // 通话方式菜单显示状态
@@ -351,6 +352,7 @@ const {
 } = useMessageMultiSelect()
 const selectMode = computed(() => messageMultiSelectState.active) // 消息多选模式
 const chatVisible = ref(false) // 当前聊天页是否可见
+const conversationClearPending = ref(false) // 隐藏期间是否收到清空记录事件
 const draftContent = ref('') // 当前输入草稿
 const friendLoaded = ref(false) // 好友关系是否加载完成
 let draftTimer: ReturnType<typeof setTimeout> | undefined
@@ -364,7 +366,9 @@ const privateFriend = computed(() => { // 当前有效私聊好友
   return friend && friendStore.isActiveFriend(targetId.value) ? friend : undefined
 })
 const isFriend = computed(() => friendStore.isActiveFriend(targetId.value)) // 私聊对象是否仍为好友
-const group = computed(() => groupStore.getGroup(targetId.value)) // 当前群聊资料
+const group = computed(() => conversationType.value === ImConversationType.GROUP
+  ? groupStore.getGroup(targetId.value)
+  : undefined) // 当前群聊资料
 const channel = computed(() => channelStore.getChannel(targetId.value)) // 当前频道资料
 const isQuitGroupConversation = computed(() => conversationType.value === ImConversationType.GROUP
   && isGroupQuit(group.value)) // 是否历史退群群聊
@@ -372,7 +376,9 @@ const privateMaxReadMessageId = computed(() => // 私聊对方已读位置
   conversationType.value === ImConversationType.PRIVATE
     ? messageStore.getPrivateReadMaxId(targetId.value) || undefined
     : undefined)
-const activeGroupCall = computed(() => rtcStore.getGroupCall(targetId.value)) // 当前群活跃通话
+const activeGroupCall = computed(() => conversationType.value === ImConversationType.GROUP
+  ? rtcStore.getGroupCall(targetId.value)
+  : undefined) // 当前群活跃通话
 const currentCcid = computed(() => getClientConversationId(conversationType.value, targetId.value)) // 当前会话主键
 const pageTitle = computed(() => { // 页面标题
   if (conversationType.value === ImConversationType.GROUP && group.value) {
@@ -395,10 +401,17 @@ function messageKey(item: Message) {
 const navbarTitle = computed(() => conversationType.value === ImConversationType.GROUP && groupMembers.value.length
   ? `${pageTitle.value} (${groupMembers.value.filter(item => item.status !== CommonStatusEnum.DISABLE).length})`
   : pageTitle.value) // 导航栏标题
-const currentGroupMember = computed(() => groupMembers.value.find(item => item.userId === userStore.userInfo.userId)) // 当前群成员
-const canManageGroup = computed(() =>
-  currentGroupMember.value?.role === ImGroupMemberRole.OWNER || currentGroupMember.value?.role === ImGroupMemberRole.ADMIN,
-)
+const currentGroupMember = computed(() => conversationType.value === ImConversationType.GROUP
+  ? groupMembers.value.find(item => item.userId === userStore.userInfo.userId)
+  : undefined) // 当前群成员
+const canManageGroup = computed(() => groupMembersReady.value
+  && !!group.value && !isQuitGroupConversation.value
+  && currentGroupMember.value?.status !== CommonStatusEnum.DISABLE
+  && (currentGroupMember.value?.role === ImGroupMemberRole.OWNER
+    || currentGroupMember.value?.role === ImGroupMemberRole.ADMIN))
+const pendingGroupRequestCount = computed(() => canManageGroup.value
+  ? groupRequestStore.getUnhandledGroupRequestCount(targetId.value)
+  : 0) // 当前群待处理申请数
 const muteOverlay = useMuteOverlay()
 const inputDisabledTip = computed(() => { // 当前不可发送原因
   if (chatVisible.value
@@ -426,6 +439,7 @@ function isPageContextActive(context: ReturnType<typeof getPageContext>) {
 }
 const {
   messageList,
+  firstPageLoading,
   historyLoadFailed,
   highlightMessageId,
   isNearBottom,
@@ -433,6 +447,7 @@ const {
   mentionPromptVisible,
   queryList,
   loadOlderMessagesAfterClear,
+  locateHistoryMessage,
   locateMentionMessage,
   handleChatScroll,
   backToLatest,
@@ -601,12 +616,7 @@ async function scrollToPinnedMessage(message: Message) {
   if (!message?.id) {
     return
   }
-  if (!messageList.value.some(item => item.id === message.id)) {
-    toast.show('该消息不在当前加载范围，请上滑加载历史消息')
-    return
-  }
-  await nextTick()
-  pagingRef.value?.scrollIntoViewById(`msg-${message.id}`, 0, true)
+  await locateHistoryMessage(message.id)
 }
 
 /** 取消置顶群消息 */
@@ -792,6 +802,7 @@ async function loadGroupMembers() {
   if (conversationType.value !== ImConversationType.GROUP || !targetId.value) {
     return
   }
+  groupMembersReady.value = false
   const context = getPageContext()
   await groupStore.loadGroupMemberList(targetId.value)
   if (!isPageContextActive(context)) {
@@ -810,6 +821,7 @@ async function loadGroupMembers() {
     return
   }
   groupMembers.value = memberList
+  groupMembersReady.value = true
   if (activeCall) {
     rtcStore.setGroupCall(activeCall)
   } else {
@@ -825,15 +837,10 @@ async function loadGroupMembers() {
     })
   }
   if (canManageGroup.value) {
-    const groupRequestStore = useGroupRequestStore()
     await groupRequestStore.fetchUnhandledGroupRequestList()
     if (!isPageContextActive(context)) {
       return
     }
-    const requests = groupRequestStore.unhandledList
-    pendingGroupRequestCount.value = requests.filter(item => item.groupId === targetId.value).length
-  } else {
-    pendingGroupRequestCount.value = 0
   }
 }
 
@@ -973,7 +980,8 @@ function onConversationCleared(clientConversationId: string) {
   }
   draftContent.value = ''
   replyTarget.value = undefined
-  resetAfterConversationClear()
+  conversationClearPending.value = !chatVisible.value
+  resetAfterConversationClear(chatVisible.value)
 }
 
 /** 初始化 */
@@ -1002,6 +1010,10 @@ onShow(async () => {
   await useImRuntimeStore().ensure()
   if (!isPageContextActive(context)) {
     return
+  }
+  if (conversationClearPending.value) {
+    conversationClearPending.value = false
+    pagingRef.value?.reload()
   }
   if (context.conversationType === ImConversationType.GROUP) {
     await loadGroupMembers()

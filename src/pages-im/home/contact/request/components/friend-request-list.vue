@@ -7,7 +7,13 @@
         class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
       >
         <view class="flex items-start gap-20rpx">
-          <ImAvatar :src="getRequestAvatar(item)" :name="getPeerName(item)" />
+          <view
+            class="shrink-0"
+            :class="canOpenFriendDetail(item) ? 'active:opacity-70' : ''"
+            @click.stop="openFriendDetail(item)"
+          >
+            <ImAvatar :src="getRequestAvatar(item)" :name="getPeerName(item)" />
+          </view>
           <view class="min-w-0 flex-1">
             <view class="flex items-center justify-between gap-12rpx">
               <view class="truncate text-30rpx text-[#333] font-semibold">
@@ -50,13 +56,6 @@
               >
                 拒绝
               </wd-button>
-            </view>
-            <view
-              v-else-if="item.handleResult === ImFriendRequestHandleResult.AGREED"
-              class="mt-18rpx text-25rpx text-[#576b95]"
-              @click="openFriendDetail(item)"
-            >
-              查看好友资料
             </view>
           </view>
         </view>
@@ -128,8 +127,16 @@ function getRequestTitle(item: FriendRequest) {
     : `${getPeerName(item)} 申请添加我`
 }
 
+/** 是否可查看申请对端的好友资料 */
+function canOpenFriendDetail(item: FriendRequest) {
+  return item.handleResult === ImFriendRequestHandleResult.AGREED
+}
+
 /** 打开申请对端的好友资料 */
 function openFriendDetail(item: FriendRequest) {
+  if (!canOpenFriendDetail(item)) {
+    return
+  }
   const peerUserId = item.fromUserId === userStore.userInfo.userId ? item.toUserId : item.fromUserId
   uni.navigateTo({ url: `/pages-im/home/contact/friend/detail/index?friendUserId=${peerUserId}` })
 }

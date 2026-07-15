@@ -2,7 +2,13 @@
   <view class="h-full flex flex-col bg-white">
     <!-- 搜索 -->
     <view class="friend-search-wrap">
-      <wd-search v-model="keyword" custom-class="friend-search" placeholder="搜索好友" hide-cancel />
+      <wd-search
+        v-model="keyword"
+        variant="filled"
+        custom-class="friend-search"
+        placeholder="搜索好友"
+        hide-cancel
+      />
       <view class="search-add-button" @click="handleAdd">
         <wd-icon name="plus" size="40rpx" color="#333" />
       </view>
@@ -139,7 +145,7 @@ onMounted(() => void friendStore.fetchFriendList())
   --wot-search-padding: 0;
   --wot-search-bg: transparent;
   --wot-search-input-bg: #fff;
-  --wot-search-cover-bg: #fff;
+  --wot-search-cover-bg: transparent;
   --wot-search-input-height: 64rpx;
   --wot-search-input-radius: 10rpx;
   --wot-search-input-font-size: 28rpx;

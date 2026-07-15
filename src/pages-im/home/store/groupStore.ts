@@ -33,6 +33,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   const singleMemberLoadTasks = new Map<string, Promise<GroupMember | undefined>>() // 单个群成员加载任务
   const detailLoadTasks = new Map<number, Promise<Group | undefined>>() // 群详情加载任务
   const detailLoadedGroupIds = new Set<number>() // 已加载详情的群编号
+  const unavailableGroupIds = new Set<number>() // 当前账号已退出、被踢或已解散的群编号
   let reloadQueued = false // 当前群聊加载完成后是否强制刷新
   const memberReloadQueued = new Set<number>() // 当前成员加载完成后需刷新的群
   const detailReloadQueued = new Set<number>() // 当前详情加载完成后需刷新的群
@@ -165,7 +166,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         return []
       }
       const previousGroups = new Map(groups.value.map(group => [group.id, group]))
-      groups.value = rows.map((group) => {
+      groups.value = rows.filter(group => !unavailableGroupIds.has(group.id)).map((group) => {
         const previous = previousGroups.get(group.id)
         if (!previous) {
           return {
@@ -214,7 +215,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 加载指定群详情 */
   function fetchGroupInfo(groupId: number, force = false): Promise<Group | undefined> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0) {
+    if (userId <= 0 || groupId <= 0 || unavailableGroupIds.has(groupId)) {
       return Promise.resolve(undefined)
     }
     if (stateUserId !== userId) {
@@ -234,6 +235,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
+      && !unavailableGroupIds.has(groupId)
     const task = (async () => {
       await initDb()
       const group = convertGroup(await getGroupApi(groupId))
@@ -263,7 +265,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 加载指定群成员 */
   function fetchGroupMemberList(groupId: number, force = false): Promise<GroupMember[]> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0) {
+    if (userId <= 0 || groupId <= 0 || unavailableGroupIds.has(groupId)) {
       return Promise.resolve([])
     }
     if (stateUserId !== userId) {
@@ -283,6 +285,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
+      && !unavailableGroupIds.has(groupId)
     const task = (async () => {
       const rawRows = await getGroupMemberList(groupId)
       if (!isActive()) {
@@ -340,7 +343,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 按需补齐指定群成员，不改变整群成员缓存的完整状态 */
   function fetchGroupMember(groupId: number, memberUserId: number): Promise<GroupMember | undefined> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0 || memberUserId <= 0) {
+    if (userId <= 0 || groupId <= 0 || memberUserId <= 0 || unavailableGroupIds.has(groupId)) {
       return Promise.resolve(undefined)
     }
     if (stateUserId !== userId) {
@@ -358,6 +361,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
+      && !unavailableGroupIds.has(groupId)
     const task = (async () => {
       const rawMember = await getGroupMember(groupId, memberUserId)
       if (!isActive() || !rawMember) {
@@ -613,6 +617,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 本地移除群及其会话 */
   function removeGroup(groupId: number) {
+    unavailableGroupIds.add(groupId)
     groups.value = groups.value.filter(group => group.id !== groupId)
     detailLoadedGroupIds.delete(groupId)
     void (async () => {
@@ -684,6 +689,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     if (!isSelfInMembers(payload)) {
       return
     }
+    unavailableGroupIds.delete(groupId)
     if (payload.operatorUserId === selfUserId && getGroup(groupId)) {
       return
     }
@@ -718,6 +724,9 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 成员被邀请进群 */
   async function applyGroupMemberInviteNotification(groupId: number, payload: GroupNotificationPayload) {
+    if (isSelfInMembers(payload)) {
+      unavailableGroupIds.delete(groupId)
+    }
     if (isSelfInMembers(payload) && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true)
     }
@@ -727,6 +736,9 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 成员主动进群 */
   async function applyGroupMemberEnterNotification(groupId: number, payload: GroupNotificationPayload) {
+    if (payload.entrantUserId === useUserStore().userInfo.userId) {
+      unavailableGroupIds.delete(groupId)
+    }
     if (payload.entrantUserId === useUserStore().userInfo.userId && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true)
     }
@@ -909,6 +921,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     singleMemberLoadTasks.clear()
     detailLoadTasks.clear()
     detailLoadedGroupIds.clear()
+    unavailableGroupIds.clear()
     reloadQueued = false
     memberReloadQueued.clear()
     detailReloadQueued.clear()

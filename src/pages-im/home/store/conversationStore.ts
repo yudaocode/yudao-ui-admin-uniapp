@@ -12,9 +12,11 @@ import {
   closeImDb,
   getClientConversationId,
   getClientMessageKey,
+  getDbSession,
   getImDb,
   getServerMessageKey,
   initImDb,
+  isCurrentDbSession,
   StorageKeys,
 } from '@/pages-im/utils/db'
 import { useUserStore } from '@/store/user'
@@ -58,6 +60,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   const pendingRecallMessageKeys = new Set<string>() // 原消息未到达时暂存的撤回终态
   const pendingIncomingWaiters = new Map<string, Array<(message?: MessageDO) => void>>() // 等待回放最终状态的实时消息
   const conversationOperationQueues = new Map<string, Promise<void>>() // 按账号和会话串行执行消息状态变更
+  const conversationMetadataOperationQueues = new Map<number, Promise<void>>() // 按账号串行执行会话本地设置与重建
 
   /** 当前登录用户 id */
   function selfUserId(): number {
@@ -90,6 +93,45 @@ export const useConversationStore = defineStore('imConversationStore', () => {
         conversationOperationQueues.delete(queueKey)
       }
     }
+  }
+
+  /** 串行执行同一账号的会话本地设置与重建 */
+  async function enqueueConversationMetadataOperation<T>(
+    expectedUserId: number,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const previous = conversationMetadataOperationQueues.get(expectedUserId) || Promise.resolve()
+    const current = previous.catch(() => undefined).then(operation)
+    const settled = current.then(() => undefined, () => undefined)
+    conversationMetadataOperationQueues.set(expectedUserId, settled)
+    try {
+      return await current
+    } finally {
+      if (conversationMetadataOperationQueues.get(expectedUserId) === settled) {
+        conversationMetadataOperationQueues.delete(expectedUserId)
+      }
+    }
+  }
+
+  /** 串行执行会话本地设置，并保持与实时消息操作的先后顺序 */
+  function enqueueConversationLocalOperation<T>(
+    clientConversationId: string,
+    expectedUserId: number,
+    operation: () => Promise<T>,
+  ) {
+    return enqueueConversationMetadataOperation(
+      expectedUserId,
+      () => enqueueConversationOperation(clientConversationId, expectedUserId, operation),
+    )
+  }
+
+  /** 等待当前账号已开始的会话消息操作结束 */
+  async function waitConversationOperations(expectedUserId: number) {
+    const queuePrefix = `${expectedUserId}:`
+    const tasks = Array.from(conversationOperationQueues.entries())
+      .filter(([key]) => key.startsWith(queuePrefix))
+      .map(([, task]) => task.catch(() => undefined))
+    await Promise.all(tasks)
   }
 
   const { deriveLastSenderDisplayName } = useMessageStore()
@@ -332,11 +374,19 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       const groupMap = new Map(groups.map(item => [item.id, item]))
       const channelMap = new Map(channels.map(item => [item.id, item]))
 
-      const list = await rebuildConversations(friendMap, groupMap, channelMap)
+      await enqueueConversationMetadataOperation(self, async () => {
+        await waitConversationOperations(self)
+        if (!isActive()) {
+          return
+        }
+        const list = await rebuildConversations(friendMap, groupMap, channelMap)
+        if (isActive()) {
+          conversations.value = sortConversations(list)
+        }
+      })
       if (!isActive()) {
         return
       }
-      conversations.value = sortConversations(list)
       loadedUserId = self
     } catch (error) {
       if (isActive()) {
@@ -429,13 +479,8 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     }
   }
 
-  /** 判断会话读位置是否覆盖消息编号 */
-  function isReadPositionCovered(type: number, targetId: number, messageId?: number): boolean {
-    if (!messageId) {
-      return false
-    }
-    return (getConversationRead(type, targetId)?.messageId || 0) >= messageId
-  }
+  // TODO @AI：【done】isReadPositionCovered() 是否多余？
+  // 回复 @AI：【有差异】是；全仓无调用且未暴露，已删除，仅保留实际使用的 isReportedReadPositionCovered()。
 
   /** 应用一条实时消息：写库 + 更新会话摘要/未读 + 重排 */
   async function applyIncomingMessage(
@@ -928,15 +973,39 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   }
 
   /** 更新会话本地设置并持久化 + 重排 */
-  async function updateConversationLocal(clientConversationId: string, patch: Partial<ConversationDO>) {
+  async function updateConversationLocal(
+    clientConversationId: string,
+    patch: Partial<ConversationDO>,
+    expectedUserId = selfUserId(),
+  ) {
     const target = conversations.value.find(item => item.clientConversationId === clientConversationId)
-    if (!target) {
+    if (expectedUserId <= 0 || selfUserId() !== expectedUserId || !target || target.deleted) {
       return
     }
+    const previous = Object.fromEntries(
+      Object.keys(patch).map(key => [key, target[key as keyof ConversationDO]]),
+    ) as Partial<ConversationDO>
     Object.assign(target, patch)
-    await initImDb()
-    await getImDb().put<ConversationDO>('conversations', JSON.parse(JSON.stringify(target)))
-    conversations.value = sortConversations([...conversations.value])
+    try {
+      await initImDb()
+      if (selfUserId() !== expectedUserId) {
+        throw new Error('会话设置更新已失效')
+      }
+      const session = getDbSession()
+      const db = getImDb()
+      await db.put<ConversationDO>('conversations', JSON.parse(JSON.stringify(target)))
+      if (selfUserId() !== expectedUserId || !isCurrentDbSession(session)) {
+        throw new Error('会话设置更新已失效')
+      }
+      conversations.value = sortConversations([...conversations.value])
+    } catch (error) {
+      if (selfUserId() === expectedUserId
+        && conversations.value.includes(target)) {
+        Object.assign(target, previous)
+        conversations.value = sortConversations([...conversations.value])
+      }
+      throw error
+    }
   }
 
   /** 执行会话记录持久化 */
@@ -983,12 +1052,25 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       return
     }
     ensureStateUser(userId)
+    const clientConversationId = getClientConversationId(info.type, info.targetId)
+    return enqueueConversationLocalOperation(
+      clientConversationId,
+      userId,
+      () => ensureConversationNow(info, clientConversationId, userId),
+    )
+  }
+
+  /** 实际创建或刷新一个显式打开的会话 */
+  async function ensureConversationNow(
+    info: { type: number, targetId: number, name: string, avatar: string, silent?: boolean },
+    clientConversationId: string,
+    userId: number,
+  ) {
     await initImDb()
     if (selfUserId() !== userId) {
       return
     }
     const db = getImDb()
-    const clientConversationId = getClientConversationId(info.type, info.targetId)
     const current = conversations.value.find(item => item.clientConversationId === clientConversationId)
       || await db.get<ConversationDO>('conversations', clientConversationId)
     if (selfUserId() !== userId) {
@@ -1051,7 +1133,14 @@ export const useConversationStore = defineStore('imConversationStore', () => {
 
   /** 置顶 / 取消置顶 */
   async function setConversationTop(type: number, targetId: number, top: boolean) {
-    await updateConversationLocal(getClientConversationId(type, targetId), { top })
+    const expectedUserId = selfUserId()
+    const clientConversationId = getClientConversationId(type, targetId)
+    return enqueueConversationLocalOperation(clientConversationId, expectedUserId, async () => {
+      if (selfUserId() !== expectedUserId) {
+        return
+      }
+      await updateConversationLocal(clientConversationId, { top }, expectedUserId)
+    })
   }
 
   /** 删除会话及其本地消息；再来新消息时恢复会话 */
@@ -1061,7 +1150,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       return
     }
     const clientConversationId = getClientConversationId(type, targetId)
-    return enqueueConversationOperation(
+    return enqueueConversationLocalOperation(
       clientConversationId,
       expectedUserId,
       () => removeConversationNow(clientConversationId, expectedUserId),
@@ -1083,9 +1172,16 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (selfUserId() !== expectedUserId) {
       return
     }
-    const conversation = conversations.value.find(item =>
+    await initImDb()
+    if (selfUserId() !== expectedUserId) {
+      return
+    }
+    const db = getImDb()
+    const memoryConversation = conversations.value.find(item =>
       item.clientConversationId === clientConversationId)
-    if (!conversation) {
+    const conversation = memoryConversation
+      || await db.get<ConversationDO>('conversations', clientConversationId)
+    if (selfUserId() !== expectedUserId || !conversation) {
       return
     }
     conversation.deleted = true
@@ -1093,16 +1189,11 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (activeClientConversationId.value === clientConversationId) {
       activeClientConversationId.value = ''
     }
-    await initImDb()
-    if (selfUserId() !== expectedUserId) {
-      return
-    }
-    const db = getImDb()
     await Promise.all([
       db.put<ConversationDO>('conversations', JSON.parse(JSON.stringify(conversation))),
       useMessageStore().deleteConversationMessageList(clientConversationId, expectedUserId),
     ])
-    if (selfUserId() === expectedUserId) {
+    if (selfUserId() === expectedUserId && memoryConversation) {
       conversations.value = sortConversations([...conversations.value])
     }
   }
@@ -1113,25 +1204,27 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (expectedUserId <= 0) {
       return
     }
-    await initImDb()
-    if (selfUserId() !== expectedUserId) {
-      return
-    }
-    await useMessageStore().deleteConversationMessageList(clientConversationId, expectedUserId)
-    if (selfUserId() !== expectedUserId) {
-      return
-    }
-    await updateConversationLocal(clientConversationId, {
-      unreadCount: 0,
-      lastContent: '',
-      lastSendTime: 0,
-      lastSenderId: undefined,
-      lastMessageType: undefined,
-      lastMessageId: undefined,
-      lastClientMessageId: undefined,
-      draft: undefined,
+    return enqueueConversationLocalOperation(clientConversationId, expectedUserId, async () => {
+      await initImDb()
+      if (selfUserId() !== expectedUserId) {
+        return
+      }
+      await useMessageStore().deleteConversationMessageList(clientConversationId, expectedUserId)
+      if (selfUserId() !== expectedUserId) {
+        return
+      }
+      await updateConversationLocal(clientConversationId, {
+        unreadCount: 0,
+        lastContent: '',
+        lastSendTime: 0,
+        lastSenderId: undefined,
+        lastMessageType: undefined,
+        lastMessageId: undefined,
+        lastClientMessageId: undefined,
+        draft: undefined,
+      }, expectedUserId)
+      uni.$emit('im:conversation-cleared', clientConversationId)
     })
-    uni.$emit('im:conversation-cleared', clientConversationId)
   }
 
   /** 根据本地剩余消息重算会话摘要、未读和 @ 状态 */
@@ -1207,9 +1300,12 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     conversation: Pick<ConversationDO, 'type' | 'targetId'>,
     draft?: ConversationDO['draft'],
   ) {
-    await updateConversationLocal(
-      getClientConversationId(conversation.type, conversation.targetId),
-      { draft },
+    const expectedUserId = selfUserId()
+    const clientConversationId = getClientConversationId(conversation.type, conversation.targetId)
+    await enqueueConversationLocalOperation(
+      clientConversationId,
+      expectedUserId,
+      () => updateConversationLocal(clientConversationId, { draft }, expectedUserId),
     )
   }
 

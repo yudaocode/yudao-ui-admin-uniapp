@@ -18,8 +18,20 @@
             <wd-switch v-model="silent" size="40rpx" @change="onSilentChange" />
           </wd-cell>
           <wd-cell title="置顶聊天" center>
-            <wd-switch v-model="pinned" size="40rpx" @change="onPinnedChange" />
+            <wd-switch
+              v-model="pinned"
+              size="40rpx"
+              :disabled="pinPending"
+              @change="onPinnedChange"
+            />
           </wd-cell>
+        </wd-cell-group>
+      </view>
+
+      <!-- 推荐好友 -->
+      <view class="mt-20rpx">
+        <wd-cell-group border>
+          <wd-cell title="把他推荐给朋友" is-link center @click="recommendVisible = true" />
         </wd-cell-group>
       </view>
 
@@ -46,6 +58,9 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 推荐个人名片 -->
+    <RecommendCardPicker v-if="friendCard" v-model="recommendVisible" :card="friendCard" />
   </view>
 </template>
 
@@ -55,12 +70,15 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref, watch } from 'vue'
 import { getClientConversationId } from '@/pages-im/utils/db'
+import { toUserCardTarget } from '@/pages-im/utils/message'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { delay, navigateBackPlus } from '@/utils'
 import { ImConversationType } from '@/pages-im/utils/constants'
+import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../../../store/conversationStore'
 import { useFriendStore } from '../../../store/friendStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
+import RecommendCardPicker from '../../components/recommend-card-picker.vue'
 
 const props = defineProps<{
   friendUserId?: number | string
@@ -75,6 +93,7 @@ definePage({
 
 const toast = useToast()
 const dialog = useDialog()
+const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const {
   clearConversationMessages,
@@ -84,7 +103,9 @@ const {
 const friendStore = useFriendStore()
 const silent = ref(false) // 消息免打扰
 const pinned = ref(false) // 置顶
+const pinPending = ref(false) // 置顶状态提交中
 const blocked = ref(false) // 黑名单
+const recommendVisible = ref(false) // 推荐名片弹窗
 
 /** 好友编号 */
 const friendUserId = computed(() => Number(props.friendUserId))
@@ -92,6 +113,11 @@ const clientConversationId = computed(() => getClientConversationId(ImConversati
 const friend = computed(() => friendStore.isActiveFriend(friendUserId.value)
   ? friendStore.getFriend(friendUserId.value)
   : undefined) // 当前有效好友资料
+const friendCard = computed(() => toUserCardTarget({ // 个人名片只携带真实昵称，不携带当前用户备注
+  id: friendUserId.value,
+  nickname: friend.value?.nickname,
+  avatar: friend.value?.avatar,
+}))
 
 /** 获取当前私聊会话 */
 function getConversation() {
@@ -144,8 +170,11 @@ async function onSilentChange() {
 
 /** 切换置顶 */
 async function onPinnedChange() {
+  const nextPinned = pinned.value
+  const operationUserId = userStore.userInfo.userId
+  pinPending.value = true
   try {
-    if (!getConversation() && pinned.value && friend.value) {
+    if (!getConversation() && nextPinned && friend.value) {
       await ensureConversation({
         type: ImConversationType.PRIVATE,
         targetId: friendUserId.value,
@@ -154,13 +183,21 @@ async function onPinnedChange() {
         silent: friend.value.silent,
       })
     }
-    if (!getConversation()) {
-      pinned.value = !pinned.value
+    if (userStore.userInfo.userId !== operationUserId) {
       return
     }
-    await setConversationTop(ImConversationType.PRIVATE, friendUserId.value, pinned.value)
+    if (!getConversation()) {
+      pinned.value = false
+      return
+    }
+    await setConversationTop(ImConversationType.PRIVATE, friendUserId.value, nextPinned)
+    pinned.value = nextPinned
   } catch {
-    pinned.value = !pinned.value
+    if (userStore.userInfo.userId === operationUserId) {
+      pinned.value = !!getConversation()?.top
+    }
+  } finally {
+    pinPending.value = false
   }
 }
 
@@ -209,7 +246,9 @@ watch(
   ([nextSilent, nextBlocked, nextPinned]) => {
     silent.value = !!nextSilent
     blocked.value = !!nextBlocked
-    pinned.value = !!nextPinned
+    if (!pinPending.value) {
+      pinned.value = !!nextPinned
+    }
   },
   { immediate: true },
 )

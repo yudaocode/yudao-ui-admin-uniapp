@@ -54,6 +54,7 @@ export function useMessageList(options: {
   const newMessageCount = ref(0) // 未自动滚动的新消息数
   const mentionPromptVisible = ref(!!options.getMentionMessageId()) // @我定位提示
   let locateConsumed = false
+  let requestedLocateMessageId = 0 // 页面内临时请求定位的消息编号
   let deletedKeysLoaded = false
 
   /** 是否已在当前设备删除 */
@@ -150,7 +151,9 @@ export function useMessageList(options: {
       let responseCount = firstResponse.length
       let reachedClearBoundary = firstResponse.some(item => item.id <= clearBeforeMessageId.value)
       let data = firstResponse.filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
-      const locateMessageId = options.getLocateMessageId() || options.getMentionMessageId()
+      const locateMessageId = requestedLocateMessageId
+        || options.getLocateMessageId()
+        || options.getMentionMessageId()
       if (isFirstPage && locateMessageId && !locateConsumed) {
         locateConsumed = true
         for (let guard = 0; guard < 50 && !data.some(item => item.id === locateMessageId); guard++) {
@@ -240,15 +243,26 @@ export function useMessageList(options: {
 
   /** 定位从聊天记录搜索进入的消息 */
   async function locateInitialMessage() {
-    const messageId = options.getLocateMessageId()
+    const messageId = requestedLocateMessageId || options.getLocateMessageId()
     if (!messageId || !messageList.value.some(item => item.id === messageId)) {
+      if (requestedLocateMessageId > 0 && requestedLocateMessageId === messageId) {
+        requestedLocateMessageId = 0
+        toast.show('未找到该置顶消息')
+      }
       return
+    }
+    if (requestedLocateMessageId === messageId) {
+      requestedLocateMessageId = 0
     }
     await locateMessage(messageId)
   }
 
   /** 定位 @我的消息 */
   async function locateMentionMessage() {
+    if (firstPageLoading.value) {
+      toast.show('消息加载中，请稍后')
+      return
+    }
     const messageId = options.getMentionMessageId()
     mentionPromptVisible.value = false
     if (!messageId || !messageList.value.some(item => item.id === messageId)) {
@@ -256,6 +270,25 @@ export function useMessageList(options: {
       return
     }
     await locateMessage(messageId)
+  }
+
+  /** 补拉历史并定位指定消息 */
+  async function locateHistoryMessage(messageId: number) {
+    if (!messageId) {
+      return false
+    }
+    if (firstPageLoading.value) {
+      toast.show('消息加载中，请稍后')
+      return false
+    }
+    if (messageList.value.some(item => item.id === messageId)) {
+      await locateMessage(messageId)
+      return true
+    }
+    requestedLocateMessageId = messageId
+    locateConsumed = false
+    options.pagingRef.value?.reload()
+    return true
   }
 
   /** 高亮并滚动到指定消息 */
@@ -433,15 +466,22 @@ export function useMessageList(options: {
   }
 
   /** 清空会话后的消息列表状态 */
-  function resetAfterConversationClear() {
+  function resetAfterConversationClear(reload = true) {
     historyMaxId.value = undefined
     clearBeforeMessageId.value = messageList.value[0]?.id || 0
+    historyLoadFailed.value = false
+    firstPageLoading.value = false
+    pendingLatestMessages.value = []
+    requestedLocateMessageId = 0
     messageList.value = []
-    options.pagingRef.value?.reload()
+    if (reload) {
+      options.pagingRef.value?.reload()
+    }
   }
 
   return {
     messageList,
+    firstPageLoading,
     historyLoadFailed,
     highlightMessageId,
     isNearBottom,
@@ -449,6 +489,7 @@ export function useMessageList(options: {
     mentionPromptVisible,
     queryList,
     loadOlderMessagesAfterClear,
+    locateHistoryMessage,
     locateMentionMessage,
     handleChatScroll,
     backToLatest,

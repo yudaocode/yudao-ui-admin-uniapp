@@ -40,13 +40,6 @@
         </wd-cell-group>
       </view>
 
-      <!-- 群通话 -->
-      <view v-if="!isQuitGroupDetail" class="mt-20rpx">
-        <wd-cell-group border>
-          <wd-cell title="音视频通话" label="可邀请群成员加入" is-link center @click="openCallMenu" />
-        </wd-cell-group>
-      </view>
-
       <!-- 聊天记录与推荐 -->
       <view class="mt-20rpx">
         <wd-cell-group border>
@@ -80,6 +73,14 @@
       <!-- 个人设置 -->
       <view v-if="!isQuitGroupDetail" class="mt-20rpx">
         <wd-cell-group border>
+          <wd-cell title="置顶聊天" center>
+            <wd-switch
+              v-model="pinned"
+              size="40rpx"
+              :disabled="pinPending"
+              @change="onPinnedChange"
+            />
+          </wd-cell>
           <wd-cell title="消息免打扰" center>
             <wd-switch v-model="mySilent" size="40rpx" @change="onSilentChange" />
           </wd-cell>
@@ -87,10 +88,19 @@
       </view>
 
       <!-- 退出 / 解散 -->
-      <view v-if="!isQuitGroupDetail" class="mt-20rpx bg-white">
-        <view class="py-30rpx text-center text-32rpx text-[#fa5151]" @click="isOwner ? handleDissolve() : handleQuit()">
-          {{ isOwner ? '解散群聊' : '退出群聊' }}
-        </view>
+      <view v-if="!isQuitGroupDetail" class="mt-20rpx">
+        <wd-cell-group>
+          <wd-cell
+            clickable
+            center
+            value-align="center"
+            custom-class="!h-94rpx"
+            custom-value-class="!text-32rpx !text-[#fa5151]"
+            @click="isOwner ? handleDissolve() : handleQuit()"
+          >
+            {{ isOwner ? '解散群聊' : '退出群聊' }}
+          </wd-cell>
+        </wd-cell-group>
       </view>
       <view class="h-40rpx" />
     </scroll-view>
@@ -106,9 +116,6 @@
 
     <!-- 推荐群名片 -->
     <RecommendCardPicker v-if="groupCard" v-model="recommendVisible" :card="groupCard" />
-
-    <!-- 通话方式菜单 -->
-    <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
 
     <!-- 成员管理菜单 -->
     <GroupMemberActionSheet
@@ -143,16 +150,6 @@
       :current-user-id="userStore.userInfo.userId"
       @success="getDetail"
     />
-
-    <!-- 发起群通话成员选择 -->
-    <GroupMemberPicker
-      ref="callMemberPickerRef"
-      v-model="callInviteUserIds"
-      title="选择通话成员"
-      :members="currentMembers"
-      :hide-ids="[userStore.userInfo.userId]"
-      @confirm="handleCallMemberConfirm"
-    />
   </view>
 </template>
 
@@ -161,8 +158,8 @@ import type { Group, GroupMember } from '../../../types'
 import { toGroupCardTarget } from '@/pages-im/utils/message'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onShow } from '@dcloudio/uni-app'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onHide, onShow } from '@dcloudio/uni-app'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   dissolveGroup,
   muteAll,
@@ -182,9 +179,8 @@ import {
   ImConversationType,
   ImFriendAddSource,
   ImGroupMemberRole,
-  ImRtcCallMediaType,
+  ImMessageType,
 } from '@/pages-im/utils/constants'
-import { useImRtc } from '../../../composables/useImRtc'
 import { useConversationStore } from '../../../store/conversationStore'
 import { useFriendStore } from '../../../store/friendStore'
 import { useGroupStore } from '../../../store/groupStore'
@@ -194,7 +190,6 @@ import RecommendCardPicker from '../../components/recommend-card-picker.vue'
 import GroupMemberActionSheet from './components/group-member-action-sheet.vue'
 import GroupMemberGrid from './components/group-member-grid.vue'
 import GroupAdminPicker from '../components/group-admin-picker.vue'
-import GroupMemberPicker from '../components/group-member-picker.vue'
 import GroupMemberRemovePicker from '../components/group-member-remove-picker.vue'
 import GroupOwnerTransferPicker from '../components/group-owner-transfer-picker.vue'
 
@@ -222,22 +217,27 @@ const memberActionRef = ref<InstanceType<typeof GroupMemberActionSheet>>() // �
 const memberRemovePickerRef = ref<InstanceType<typeof GroupMemberRemovePicker>>() // 批量移出成员选择器引用
 const adminPickerRef = ref<InstanceType<typeof GroupAdminPicker>>() // 群管理员选择器引用
 const ownerTransferPickerRef = ref<InstanceType<typeof GroupOwnerTransferPicker>>() // 新群主选择器引用
-const callMemberPickerRef = ref<InstanceType<typeof GroupMemberPicker>>() // 群通话成员选择器引用
 const inviting = ref(false) // 邀请提交状态
 const inviteUserIds = ref<number[]>([]) // 邀请用户编号
 const recommendVisible = ref(false) // 推荐群名片弹窗
-const callActionVisible = ref(false) // 通话方式菜单显示状态
-const callInviteUserIds = ref<number[]>([]) // 群通话邀请成员编号
-const callMediaType = ref<number>() // 待发起的群通话媒体类型
-const callActions = [ // 通话方式菜单项
-  { name: '语音通话', value: ImRtcCallMediaType.VOICE },
-  { name: '视频通话', value: ImRtcCallMediaType.VIDEO },
-]
 const mutedAll = ref(false) // 全员禁言
 const joinApproval = ref(false) // 进群审批
+const pinned = ref(false) // 是否置顶当前群聊
+const pinPending = ref(false) // 置顶状态提交中
 const mySilent = ref(false) // 我的群免打扰
-const { start: startRtcCall } = useImRtc()
-const { clearConversationMessages } = useConversationStore()
+const pageVisible = ref(false) // 当前页面是否可见
+const groupRelationInvalid = ref(false) // 当前账号与群关系是否已终止
+const memberDetailLoaded = ref(false) // 当前成员关系是否已成功刷新
+let pageUserId = 0 // 当前页面所属账号
+let pinEpoch = 0 // 置顶操作轮次；群关系失效后旧操作不得恢复会话
+let detailEpoch = 0 // 群详情加载轮次
+const conversationStore = useConversationStore()
+const {
+  clearConversationMessages,
+  ensureConversation,
+  removeGroupConversation,
+  setConversationTop,
+} = conversationStore
 
 /** 当前用户群成员 */
 const currentMembers = computed(() => members.value.filter( // 当前有效群成员
@@ -250,15 +250,17 @@ const currentMembers = computed(() => members.value.filter( // 当前有效群�
 const currentMember = computed(() => currentMembers.value.find(item => item.userId === userStore.userInfo.userId))
 const currentMemberUserIds = computed(() => currentMembers.value.map(item => item.userId)) // 当前群成员编号
 const remainingMemberCount = computed(() => Math.max(0, GROUP_MAX_MEMBER - currentMembers.value.length)) // 剩余可邀请人数
-const isQuitGroupDetail = computed(() => isGroupQuit(formData.value)) // 历史退群群只读展示
+const isQuitGroupDetail = computed(() => groupRelationInvalid.value
+  || isGroupQuit(formData.value)) // 历史退群群只读展示
 
 /** 是否可管理群（群主 / 管理员） */
-const canManageGroup = computed(() =>
-  currentMember.value?.role === ImGroupMemberRole.OWNER || currentMember.value?.role === ImGroupMemberRole.ADMIN,
-)
+const canManageGroup = computed(() => memberDetailLoaded.value && !isQuitGroupDetail.value
+  && (currentMember.value?.role === ImGroupMemberRole.OWNER
+    || currentMember.value?.role === ImGroupMemberRole.ADMIN))
 
 /** 是否群主 */
-const isOwner = computed(() => currentMember.value?.role === ImGroupMemberRole.OWNER)
+const isOwner = computed(() => memberDetailLoaded.value && !isQuitGroupDetail.value
+  && currentMember.value?.role === ImGroupMemberRole.OWNER)
 const removableMembers = computed(() => currentMembers.value.filter(canManageMember)) // 当前可移出的群成员
 
 /** 我在本群的昵称 */
@@ -270,6 +272,11 @@ const groupCard = computed(() => toGroupCardTarget({ // 群名片
   showImage: formData.value?.avatar,
   memberCount: currentMembers.value.length,
 }))
+
+/** 获取当前群会话 */
+function getConversation() {
+  return conversationStore.getConversation(ImConversationType.GROUP, Number(props.id))
+}
 
 /** 返回上一页 */
 function handleBack() {
@@ -368,44 +375,6 @@ async function editGroupRemark() {
   await groupStore.updateMyGroupMember(groupId, { groupRemark: String(value || '') })
   await getDetail()
   toast.success('已保存')
-}
-
-/** 发起群音视频通话 */
-function openCallMenu() {
-  if (isQuitGroupDetail.value) {
-    return
-  }
-  const inviteeIds = currentMembers.value
-    .filter(item => item.userId !== userStore.userInfo.userId)
-    .map(item => item.userId)
-  if (inviteeIds.length === 0 || !formData.value?.id) {
-    toast.show('暂无可邀请成员')
-    return
-  }
-  callActionVisible.value = true
-}
-
-/** 发起指定方式的群通话 */
-function handleCallAction({ item }: { item: { value: number } }) {
-  if (!formData.value?.id) {
-    return
-  }
-  callMediaType.value = item.value
-  callInviteUserIds.value = []
-  callMemberPickerRef.value?.open([])
-}
-
-/** 选择成员后发起群通话 */
-function handleCallMemberConfirm(inviteeIds: number[]) {
-  if (!formData.value?.id || callMediaType.value == null || inviteeIds.length === 0) {
-    return
-  }
-  startRtcCall({
-    conversationType: ImConversationType.GROUP,
-    mediaType: callMediaType.value,
-    groupId: formData.value.id,
-    inviteeIds,
-  })
 }
 
 /** 查找聊天内容 */
@@ -512,6 +481,53 @@ async function onSilentChange() {
   }
 }
 
+/** 切换群聊置顶 */
+async function onPinnedChange() {
+  const nextPinned = pinned.value
+  const operationUserId = userStore.userInfo.userId
+  if (!formData.value?.id || isQuitGroupDetail.value) {
+    pinned.value = !!getConversation()?.top
+    return
+  }
+  const groupId = formData.value.id
+  const operationEpoch = ++pinEpoch
+  pinPending.value = true
+  try {
+    if (!getConversation() && nextPinned) {
+      await ensureConversation({
+        type: ImConversationType.GROUP,
+        targetId: groupId,
+        name: formData.value.name,
+        avatar: formData.value.avatar || '',
+        silent: formData.value.silent,
+      })
+    }
+    if (userStore.userInfo.userId !== operationUserId) {
+      return
+    }
+    if (operationEpoch !== pinEpoch || isQuitGroupDetail.value) {
+      await removeGroupConversation(groupId)
+      return
+    }
+    if (!getConversation()) {
+      pinned.value = false
+      return
+    }
+    await setConversationTop(ImConversationType.GROUP, groupId, nextPinned)
+    if (operationEpoch === pinEpoch) {
+      pinned.value = nextPinned
+    }
+  } catch {
+    if (operationEpoch === pinEpoch && userStore.userInfo.userId === operationUserId) {
+      pinned.value = !!getConversation()?.top
+    }
+  } finally {
+    if (operationEpoch === pinEpoch) {
+      pinPending.value = false
+    }
+  }
+}
+
 /** 退出群聊 */
 async function handleQuit() {
   if (!formData.value?.id) {
@@ -549,40 +565,110 @@ async function getDetail() {
   if (!props.id) {
     return
   }
+  const epoch = ++detailEpoch
+  const userId = userStore.userInfo.userId
+  memberDetailLoaded.value = false
   loading.value = true
   try {
     const [group, memberList] = await Promise.all([
       groupStore.fetchGroupInfo(Number(props.id), true),
       groupStore.fetchGroupMemberList(Number(props.id), true),
     ])
-    if (!group) {
+    if (epoch !== detailEpoch || !pageVisible.value
+      || userStore.userInfo.userId !== userId || !group) {
       return
     }
     formData.value = group
     members.value = memberList
+    const activeSelfMember = memberList.find(member => member.userId === userId
+      && member.status !== CommonStatusEnum.DISABLE)
+    groupRelationInvalid.value = !activeSelfMember
+    memberDetailLoaded.value = !!activeSelfMember
     mutedAll.value = !!group.mutedAll
     joinApproval.value = !!group.joinApproval
     mySilent.value = !!group.silent
   } finally {
-    loading.value = false
+    if (epoch === detailEpoch) {
+      loading.value = false
+    }
   }
 }
 
+/** 同步群会话置顶状态 */
+watch(
+  () => getConversation()?.top,
+  (value) => {
+    if (!pinPending.value) {
+      pinned.value = !!value
+    }
+  },
+  { immediate: true },
+)
+
 onShow(() => {
+  pageVisible.value = true
+  pageUserId = userStore.userInfo.userId
   void useImRuntimeStore().ensure()
   getDetail()
 })
 
-/** 当前群关系变化时刷新详情 */
-function handleGroupReload(groupId?: number) {
-  if (!groupId || groupId === Number(props.id)) {
-    getDetail()
+/** 页面隐藏后停止接收实时详情事件 */
+onHide(() => pageVisible.value = false)
+
+/** 解析群事件内容 */
+function parseGroupEventContent(payload: any) {
+  if (typeof payload?.content !== 'string') {
+    return payload || {}
+  }
+  try {
+    return JSON.parse(payload.content)
+  } catch {
+    return payload
   }
 }
 
+/** 接收当前群详情的实时状态事件 */
+function handleImEvent(data: { conversationType?: number, contentType?: number, payload?: any }) {
+  if (pageUserId !== userStore.userInfo.userId
+    || data.conversationType !== ImConversationType.GROUP || !data.contentType || !data.payload) {
+    return
+  }
+  const groupId = Number(data.payload.groupId)
+  if (!groupId || groupId !== Number(props.id)) {
+    return
+  }
+  const content = parseGroupEventContent(data.payload)
+  const userId = userStore.userInfo.userId
+  const removedSelf = data.contentType === ImMessageType.GROUP_DISSOLVE
+    || (data.contentType === ImMessageType.GROUP_MEMBER_QUIT
+      && Number(content.operatorUserId || data.payload.operatorUserId) === userId)
+    || (data.contentType === ImMessageType.GROUP_MEMBER_KICK
+      && (content.memberUserIds || data.payload.memberUserIds || []).map(Number).includes(userId))
+  if (removedSelf) {
+    detailEpoch++
+    pinEpoch++
+    groupRelationInvalid.value = true
+    memberDetailLoaded.value = false
+    pinned.value = false
+    pinPending.value = false
+    loading.value = false
+    if (formData.value) {
+      formData.value = { ...formData.value, joinStatus: CommonStatusEnum.DISABLE }
+    }
+    members.value = members.value.map(member => member.userId === userId
+      ? { ...member, status: CommonStatusEnum.DISABLE }
+      : member)
+    return
+  }
+  if (!pageVisible.value) {
+    return
+  }
+  void getDetail().catch(() => undefined)
+}
+
 /** 订阅群详情实时变化 */
-onMounted(() => uni.$on('im:group-detail:reload', handleGroupReload))
+onMounted(() => uni.$on('im:event', handleImEvent))
 
 /** 释放群详情订阅 */
-onUnmounted(() => uni.$off('im:group-detail:reload', handleGroupReload))
+onUnmounted(() => uni.$off('im:event', handleImEvent))
 </script>

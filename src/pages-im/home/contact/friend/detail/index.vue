@@ -69,15 +69,6 @@
         </wd-cell-group>
       </view>
 
-      <!-- 聊天与推荐 -->
-      <view class="mt-20rpx bg-white">
-        <wd-cell-group border>
-          <wd-cell title="查找聊天内容" is-link center @click="goHistory" />
-          <wd-cell title="把他推荐给朋友" is-link center @click="recommendVisible = true" />
-          <wd-cell title="发起群聊" is-link center @click="createGroupWithFriend" />
-        </wd-cell-group>
-      </view>
-
       <!-- 操作：发消息 / 音视频通话 -->
       <view class="mt-20rpx bg-white">
         <view class="flex items-center justify-center gap-12rpx py-30rpx text-32rpx text-[#576b95]" @click="sendMessage">
@@ -92,9 +83,6 @@
       </view>
     </scroll-view>
 
-    <!-- 推荐个人名片 -->
-    <RecommendCardPicker v-if="friendCard" v-model="recommendVisible" :card="friendCard" />
-
     <!-- 通话方式菜单 -->
     <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
   </view>
@@ -105,7 +93,6 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import type { User } from '@/api/system/user'
 import { getSimpleUser } from '@/api/system/user'
-import { toUserCardTarget } from '@/pages-im/utils/message'
 import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { navigateBackPlus } from '@/utils'
@@ -117,7 +104,6 @@ import { useImRtc } from '../../../composables/useImRtc'
 import { useFriendStore } from '../../../store/friendStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
 import ImAvatar from '../../../components/im-avatar.vue'
-import RecommendCardPicker from '../../components/recommend-card-picker.vue'
 
 const props = defineProps<{
   friendUserId?: number | string
@@ -133,7 +119,6 @@ definePage({
 const friendStore = useFriendStore()
 const userStore = useUserStore()
 const simpleUser = ref<User>() // 系统用户精简资料
-const recommendVisible = ref(false) // 推荐名片弹窗
 const callActionVisible = ref(false) // 通话方式菜单显示状态
 const callActions = [ // 通话方式菜单项
   { name: '语音通话', value: ImRtcCallMediaType.VOICE },
@@ -151,11 +136,6 @@ const friend = computed(() => friendStore.isActiveFriend(friendUserId.value)
 const displayName = computed(() => friend.value
   ? getFriendDisplayName(friend.value)
   : `用户 ${friendUserId.value}`)
-const friendCard = computed(() => toUserCardTarget({ // 个人名片只携带真实昵称，不携带当前用户备注
-  id: friendUserId.value,
-  nickname: friend.value?.nickname,
-  avatar: friend.value?.avatar,
-}))
 
 /** 加载好友资料 */
 async function loadFriend() {
@@ -191,18 +171,6 @@ function sendMessage() {
       targetId: friendUserId.value,
     }),
   })
-}
-
-/** 查找聊天内容 */
-function goHistory() {
-  uni.navigateTo({
-    url: `/pages-im/home/conversation/history/index?type=${ImConversationType.PRIVATE}&targetId=${friendUserId.value}&title=${encodeURIComponent(displayName.value)}`,
-  })
-}
-
-/** 与当前好友发起群聊 */
-function createGroupWithFriend() {
-  uni.navigateTo({ url: `/pages-im/home/contact/group/form/index?memberUserIds=${friendUserId.value}` })
 }
 
 /** 选择并发起音视频通话 */
