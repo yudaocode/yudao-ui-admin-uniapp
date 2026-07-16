@@ -1,7 +1,21 @@
 <template>
   <view class="rtc-page">
     <!-- 视频画面 -->
-    <view id="rtc-media-stage" class="rtc-media-stage" />
+    <view
+      id="rtc-media-stage"
+      class="rtc-media-stage"
+      :data-tile-count="mediaParticipants.length"
+    >
+      <RtcCallParticipantTile
+        v-for="participant in mediaParticipants"
+        :key="participant.userId"
+        :member="participant"
+        :is-local="participant.isLocal"
+        :video-track="participant.videoTrack"
+        :audio-track="participant.audioTrack"
+        :speaker-enabled="speakerEnabled"
+      />
+    </view>
 
     <!-- 通话信息 -->
     <view class="relative z-2 flex flex-1 flex-col items-center px-48rpx pt-[calc(100rpx+env(safe-area-inset-top))]">
@@ -15,8 +29,6 @@
       <view v-if="reconnecting" class="mt-16rpx rounded-full bg-black/30 px-24rpx py-10rpx text-24rpx text-white">
         网络重连中…
       </view>
-
-      <RtcCallParticipantList v-if="isGroup" :members="participantMembers" />
     </view>
 
     <!-- 来电操作 -->
@@ -51,10 +63,15 @@
 
 <script lang="ts" setup>
 import type { GroupMember } from '../../../types'
+import type { RtcParticipantTracks } from '../../../composables/useLiveKitRoom'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { getMemberDisplayName as getMemberName } from '@/pages-im/utils/user'
+import {
+  getMemberDisplayName as getMemberName,
+  getSenderAvatar,
+  getSenderDisplayName,
+} from '@/pages-im/utils/user'
 import { RTC_NO_ANSWER_CALL_CHECK_INTERVAL_MS } from '@/pages-im/utils/config'
 import { formatCallDuration } from '@/pages-im/utils/time'
 import { noAnswerCallCheck } from '@/api/im/rtc'
@@ -69,7 +86,7 @@ import { CommonStatusEnum, ImConversationType, ImRtcCallMediaType, ImRtcCallStag
 import ImAvatar from '../../../components/im-avatar.vue'
 import RtcCallControls from './components/rtc-call-controls.vue'
 import RtcCallIncoming from './components/rtc-call-incoming.vue'
-import RtcCallParticipantList from './components/rtc-call-participant-list.vue'
+import RtcCallParticipantTile from './components/rtc-call-participant-tile.vue'
 
 definePage({
   style: {
@@ -117,6 +134,7 @@ const {
   speakerEnabled,
   reconnecting,
   screenShareEnabled,
+  participantTracks,
   connectRoom,
   toggleScreenShare,
   toggleMic,
@@ -132,12 +150,60 @@ const groupId = computed(() => call.value?.groupId ?? incomingPayload.value?.gro
 const inviterId = computed(() => call.value?.inviterId ?? incomingPayload.value?.inviterUserId) // 当前通话发起人
 const participantMembers = useGroupCallMembers(groupId, inviterId, groupMembers)
 const participantUserIds = computed(() => participantMembers.value.map(item => item.userId)) // 已加入或邀请中的成员
+const mediaParticipants = computed(() => { // 参与者资料与 LiveKit 轨道映射
+  const trackByUserId = new Map(participantTracks.value.map(item => [item.userId, item]))
+  const memberByUserId = new Map(participantMembers.value.map(item => [item.userId, item]))
+  const userIds = new Set<number>([
+    ...Array.from(memberByUserId.keys()),
+    ...Array.from(trackByUserId.keys()),
+  ])
+  return Array.from(userIds).filter(Boolean).map((userId) => {
+    const track = trackByUserId.get(userId)
+    const member = memberByUserId.get(userId) ?? resolveParticipantMember(userId, track)
+    return {
+      ...member,
+      pending: member.pending && !track,
+      isLocal: track?.isLocal ?? userId === currentUserId.value,
+      videoTrack: !track?.screenShareMuted && track?.screenShareTrack
+        ? track.screenShareTrack
+        : !track?.cameraMuted ? track?.cameraTrack : undefined,
+      audioTrack: track?.audioMuted ? undefined : track?.audioTrack,
+    }
+  })
+})
 const inviteCandidates = computed(() => groupMembers.value
   .filter(item => item.status !== CommonStatusEnum.DISABLE
     && item.userId !== currentUserId.value
     && !participantUserIds.value.includes(item.userId)
     && !rtcStore.isUserLeft(call.value?.room || '', item.userId))
   .map(item => ({ ...item, displayUserName: getMemberName(item) }))) // 可追加邀请成员
+
+/** 补齐轨道参与者资料 */
+function resolveParticipantMember(userId: number, track?: RtcParticipantTracks) {
+  const groupMember = groupMembers.value.find(item => item.userId === userId)
+  if (groupMember) {
+    return {
+      userId,
+      nickname: getMemberName(groupMember),
+      avatar: groupMember.avatar,
+      pending: false,
+    }
+  }
+  const isLocal = track?.isLocal ?? userId === currentUserId.value
+  const remoteNickname = isGroup.value
+    ? getSenderDisplayName(userId, ImConversationType.GROUP, groupId.value) || '通话成员'
+    : peerNickname.value || '通话成员'
+  return {
+    userId,
+    nickname: isLocal ? userStore.userInfo.nickname || '我' : remoteNickname,
+    avatar: isLocal
+      ? userStore.userInfo.avatar
+      : isGroup.value
+        ? getSenderAvatar(userId, ImConversationType.GROUP, groupId.value || 0) || undefined
+        : peerAvatar.value || undefined,
+    pending: false,
+  }
+}
 
 /** 通话状态文案 */
 const statusText = computed(() => {
@@ -318,18 +384,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.rtc-media-stage[data-video-count='1'] {
+.rtc-media-stage[data-tile-count='1'] {
   grid-template-columns: 1fr;
-}
-
-:global(.rtc-video-track) {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  object-fit: cover;
-}
-
-:global(.rtc-audio-track) {
-  display: none;
 }
 </style>

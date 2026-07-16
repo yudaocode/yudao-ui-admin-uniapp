@@ -38,7 +38,12 @@
 
     <!-- 群聊置顶与通话横幅 -->
     <!-- #ifdef H5 -->
-    <RtcGroupCallBanner v-if="activeGroupCall" @join="joinActiveGroupCall" />
+    <RtcGroupCallBanner
+      v-if="activeGroupCall"
+      :active-call="activeGroupCall"
+      :members="groupMembers"
+      @join="joinActiveGroupCall"
+    />
     <!-- #endif -->
     <GroupPinnedMessage
       v-if="!firstPageLoading && group?.pinnedMessages?.length"

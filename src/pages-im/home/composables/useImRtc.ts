@@ -175,7 +175,9 @@ export function useImRtc() {
       return
     }
     const currentIds = currentCall.joinedUserIds || []
-    if (!joined) {
+    if (joined) {
+      rtcStore.restoreUser(currentCall.room, userId)
+    } else {
       rtcStore.markUserLeft(currentCall.room, userId)
     }
     const data = {
@@ -183,6 +185,9 @@ export function useImRtc() {
       joinedUserIds: joined
         ? Array.from(new Set([...currentIds, userId]))
         : currentIds.filter(id => id !== userId),
+      inviteeIds: joined
+        ? currentCall.inviteeIds
+        : currentCall.inviteeIds?.filter(id => id !== userId),
     }
     rtcStore.call = data
     if (data.conversationType === ImConversationType.GROUP && data.groupId) {
@@ -199,6 +204,20 @@ export function useImRtc() {
       && userId !== userStore.userInfo.userId
       && rtcStore.stage === ImRtcCallStage.INVITING) {
       rtcStore.enterRunning(data)
+    }
+  }
+
+  /** 同步拒绝或未接听成员 */
+  function syncUnavailableParticipant(notification: ImRtcCallNotification) {
+    if (notification.conversationType === ImConversationType.GROUP) {
+      if (notification.room === rtcStore.call?.room && notification.operatorUserId) {
+        syncParticipant(notification.operatorUserId, false)
+      }
+      return
+    }
+    if (notification.room === rtcStore.call?.room
+      || notification.room === rtcStore.incomingPayload?.room) {
+      rtcStore.reset()
     }
   }
 
@@ -240,20 +259,12 @@ export function useImRtc() {
     }
     if (notification.status === ImRtcParticipantStatus.REJECTED) {
       rtcStore.applyParticipantRejected(notification)
-      if (notification.conversationType !== ImConversationType.GROUP
-        && (notification.room === rtcStore.call?.room
-          || notification.room === rtcStore.incomingPayload?.room)) {
-        rtcStore.reset()
-      }
+      syncUnavailableParticipant(notification)
       return
     }
     if (notification.status === ImRtcParticipantStatus.NO_ANSWER) {
       rtcStore.applyParticipantNoAnswer(notification)
-      if (notification.conversationType !== ImConversationType.GROUP
-        && (notification.room === rtcStore.call?.room
-          || notification.room === rtcStore.incomingPayload?.room)) {
-        rtcStore.reset()
-      }
+      syncUnavailableParticipant(notification)
       return
     }
     if (notification.room === rtcStore.call?.room

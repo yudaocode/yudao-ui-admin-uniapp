@@ -33,12 +33,15 @@ export function useGroupCallMembers(
     const inviteeIds = groupCall?.inviteeIds ?? []
     const joinedSet = new Set(joinedIds)
     const orderedIds = [...joinedIds, ...inviteeIds.filter(id => !joinedSet.has(id))]
+      .filter(userId => !rtcStore.isUserLeft(groupCall?.room || '', userId))
     const memberById = new Map((members?.value || []).map(member => [member.userId, member]))
     if (orderedIds.length > 0) {
       return orderedIds.map(userId => toVM(userId, gid, !joinedSet.has(userId), memberById.get(userId)))
     }
     const fallback = fallbackInviterId?.value
-    return fallback ? [toVM(fallback, gid, false, memberById.get(fallback))] : []
+    return fallback && !rtcStore.isUserLeft(groupCall?.room || '', fallback)
+      ? [toVM(fallback, gid, false, memberById.get(fallback))]
+      : []
   })
 }
 

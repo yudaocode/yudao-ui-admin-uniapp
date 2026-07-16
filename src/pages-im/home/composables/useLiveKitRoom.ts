@@ -1,8 +1,20 @@
 import type { Ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref, watch } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { Room, RoomEvent, Track } from 'livekit-client'
 import { useImRtc } from './useImRtc'
+
+/** 参与者媒体轨道；视频优先屏幕共享，其次摄像头 */
+export interface RtcParticipantTracks {
+  userId: number
+  isLocal: boolean
+  cameraTrack?: Track
+  cameraMuted?: boolean
+  screenShareTrack?: Track
+  screenShareMuted?: boolean
+  audioTrack?: Track
+  audioMuted?: boolean
+}
 
 /** 管理 H5 LiveKit 房间及本地媒体设备 */
 export function useLiveKitRoom(options: {
@@ -17,6 +29,7 @@ export function useLiveKitRoom(options: {
   const speakerEnabled = ref(true) // 扬声器状态
   const reconnecting = ref(false) // 网络重连状态
   const screenShareEnabled = ref(false) // 屏幕共享状态
+  const participantTracks = shallowRef<RtcParticipantTracks[]>([]) // 按参与者归属的媒体轨道
   let room: Room | undefined
 
   /** 释放已经失效的房间实例 */
@@ -29,40 +42,80 @@ export function useLiveKitRoom(options: {
     }
   }
 
-  /** 获取媒体容器 */
-  function getMediaStage() {
-    // #ifdef H5
-    return document.getElementById('rtc-media-stage')
-    // #endif
-    return undefined
-  }
-
-  /** 刷新视频宫格数量 */
-  function refreshMediaLayout() {
-    const mediaStage = getMediaStage()
-    if (mediaStage) {
-      mediaStage.dataset.videoCount = String(mediaStage.querySelectorAll('video').length)
+  /** 写入参与者媒体轨道 */
+  function upsertParticipantTrack(track: Track, userId: number, isLocal: boolean) {
+    if (!userId || (track.kind === Track.Kind.Audio && track.source !== Track.Source.Microphone)) {
+      return
     }
-  }
-
-  /** 挂载 LiveKit 媒体轨道 */
-  function attachTrack(track: Track) {
-    // #ifdef H5
-    const element = track.attach()
-    element.autoplay = true
-    element.className = track.kind === Track.Kind.Video ? 'rtc-video-track' : 'rtc-audio-track'
-    if (element instanceof HTMLAudioElement) {
-      element.muted = !speakerEnabled.value
+    const current = participantTracks.value.find(item => item.userId === userId)
+    const next: RtcParticipantTracks = {
+      ...current,
+      userId,
+      isLocal,
     }
-    getMediaStage()?.appendChild(element)
-    refreshMediaLayout()
-    // #endif
+    if (track.kind === Track.Kind.Audio) {
+      next.audioTrack = track
+      next.audioMuted = track.isMuted
+    } else if (track.source === Track.Source.ScreenShare) {
+      next.screenShareTrack = track
+      next.screenShareMuted = track.isMuted
+    } else {
+      next.cameraTrack = track
+      next.cameraMuted = track.isMuted
+    }
+    participantTracks.value = [
+      ...participantTracks.value.filter(item => item.userId !== userId),
+      next,
+    ]
   }
 
-  /** 清理媒体元素 */
-  function clearMediaElements() {
-    getMediaStage()?.querySelectorAll('video,audio').forEach(element => element.remove())
-    refreshMediaLayout()
+  /** 移除参与者媒体轨道 */
+  function removeParticipantTrack(userId: number, track?: Track, trackSid?: string) {
+    const current = participantTracks.value.find(item => item.userId === userId)
+    if (!current) {
+      return
+    }
+    const isTargetTrack = (item?: Track) => !!item && (item === track || (!!trackSid && item.sid === trackSid))
+    const next: RtcParticipantTracks = {
+      ...current,
+      cameraTrack: isTargetTrack(current.cameraTrack) ? undefined : current.cameraTrack,
+      cameraMuted: isTargetTrack(current.cameraTrack) ? undefined : current.cameraMuted,
+      screenShareTrack: isTargetTrack(current.screenShareTrack) ? undefined : current.screenShareTrack,
+      screenShareMuted: isTargetTrack(current.screenShareTrack) ? undefined : current.screenShareMuted,
+      audioTrack: isTargetTrack(current.audioTrack) ? undefined : current.audioTrack,
+      audioMuted: isTargetTrack(current.audioTrack) ? undefined : current.audioMuted,
+    }
+    const rows = participantTracks.value.filter(item => item.userId !== userId)
+    if (next.cameraTrack || next.screenShareTrack || next.audioTrack) {
+      rows.push(next)
+    }
+    participantTracks.value = rows
+  }
+
+  /** 同步参与者媒体轨道静音状态 */
+  function updateParticipantTrackMuted(userId: number, trackSid: string, muted: boolean) {
+    const current = participantTracks.value.find(item => item.userId === userId)
+    if (!current) {
+      return
+    }
+    const next = { ...current }
+    if (current.cameraTrack?.sid === trackSid) {
+      next.cameraMuted = muted
+    } else if (current.screenShareTrack?.sid === trackSid) {
+      next.screenShareMuted = muted
+    } else if (current.audioTrack?.sid === trackSid) {
+      next.audioMuted = muted
+    } else {
+      return
+    }
+    participantTracks.value = participantTracks.value.map(item => item.userId === userId ? next : item)
+  }
+
+  /** 清空指定参与者或全部媒体轨道 */
+  function clearParticipantTracks(userId?: number) {
+    participantTracks.value = userId
+      ? participantTracks.value.filter(item => item.userId !== userId)
+      : []
   }
 
   /** 连接 LiveKit 房间 */
@@ -78,19 +131,33 @@ export function useLiveKitRoom(options: {
     let connected = false
     room = currentRoom
     currentRoom
-      .on(RoomEvent.TrackSubscribed, track => attachTrack(track))
+      .on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+        upsertParticipantTrack(track, Number(participant.identity), false)
+      })
       .on(RoomEvent.LocalTrackPublished, (publication) => {
-        if (publication.track?.kind === Track.Kind.Video) {
-          attachTrack(publication.track)
+        if (publication.track) {
+          upsertParticipantTrack(
+            publication.track,
+            Number(currentRoom.localParticipant.identity),
+            true,
+          )
         }
       })
       .on(RoomEvent.LocalTrackUnpublished, (publication) => {
-        publication.track?.detach().forEach(element => element.remove())
-        refreshMediaLayout()
+        removeParticipantTrack(
+          Number(currentRoom.localParticipant.identity),
+          publication.track,
+          publication.trackSid,
+        )
       })
-      .on(RoomEvent.TrackUnsubscribed, (track) => {
-        track.detach().forEach(element => element.remove())
-        refreshMediaLayout()
+      .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+        removeParticipantTrack(Number(participant.identity), track, publication.trackSid)
+      })
+      .on(RoomEvent.TrackMuted, (publication, participant) => {
+        updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, true)
+      })
+      .on(RoomEvent.TrackUnmuted, (publication, participant) => {
+        updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, false)
       })
       .on(RoomEvent.ParticipantConnected, (participant) => {
         const userId = Number(participant.identity)
@@ -102,6 +169,7 @@ export function useLiveKitRoom(options: {
         const userId = Number(participant.identity)
         if (userId) {
           syncParticipant(userId, false)
+          clearParticipantTracks(userId)
         }
       })
       .on(RoomEvent.Reconnecting, () => {
@@ -121,7 +189,7 @@ export function useLiveKitRoom(options: {
         cameraEnabled.value = false
         speakerEnabled.value = true
         screenShareEnabled.value = false
-        clearMediaElements()
+        clearParticipantTracks()
         void options.onRoomDisconnected()
       })
     try {
@@ -147,7 +215,7 @@ export function useLiveKitRoom(options: {
       currentRoom.remoteParticipants.forEach((participant) => {
         participant.trackPublications.forEach((publication) => {
           if (publication.track) {
-            attachTrack(publication.track)
+            upsertParticipantTrack(publication.track, Number(participant.identity), false)
           }
         })
       })
@@ -226,16 +294,9 @@ export function useLiveKitRoom(options: {
       cameraEnabled.value = false
       speakerEnabled.value = true
       screenShareEnabled.value = false
-      clearMediaElements()
+      clearParticipantTracks()
     }
   }
-
-  /** 同步本地音频轨道的扬声器状态 */
-  watch(speakerEnabled, (enabled) => {
-    getMediaStage()?.querySelectorAll('audio').forEach((element) => {
-      ;(element as HTMLAudioElement).muted = !enabled
-    })
-  })
 
   return {
     micEnabled,
@@ -243,6 +304,7 @@ export function useLiveKitRoom(options: {
     speakerEnabled,
     reconnecting,
     screenShareEnabled,
+    participantTracks,
     connectRoom,
     toggleScreenShare,
     toggleMic,

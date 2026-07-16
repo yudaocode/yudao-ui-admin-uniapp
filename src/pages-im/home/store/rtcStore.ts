@@ -410,6 +410,7 @@ export const useRtcStore = defineStore('imRtc', () => {
     reset,
     appendInvitees,
     markUserLeft,
+    restoreUser,
     isUserLeft,
     setGroupCall,
     removeGroupCall,
