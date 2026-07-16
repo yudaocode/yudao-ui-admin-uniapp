@@ -31,7 +31,7 @@
       v-if="conversationType === ImConversationType.PRIVATE && friendLoaded && !isFriend"
       class="flex items-center gap-16rpx border-b border-b-[#eee] bg-[#fff8e8] px-24rpx py-18rpx"
     >
-      <wd-icon name="warning" size="32rpx" color="#d48806" />
+      <wd-icon name="exclamation-circle" size="32rpx" color="#d48806" />
       <text class="min-w-0 flex-1 text-26rpx text-[#8f5b00]">对方还不是你的朋友</text>
       <text class="text-26rpx text-[#576b95]" @click="openFriendApply">添加朋友</text>
     </view>
@@ -170,8 +170,18 @@
       @create-group="createGroupAndForward"
     >
       <template #footer>
-        <view class="border-t border-t-[#f2f3f5] px-24rpx py-16rpx">
-          <wd-input v-model="forwardLeaveMessage" :maxlength="100" placeholder="给朋友留言" clearable />
+        <view class="shrink-0 border-t border-t-[#e5e7eb] bg-white px-24rpx pb-[calc(16rpx+env(safe-area-inset-bottom))] pt-16rpx">
+          <view class="flex items-center gap-12rpx rounded-12rpx bg-[#f5f6f7] px-20rpx py-16rpx">
+            <wd-icon name="edit" size="30rpx" color="#9ca3af" />
+            <wd-input
+              v-model="forwardLeaveMessage"
+              custom-class="min-w-0 flex-1"
+              :maxlength="100"
+              placeholder="给朋友留言（选填）"
+              compact
+              clearable
+            />
+          </view>
         </view>
       </template>
     </ForwardPicker>

@@ -6,7 +6,7 @@
     <!-- 授权结果 -->
     <view class="form-container flex flex-col items-center">
       <wd-loading v-if="status === 'loading'" color="#1890ff" size="64rpx" />
-      <wd-icon v-else name="warning" size="64rpx" color="#faad14" />
+      <wd-icon v-else name="exclamation-circle" size="64rpx" color="#faad14" />
       <text class="mt-32rpx text-32rpx text-[#333] font-medium">
         {{ status === 'loading' ? `正在完成三方${actionLabel}` : `三方${actionLabel}失败` }}
       </text>

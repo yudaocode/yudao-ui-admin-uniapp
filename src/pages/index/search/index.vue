@@ -16,7 +16,7 @@
     <scroll-view class="min-h-0 flex-1" scroll-y>
       <!-- 未输入关键词 -->
       <view v-if="!trimmedKeyword" class="flex flex-col items-center justify-center py-160rpx">
-        <wd-icon name="search" size="80rpx" color="#dcdcdc" />
+        <wd-icon name="search-line" size="80rpx" color="#dcdcdc" />
         <text class="mt-20rpx text-26rpx text-#999">输入菜单名称，快速跳转</text>
       </view>
       <!-- 有关键词但无结果 -->

@@ -25,7 +25,7 @@
         @click="openInvitePicker"
       >
         <view class="rtc-call-tool bg-white/20">
-          <wd-icon name="add" size="44rpx" color="#fff" />
+          <wd-icon name="plus" size="44rpx" color="#fff" />
         </view>
         <text class="text-24rpx text-white">邀请成员</text>
       </view>
@@ -36,7 +36,7 @@
         @click="emit('toggle-screen-share')"
       >
         <view class="rtc-call-tool" :class="screenShareEnabled ? 'bg-white text-[#222]' : 'bg-white/20'">
-          <wd-icon name="computer" size="44rpx" :color="screenShareEnabled ? '#222' : '#fff'" />
+          <wd-icon name="desktop" size="44rpx" :color="screenShareEnabled ? '#222' : '#fff'" />
         </view>
         <text class="text-24rpx text-white">{{ screenShareEnabled ? '停止共享' : '共享屏幕' }}</text>
       </view>

@@ -60,7 +60,7 @@
                   {{ item.memberCount ?? 0 }} 人 · 群号 {{ item.id }}
                 </view>
               </view>
-              <wd-icon :name="selected?.id === item.id ? 'check-circle-filled' : 'circle'" size="36rpx" :color="selected?.id === item.id ? '#07c160' : '#c8c9cc'" />
+              <wd-icon :name="selected?.id === item.id ? 'check-circle-fill' : 'check-circle'" size="36rpx" :color="selected?.id === item.id ? '#07c160' : '#c8c9cc'" />
             </view>
           </view>
         </z-paging>

@@ -36,7 +36,7 @@
             class="h-104rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed"
             @click="handleUpload"
           >
-            <wd-icon name="add" size="48rpx" color="#999" />
+            <wd-icon name="plus" size="48rpx" color="#999" />
           </view>
           <view
             v-for="item in currentItems"

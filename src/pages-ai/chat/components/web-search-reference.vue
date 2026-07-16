@@ -2,7 +2,7 @@
   <view v-if="pages?.length" class="mt-20rpx rounded-20rpx bg-[#f5f5f5] px-22rpx py-18rpx">
     <view class="flex items-center justify-between" @click="expanded = !expanded">
       <view class="flex items-center gap-8rpx text-25rpx text-[#333] font-medium">
-        <wd-icon name="search" size="28rpx" color="#1677ff" />
+        <wd-icon name="search-line" size="28rpx" color="#1677ff" />
         <text>联网搜索结果（{{ pages.length }} 条）</text>
       </view>
       <wd-icon :name="expanded ? 'arrow-up' : 'arrow-down'" size="28rpx" color="#999" />

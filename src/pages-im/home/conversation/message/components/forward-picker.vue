@@ -32,10 +32,9 @@
           @click="createGroup"
         >
           <view class="h-80rpx w-80rpx flex items-center justify-center rounded-12rpx bg-[#f0f2f5]">
-            <wd-icon name="usergroup-add" size="44rpx" color="#576b95" />
+            <wd-icon name="user-add" size="44rpx" color="#576b95" />
           </view>
           <text class="min-w-0 flex-1 text-30rpx text-[#333]">新建群聊并转发</text>
-          <wd-icon name="arrow-right" size="30rpx" color="#aaa" />
         </view>
         <!-- 最近转发 -->
         <view v-if="!keyword && recentForwardConversations.length" class="border-b border-b-[#eee] px-24rpx py-18rpx">
