@@ -29,7 +29,7 @@
       <view
         v-if="showTopToggle"
         class="top-conversation-bar"
-        @click="topCollapsed = !topCollapsed"
+        @click="toggleTopCollapsed"
       >
         <wd-icon name="list" size="34rpx" color="#888" />
         <text class="flex-1">
@@ -57,6 +57,7 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { filterConversationsByKeyword } from '@/pages-im/utils/conversation'
+import { StorageKeys } from '@/pages-im/utils/db'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { useConversationStore } from '../../store/conversationStore'
 import { useFriendStore } from '../../store/friendStore'
@@ -76,7 +77,7 @@ const dialog = useDialog()
 const PINNED_FOLD_THRESHOLD = 3 // 置顶会话达到该数量后进入折叠模式
 const refreshing = ref(false) // 下拉刷新状态
 const keyword = ref('') // 搜索关键词
-const topCollapsed = ref(true) // 是否折叠置顶聊天
+const topCollapsed = ref(uni.getStorageSync(StorageKeys.localStorage.conversationPinnedExpanded) !== true) // 是否折叠置顶聊天
 const actionVisible = ref(false) // 会话操作菜单显示状态
 const actionConversation = ref<ConversationDO>() // 当前操作的会话
 const conversationActions = ref<Array<{ name: string, value: 'top' | 'silent' | 'delete', color?: string }>>([]) // 会话操作菜单项
@@ -105,6 +106,12 @@ const displayConversations = computed(() => {
 /** 打开新增操作 */
 function handleAdd() {
   emit('add')
+}
+
+/** 切换并保存置顶会话折叠状态 */
+function toggleTopCollapsed() {
+  topCollapsed.value = !topCollapsed.value
+  uni.setStorageSync(StorageKeys.localStorage.conversationPinnedExpanded, !topCollapsed.value)
 }
 
 /** 长按会话：置顶 / 免打扰 / 删除 */

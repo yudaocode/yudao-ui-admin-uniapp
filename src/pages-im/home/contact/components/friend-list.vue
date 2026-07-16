@@ -49,7 +49,11 @@
           />
         </template>
 
-        <wd-empty v-if="!loading && totalCount === 0" icon="content" tip="暂无好友" />
+        <wd-empty
+          v-if="!loading && totalCount === 0"
+          icon="content"
+          :tip="keyword.trim() ? '没有匹配的好友' : '暂无好友'"
+        />
         <view class="h-40rpx" />
       </scroll-view>
 

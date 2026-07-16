@@ -88,6 +88,9 @@ export const STORE_SCHEMA: Record<DbStoreName, StoreSchema> = {
 
 /** IM 本地存储 key */
 export const StorageKeys = {
+  localStorage: {
+    conversationPinnedExpanded: 'im:conversation:pinnedExpanded', // 会话列表置顶折叠展开态
+  },
   settings: {
     privateMessageMaxId: 'privateMessageMaxId',
     groupMessageMaxId: 'groupMessageMaxId',

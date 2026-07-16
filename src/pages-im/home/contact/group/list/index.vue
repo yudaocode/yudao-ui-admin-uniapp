@@ -17,7 +17,11 @@
         @open="openChat"
       />
 
-      <wd-empty v-if="!loading && filteredGroups.length === 0" icon="content" tip="暂无群聊" />
+      <wd-empty
+        v-if="!loading && filteredGroups.length === 0"
+        icon="content"
+        :tip="keyword.trim() ? '没有匹配的群聊' : '暂无群聊'"
+      />
     </scroll-view>
   </view>
 </template>

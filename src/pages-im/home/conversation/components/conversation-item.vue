@@ -17,18 +17,23 @@
     </view>
     <view class="conversation-content">
       <view class="min-w-0 flex items-center justify-between">
-        <text class="conversation-name">{{ conversation.name || '未命名' }}</text>
+        <view class="min-w-0 flex flex-1 items-center gap-8rpx">
+          <text class="conversation-name">{{ conversation.name || '未命名' }}</text>
+          <text v-if="isGroup" class="group-tag">群</text>
+        </view>
         <text class="conversation-time">{{ formatConversationTime(conversation.lastSendTime) }}</text>
       </view>
       <view class="mt-7rpx flex items-center gap-8rpx">
         <view class="line-clamp-1 min-w-0 flex-1 text-27rpx text-[#999]">
+          <text v-if="groupRequestText" class="text-[#fa5151]">{{ groupRequestText }} </text>
           <text v-if="hasDraft" class="text-[#fa5151]">[草稿] </text>
           <template v-else>
-            <text v-if="groupRequestText" class="text-[#fa5151]">{{ groupRequestText }} </text>
             <text v-if="conversation.atMe" class="text-[#fa5151]">[有人@我] </text>
             <text v-else-if="conversation.atAll" class="text-[#fa5151]">[@全体成员] </text>
+            <text v-if="mutedUnreadText">{{ mutedUnreadText }} </text>
             <text v-if="lastSenderText">{{ lastSenderText }}: </text>
-          </template>{{ contentText || ' ' }}
+          </template>
+          <text v-if="hasDraft && mutedUnreadText">{{ mutedUnreadText }} </text>{{ contentText || ' ' }}
         </view>
         <wd-icon v-if="conversation.silent" name="notification-close" size="27rpx" color="#b2b2b2" />
       </view>
@@ -63,6 +68,14 @@ const groupRequestStore = useGroupRequestStore()
 const userStore = useUserStore()
 const hasDraft = computed(() => !!props.conversation.draft
   && (!!props.conversation.draft.plain.trim() || !!props.conversation.draft.reply)) // 是否存在会话草稿
+const isGroup = computed(() => props.conversation.type === ImConversationType.GROUP) // 是否群聊
+const mutedUnreadText = computed(() => { // 免打扰会话未读条数
+  if (!props.conversation.silent || props.conversation.unreadCount <= 0) {
+    return ''
+  }
+  const count = props.conversation.unreadCount > 99 ? '99+' : props.conversation.unreadCount
+  return `[${count}条]`
+})
 
 /** 获取会话发送人名称 */
 function getSenderName() {
@@ -158,6 +171,16 @@ function openChat() {
   line-height: 44rpx;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.group-tag {
+  flex-shrink: 0;
+  padding: 0 7rpx;
+  border: 1rpx solid #1677ff;
+  border-radius: 5rpx;
+  color: #1677ff;
+  font-size: 20rpx;
+  line-height: 28rpx;
 }
 
 .conversation-time {

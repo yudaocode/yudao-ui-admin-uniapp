@@ -2,7 +2,7 @@
   <view
     class="im-message-bubble"
     :class="[
-      isSelf ? 'im-message-bubble--self' : 'im-message-bubble--other',
+      centered ? 'im-message-bubble--centered' : isSelf ? 'im-message-bubble--self' : 'im-message-bubble--other',
       plain ? 'im-message-bubble--plain' : '',
     ]"
     @longpress="emit('longpress')"
@@ -45,6 +45,7 @@ const props = defineProps<{
   isSelf: boolean // 是否自己发送
   quoteTitle?: string // 引用展示文案
   mentions?: MentionCandidate[] // 文本中的 @ 候选
+  centered?: boolean // 是否使用居中无箭头样式
 }>()
 
 const emit = defineEmits<{
@@ -100,6 +101,11 @@ const plain = computed(() => plainTypes.includes(props.message.type)) // 是否�
     border: 9rpx solid transparent;
     border-right-color: #fff;
   }
+}
+
+.im-message-bubble--centered {
+  background: #fff;
+  color: #333;
 }
 
 .im-message-bubble--plain {

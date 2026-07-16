@@ -45,11 +45,18 @@
         <text v-else>{{ systemTipText }}</text>
       </view>
       <!-- 普通消息 -->
-      <view v-else class="flex items-start gap-16rpx" :class="isSelf ? 'flex-row-reverse' : ''">
-        <view @click.stop="onAvatarClick">
+      <view
+        v-else
+        class="flex items-start gap-16rpx"
+        :class="isChannelMaterial ? 'justify-center px-16rpx' : isSelf ? 'flex-row-reverse' : ''"
+      >
+        <view v-if="!isChannelMaterial" @click.stop="onAvatarClick">
           <ImAvatar :src="senderAvatar" :name="senderRealNickname" size="80rpx" :round="false" />
         </view>
-        <view class="max-w-[560rpx] flex flex-col" :class="isSelf ? 'items-end' : 'items-start'">
+        <view
+          class="max-w-[560rpx] flex flex-col"
+          :class="isChannelMaterial ? 'items-center' : isSelf ? 'items-end' : 'items-start'"
+        >
           <!-- 群聊对方昵称 -->
           <view v-if="showSenderName" class="mb-8rpx text-22rpx text-[#999]">
             {{ senderName }}
@@ -60,6 +67,7 @@
             :is-self="isSelf"
             :quote-title="quoteTitle"
             :mentions="mentionCandidates"
+            :centered="isChannelMaterial"
             @longpress="onBubbleLongpress"
             @scroll-to-quote="emit('scroll-to-quote', $event)"
             @material-click="emit('material-click', $event)"
@@ -69,7 +77,7 @@
           />
           <!-- 发送状态 -->
           <view
-            v-if="statusText || showGroupReadStatus"
+            v-if="statusText || showGroupReadStatus || isAtMe"
             class="mt-8rpx text-22rpx text-[#bbb]"
             :class="isSelf ? 'text-right' : 'text-left'"
             @click="onStatusClick"
@@ -81,7 +89,10 @@
               :group-members="groupMembers"
               @receipt="onReceipt"
             />
-            <text v-else>{{ statusText }}</text>
+            <text v-else-if="statusText">{{ statusText }}</text>
+            <text v-if="isAtMe" class="border border-[#fa5151] rounded-5rpx px-8rpx py-2rpx text-[#fa5151]">
+              @我
+            </text>
           </view>
         </view>
       </view>
@@ -214,6 +225,12 @@ function onBubbleLongpress() {
 
 const isGroup = computed(() => props.conversationType === ImConversationType.GROUP) // 是否群聊
 const isSelf = computed(() => props.message.senderId === props.selfUserId) // 是否自己发送
+const isAtMe = computed(() => isGroup.value
+  && !isSelf.value
+  && !!props.selfUserId
+  && !!props.message.atUserIds?.includes(props.selfUserId)) // 是否为 @我的群消息
+const isChannelMaterial = computed(() => props.conversationType === ImConversationType.CHANNEL
+  && props.message.type === ImMessageType.MATERIAL) // 是否为频道内素材消息
 
 /** 是否系统提示消息（撤回 / 群通知 / 好友提示 / 通话提示） */
 const isSystemTip = computed(() => {
