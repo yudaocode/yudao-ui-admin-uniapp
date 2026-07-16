@@ -77,6 +77,7 @@ const emit = defineEmits<{
   send: [payload: AudioMessage]
 }>()
 
+const VOICE_MAX_DURATION_MS = 60 * 1000 // 单条语音最长时长
 const toast = useToast()
 const { validateFileSize, uploadLocalFile, uploadBlob } = useMediaUploader()
 const sending = ref(false) // 语音发送中
@@ -103,6 +104,7 @@ const voiceWaveHeights = [ // 录音反馈波形高度
 let h5Recorder: MediaRecorder | null = null
 let h5RecorderStream: MediaStream | null = null
 let h5RecorderChunks: Blob[] = []
+let h5MaxDurationTimer: ReturnType<typeof setTimeout> | undefined
 let stopIntent: StopIntent = 'discard'
 let pressStartY: number | undefined
 let recordingSessionId = 0
@@ -127,14 +129,18 @@ const nativeRecorderClient = createNativeRecorderClient({ // 原生录音 client
   },
   /** 原生录音停止后按意图上传或丢弃 */
   onStop: async (res) => {
+    const shouldDiscard = res.intent === 'discard' || cancelPending.value
     recording.value = false
     starting.value = false
     resetInteraction()
-    if (disposed || res.intent === 'discard' || !res.tempFilePath) {
+    if (disposed || shouldDiscard || !res.tempFilePath) {
       return
     }
     if (res.durationMs < 1000) {
       toast.show('说话时间太短')
+      return
+    }
+    if (!validateFileSize(res.fileSize, MESSAGE_VOICE_MAX_BYTES)) {
       return
     }
     sending.value = true
@@ -284,6 +290,14 @@ function releaseH5Stream() {
   h5RecorderStream = null
 }
 
+/** 清除 H5 最长录音定时器 */
+function clearH5MaxDurationTimer() {
+  if (h5MaxDurationTimer) {
+    clearTimeout(h5MaxDurationTimer)
+    h5MaxDurationTimer = undefined
+  }
+}
+
 /** 开始 H5 录音 */
 async function startH5Recording(sessionId: number) {
   if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -308,6 +322,7 @@ async function startH5Recording(sessionId: number) {
     recorder.ondataavailable = event => event.data.size && h5RecorderChunks.push(event.data)
     /** H5 录音错误时丢弃当前会话 */
     recorder.onerror = () => {
+      clearH5MaxDurationTimer()
       stopIntent = 'discard'
       resetInteraction()
       if (recorder.state !== 'inactive') {
@@ -325,6 +340,7 @@ async function startH5Recording(sessionId: number) {
     }
     /** H5 录音停止后按意图上传或丢弃 */
     recorder.onstop = async () => {
+      clearH5MaxDurationTimer()
       const intent = stopIntent
       stopIntent = 'discard'
       recording.value = false
@@ -366,9 +382,18 @@ async function startH5Recording(sessionId: number) {
       }
     }
     recorder.start()
+    h5MaxDurationTimer = setTimeout(() => {
+      if (h5Recorder !== recorder || recorder.state === 'inactive') {
+        return
+      }
+      stopIntent = cancelPending.value ? 'discard' : 'send'
+      resetInteraction()
+      recorder.stop()
+    }, VOICE_MAX_DURATION_MS)
     recording.value = true
     starting.value = false
   } catch {
+    clearH5MaxDurationTimer()
     starting.value = false
     stopIntent = 'discard'
     resetInteraction()
@@ -385,6 +410,7 @@ onUnmounted(() => {
   recordingSessionId += 1
   stopIntent = 'discard'
   resetInteraction()
+  clearH5MaxDurationTimer()
   // #ifndef H5
   nativeRecorderClient.dispose()
   // #endif

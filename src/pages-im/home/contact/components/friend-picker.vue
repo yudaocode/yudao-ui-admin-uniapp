@@ -71,10 +71,12 @@ const props = withDefaults(defineProps<{
   modelValue: number[]
   lockedIds?: number[]
   disabledIds?: number[]
+  hideIds?: number[]
   maxSize?: number
 }>(), {
   lockedIds: () => [],
   disabledIds: () => [],
+  hideIds: () => [],
   maxSize: 0,
 })
 
@@ -91,13 +93,16 @@ const keyword = ref('') // 好友搜索关键词
 const selectedIds = ref<number[]>([]) // 当前临时选中好友
 const lockedIdSet = computed(() => new Set(props.lockedIds)) // 固定好友编号
 const disabledIdSet = computed(() => new Set(props.disabledIds)) // 禁用好友编号
-const { filtered: filteredFriends } = useFriendBuckets(getActiveFriendLiteList, keyword)
+const hideIdSet = computed(() => new Set(props.hideIds)) // 隐藏好友编号
+const candidateFriends = computed(() => getActiveFriendLiteList.value
+  .filter(friend => !hideIdSet.value.has(friend.id))) // 可展示的好友候选
+const { filtered: filteredFriends } = useFriendBuckets(candidateFriends, keyword)
 const friendById = computed(() => new Map(getActiveFriendLiteList.value.map(friend => [friend.id, friend]))) // 好友编号索引
 const { selectedCount, selectedItems } = useSelectedItems(
   () => visible.value ? selectedIds.value : props.modelValue,
   () => props.lockedIds,
   () => props.disabledIds,
-  () => [],
+  () => props.hideIds,
   friendById,
 )
 
@@ -134,7 +139,7 @@ function toggle(userId: number) {
     selectedIds.value.splice(index, 1)
     return
   }
-  if (props.maxSize > 0 && selectedIds.value.length >= props.maxSize) {
+  if (props.maxSize > 0 && selectedCount.value >= props.maxSize) {
     toast.show(`最多选择 ${props.maxSize} 位好友`)
     return
   }

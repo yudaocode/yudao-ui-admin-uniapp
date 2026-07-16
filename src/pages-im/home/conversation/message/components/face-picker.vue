@@ -9,7 +9,7 @@
           关闭
         </wd-button>
       </view>
-      <wd-tabs v-model="activeTab" line-theme="text">
+      <wd-tabs v-if="mode === 'full'" v-model="activeTab" line-theme="text" slidable="always">
         <wd-tab title="表情" name="emoji" />
         <wd-tab title="收藏" name="user" />
         <wd-tab
@@ -20,7 +20,7 @@
         />
       </wd-tabs>
       <scroll-view class="min-h-0 flex-1" scroll-y>
-        <view v-if="activeTab === 'emoji'" class="grid grid-cols-8 gap-y-22rpx p-24rpx">
+        <view v-if="mode === 'emoji' || activeTab === 'emoji'" class="grid grid-cols-8 gap-y-22rpx p-24rpx">
           <view
             v-for="emoji in IM_EMOJI_LIST"
             :key="emoji"
@@ -48,7 +48,7 @@
             <wd-img :src="item.url" width="84rpx" height="84rpx" mode="aspectFit" />
           </view>
         </view>
-        <wd-empty v-if="activeTab !== 'emoji' && !loading && currentItems.length === 0" icon="content" tip="暂无表情" />
+        <wd-empty v-if="mode === 'full' && activeTab !== 'emoji' && !loading && currentItems.length === 0" icon="content" tip="暂无表情" />
       </scroll-view>
     </view>
   </wd-popup>
@@ -66,9 +66,12 @@ import { useUserStore } from '@/store/user'
 import { useMediaUploader } from '../../../composables/useMediaUploader'
 import { useFaceStore } from '../../../store/faceStore'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean // 是否显示
-}>()
+  mode?: 'full' | 'emoji' // 完整面板或仅文本表情
+}>(), {
+  mode: 'full',
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
@@ -116,17 +119,22 @@ function handleUpload() {
         return
       }
       try {
-        const [url, imageInfo] = await Promise.all([
-          uploadLocalFile(filePath, 'im/face'),
-          getLocalImageInfo(filePath),
-        ])
+        const imageInfo = await getLocalImageInfo(filePath)
+        if (userStore.userInfo.userId !== expectedUserId) {
+          return
+        }
+        if (!imageInfo) {
+          toast.show('无法读取图片信息')
+          return
+        }
+        const url = await uploadLocalFile(filePath, 'im/face')
         if (userStore.userInfo.userId !== expectedUserId) {
           return
         }
         await faceStore.addFaceUserItem({
           url,
-          width: imageInfo?.width || 0,
-          height: imageInfo?.height || 0,
+          width: imageInfo.width,
+          height: imageInfo.height,
         })
         toast.success('已添加到收藏')
       } finally {
@@ -154,6 +162,10 @@ async function handleDelete(item: ImFacePackUserItemVO | ImFaceUserItemVO) {
 /** 首次打开时加载表情数据 */
 watch(visible, async (value) => {
   if (!value) {
+    return
+  }
+  activeTab.value = 'emoji'
+  if (props.mode === 'emoji') {
     return
   }
   await Promise.all([

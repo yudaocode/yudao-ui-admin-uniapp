@@ -19,23 +19,6 @@ export function useSelectedItems<T>(
 } {
   const hideSet = computed(() => new Set(hideIds()))
   const disabledSet = computed(() => new Set(disabledIds()))
-  const selectedCount = computed(() => {
-    const merged = new Set<number>()
-    for (const id of selectedIds()) {
-      if (hideSet.value.has(id) || disabledSet.value.has(id)) {
-        continue
-      }
-      merged.add(id)
-    }
-    // locked 仅被 hide 过滤；locked 胜过 disabled
-    for (const id of lockedIds()) {
-      if (hideSet.value.has(id)) {
-        continue
-      }
-      merged.add(id)
-    }
-    return merged.size
-  })
   const selectedItems = computed(() => {
     const seen = new Set<number>()
     const result: T[] = []
@@ -61,5 +44,6 @@ export function useSelectedItems<T>(
     }
     return result
   })
+  const selectedCount = computed(() => selectedItems.value.length) // 仅统计实际存在且可提交的选项
   return { selectedCount, selectedItems }
 }

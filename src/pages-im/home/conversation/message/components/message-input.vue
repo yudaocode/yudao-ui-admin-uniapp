@@ -259,8 +259,9 @@ function handleSelectFace(item: ImFacePackUserItemVO | ImFaceUserItemVO) {
 
 /** 插入文本表情 */
 function handleSelectEmoji(value: string) {
-  inputContent.value += value
-  faceVisible.value = false
+  if (inputContent.value.length + value.length <= 1000) {
+    inputContent.value += value
+  }
 }
 
 /** 输入 @ 时打开成员面板 */

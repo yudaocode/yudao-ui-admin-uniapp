@@ -171,6 +171,9 @@
     >
       <template #footer>
         <view class="shrink-0 border-t border-t-[#e5e7eb] bg-white px-24rpx pb-[calc(16rpx+env(safe-area-inset-bottom))] pt-16rpx">
+          <view class="line-clamp-2 mb-12rpx text-24rpx text-[#999] leading-34rpx">
+            {{ forwardPreview }}
+          </view>
           <view class="flex items-center gap-12rpx rounded-12rpx bg-[#f5f6f7] px-20rpx py-16rpx">
             <wd-icon name="edit" size="30rpx" color="#9ca3af" />
             <wd-input
@@ -181,10 +184,16 @@
               compact
               clearable
             />
+            <wd-icon name="face-smile-fill" size="34rpx" color="#576b95" @click="forwardEmojiVisible = true" />
           </view>
         </view>
       </template>
     </ForwardPicker>
+    <FacePicker
+      v-model="forwardEmojiVisible"
+      mode="emoji"
+      @select-emoji="handleForwardEmoji"
+    />
 
     <!-- 通话方式菜单 -->
     <wd-action-sheet v-model="callActionVisible" :actions="callActions" @select="handleCallAction" />
@@ -276,6 +285,7 @@ import { useGroupStore } from '../../store/groupStore'
 import { useImRuntimeStore } from '../../store/runtimeStore'
 import { useMessageStore } from '../../store/messageStore'
 import MessageInput from './components/message-input.vue'
+import FacePicker from './components/face-picker.vue'
 import ForwardPicker from './components/forward-picker.vue'
 import GroupPinnedMessage from './components/group-pinned-message.vue'
 import GroupRequestPending from './components/group-request-pending.vue'
@@ -333,6 +343,7 @@ const groupMembers = ref<GroupMember[]>([]) // 群成员
 const groupMembersReady = ref(false) // 当前群成员权限是否已成功刷新
 const mergeVisible = ref(false) // 合并转发详情弹窗
 const mergePayload = ref<MergeMessage>() // 合并转发内容
+const forwardEmojiVisible = ref(false) // 转发留言表情面板
 const callActionVisible = ref(false) // 通话方式菜单显示状态
 const callMemberPickerRef = ref<InstanceType<typeof GroupMemberPicker>>() // 群通话成员选择器引用
 const callInviteUserIds = ref<number[]>([]) // 群通话邀请成员编号
@@ -484,6 +495,7 @@ const {
 const {
   forwardVisible,
   forwardLeaveMessage,
+  forwardPreview,
   openForward,
   createGroupAndForward,
   handleForwardConfirm,
@@ -491,6 +503,13 @@ const {
   exitSelectMode,
   pageTitle,
 })
+
+/** 插入转发留言表情 */
+function handleForwardEmoji(value: string) {
+  if (forwardLeaveMessage.value.length + value.length <= 100) {
+    forwardLeaveMessage.value += value
+  }
+}
 const {
   sendRaw,
   retryMessage,

@@ -7,10 +7,11 @@ import {
   removeQuotePayload,
   serializeMessage,
 } from '@/pages-im/utils/message'
+import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { useUserStore } from '@/store/user'
 import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useConversationStore } from '../store/conversationStore'
 import { sendMessageToConversation } from './useMessageSender'
 
@@ -26,6 +27,20 @@ export function useMessageForwarder(options: {
   const forwardMessages = ref<Message[]>([]) // 待转发消息
   const forwardMerge = ref(false) // 是否合并转发
   const forwardLeaveMessage = ref('') // 转发留言
+  const forwardPreview = computed(() => { // 待转发内容预览
+    if (forwardMessages.value.length === 0) {
+      return ''
+    }
+    if (forwardMerge.value) {
+      return `合并转发：共 ${forwardMessages.value.length} 条消息`
+    }
+    const summaries = forwardMessages.value
+      .slice(0, 2)
+      .map(message => getMessageSummary(message.type, message.content))
+    return forwardMessages.value.length > summaries.length
+      ? `待转发：${summaries.join('、')} 等 ${forwardMessages.value.length} 条消息`
+      : `待转发：${summaries.join('、')}`
+  })
   let forwardUserId = 0 // 当前转发任务所属用户
   let forwardSourceConversation: ConversationDO | undefined // 打开转发时的源会话快照
 
@@ -168,6 +183,7 @@ export function useMessageForwarder(options: {
   return {
     forwardVisible,
     forwardLeaveMessage,
+    forwardPreview,
     openForward,
     createGroupAndForward,
     handleForwardConfirm,

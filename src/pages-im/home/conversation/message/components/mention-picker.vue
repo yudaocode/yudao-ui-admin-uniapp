@@ -9,8 +9,11 @@
           关闭
         </wd-button>
       </view>
+      <view class="border-b border-b-[#f2f3f5] px-20rpx py-12rpx">
+        <wd-search v-model="keyword" placeholder="搜索群成员" hide-cancel />
+      </view>
       <scroll-view class="min-h-0 flex-1" scroll-y>
-        <view v-if="canMentionAll" class="mention-member" @click="emit('select-all')">
+        <view v-if="showMentionAll" class="mention-member" @click="emit('select-all')">
           <view class="h-72rpx w-72rpx flex items-center justify-center rounded-full bg-[#1677ff] text-26rpx text-white">
             全
           </view>
@@ -24,7 +27,7 @@
           </view>
         </view>
         <view
-          v-for="item in members"
+          v-for="item in filteredMembers"
           :key="item.userId"
           class="mention-member"
           @click="emit('select', item)"
@@ -39,7 +42,11 @@
             </view>
           </view>
         </view>
-        <wd-empty v-if="members.length === 0 && !canMentionAll" icon="content" tip="暂无可 @ 成员" />
+        <wd-empty
+          v-if="filteredMembers.length === 0 && !showMentionAll"
+          icon="content"
+          :tip="normalizedKeyword ? '没有匹配的群成员' : '暂无可 @ 成员'"
+        />
       </scroll-view>
     </view>
   </wd-popup>
@@ -48,7 +55,7 @@
 <script lang="ts" setup>
 import type { GroupMember } from '../../../types'
 import { getMemberDisplayName } from '@/pages-im/utils/user'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { IM_AT_ALL_NICKNAME } from '@/pages-im/utils/constants'
 import ImAvatar from '../../../components/im-avatar.vue'
 
@@ -67,6 +74,19 @@ const emit = defineEmits<{
 const visible = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
+})
+const keyword = ref('') // 成员搜索关键词
+const normalizedKeyword = computed(() => keyword.value.trim()) // 去除首尾空格的搜索词
+const showMentionAll = computed(() => props.canMentionAll
+  && IM_AT_ALL_NICKNAME.startsWith(normalizedKeyword.value)) // 是否展示 @所有人
+const filteredMembers = computed(() => props.members.filter(item =>
+  getMemberDisplayName(item).startsWith(normalizedKeyword.value))) // 匹配的群成员
+
+/** 每次打开时重置搜索词 */
+watch(visible, (value) => {
+  if (value) {
+    keyword.value = ''
+  }
 })
 </script>
 
