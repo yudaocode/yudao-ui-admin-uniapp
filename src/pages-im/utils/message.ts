@@ -11,6 +11,7 @@ import {
   ImMessageStatus,
   ImMessageType,
   ImRtcCallEndReason,
+  ImRtcCallMediaType,
   isNormalMessage,
 } from './constants'
 import type { ImConversationTypeValue } from './constants'
@@ -645,12 +646,13 @@ export function resolveRtcCallTipSegments(message: {
   if (!payload) {
     return []
   }
+  const callType = payload.mediaType === ImRtcCallMediaType.VIDEO ? '视频通话' : '语音通话'
   if (message.type === ImMessageType.RTC_CALL_START && payload.inviterUserId) {
     const inviterName = payload.inviterNickname?.trim() || `用户 ${payload.inviterUserId}`
-    return [tipMention(payload.inviterUserId, inviterName), tipText(' 发起了语音通话')]
+    return [tipMention(payload.inviterUserId, inviterName), tipText(` 发起了${callType}`)]
   }
   if (message.type === ImMessageType.RTC_CALL_END) {
-    return [tipText('语音通话已经结束')]
+    return [tipText(`${callType}已经结束`)]
   }
   return []
 }
@@ -660,17 +662,18 @@ export function resolveRtcCallLastContent(
   message: { type?: number, content?: string },
   conversationType: number,
 ) {
+  const payload = parseRtcCallPayload(message.content)
+  const callType = payload?.mediaType === ImRtcCallMediaType.VIDEO ? '视频通话' : '语音通话'
   if (conversationType === ImConversationType.PRIVATE) {
-    return '[语音通话]'
+    return `[${callType}]`
   }
   if (message.type === ImMessageType.RTC_CALL_END) {
-    return '语音通话已经结束'
+    return `${callType}已经结束`
   }
   if (message.type === ImMessageType.RTC_CALL_START) {
-    const payload = parseRtcCallPayload(message.content)
     if (payload) {
       const inviterName = payload.inviterNickname?.trim() || `用户 ${payload.inviterUserId ?? ''}`
-      return `${inviterName} 发起了语音通话`
+      return `${inviterName} 发起了${callType}`
     }
   }
   return ''

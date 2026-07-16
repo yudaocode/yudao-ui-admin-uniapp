@@ -195,7 +195,9 @@ export function useImRtc() {
         inviteeIds: data.inviteeIds,
       })
     }
-    if (joined && rtcStore.stage === ImRtcCallStage.INVITING) {
+    if (joined
+      && userId !== userStore.userInfo.userId
+      && rtcStore.stage === ImRtcCallStage.INVITING) {
       rtcStore.enterRunning(data)
     }
   }

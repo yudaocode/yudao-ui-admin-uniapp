@@ -1,7 +1,8 @@
 import type { ComputedRef, Ref } from 'vue'
+import type { GroupMember } from '../types'
 import { computed } from 'vue'
 import { ImConversationType } from '@/pages-im/utils/constants'
-import { getSenderAvatar, getSenderDisplayName } from '@/pages-im/utils/user'
+import { getMemberDisplayName, getSenderAvatar, getSenderDisplayName } from '@/pages-im/utils/user'
 import { useRtcStore } from '../store/rtcStore'
 
 /** 群通话成员视图模型：已加入 + 接入中；pending 头像 UI 半透明，joined 不透明 */
@@ -19,6 +20,7 @@ export interface GroupCallMember {
 export function useGroupCallMembers(
   groupId: Ref<number | undefined>,
   fallbackInviterId?: Ref<number | undefined>,
+  members?: Ref<GroupMember[]>,
 ): ComputedRef<GroupCallMember[]> {
   const rtcStore = useRtcStore()
   return computed(() => {
@@ -31,20 +33,26 @@ export function useGroupCallMembers(
     const inviteeIds = groupCall?.inviteeIds ?? []
     const joinedSet = new Set(joinedIds)
     const orderedIds = [...joinedIds, ...inviteeIds.filter(id => !joinedSet.has(id))]
+    const memberById = new Map((members?.value || []).map(member => [member.userId, member]))
     if (orderedIds.length > 0) {
-      return orderedIds.map(userId => toVM(userId, gid, !joinedSet.has(userId)))
+      return orderedIds.map(userId => toVM(userId, gid, !joinedSet.has(userId), memberById.get(userId)))
     }
     const fallback = fallbackInviterId?.value
-    return fallback ? [toVM(fallback, gid, false)] : []
+    return fallback ? [toVM(fallback, gid, false, memberById.get(fallback))] : []
   })
 }
 
 /** 把 userId 翻译成视图模型，统一走 user.ts helper 解析昵称 / 头像 */
-function toVM(userId: number, groupId: number, pending: boolean): GroupCallMember {
+function toVM(userId: number, groupId: number, pending: boolean, member?: GroupMember): GroupCallMember {
   return {
     userId,
-    nickname: getSenderDisplayName(userId, ImConversationType.GROUP, groupId),
-    avatar: getSenderAvatar(userId, ImConversationType.GROUP, groupId) || undefined,
+    nickname: getSenderDisplayName(
+      userId,
+      ImConversationType.GROUP,
+      groupId,
+      member ? getMemberDisplayName(member) : undefined,
+    ),
+    avatar: getSenderAvatar(userId, ImConversationType.GROUP, groupId) || member?.avatar || undefined,
     pending,
   }
 }

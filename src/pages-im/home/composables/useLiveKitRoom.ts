@@ -6,7 +6,7 @@ import { useImRtc } from './useImRtc'
 
 /** 管理 H5 LiveKit 房间及本地媒体设备 */
 export function useLiveKitRoom(options: {
-  isVideo: Readonly<Ref<boolean>>
+  initialCameraEnabled: Readonly<Ref<boolean>>
   onConnectFailed: () => Promise<void>
   onRoomDisconnected: () => Promise<void>
 }) {
@@ -136,7 +136,7 @@ export function useLiveKitRoom(options: {
         await disconnectStaleRoom(currentRoom)
         return
       }
-      if (options.isVideo.value) {
+      if (options.initialCameraEnabled.value) {
         await currentRoom.localParticipant.setCameraEnabled(true)
         if (room !== currentRoom) {
           await disconnectStaleRoom(currentRoom)

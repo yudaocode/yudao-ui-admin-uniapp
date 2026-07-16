@@ -22,6 +22,8 @@
     <!-- 来电操作 -->
     <RtcCallIncoming
       v-if="stage === ImRtcCallStage.INCOMING"
+      :accepting="accepting"
+      :rejecting="rejecting"
       @accept="handleAccept"
       @reject="handleReject"
     />
@@ -94,14 +96,21 @@ const {
 } = useImRtc()
 const groupMembers = ref<GroupMember[]>([]) // 群通话成员
 const elapsed = ref(0) // 通话时长
+const accepting = ref(false) // 接听进行状态
+const rejecting = ref(false) // 拒绝进行状态
 let durationTimer: ReturnType<typeof setInterval> | undefined
 let noAnswerTimer: ReturnType<typeof setInterval> | undefined
 let cleanupStarted = false
 let pageLeaving = false
+const RTC_CALL_ROUTE = 'pages-im/home/conversation/rtc/call/index' // 通话页路由
+const RTC_FALLBACK_URL = '/pages-im/home/conversation/index' // 通话页兜底返回地址
 
 /** 是否视频通话 */
 const isVideo = computed(() =>
   (call.value?.mediaType || incomingPayload.value?.mediaType) === ImRtcCallMediaType.VIDEO)
+const isGroup = computed(() => // 是否群通话
+  (call.value?.conversationType ?? incomingPayload.value?.conversationType) === ImConversationType.GROUP)
+const initialCameraEnabled = computed(() => isVideo.value && !isGroup.value) // 私聊视频默认开启摄像头
 const {
   micEnabled,
   cameraEnabled,
@@ -114,15 +123,14 @@ const {
   toggleCamera,
   disposeRoom,
 } = useLiveKitRoom({
-  isVideo,
+  initialCameraEnabled,
   onConnectFailed: handleHangup,
   onRoomDisconnected: handleHangup,
 })
-const isGroup = computed(() => call.value?.conversationType === ImConversationType.GROUP) // 是否群通话
 const currentUserId = computed(() => userStore.userInfo.userId) // 当前用户编号
-const groupId = computed(() => call.value?.groupId) // 当前群编号
-const inviterId = computed(() => call.value?.inviterId) // 当前通话发起人
-const participantMembers = useGroupCallMembers(groupId, inviterId)
+const groupId = computed(() => call.value?.groupId ?? incomingPayload.value?.groupId) // 当前群编号
+const inviterId = computed(() => call.value?.inviterId ?? incomingPayload.value?.inviterUserId) // 当前通话发起人
+const participantMembers = useGroupCallMembers(groupId, inviterId, groupMembers)
 const participantUserIds = computed(() => participantMembers.value.map(item => item.userId)) // 已加入或邀请中的成员
 const inviteCandidates = computed(() => groupMembers.value
   .filter(item => item.status !== CommonStatusEnum.DISABLE
@@ -144,9 +152,8 @@ const statusText = computed(() => {
 
 /** 加载群通话成员 */
 async function loadGroupMembers() {
-  const currentCall = call.value
-  const currentGroupId = currentCall?.groupId
-  const currentRoom = currentCall?.room
+  const currentGroupId = call.value?.groupId ?? incomingPayload.value?.groupId
+  const currentRoom = call.value?.room ?? incomingPayload.value?.room
   const userId = userStore.userInfo.userId
   if (!currentGroupId) {
     groupMembers.value = []
@@ -155,8 +162,8 @@ async function loadGroupMembers() {
   const rows = await groupStore.fetchGroupMemberList(currentGroupId)
   if (pageLeaving
     || userStore.userInfo.userId !== userId
-    || call.value?.groupId !== currentGroupId
-    || call.value?.room !== currentRoom) {
+    || (call.value?.groupId ?? incomingPayload.value?.groupId) !== currentGroupId
+    || (call.value?.room ?? incomingPayload.value?.room) !== currentRoom) {
     return
   }
   groupMembers.value = rows
@@ -176,13 +183,29 @@ function toggleSpeaker() {
 
 /** 接听 */
 async function handleAccept() {
-  await accept()
-  await connectRoom()
+  if (accepting.value || rejecting.value) {
+    return
+  }
+  accepting.value = true
+  try {
+    await accept()
+    await connectRoom()
+  } finally {
+    accepting.value = false
+  }
 }
 
 /** 拒绝 */
 async function handleReject() {
-  await reject()
+  if (rejecting.value || accepting.value) {
+    return
+  }
+  rejecting.value = true
+  try {
+    await reject()
+  } finally {
+    rejecting.value = false
+  }
 }
 
 /** 幂等结束通话 */
@@ -208,8 +231,19 @@ async function handleRtcEnded() {
   }
   if (!pageLeaving) {
     pageLeaving = true
-    uni.navigateBack()
+    leaveCallPage()
   }
+}
+
+/** 返回上一页；直接打开或重复入栈时回到 IM 会话列表 */
+function leaveCallPage() {
+  const pages = getCurrentPages()
+  const previousPage = pages[pages.length - 2]
+  if (previousPage?.route && previousPage.route !== RTC_CALL_ROUTE) {
+    uni.navigateBack()
+    return
+  }
+  uni.reLaunch({ url: RTC_FALLBACK_URL })
 }
 
 /** 刷新通话时长 */
@@ -219,20 +253,22 @@ function refreshDuration() {
 
 /** 触发服务端未应答检查 */
 function checkNoAnswer() {
-  if (!call.value?.room || !(call.value.inviteeIds || []).length) {
+  const source = call.value ?? incomingPayload.value
+  if (!source?.room || !(source.inviteeIds || []).length) {
     return
   }
-  void noAnswerCallCheck(call.value.room).catch(() => undefined)
+  void noAnswerCallCheck(source.room).catch(() => undefined)
 }
 
 watch(() => call.value?.token, () => connectRoom())
-watch(() => call.value?.groupId, loadGroupMembers, { immediate: true })
+watch(groupId, loadGroupMembers, { immediate: true })
 
 /** 初始化通话页 */
 onMounted(() => {
   void useImRuntimeStore().ensure()
   if (stage.value === ImRtcCallStage.IDLE) {
-    uni.navigateBack()
+    pageLeaving = true
+    leaveCallPage()
     return
   }
   connectRoom()

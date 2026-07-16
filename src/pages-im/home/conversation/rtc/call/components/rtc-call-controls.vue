@@ -7,7 +7,7 @@
         </view>
         <text class="text-24rpx text-white">{{ micEnabled ? '静音' : '取消静音' }}</text>
       </view>
-      <view v-if="isVideo" class="flex flex-col items-center gap-14rpx" @click="emit('toggle-camera')">
+      <view v-if="isVideo || isGroup" class="flex flex-col items-center gap-14rpx" @click="emit('toggle-camera')">
         <view class="rtc-call-tool" :class="cameraEnabled ? 'bg-white/20' : 'bg-white text-[#222]'">
           <wd-icon name="camera" size="44rpx" :color="cameraEnabled ? '#fff' : '#222'" />
         </view>
@@ -31,7 +31,7 @@
       </view>
       <!-- #ifdef H5 -->
       <view
-        v-if="stage === ImRtcCallStage.RUNNING"
+        v-if="isGroup && stage === ImRtcCallStage.RUNNING"
         class="flex flex-col items-center gap-14rpx"
         @click="emit('toggle-screen-share')"
       >
