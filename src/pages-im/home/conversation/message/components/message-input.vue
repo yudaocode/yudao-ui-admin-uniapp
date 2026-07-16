@@ -13,6 +13,14 @@
         class="mb-14rpx"
         @close="emit('clear-reply')"
       />
+      <!-- 回执消息提示 -->
+      <ReplyPreview
+        v-if="receiptMode"
+        title="已开启消息回执，发送后可查看群成员已读情况"
+        closable
+        class="mb-14rpx"
+        @close="receiptMode = false"
+      />
       <!-- 输入栏（微信式：输入框占主，图标在两侧） -->
       <view class="flex items-end gap-12rpx">
         <view
@@ -35,11 +43,14 @@
             v-model="inputContent"
             placeholder=""
             :maxlength="1000"
+            :focus="inputFocused"
+            :cursor="inputCursor"
             auto-height
             compact
             disable-default-padding
             custom-class="!w-full !box-border !px-24rpx !py-18rpx"
             custom-textarea-class="!max-h-189rpx !min-h-39rpx !overflow-y-auto !text-30rpx !leading-39rpx !text-[#181818]"
+            @input="handleTextInput"
           />
           <VoiceRecorder v-show="voiceMode" @send="handleSendVoice" />
         </view>
@@ -85,23 +96,11 @@
             </view>
             <text>{{ fileSending ? '发送中' : '文件' }}</text>
           </view>
-          <view v-if="isGroup" class="im-tool-item" @click="openMention">
-            <view class="im-tool-icon">
-              <text class="text-42rpx text-[#555]">@</text>
-            </view>
-            <text>提醒成员</text>
-          </view>
-          <view v-if="isGroup && MESSAGE_GROUP_READ_ENABLED" class="im-tool-item" @click="handleSendText({ receipt: true })">
+          <view v-if="isGroup && MESSAGE_GROUP_READ_ENABLED" class="im-tool-item" @click="enableReceiptMode">
             <view class="im-tool-icon">
               <wd-icon name="check-circle" size="52rpx" color="#555" />
             </view>
             <text>回执消息</text>
-          </view>
-          <view class="im-tool-item" @click="voiceMode = true; moreVisible = false">
-            <view class="im-tool-icon">
-              <view class="i-carbon-microphone h-52rpx w-52rpx text-[#555]" />
-            </view>
-            <text>语音输入</text>
           </view>
         </view>
       </wd-popup>
@@ -134,7 +133,7 @@ import type {
   VideoMessage,
 } from '@/pages-im/utils/message'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   DANGEROUS_FILE_EXTENSIONS,
   MESSAGE_GROUP_READ_ENABLED,
@@ -194,6 +193,11 @@ const imageSending = ref(false) // 图片发送中
 const fileSending = ref(false) // 文件发送中
 const videoSending = ref(false) // 视频发送中
 const voiceMode = ref(false) // 是否语音输入模式
+const receiptMode = ref(false) // 是否为下一条文本消息开启回执
+const inputFocused = ref(false) // 是否聚焦文本输入框
+const inputCursor = ref(-1) // 文本输入框光标位置
+const mentionTriggerIndex = ref<number>() // 输入框内触发 @ 的位置
+let previousInputContent = inputContent.value // 上一次输入内容，用于识别新输入的 @
 let disposed = false // 组件是否已卸载
 
 const isGroup = computed(() => props.conversationType === ImConversationType.GROUP) // 是否群聊
@@ -212,7 +216,7 @@ const canMentionAll = computed(() => {
 })
 
 /** 发送文本消息 */
-function handleSendText(options: SendExtOptions = {}) {
+function handleSendText() {
   if (!canSend()) {
     return
   }
@@ -224,11 +228,23 @@ function handleSendText(options: SendExtOptions = {}) {
   emit('send', {
     type: ImMessageType.TEXT,
     payload: { content },
-    options: { atUserIds: atUserIds.length > 0 ? atUserIds : undefined, receipt: options.receipt },
+    options: {
+      atUserIds: atUserIds.length > 0 ? atUserIds : undefined,
+      receipt: receiptMode.value || undefined,
+    },
   })
   inputContent.value = ''
   mentionUserIds.value = []
+  receiptMode.value = false
   moreVisible.value = false
+}
+
+/** 开启下一条文本消息的回执 */
+function enableReceiptMode() {
+  receiptMode.value = true
+  voiceMode.value = false
+  moreVisible.value = false
+  void focusTextInput()
 }
 
 /** 选中表情：发送表情消息 */
@@ -247,18 +263,47 @@ function handleSelectEmoji(value: string) {
   faceVisible.value = false
 }
 
-/** 打开 @ 成员面板 */
-function openMention() {
+/** 输入 @ 时打开成员面板 */
+function handleTextInput(detail: { value?: string, cursor?: number }) {
+  if (!isGroup.value) {
+    return
+  }
+  const content = detail.value ?? inputContent.value
+  const cursor = detail.cursor ?? content.length
+  const triggerIndex = cursor - 1
+  const changedRange = getChangedRange(previousInputContent, content)
+  const isNewMentionTrigger = triggerIndex >= 0
+    && content[triggerIndex] === '@'
+    && triggerIndex >= changedRange.start
+    && triggerIndex < changedRange.end
+  if (!isNewMentionTrigger) {
+    return
+  }
+  mentionTriggerIndex.value = triggerIndex
+  inputFocused.value = false
   mentionVisible.value = true
-  moreVisible.value = false
 }
 
 /** 插入 @ 文案 */
 function insertMentionText(name: string, userId: number) {
-  const prefix = inputContent.value && !inputContent.value.endsWith(' ') ? ' ' : ''
-  inputContent.value = `${inputContent.value}${prefix}@${name} `
+  const content = inputContent.value
+  const triggerIndex = mentionTriggerIndex.value
+  let cursor = content.length
+  if (triggerIndex != null && content[triggerIndex] === '@') {
+    const prefix = content.slice(0, triggerIndex)
+    const suffix = content.slice(triggerIndex + 1)
+    const separator = /^\s/.test(suffix) ? '' : ' '
+    inputContent.value = `${prefix}@${name}${separator}${suffix}`
+    cursor = prefix.length + name.length + 2
+  } else {
+    const prefix = content && !content.endsWith(' ') ? ' ' : ''
+    inputContent.value = `${content}${prefix}@${name} `
+    cursor = inputContent.value.length
+  }
   mentionUserIds.value = Array.from(new Set([...mentionUserIds.value, userId]))
+  mentionTriggerIndex.value = undefined
   mentionVisible.value = false
+  void focusTextInput(cursor)
 }
 
 /** 选中 @ 成员 */
@@ -281,6 +326,38 @@ function getValidMentionUserIds(content: string) {
     return member ? content.includes(`@${getMemberDisplayName(member)}`) : true
   })
 }
+
+/** 获取两次输入之间新文本的变更区间 */
+function getChangedRange(previous: string, current: string) {
+  let start = 0
+  while (start < previous.length && start < current.length && previous[start] === current[start]) {
+    start++
+  }
+  let previousEnd = previous.length
+  let currentEnd = current.length
+  while (previousEnd > start && currentEnd > start && previous[previousEnd - 1] === current[currentEnd - 1]) {
+    previousEnd--
+    currentEnd--
+  }
+  return { start, end: currentEnd }
+}
+
+/** 聚焦文本输入框并一次性设置光标位置 */
+async function focusTextInput(cursor = -1) {
+  inputFocused.value = false
+  inputCursor.value = cursor
+  await nextTick()
+  inputFocused.value = true
+  if (cursor >= 0) {
+    await nextTick()
+    inputCursor.value = -1
+  }
+}
+
+/** 记录上一次输入内容 */
+watch(inputContent, (value) => {
+  previousInputContent = value
+})
 
 /** 发送图片消息 */
 function handleSendImage(sourceType: Array<'album' | 'camera'> = ['album', 'camera']) {

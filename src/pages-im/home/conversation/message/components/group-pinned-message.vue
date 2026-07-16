@@ -1,5 +1,5 @@
 <template>
-  <view class="relative z-30 shrink-0 bg-[#ededed] px-20rpx py-12rpx">
+  <view class="relative z-1 shrink-0 bg-[#ededed] px-20rpx py-12rpx">
     <!-- 折叠状态：展示最新一条置顶消息 -->
     <view
       v-if="!expanded"
