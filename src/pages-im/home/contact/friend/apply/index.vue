@@ -16,6 +16,9 @@
             label="目标用户"
             prop="toUserId"
             placeholder="请选择用户"
+            :hide-ids="hiddenUserIds"
+            :disabled-ids="existingFriendUserIds"
+            disabled-text="已添加"
           />
           <wd-form-item title="好友备注" title-width="180rpx" prop="displayName">
             <wd-input
@@ -55,7 +58,8 @@
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref } from 'vue'
 import { UserFormPicker } from '@/components/system-select'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
@@ -80,8 +84,12 @@ definePage({
 const toast = useToast()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
+const { getActiveFriendList } = storeToRefs(friendStore)
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
+const hiddenUserIds = computed(() => userStore.userInfo.userId ? [userStore.userInfo.userId] : []) // 隐藏当前用户
+const existingFriendUserIds = computed(() => getActiveFriendList.value
+  .map(friend => friend.friendUserId)) // 已添加好友编号
 const formData = ref({
   toUserId: props.toUserId ? Number(props.toUserId) : undefined as number | undefined,
   displayName: '',
@@ -106,6 +114,10 @@ async function handleSubmit() {
   }
   if (formData.value.toUserId === userStore.userInfo.userId) {
     toast.warning('不能添加自己为好友')
+    return
+  }
+  if (friendStore.isActiveFriend(formData.value.toUserId)) {
+    toast.warning('对方已经是好友')
     return
   }
   const expectedUserId = userStore.userInfo.userId

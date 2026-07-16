@@ -10,6 +10,12 @@
       >
         <ImAvatar :src="item.avatar" :name="item.nickname" :round="false" size="96rpx" />
         <text class="w-96rpx truncate text-center text-22rpx text-[#666]">{{ getMemberDisplayName(item) }}</text>
+        <text
+          v-if="getGroupMemberRoleLabel(item.role)"
+          class="rounded-6rpx bg-[#edf5ff] px-8rpx py-1rpx text-18rpx text-[#4d80f0] -mt-4rpx"
+        >
+          {{ getGroupMemberRoleLabel(item.role) }}
+        </text>
       </view>
       <view v-if="canInvite" class="flex flex-col items-center gap-8rpx" @click="emit('invite')">
         <view class="h-96rpx w-96rpx flex items-center justify-center border border-[#ddd] rounded-12rpx border-dashed">
@@ -36,7 +42,7 @@
 <script lang="ts" setup>
 import type { GroupMember } from '../../../../types'
 import { computed, ref } from 'vue'
-import { getMemberDisplayName } from '@/pages-im/utils/user'
+import { getGroupMemberRoleLabel, getMemberDisplayName } from '@/pages-im/utils/user'
 import ImAvatar from '../../../../components/im-avatar.vue'
 
 const props = withDefaults(defineProps<{

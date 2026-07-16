@@ -8,6 +8,7 @@ import {
   IM_AT_ALL_NICKNAME,
   IM_AT_ALL_USER_ID,
   ImConversationType,
+  ImGroupMemberRole,
 } from './constants'
 
 const EMPTY_MENTIONS: MentionCandidate[] = [] // 无 @ 场景复用稳定空数组
@@ -29,6 +30,17 @@ export function getMemberDisplayName(
   friend?: Pick<Friend, 'displayName'> | null,
 ): string {
   return friend?.displayName || member.displayUserName || member.nickname
+}
+
+/** 获取群成员角色标签；普通成员不展示 */
+export function getGroupMemberRoleLabel(role?: number): string {
+  if (role === ImGroupMemberRole.OWNER) {
+    return '群主'
+  }
+  if (role === ImGroupMemberRole.ADMIN) {
+    return '管理员'
+  }
+  return ''
 }
 
 /** 获取群聊显示名：当前用户设置的群备注优先于群名称 */

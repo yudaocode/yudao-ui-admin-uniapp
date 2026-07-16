@@ -7,10 +7,10 @@
     ref="pickerRef"
     :model-value="pickerValue"
     :title="title"
-    :columns="userList"
+    :columns="userOptions"
     :loading="loading"
     value-key="id"
-    label-key="nickname"
+    label-key="pickerLabel"
     :type="type"
     :filterable="filterable"
     root-portal
@@ -25,17 +25,28 @@ import type { User } from '@/api/system/user'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleUserList } from '@/api/system/user'
 
+interface UserPickerOption extends User {
+  disabled: boolean
+  pickerLabel: string
+}
+
 const props = withDefaults(defineProps<{
   modelValue?: number | number[]
   type?: 'radio' | 'checkbox'
   title?: string
   disabled?: boolean
   filterable?: boolean
+  hideIds?: number[]
+  disabledIds?: number[]
+  disabledText?: string
 }>(), {
   type: 'radio',
   title: '选择用户',
   disabled: false,
   filterable: true,
+  hideIds: () => [],
+  disabledIds: () => [],
+  disabledText: '不可选择',
 })
 
 const emit = defineEmits<{
@@ -46,6 +57,18 @@ const emit = defineEmits<{
 const userList = ref<User[]>([]) // 用户选项
 const loading = ref(false) // 用户选项加载状态
 const pickerRef = ref<SelectPickerInstance>() // 用户选择器
+const hideIdSet = computed(() => new Set(props.hideIds)) // 隐藏用户编号
+const disabledIdSet = computed(() => new Set(props.disabledIds)) // 禁用用户编号
+const userOptions = computed<UserPickerOption[]>(() => userList.value
+  .filter(user => user.id == null || !hideIdSet.value.has(user.id))
+  .map((user) => {
+    const disabled = user.id != null && disabledIdSet.value.has(user.id)
+    return {
+      ...user,
+      disabled,
+      pickerLabel: disabled ? `${user.nickname}（${props.disabledText}）` : user.nickname,
+    }
+  })) // 过滤并标记后的用户选项
 const pickerValue = computed(() => {
   if (props.type === 'checkbox') {
     return Array.isArray(props.modelValue) ? props.modelValue : []

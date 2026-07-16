@@ -5,6 +5,9 @@
     :type="type"
     :title="label || placeholder"
     :disabled="disabled"
+    :hide-ids="hideIds"
+    :disabled-ids="disabledIds"
+    :disabled-text="disabledText"
     @update:model-value="handleUpdate"
     @confirm="handleConfirm"
   >
@@ -34,6 +37,9 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   prop?: string
   disabled?: boolean
+  hideIds?: number[]
+  disabledIds?: number[]
+  disabledText?: string
 }>(), {
   type: 'radio',
   label: '用户',
@@ -41,6 +47,9 @@ const props = withDefaults(defineProps<{
   placeholder: '请选择用户',
   prop: '',
   disabled: false,
+  hideIds: () => [],
+  disabledIds: () => [],
+  disabledText: '不可选择',
 })
 
 const emit = defineEmits<{

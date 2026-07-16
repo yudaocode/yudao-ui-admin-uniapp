@@ -4,6 +4,7 @@
     position="bottom"
     root-portal
     custom-style="height: 76vh; border-radius: 24rpx 24rpx 0 0;"
+    @after-enter="resetLocalPaging"
   >
     <view class="h-full flex flex-col overflow-hidden bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -27,9 +28,19 @@
           {{ selectionSummary }}
         </view>
       </view>
-      <scroll-view class="min-h-0 flex-1" scroll-y>
+      <z-paging
+        ref="pagingRef"
+        v-model="pagedMembers"
+        :fixed="false"
+        :auto="false"
+        class="min-h-0 flex-1"
+        :default-page-size="30"
+        :refresher-enabled="false"
+        :show-loading-more-no-more-view="false"
+        @query="queryList"
+      >
         <view
-          v-for="item in filteredMembers"
+          v-for="item in pagedMembers"
           :key="item.userId"
           class="flex items-center gap-20rpx border-b border-[#eee] bg-white px-28rpx py-20rpx"
           :class="isDisabled(item.userId) ? 'opacity-55' : ''"
@@ -43,8 +54,16 @@
           </view>
           <ImAvatar :src="item.avatar" :name="item.nickname" size="76rpx" />
           <view class="min-w-0 flex-1">
-            <view class="truncate text-28rpx text-[#333]">
-              {{ getMemberDisplayName(item) }}
+            <view class="flex items-center gap-12rpx">
+              <text class="min-w-0 truncate text-28rpx text-[#333]">
+                {{ getMemberDisplayName(item) }}
+              </text>
+              <text
+                v-if="getGroupMemberRoleLabel(item.role)"
+                class="shrink-0 rounded-6rpx bg-[#edf5ff] px-10rpx py-2rpx text-20rpx text-[#4d80f0]"
+              >
+                {{ getGroupMemberRoleLabel(item.role) }}
+              </text>
             </view>
             <view v-if="isLocked(item.userId)" class="mt-4rpx text-22rpx text-[#999]">
               已固定
@@ -54,22 +73,23 @@
             </view>
           </view>
         </view>
-        <wd-empty
-          v-if="filteredMembers.length === 0"
-          icon="search"
-          :tip="keyword ? '没有匹配的群成员' : emptyTip"
-        />
-      </scroll-view>
+        <template #empty>
+          <wd-empty
+            icon="search"
+            :tip="keyword ? '没有匹配的群成员' : emptyTip"
+          />
+        </template>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
 
 <script lang="ts" setup>
 import type { GroupMember } from '../../../types'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { CommonStatusEnum } from '@/pages-im/utils/constants'
-import { getMemberDisplayName } from '@/pages-im/utils/user'
+import { getGroupMemberRoleLabel, getMemberDisplayName } from '@/pages-im/utils/user'
 import { useSelectedItems } from '../../../composables/useSelectedItems'
 import ImAvatar from '../../../components/im-avatar.vue'
 
@@ -108,6 +128,8 @@ const toast = useToast()
 const visible = ref(false) // 选择弹窗显示状态
 const keyword = ref('') // 群成员搜索关键词
 const selectedIds = ref<number[]>([]) // 当前临时选中成员
+const pagedMembers = ref<GroupMember[]>([]) // 当前分段渲染成员
+const pagingRef = ref<any>() // 本地分页组件引用
 const hideIdSet = computed(() => new Set(props.hideIds)) // 隐藏成员编号
 const lockedIdSet = computed(() => new Set(props.lockedIds)) // 固定成员编号
 const disabledIdSet = computed(() => new Set(props.disabledIds)) // 禁用成员编号
@@ -128,6 +150,27 @@ const { selectedCount, selectedItems } = useSelectedItems(
 const selectionSummary = computed(() => props.maxSize > 0
   ? `已选择 ${selectedCount.value} 人，最多 ${props.maxSize} 人`
   : `已选择 ${selectedCount.value} 人`) // 当前选择人数文案
+
+/** 候选变化时重置本地分页 */
+watch(filteredMembers, () => {
+  if (!visible.value) {
+    return
+  }
+  void resetLocalPaging()
+})
+
+/** 重置成员本地分页 */
+async function resetLocalPaging() {
+  await nextTick()
+  await pagingRef.value?.reload()
+}
+
+/** 查询当前成员分页 */
+function queryList(pageNo: number, pageSize: number) {
+  const start = (pageNo - 1) * pageSize
+  const rows = filteredMembers.value.slice(start, start + pageSize)
+  void pagingRef.value?.completeByTotal(rows, filteredMembers.value.length)
+}
 
 /** 是否固定选择 */
 function isLocked(userId: number) {

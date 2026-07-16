@@ -16,7 +16,13 @@
               <dict-tag :type="DICT_TYPE.IM_GROUP_REQUEST_HANDLE_RESULT" :value="item.handleResult" />
             </view>
             <view class="mt-8rpx text-26rpx text-[#666]">
-              申请加入：{{ item.groupName || `群 ${item.groupId}` }}
+              <template v-if="item.inviterUserId">
+                通过 <text class="text-[#4d80f0]">{{ item.inviterNickname || `用户 ${item.inviterUserId}` }}</text> 邀请加入：
+              </template>
+              <template v-else>
+                申请加入：
+              </template>
+              {{ item.groupName || `群 ${item.groupId}` }}
             </view>
             <view class="mt-8rpx text-26rpx text-[#666]">
               {{ item.applyContent || '暂无申请理由' }}
@@ -64,7 +70,7 @@
 
 <script lang="ts" setup>
 import type { ImGroupRequestRespVO } from '@/api/im/group/request'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -88,6 +94,13 @@ const actingAction = ref<'agree' | 'refuse'>() // 当前申请操作
 const { unhandledList, loading: globalLoading } = storeToRefs(groupRequestStore)
 const requests = computed(() => props.groupId ? singleGroupRequests.value : unhandledList.value) // 当前申请列表
 const loading = computed(() => props.groupId ? singleGroupLoading.value : globalLoading.value) // 当前加载状态
+const singleGroupChangeKey = computed(() => props.groupId
+  ? unhandledList.value
+      .filter(request => request.groupId === props.groupId)
+      .map(request => `${request.id}:${request.inviterUserId ?? ''}:${request.applyContent ?? ''}`)
+      .join(',')
+  : '') // 指定群聊的实时申请变更标识
+let singleGroupLoadSeq = 0 // 指定群聊申请加载序号
 
 /** 同意加群申请 */
 async function handleAgree(item: ImGroupRequestRespVO) {
@@ -163,13 +176,28 @@ async function load() {
     await groupRequestStore.fetchUnhandledGroupRequestList()
     return
   }
+  const targetGroupId = props.groupId
+  const loadSeq = ++singleGroupLoadSeq
   singleGroupLoading.value = true
   try {
-    singleGroupRequests.value = await getGroupRequestListByGroupId(props.groupId)
+    const list = await getGroupRequestListByGroupId(targetGroupId)
+    if (loadSeq === singleGroupLoadSeq && props.groupId === targetGroupId) {
+      singleGroupRequests.value = list
+    }
   } finally {
-    singleGroupLoading.value = false
+    if (loadSeq === singleGroupLoadSeq) {
+      singleGroupLoading.value = false
+    }
   }
 }
+
+/** 指定群聊收到或处理申请后重新拉取完整历史 */
+watch(singleGroupChangeKey, (current, previous) => {
+  if (!props.groupId || current === previous) {
+    return
+  }
+  void load()
+})
 
 defineExpose({ load })
 </script>

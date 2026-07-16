@@ -4,6 +4,7 @@
     position="bottom"
     root-portal
     custom-style="height: 76vh; border-radius: 24rpx 24rpx 0 0;"
+    @after-enter="resetLocalPaging"
   >
     <view class="h-full flex flex-col overflow-hidden bg-[#f5f5f5]">
       <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
@@ -21,9 +22,19 @@
           已选择 {{ selectedCount }} 人
         </view>
       </view>
-      <scroll-view class="min-h-0 flex-1" scroll-y>
+      <z-paging
+        ref="pagingRef"
+        v-model="pagedFriends"
+        :fixed="false"
+        :auto="false"
+        class="min-h-0 flex-1"
+        :default-page-size="30"
+        :refresher-enabled="false"
+        :show-loading-more-no-more-view="false"
+        @query="queryList"
+      >
         <view
-          v-for="item in filteredFriends"
+          v-for="item in pagedFriends"
           :key="item.id"
           class="flex items-center gap-20rpx border-b border-[#eee] bg-white px-28rpx py-20rpx"
           :class="isDisabled(item.id) ? 'opacity-55' : ''"
@@ -48,18 +59,20 @@
             </view>
           </view>
         </view>
-        <wd-empty
-          v-if="filteredFriends.length === 0"
-          icon="search"
-          :tip="keyword ? '没有匹配的好友' : '暂无好友'"
-        />
-      </scroll-view>
+        <template #empty>
+          <wd-empty
+            icon="search"
+            :tip="keyword ? '没有匹配的好友' : '暂无好友'"
+          />
+        </template>
+      </z-paging>
     </view>
   </wd-popup>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import type { FriendLite } from '../../types'
+import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { useFriendBuckets } from '../../composables/useFriendBuckets'
@@ -91,6 +104,8 @@ const { getActiveFriendLiteList } = storeToRefs(friendStore)
 const visible = ref(false) // 选择弹窗显示状态
 const keyword = ref('') // 好友搜索关键词
 const selectedIds = ref<number[]>([]) // 当前临时选中好友
+const pagedFriends = ref<FriendLite[]>([]) // 当前分段渲染好友
+const pagingRef = ref<any>() // 本地分页组件引用
 const lockedIdSet = computed(() => new Set(props.lockedIds)) // 固定好友编号
 const disabledIdSet = computed(() => new Set(props.disabledIds)) // 禁用好友编号
 const hideIdSet = computed(() => new Set(props.hideIds)) // 隐藏好友编号
@@ -105,6 +120,27 @@ const { selectedCount, selectedItems } = useSelectedItems(
   () => props.hideIds,
   friendById,
 )
+
+/** 候选变化时重置本地分页 */
+watch(filteredFriends, () => {
+  if (!visible.value) {
+    return
+  }
+  void resetLocalPaging()
+})
+
+/** 重置好友本地分页 */
+async function resetLocalPaging() {
+  await nextTick()
+  await pagingRef.value?.reload()
+}
+
+/** 查询当前好友分页 */
+function queryList(pageNo: number, pageSize: number) {
+  const start = (pageNo - 1) * pageSize
+  const rows = filteredFriends.value.slice(start, start + pageSize)
+  void pagingRef.value?.completeByTotal(rows, filteredFriends.value.length)
+}
 
 /** 是否固定选择 */
 function isLocked(userId: number) {
