@@ -104,7 +104,6 @@
 import type {
   CardMessage,
   MaterialMessage,
-  MergeMessage,
   QuoteMessage,
 } from '@/pages-im/utils/message'
 import type { GroupMember, Message } from '../../../types'
@@ -161,7 +160,7 @@ const emit = defineEmits<{
   'longpress': [message: Message] // 长按消息
   'scroll-to-quote': [content: string] // 点击引用滚动到原消息
   'material-click': [payload: MaterialMessage] // 点击频道素材
-  'merge-click': [payload: MergeMessage] // 点击合并转发
+  'merge-click': [content: string] // 点击合并转发
   'card-click': [payload: CardMessage] // 点击名片
   'mention-click': [userId: number] // 点击 @ 用户
   'rtc-redial': [mediaType: number] // 重拨私聊通话

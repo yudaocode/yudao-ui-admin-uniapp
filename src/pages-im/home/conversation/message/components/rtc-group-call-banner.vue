@@ -1,5 +1,5 @@
 <template>
-  <view class="flex items-center gap-16rpx bg-[#e8f7ec] px-24rpx py-18rpx" @click="emit('join')">
+  <view v-if="activeCall" class="flex items-center gap-16rpx bg-[#e8f7ec] px-24rpx py-18rpx" @click="handleJoin">
     <wd-icon :name="activeCall.mediaType === ImRtcCallMediaType.VIDEO ? 'camera' : 'phone'" size="34rpx" color="#07c160" />
     <text class="line-clamp-1 min-w-0 flex-1 text-27rpx text-[#16733d]">
       {{ bannerText }}，点击加入
@@ -9,30 +9,38 @@
 </template>
 
 <script lang="ts" setup>
-import type { ImRtcGroupCallRespVO } from '@/api/im/rtc'
-import type { GroupMember } from '../../../types'
-import { computed, toRef } from 'vue'
+import { computed } from 'vue'
 import { ImRtcCallMediaType } from '@/pages-im/utils/constants'
 import { useGroupCallMembers } from '../../../composables/useGroupCallMembers'
+import { useImRtc } from '../../../composables/useImRtc'
+import { useGroupStore } from '../../../store/groupStore'
+import { useRtcStore } from '../../../store/rtcStore'
 
 const props = defineProps<{
-  activeCall: ImRtcGroupCallRespVO // 当前群活跃通话
-  members: GroupMember[] // 当前群成员
+  groupId: number // 群编号
 }>()
 
-const emit = defineEmits<{
-  join: []
-}>()
-
+const groupStore = useGroupStore()
+const rtcStore = useRtcStore()
+const { join } = useImRtc()
+const activeCall = computed(() => rtcStore.getGroupCall(props.groupId)) // 当前群活跃通话
+const members = computed(() => groupStore.getGroup(props.groupId)?.members || []) // 当前群成员
 const callMembers = useGroupCallMembers(
-  computed(() => props.activeCall.groupId),
-  computed(() => props.activeCall.inviterId),
-  toRef(props, 'members'),
+  computed(() => props.groupId),
+  computed(() => activeCall.value?.inviterId || 0),
+  members,
 )
 const bannerText = computed(() => { // 群通话媒体类型与参与人数
-  const mediaLabel = props.activeCall.mediaType === ImRtcCallMediaType.VIDEO ? '视频' : '语音'
+  const mediaLabel = activeCall.value?.mediaType === ImRtcCallMediaType.VIDEO ? '视频' : '语音'
   return callMembers.value.length > 0
     ? `正在${mediaLabel}通话（${callMembers.value.length} 人）`
     : `正在${mediaLabel}通话`
 })
+
+/** 加入当前群通话 */
+async function handleJoin() {
+  if (activeCall.value) {
+    await join(activeCall.value.room)
+  }
+}
 </script>

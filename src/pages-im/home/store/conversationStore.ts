@@ -298,6 +298,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   }
 
   const activeClientConversationId = ref('') // 当前打开的会话（实时消息不计未读）
+  let activeConversationOwner: symbol | undefined // 当前打开会话的页面实例
   const activeConversation = computed(() => conversations.value.find(item =>
     item.clientConversationId === activeClientConversationId.value)) // 当前打开的会话
   const { pullOnce, cancelPull } = useMessagePuller({
@@ -406,11 +407,22 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     }
   }
 
-  /** 设置/清除当前打开的会话 */
-  function setActiveConversation(conversation: Pick<ConversationDO, 'type' | 'targetId'> | null) {
-    activeClientConversationId.value = conversation
-      ? getClientConversationId(conversation.type, conversation.targetId)
-      : ''
+  /** 设置当前打开的会话及其页面实例 */
+  function setActiveConversation(
+    conversation: Pick<ConversationDO, 'type' | 'targetId'>,
+    owner: symbol,
+  ) {
+    activeClientConversationId.value = getClientConversationId(conversation.type, conversation.targetId)
+    activeConversationOwner = owner
+  }
+
+  /** 仅由持有者清除当前打开的会话 */
+  function releaseActiveConversation(owner: symbol) {
+    if (activeConversationOwner !== owner) {
+      return
+    }
+    activeClientConversationId.value = ''
+    activeConversationOwner = undefined
   }
 
   /** 判断指定会话是否正在打开 */
@@ -1188,6 +1200,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     conversation.draft = undefined
     if (activeClientConversationId.value === clientConversationId) {
       activeClientConversationId.value = ''
+      activeConversationOwner = undefined
     }
     await Promise.all([
       db.put<ConversationDO>('conversations', JSON.parse(JSON.stringify(conversation))),
@@ -1366,6 +1379,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     loadedUserId = 0
     stateUserId = 0
     activeClientConversationId.value = ''
+    activeConversationOwner = undefined
     loadingUserId = 0
     reloadQueued = false
     pendingIncomingMessages.length = 0
@@ -1392,6 +1406,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     markConversationReadReported,
     getConversation,
     setActiveConversation,
+    releaseActiveConversation,
     isActiveConversation,
     applyIncomingMessage,
     applyRecallMessage,

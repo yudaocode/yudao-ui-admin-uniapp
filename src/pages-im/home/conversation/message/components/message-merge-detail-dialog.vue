@@ -26,8 +26,8 @@
                   :type="item.type"
                   :content="item.content"
                   @merge-click="handleNestedOpen"
-                  @material-click="emit('material-click', $event)"
-                  @card-click="emit('card-click', $event)"
+                  @material-click="handleMaterialClick"
+                  @card-click="handleCardClick"
                 />
               </view>
             </view>
@@ -40,36 +40,44 @@
 </template>
 
 <script lang="ts" setup>
-import type { PropType } from 'vue'
-import type { CardMessage, MaterialMessage, MergeMessage } from '@/pages-im/utils/message'
-import { computed, ref, watch } from 'vue'
+import type { GroupCardPreviewOptions } from '../../../composables/useMessageContentActions'
+import type { MergeMessage } from '@/pages-im/utils/message'
+import { computed, ref } from 'vue'
 import MessageContent from '@/pages-im/home/components/message-content.vue'
+import { parseMessage } from '@/pages-im/utils/message'
 import { formatMergeItemTime } from '@/pages-im/utils/time'
+import { useMessageContentActions } from '../../../composables/useMessageContentActions'
 import ImAvatar from '../../../components/im-avatar.vue'
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false }, // 是否显示
-  payload: { type: Object as PropType<MergeMessage>, default: undefined }, // 合并转发内容
-})
-
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'material-click': [payload: MaterialMessage]
-  'card-click': [payload: CardMessage]
+const props = defineProps<{
+  conversationType: number // 当前会话类型
+  targetId: number // 当前会话目标编号
+  openGroupCardPreview: (options: GroupCardPreviewOptions) => void // 打开群名片资料
 }>()
 
-const visible = computed({
-  get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
-})
-
+const visible = ref(false) // 是否显示
 const stack = ref<MergeMessage[]>([]) // 嵌套合并消息栈
 const currentPayload = computed(() => stack.value[stack.value.length - 1]) // 当前展示的合并消息
 const messages = computed(() => currentPayload.value?.messages || []) // 当前层消息列表
+const { handleMaterialClick, handleCardClick } = useMessageContentActions({
+  conversationType: computed(() => props.conversationType),
+  targetId: computed(() => props.targetId),
+  openGroupCardPreview: props.openGroupCardPreview,
+})
+
+/** 打开合并消息详情 */
+function open(content: string) {
+  const payload = parseMessage<MergeMessage>(content)
+  stack.value = payload ? [payload] : []
+  visible.value = true
+}
 
 /** 打开嵌套合并消息 */
-function handleNestedOpen(payload: MergeMessage) {
-  stack.value.push(payload)
+function handleNestedOpen(content: string) {
+  const payload = parseMessage<MergeMessage>(content)
+  if (payload) {
+    stack.value.push(payload)
+  }
 }
 
 /** 返回上一层合并消息 */
@@ -79,8 +87,5 @@ function handleBack() {
   }
 }
 
-/** 打开时从顶层合并消息开始 */
-watch([visible, () => props.payload], ([isVisible, payload]) => {
-  stack.value = isVisible && payload ? [payload] : []
-})
+defineExpose({ open })
 </script>

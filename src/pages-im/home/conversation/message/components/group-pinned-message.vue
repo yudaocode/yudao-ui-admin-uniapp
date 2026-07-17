@@ -1,5 +1,5 @@
 <template>
-  <view class="relative z-1 shrink-0 bg-[#ededed] px-20rpx py-12rpx">
+  <view v-if="messages.length" class="relative z-1 shrink-0 bg-[#ededed] px-20rpx py-12rpx">
     <!-- 折叠状态：展示最新一条置顶消息 -->
     <view
       v-if="!expanded"
@@ -66,31 +66,39 @@
 <script lang="ts" setup>
 import type { Message } from '../../../types'
 import { computed, ref, watch } from 'vue'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { unpinGroupMessage } from '@/api/im/group'
 import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { getSenderDisplayName } from '@/pages-im/utils/user'
 import { ImConversationType } from '@/pages-im/utils/constants'
+import { useGroupStore } from '../../../store/groupStore'
 
 const props = defineProps<{
-  messages: Message[] // 置顶消息列表
-  canManage?: boolean // 是否可取消置顶
+  groupId: number // 群编号
+  canManage: boolean // 是否可取消置顶
 }>()
 
 const emit = defineEmits<{
-  locate: [message: Message] // 定位消息
-  remove: [message: Message] // 取消置顶
+  locate: [messageId: number] // 定位消息
 }>()
 
+const toast = useToast()
+const groupStore = useGroupStore()
 const expanded = ref(false) // 是否展开全部置顶消息
-const latestMessage = computed(() => props.messages[props.messages.length - 1]) // 最新置顶消息
-const displayMessages = computed(() => props.messages) // 按置顶先后顺序展示
+const pinningMessageId = ref<number>() // 正在取消置顶的消息编号
+const messages = computed(() => groupStore.getGroup(props.groupId)?.pinnedMessages || []) // 置顶消息列表
+const latestMessage = computed(() => messages.value[messages.value.length - 1]) // 最新置顶消息
+const displayMessages = computed(() => messages.value) // 按置顶先后顺序展示
 
 /** 点击顶部置顶消息 */
 function handleTopClick() {
   if (!latestMessage.value) {
     return
   }
-  if (props.messages.length === 1) {
-    emit('locate', latestMessage.value)
+  if (messages.value.length === 1) {
+    if (latestMessage.value.id) {
+      emit('locate', latestMessage.value.id)
+    }
     return
   }
   expanded.value = true
@@ -99,7 +107,9 @@ function handleTopClick() {
 /** 定位置顶消息 */
 function handleLocate(message: Message) {
   expanded.value = false
-  emit('locate', message)
+  if (message.id) {
+    emit('locate', message.id)
+  }
 }
 
 /** 获取置顶消息发送人 */
@@ -115,15 +125,22 @@ function getPreview(message?: Message) {
 }
 
 /** 取消置顶消息 */
-function handleRemove(message?: Message) {
-  if (!message) {
+async function handleRemove(message?: Message) {
+  if (!message?.id || !props.canManage || pinningMessageId.value != null) {
     return
   }
-  emit('remove', message)
+  pinningMessageId.value = message.id
+  try {
+    await unpinGroupMessage({ id: props.groupId, messageId: message.id })
+    toast.success('已取消置顶')
+    await groupStore.fetchGroupInfo(props.groupId, true)
+  } finally {
+    pinningMessageId.value = undefined
+  }
 }
 
 /** 置顶消息减少为一条时退出展开状态 */
-watch(() => props.messages.length, (length) => {
+watch(() => messages.value.length, (length) => {
   if (length <= 1) {
     expanded.value = false
   }

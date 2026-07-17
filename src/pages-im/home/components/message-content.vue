@@ -80,7 +80,7 @@
   <view
     v-else-if="type === ImMessageType.MERGE && mergePayload"
     class="w-400rpx"
-    @click="emit('merge-click', mergePayload)"
+    @click="emit('merge-click', content)"
   >
     <view class="text-28rpx text-[#333] font-medium">
       {{ mergePayload.title || '聊天记录' }}
@@ -168,7 +168,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'material-click': [payload: MaterialMessage] // 点击频道素材
-  'merge-click': [payload: MergeMessage] // 点击合并转发
+  'merge-click': [content: string] // 点击合并转发
   'card-click': [payload: CardMessage] // 点击名片
   'mention-click': [userId: number] // 点击 @ 用户
 }>()

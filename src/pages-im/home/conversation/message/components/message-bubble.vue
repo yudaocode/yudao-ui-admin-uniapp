@@ -32,7 +32,6 @@ import type {
   CardMessage,
   MaterialMessage,
   MentionCandidate,
-  MergeMessage,
 } from '@/pages-im/utils/message'
 import type { Message } from '../../../types'
 import { computed } from 'vue'
@@ -52,7 +51,7 @@ const emit = defineEmits<{
   'longpress': [] // 长按消息
   'scroll-to-quote': [content: string] // 定位引用原消息
   'material-click': [payload: MaterialMessage] // 点击频道素材
-  'merge-click': [payload: MergeMessage] // 点击合并转发
+  'merge-click': [content: string] // 点击合并转发
   'card-click': [payload: CardMessage] // 点击名片
   'mention-click': [userId: number] // 点击 @ 用户
 }>()

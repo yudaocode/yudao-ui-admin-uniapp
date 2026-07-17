@@ -5,7 +5,7 @@
     root-portal
     custom-style="border-radius: 24rpx 24rpx 0 0;"
   >
-    <view class="bg-[#f5f5f5] pb-[calc(24rpx+env(safe-area-inset-bottom))]">
+    <view v-if="card" class="bg-[#f5f5f5] pb-[calc(24rpx+env(safe-area-inset-bottom))]">
       <!-- 顶部标题 -->
       <view class="flex items-center justify-between bg-white px-28rpx py-22rpx">
         <text class="text-32rpx text-[#333] font-semibold">群聊资料</text>
@@ -43,30 +43,51 @@
 
 <script lang="ts" setup>
 import type { CardMessage } from '@/pages-im/utils/message'
-import { computed } from 'vue'
+import type { GroupCardPreviewOptions } from '../../../composables/useMessageContentActions'
+import { ref } from 'vue'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { applyJoinGroup } from '@/api/im/group/request'
+import { ImGroupAddSource } from '@/pages-im/utils/constants'
 import ImAvatar from '../../../components/im-avatar.vue'
 
-const props = withDefaults(defineProps<{
-  modelValue: boolean // 是否显示
-  card: CardMessage // 群名片快照
-  canApply?: boolean // 是否允许申请加入
-}>(), {
-  canApply: true,
-})
+const dialog = useDialog()
+const toast = useToast()
+const visible = ref(false) // 是否显示
+const card = ref<CardMessage>() // 群名片快照
+const canApply = ref(true) // 是否允许申请加入
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'apply': [card: CardMessage]
-}>()
-
-const visible = computed({
-  get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
-})
+/** 打开群名片资料 */
+function open(options: GroupCardPreviewOptions) {
+  card.value = { ...options.card }
+  canApply.value = options.canApply
+  visible.value = true
+}
 
 /** 申请加入群聊 */
-function handleApply() {
+async function handleApply() {
+  if (!card.value) {
+    return
+  }
   visible.value = false
-  emit('apply', props.card)
+  let value: string | number | undefined
+  try {
+    const result = await dialog.prompt({
+      title: card.value.name || '申请加入群聊',
+      inputValue: '你好，我想加入群聊',
+      inputProps: { placeholder: '请输入申请理由' },
+    })
+    value = result.value
+  } catch {
+    return
+  }
+  await applyJoinGroup({
+    groupId: card.value.targetId,
+    applyContent: String(value || '你好，我想加入群聊'),
+    addSource: ImGroupAddSource.SHARE_LINK,
+  })
+  toast.success('申请已发送')
 }
+
+defineExpose({ open })
 </script>
