@@ -33,7 +33,8 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   const singleMemberLoadTasks = new Map<string, Promise<GroupMember | undefined>>() // 单个群成员加载任务
   const detailLoadTasks = new Map<number, Promise<Group | undefined>>() // 群详情加载任务
   const detailLoadedGroupIds = new Set<number>() // 已加载详情的群编号
-  const unavailableGroupIds = new Set<number>() // 当前账号已退出、被踢或已解散的群编号
+  const unavailableGroupVersions = new Map<number, number>() // 当前账号不可用群编号及墓碑版本
+  let unavailableGroupVersionSequence = 0 // 墓碑递增序列，避免旧请求清除新墓碑
   let reloadQueued = false // 当前群聊加载完成后是否强制刷新
   const memberReloadQueued = new Set<number>() // 当前成员加载完成后需刷新的群
   const detailReloadQueued = new Set<number>() // 当前详情加载完成后需刷新的群
@@ -159,14 +160,24 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
+    const unavailableAtStart = new Map(unavailableGroupVersions) // 请求前已存在的墓碑可由服务端有效关系恢复
     loading.value = true
     const task = (async () => {
       const rows = (await getMyGroupList()).map(convertGroup)
       if (!isActive()) {
         return []
       }
+      rows.forEach((group) => {
+        const unavailableVersion = unavailableAtStart.get(group.id)
+        if (unavailableVersion !== undefined
+          && unavailableGroupVersions.get(group.id) === unavailableVersion
+          && group.status === CommonStatusEnum.ENABLE
+          && group.joinStatus === CommonStatusEnum.ENABLE) {
+          unavailableGroupVersions.delete(group.id)
+        }
+      })
       const previousGroups = new Map(groups.value.map(group => [group.id, group]))
-      groups.value = rows.filter(group => !unavailableGroupIds.has(group.id)).map((group) => {
+      groups.value = rows.filter(group => !unavailableGroupVersions.has(group.id)).map((group) => {
         const previous = previousGroups.get(group.id)
         if (!previous) {
           return {
@@ -212,10 +223,15 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     return groups.value.find(group => group.id === groupId)
   }
 
+  /** 是否为当前账号本次运行内已退出、被踢或已解散的群 */
+  function isGroupUnavailable(groupId: number) {
+    return unavailableGroupVersions.has(groupId)
+  }
+
   /** 加载指定群详情 */
   function fetchGroupInfo(groupId: number, force = false): Promise<Group | undefined> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0 || unavailableGroupIds.has(groupId)) {
+    if (userId <= 0 || groupId <= 0 || unavailableGroupVersions.has(groupId)) {
       return Promise.resolve(undefined)
     }
     if (stateUserId !== userId) {
@@ -235,7 +251,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
-      && !unavailableGroupIds.has(groupId)
+      && !unavailableGroupVersions.has(groupId)
     const task = (async () => {
       await initDb()
       const group = convertGroup(await getGroupApi(groupId))
@@ -265,7 +281,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 加载指定群成员 */
   function fetchGroupMemberList(groupId: number, force = false): Promise<GroupMember[]> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0 || unavailableGroupIds.has(groupId)) {
+    if (userId <= 0 || groupId <= 0 || unavailableGroupVersions.has(groupId)) {
       return Promise.resolve([])
     }
     if (stateUserId !== userId) {
@@ -285,7 +301,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
-      && !unavailableGroupIds.has(groupId)
+      && !unavailableGroupVersions.has(groupId)
     const task = (async () => {
       const rawRows = await getGroupMemberList(groupId)
       if (!isActive()) {
@@ -343,7 +359,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 按需补齐指定群成员，不改变整群成员缓存的完整状态 */
   function fetchGroupMember(groupId: number, memberUserId: number): Promise<GroupMember | undefined> {
     const userId = useUserStore().userInfo.userId
-    if (userId <= 0 || groupId <= 0 || memberUserId <= 0 || unavailableGroupIds.has(groupId)) {
+    if (userId <= 0 || groupId <= 0 || memberUserId <= 0 || unavailableGroupVersions.has(groupId)) {
       return Promise.resolve(undefined)
     }
     if (stateUserId !== userId) {
@@ -361,7 +377,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     }
     const epoch = loadEpoch
     const isActive = () => epoch === loadEpoch && useUserStore().userInfo.userId === userId
-      && !unavailableGroupIds.has(groupId)
+      && !unavailableGroupVersions.has(groupId)
     const task = (async () => {
       const rawMember = await getGroupMember(groupId, memberUserId)
       if (!isActive() || !rawMember) {
@@ -617,7 +633,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 本地移除群及其会话 */
   function removeGroup(groupId: number) {
-    unavailableGroupIds.add(groupId)
+    unavailableGroupVersions.set(groupId, ++unavailableGroupVersionSequence)
     groups.value = groups.value.filter(group => group.id !== groupId)
     detailLoadedGroupIds.delete(groupId)
     void (async () => {
@@ -689,7 +705,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     if (!isSelfInMembers(payload)) {
       return
     }
-    unavailableGroupIds.delete(groupId)
+    unavailableGroupVersions.delete(groupId)
     if (payload.operatorUserId === selfUserId && getGroup(groupId)) {
       return
     }
@@ -725,7 +741,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 成员被邀请进群 */
   async function applyGroupMemberInviteNotification(groupId: number, payload: GroupNotificationPayload) {
     if (isSelfInMembers(payload)) {
-      unavailableGroupIds.delete(groupId)
+      unavailableGroupVersions.delete(groupId)
     }
     if (isSelfInMembers(payload) && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true)
@@ -737,7 +753,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 成员主动进群 */
   async function applyGroupMemberEnterNotification(groupId: number, payload: GroupNotificationPayload) {
     if (payload.entrantUserId === useUserStore().userInfo.userId) {
-      unavailableGroupIds.delete(groupId)
+      unavailableGroupVersions.delete(groupId)
     }
     if (payload.entrantUserId === useUserStore().userInfo.userId && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true)
@@ -921,7 +937,8 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     singleMemberLoadTasks.clear()
     detailLoadTasks.clear()
     detailLoadedGroupIds.clear()
-    unavailableGroupIds.clear()
+    unavailableGroupVersions.clear()
+    unavailableGroupVersionSequence = 0
     reloadQueued = false
     memberReloadQueued.clear()
     detailReloadQueued.clear()
@@ -961,6 +978,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     fetchGroupMemberList,
     fetchGroupMember,
     getGroup,
+    isGroupUnavailable,
     markAllGroupInfoExpired,
     markAllGroupMembersExpired,
     markAllGroupActiveCallsExpired,
@@ -987,6 +1005,7 @@ function convertGroup(group: ImGroupRespVO): Group {
     pinnedMessages: group.pinnedMessages?.map(convertGroupMessage),
     mutedAll: group.mutedAll,
     banned: group.banned,
+    status: group.status,
     joinApproval: group.joinApproval,
     joinStatus: group.joinStatus,
     groupRemark: group.groupRemark,

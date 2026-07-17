@@ -167,6 +167,15 @@
       @card-click="handleCardClick"
     />
 
+    <!-- 群名片资料 -->
+    <GroupCardPreview
+      v-if="groupCardPreview"
+      v-model="groupCardPreviewVisible"
+      :card="groupCardPreview"
+      :can-apply="groupCardCanApply"
+      @apply="handleGroupCardApply"
+    />
+
     <!-- 转发选择弹窗 -->
     <ForwardPicker
       v-model="forwardVisible"
@@ -292,6 +301,7 @@ import { useMessageStore } from '../../store/messageStore'
 import MessageInput from './components/message-input.vue'
 import FacePicker from './components/face-picker.vue'
 import ForwardPicker from './components/forward-picker.vue'
+import GroupCardPreview from './components/group-card-preview.vue'
 import GroupPinnedMessage from './components/group-pinned-message.vue'
 import GroupRequestPending from './components/group-request-pending.vue'
 import MergeDetail from './components/merge-detail.vue'
@@ -348,6 +358,9 @@ const groupMembers = ref<GroupMember[]>([]) // 群成员
 const groupMembersReady = ref(false) // 当前群成员权限是否已成功刷新
 const mergeVisible = ref(false) // 合并转发详情弹窗
 const mergePayload = ref<MergeMessage>() // 合并转发内容
+const groupCardPreviewVisible = ref(false) // 群名片资料弹窗
+const groupCardPreview = ref<CardMessage>() // 当前群名片快照
+const groupCardCanApply = ref(true) // 是否允许申请加入当前群
 const forwardEmojiVisible = ref(false) // 转发留言表情面板
 const callActionVisible = ref(false) // 通话方式菜单显示状态
 const callMemberPickerRef = ref<InstanceType<typeof GroupMemberPicker>>() // 群通话成员选择器引用
@@ -744,27 +757,14 @@ function handleMergeClick(payload: MergeMessage) {
 async function handleCardClick(payload: CardMessage) {
   if (payload.targetType === ImConversationType.GROUP) {
     await groupStore.fetchGroupList()
-    if (groupStore.groups.some(item => item.id === payload.targetId && !isGroupQuit(item))) {
+    const cachedGroup = groupStore.groups.find(item => item.id === payload.targetId)
+    if (cachedGroup && !isGroupQuit(cachedGroup)) {
       uni.navigateTo({ url: `/pages-im/home/contact/group/detail/index?id=${payload.targetId}` })
       return
     }
-    let value: string | number | undefined
-    try {
-      const result = await dialog.prompt({
-        title: payload.name || '申请加入群聊',
-        inputValue: '你好，我想加入群聊',
-        inputProps: { placeholder: '请输入申请理由' },
-      })
-      value = result.value
-    } catch {
-      return
-    }
-    await applyJoinGroup({
-      groupId: payload.targetId,
-      applyContent: String(value || '你好，我想加入群聊'),
-      addSource: ImGroupAddSource.SHARE_LINK,
-    })
-    toast.success('申请已发送')
+    groupCardPreview.value = payload
+    groupCardCanApply.value = !cachedGroup && !groupStore.isGroupUnavailable(payload.targetId)
+    groupCardPreviewVisible.value = true
     return
   }
   if (payload.targetId === userStore.userInfo.userId) {
@@ -779,6 +779,27 @@ async function handleCardClick(payload: CardMessage) {
   uni.navigateTo({
     url: `/pages-im/home/contact/friend/apply/index?toUserId=${payload.targetId}&source=${ImFriendAddSource.CARD}`,
   })
+}
+
+/** 从群名片资料申请加入 */
+async function handleGroupCardApply(payload: CardMessage) {
+  let value: string | number | undefined
+  try {
+    const result = await dialog.prompt({
+      title: payload.name || '申请加入群聊',
+      inputValue: '你好，我想加入群聊',
+      inputProps: { placeholder: '请输入申请理由' },
+    })
+    value = result.value
+  } catch {
+    return
+  }
+  await applyJoinGroup({
+    groupId: payload.targetId,
+    applyContent: String(value || '你好，我想加入群聊'),
+    addSource: ImGroupAddSource.SHARE_LINK,
+  })
+  toast.success('申请已发送')
 }
 
 /** 打开消息发送人资料 */

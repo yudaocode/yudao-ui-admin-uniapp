@@ -3,11 +3,17 @@
     v-model="visible"
     position="bottom"
     root-portal
-    custom-style="height: 76vh; border-radius: 24rpx 24rpx 0 0;"
+    :custom-style="popupStyle"
     @after-enter="resetLocalPaging"
   >
-    <view class="h-full flex flex-col overflow-hidden bg-[#f5f5f5]">
-      <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
+    <view
+      class="h-full flex flex-col overflow-hidden bg-[#f5f5f5]"
+      :class="fullScreen ? 'pb-[env(safe-area-inset-bottom)]' : ''"
+    >
+      <view
+        class="flex items-center justify-between bg-white px-24rpx"
+        :class="fullScreen ? 'pb-20rpx pt-[calc(20rpx+env(safe-area-inset-top))]' : 'py-20rpx'"
+      >
         <wd-button size="small" variant="plain" @click="visible = false">
           取消
         </wd-button>
@@ -86,11 +92,13 @@ const props = withDefaults(defineProps<{
   disabledIds?: number[]
   hideIds?: number[]
   maxSize?: number
+  fullScreen?: boolean
 }>(), {
   lockedIds: () => [],
   disabledIds: () => [],
   hideIds: () => [],
   maxSize: 0,
+  fullScreen: false,
 })
 
 const emit = defineEmits<{
@@ -109,6 +117,9 @@ const pagingRef = ref<any>() // 本地分页组件引用
 const lockedIdSet = computed(() => new Set(props.lockedIds)) // 固定好友编号
 const disabledIdSet = computed(() => new Set(props.disabledIds)) // 禁用好友编号
 const hideIdSet = computed(() => new Set(props.hideIds)) // 隐藏好友编号
+const popupStyle = computed(() => props.fullScreen
+  ? 'height: 100vh; border-radius: 0;'
+  : 'height: 76vh; border-radius: 24rpx 24rpx 0 0;') // 弹窗尺寸
 const candidateFriends = computed(() => getActiveFriendLiteList.value
   .filter(friend => !hideIdSet.value.has(friend.id))) // 可展示的好友候选
 const { filtered: filteredFriends } = useFriendBuckets(candidateFriends, keyword)

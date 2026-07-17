@@ -21,8 +21,8 @@
       <!-- 群信息 -->
       <view class="mt-20rpx">
         <wd-cell-group border>
-          <wd-cell title="群聊名称" :value="formData?.name || '-'" :is-link="canManageGroup" center @click="editGroupInfo" />
-          <wd-cell title="群公告" :value="formData?.notice || '未设置'" :is-link="canManageGroup" center @click="editGroupInfo" />
+          <wd-cell title="群聊名称" :value="formData?.name || '-'" :is-link="isOwner" center @click="editGroupInfo" />
+          <wd-cell title="群公告" :value="formData?.notice || '未设置'" :is-link="isOwner" center @click="editGroupInfo" />
           <wd-cell
             title="我在本群的昵称"
             :value="myGroupNick || '未设置'"
@@ -327,7 +327,7 @@ function onMemberTap(item: GroupMember) {
 
 /** 编辑群资料（群名 / 公告，跳编辑页） */
 function editGroupInfo() {
-  if (!canManageGroup.value || !formData.value?.id) {
+  if (!isOwner.value || !formData.value?.id) {
     return
   }
   uni.navigateTo({ url: `/pages-im/home/contact/group/form/index?id=${formData.value.id}` })

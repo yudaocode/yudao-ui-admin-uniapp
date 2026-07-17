@@ -7,6 +7,7 @@
     :disabled-ids="disabledIds"
     :hide-ids="hideIds"
     :max-size="maxSize"
+    :full-screen="fullScreen"
     @confirm="emit('confirm', $event)"
   />
 </template>
@@ -25,12 +26,14 @@ const props = withDefaults(defineProps<{
   disabledIds?: number[]
   hideIds?: number[]
   maxSize?: number
+  fullScreen?: boolean
 }>(), {
   label: '好友',
   lockedIds: () => [],
   disabledIds: () => [],
   hideIds: () => [],
   maxSize: 0,
+  fullScreen: false,
 })
 
 const emit = defineEmits<{
@@ -57,4 +60,6 @@ const modelValue = computed({
 const displayValue = computed(() => selectedCount.value > 0
   ? `已选择 ${selectedCount.value} 人`
   : '请选择') // 表单行展示文案
+
+defineExpose({ open: () => pickerRef.value?.open() })
 </script>

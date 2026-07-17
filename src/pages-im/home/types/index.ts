@@ -194,6 +194,7 @@ export interface Group {
   pinnedMessages?: Message[] // 群置顶消息列表
   mutedAll?: boolean // 是否全群禁言
   banned?: boolean // 是否被管理员封禁
+  status?: number // 群状态（参见 CommonStatusEnum：0 正常 / 1 已解散）
   joinApproval?: boolean // 进群是否需群主 / 管理员审批
   joinStatus?: number // 当前登录用户在该群的成员状态（参见 CommonStatusEnum：0 在群 / 1 已退群）
 
