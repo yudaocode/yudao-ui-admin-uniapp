@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { GroupMember } from '../../../../types'
+import type { GroupMember } from '../../types'
 import { ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -23,7 +23,7 @@ import { GROUP_ADMIN_MAX_COUNT } from '@/pages-im/utils/config'
 import { ImGroupMemberRole } from '@/pages-im/utils/constants'
 import { toTimestamp } from '@/pages-im/utils/time'
 import { getMemberDisplayName } from '@/pages-im/utils/user'
-import GroupMemberMutePicker from '../../components/group-member-mute-picker.vue'
+import GroupMemberMutePicker from '../../contact/group/components/group-member-mute-picker.vue'
 
 interface MemberAction {
   name: string

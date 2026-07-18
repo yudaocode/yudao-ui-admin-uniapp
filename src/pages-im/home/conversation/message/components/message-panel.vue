@@ -33,7 +33,7 @@
     >
       <wd-icon name="exclamation-circle" size="32rpx" color="#d48806" />
       <text class="min-w-0 flex-1 text-26rpx text-[#8f5b00]">对方还不是你的朋友</text>
-      <text class="text-26rpx text-[#576b95]" @click="openFriendApply">添加朋友</text>
+      <text class="text-26rpx text-[#576b95]" @click="openFriendProfile">添加朋友</text>
     </view>
 
     <!-- 群聊置顶与通话横幅 -->
@@ -464,17 +464,18 @@ function openSetting() {
   }
   if (conversationType.value === ImConversationType.GROUP) {
     uni.navigateTo({ url: `/pages-im/home/contact/group/detail/index?id=${targetId.value}` })
-  } else if (friendLoaded.value && !isFriend.value) {
-    openFriendApply()
   } else {
-    uni.navigateTo({ url: `/pages-im/home/contact/friend/detail/index?friendUserId=${targetId.value}` })
+    const source = friendLoaded.value && !isFriend.value
+      ? `&source=${ImFriendAddSource.SEARCH}`
+      : ''
+    uni.navigateTo({ url: `/pages-im/home/contact/friend/detail/index?friendUserId=${targetId.value}${source}` })
   }
 }
 
-/** 打开添加好友页 */
-function openFriendApply() {
+/** 打开会话对方资料 */
+function openFriendProfile() {
   uni.navigateTo({
-    url: `/pages-im/home/contact/friend/apply/index?toUserId=${targetId.value}&source=${ImFriendAddSource.SEARCH}`,
+    url: `/pages-im/home/contact/friend/detail/index?friendUserId=${targetId.value}&source=${ImFriendAddSource.SEARCH}`,
   })
 }
 

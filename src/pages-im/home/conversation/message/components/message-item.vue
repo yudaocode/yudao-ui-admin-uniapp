@@ -61,23 +61,32 @@
           <view v-if="showSenderName" class="mb-8rpx text-22rpx text-[#999]">
             {{ senderName }}
           </view>
-          <!-- 气泡 -->
-          <MessageBubble
-            :message="message"
-            :is-self="isSelf"
-            :conversation-type="conversationType"
-            :quote="quote"
-            :quote-sender-name="quoteSenderName"
-            :quote-recalled="quoteRecalled"
-            :mentions="mentionCandidates"
-            :centered="isChannelMaterial"
-            @longpress="onBubbleLongpress"
-            @scroll-to-quote="emit('scroll-to-quote', $event)"
-            @material-click="emit('material-click', $event)"
-            @merge-click="emit('merge-click', $event)"
-            @card-click="emit('card-click', $event)"
-            @mention-click="onMentionClick"
-          />
+          <!-- 引用消息与气泡 -->
+          <view @longpress="onBubbleLongpress">
+            <ReplyPreview
+              v-if="quote"
+              :quote="quote"
+              :sender-name="quoteSenderName"
+              :recalled="quoteRecalled"
+              clickable
+              :mirrored="isSelf"
+              class="mb-12rpx"
+              @locate="emit('scroll-to-quote', $event)"
+            />
+            <MessageBubble
+              :type="message.type"
+              :content="message.content"
+              :self-send="isSelf"
+              :conversation-type="conversationType"
+              :mentions="mentionCandidates"
+              :upload-progress="message.uploadProgress"
+              :centered="isChannelMaterial"
+              @material-click="emit('material-click', $event)"
+              @open-merge="emit('merge-click', $event)"
+              @click-card="emit('card-click', $event)"
+              @mention-click="onMentionClick"
+            />
+          </view>
           <!-- 发送状态 -->
           <view
             v-if="statusText || showGroupReadStatus || isAtMe"
@@ -142,6 +151,7 @@ import ImAvatar from '../../../components/im-avatar.vue'
 import MessageBubble from './message-bubble.vue'
 import MessageReadStatus from './message-read-status.vue'
 import MessageTipSegments from './message-tip-segments.vue'
+import ReplyPreview from './reply-preview.vue'
 
 const props = defineProps<{
   message: Message // 消息数据

@@ -14,21 +14,27 @@
       </view>
       <scroll-view class="min-h-0 flex-1" scroll-y>
         <view class="p-24rpx">
-          <view v-for="(item, index) in messages" :key="index" class="mb-28rpx flex items-start gap-16rpx">
+          <view
+            v-for="(item, index) in messages"
+            :key="index"
+            class="mb-28rpx flex items-start gap-16rpx"
+            :class="item.senderId === selfUserId ? 'flex-row-reverse' : ''"
+          >
             <ImAvatar :src="item.senderAvatar" :name="item.senderNickname" :round="false" size="72rpx" />
-            <view class="min-w-0 flex-1">
+            <view class="min-w-0 flex flex-1 flex-col" :class="item.senderId === selfUserId ? 'items-end' : ''">
               <view class="mb-8rpx flex items-center justify-between gap-16rpx text-24rpx text-[#999]">
                 <text class="truncate">{{ item.senderNickname || '' }}</text>
                 <text class="shrink-0">{{ formatMergeItemTime(item.sendTime) }}</text>
               </view>
-              <view class="inline-block rounded-12rpx bg-[#f7f8fa] px-22rpx py-16rpx text-28rpx text-[#333] leading-42rpx">
-                <MessageContent
+              <view class="inline-block">
+                <MessageBubble
                   :type="item.type"
                   :content="item.content"
                   :conversation-type="conversationType"
-                  @merge-click="handleNestedOpen"
+                  :self-send="item.senderId === selfUserId"
+                  @open-merge="handleNestedOpen"
                   @material-click="handleMaterialClick"
-                  @card-click="handleCardClick"
+                  @click-card="handleCardClick"
                 />
               </view>
             </view>
@@ -44,11 +50,12 @@
 import type { GroupCardPreviewOptions } from '../../../composables/useMessageContentActions'
 import type { MergeMessage } from '@/pages-im/utils/message'
 import { computed, ref } from 'vue'
-import MessageContent from '@/pages-im/home/components/message-content.vue'
+import { useUserStore } from '@/store/user'
 import { parseMessage } from '@/pages-im/utils/message'
 import { formatMergeItemTime } from '@/pages-im/utils/time'
 import { useMessageContentActions } from '../../../composables/useMessageContentActions'
 import ImAvatar from '../../../components/im-avatar.vue'
+import MessageBubble from './message-bubble.vue'
 
 const props = defineProps<{
   conversationType: number // 当前会话类型
@@ -57,6 +64,7 @@ const props = defineProps<{
 }>()
 
 const visible = ref(false) // 是否显示
+const selfUserId = computed(() => useUserStore().userInfo.userId) // 当前用户编号
 const stack = ref<MergeMessage[]>([]) // 嵌套合并消息栈
 const currentPayload = computed(() => stack.value[stack.value.length - 1]) // 当前展示的合并消息
 const messages = computed(() => currentPayload.value?.messages || []) // 当前层消息列表

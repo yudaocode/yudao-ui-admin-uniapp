@@ -6,7 +6,8 @@
         v-for="item in displayMembers"
         :key="item.userId"
         class="flex flex-col items-center gap-8rpx"
-        @click="emit('member-click', item)"
+        @click="handleMemberClick(item)"
+        @longpress.stop="handleMemberLongpress(item)"
       >
         <ImAvatar :src="item.avatar" :name="item.nickname" :round="false" size="96rpx" />
         <text class="w-96rpx truncate text-center text-22rpx text-[#666]">{{ getMemberDisplayName(item) }}</text>
@@ -40,10 +41,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { GroupMember } from '../../../../types'
-import { computed, ref } from 'vue'
+import type { GroupMember } from '../../types'
+import { computed, onUnmounted, ref } from 'vue'
 import { getGroupMemberRoleLabel, getMemberDisplayName } from '@/pages-im/utils/user'
-import ImAvatar from '../../../../components/im-avatar.vue'
+import ImAvatar from '../../components/im-avatar.vue'
 
 const props = withDefaults(defineProps<{
   members: GroupMember[] // 当前有效群成员
@@ -58,12 +59,15 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'member-click': [member: GroupMember] // 点击群成员
+  'member-longpress': [member: GroupMember] // 长按群成员
   'invite': [] // 邀请群成员
   'manage': [] // 查看成员管理提示
 }>()
 
 const keyword = ref('') // 群成员关键词
 const expanded = ref(false) // 是否展开全部成员
+let longpressedUserId = 0 // 刚触发长按的成员编号
+let longpressResetTimer: ReturnType<typeof setTimeout> | undefined
 const filteredMembers = computed(() => { // 搜索后的群成员
   const value = keyword.value.trim().toLowerCase()
   return value
@@ -73,4 +77,30 @@ const filteredMembers = computed(() => { // 搜索后的群成员
 const displayMembers = computed(() => expanded.value || keyword.value
   ? filteredMembers.value
   : filteredMembers.value.slice(0, props.memberLimit)) // 当前展示成员
+
+/** 短按查看成员资料 */
+function handleMemberClick(member: GroupMember) {
+  if (longpressedUserId === member.userId) {
+    longpressedUserId = 0
+    return
+  }
+  emit('member-click', member)
+}
+
+/** 长按打开成员管理 */
+function handleMemberLongpress(member: GroupMember) {
+  longpressedUserId = member.userId
+  if (longpressResetTimer) {
+    clearTimeout(longpressResetTimer)
+  }
+  longpressResetTimer = setTimeout(() => {
+    if (longpressedUserId === member.userId) {
+      longpressedUserId = 0
+    }
+  }, 800)
+  emit('member-longpress', member)
+}
+
+/** 释放长按抑制定时器 */
+onUnmounted(() => clearTimeout(longpressResetTimer))
 </script>

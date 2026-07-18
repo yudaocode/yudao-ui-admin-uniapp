@@ -2,6 +2,7 @@
   <template v-for="(segment, index) in segments" :key="index">
     <text
       :class="segment.type !== 'text' ? 'text-[#576b95]' : ''"
+      :selectable="selectable"
       @tap.stop="handleSegmentTap(segment)"
     >
       {{ segment.text }}
@@ -14,9 +15,12 @@ import type { TipSegment } from '@/pages-im/utils/message'
 import { IM_AT_ALL_USER_ID } from '@/pages-im/utils/constants'
 import { openSafeUrl } from '@/utils/url'
 
-defineProps<{
+withDefaults(defineProps<{
   segments: TipSegment[] // 消息提示分段
-}>()
+  selectable?: boolean // 是否允许选择文本
+}>(), {
+  selectable: false,
+})
 
 const emit = defineEmits<{
   'mention-click': [userId: number] // 点击用户分段

@@ -1,7 +1,5 @@
 import type { Ref } from 'vue'
 import type { CardMessage, MaterialMessage } from '@/pages-im/utils/message'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { useUserStore } from '@/store/user'
 import { openSafeUrl } from '@/utils/url'
 import {
   IM_AT_ALL_USER_ID,
@@ -9,7 +7,6 @@ import {
   ImFriendAddSource,
 } from '@/pages-im/utils/constants'
 import { isGroupQuit } from '@/pages-im/utils/user'
-import { useFriendStore } from '../store/friendStore'
 import { useGroupStore } from '../store/groupStore'
 
 export interface GroupCardPreviewOptions {
@@ -23,9 +20,6 @@ export function useMessageContentActions(options: {
   targetId: Readonly<Ref<number>>
   openGroupCardPreview: (options: GroupCardPreviewOptions) => void
 }) {
-  const toast = useToast()
-  const userStore = useUserStore()
-  const friendStore = useFriendStore()
   const groupStore = useGroupStore()
 
   /** 点击频道素材 */
@@ -57,28 +51,14 @@ export function useMessageContentActions(options: {
       })
       return
     }
-    if (payload.targetId === userStore.userInfo.userId) {
-      toast.show('这是你自己的名片')
-      return
-    }
-    await friendStore.fetchFriendList()
-    if (friendStore.getActiveFriendList.some(item => item.friendUserId === payload.targetId)) {
-      uni.navigateTo({ url: `/pages-im/home/contact/friend/detail/index?friendUserId=${payload.targetId}` })
-      return
-    }
     uni.navigateTo({
-      url: `/pages-im/home/contact/friend/apply/index?toUserId=${payload.targetId}&source=${ImFriendAddSource.CARD}`,
+      url: `/pages-im/home/contact/friend/detail/index?friendUserId=${payload.targetId}&source=${ImFriendAddSource.CARD}`,
     })
   }
 
   /** 打开消息发送人资料 */
   async function handleAvatarClick(userId: number) {
-    if (!userId || userId === IM_AT_ALL_USER_ID || userId === userStore.userInfo.userId) {
-      return
-    }
-    await friendStore.fetchFriendList()
-    if (friendStore.getActiveFriendList.some(item => item.friendUserId === userId)) {
-      uni.navigateTo({ url: `/pages-im/home/contact/friend/detail/index?friendUserId=${userId}` })
+    if (!userId || userId === IM_AT_ALL_USER_ID) {
       return
     }
     const group = options.conversationType.value === ImConversationType.GROUP
@@ -89,7 +69,7 @@ export function useMessageContentActions(options: {
       ? ImFriendAddSource.GROUP
       : ImFriendAddSource.SEARCH
     uni.navigateTo({
-      url: `/pages-im/home/contact/friend/apply/index?toUserId=${userId}&source=${addSource}${sourceExtra}`,
+      url: `/pages-im/home/contact/friend/detail/index?friendUserId=${userId}&source=${addSource}${sourceExtra}`,
     })
   }
 

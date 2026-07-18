@@ -99,9 +99,18 @@ export function useImRtc() {
   async function accept() {
     const room = rtcStore.incomingPayload?.room
     if (!room) {
-      return
+      return false
     }
-    rtcStore.enterRunning(await acceptCall(room))
+    const userId = userStore.userInfo.userId
+    const data = await acceptCall(room)
+    if (userStore.userInfo.userId !== userId
+      || rtcStore.stage !== ImRtcCallStage.INCOMING
+      || rtcStore.incomingPayload?.room !== room) {
+      await leaveCall(room).catch(() => undefined)
+      return false
+    }
+    rtcStore.enterRunning(data)
+    return true
   }
 
   /** 拒绝来电 */
