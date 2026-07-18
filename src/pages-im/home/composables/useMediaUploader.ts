@@ -56,8 +56,8 @@ export function useMediaUploader() {
   }
 
   /** 上传本地临时文件 */
-  function uploadLocalFile(filePath: string, directory: string) {
-    return uploadFile(filePath, directory)
+  function uploadLocalFile(filePath: string, directory: string, onProgress?: (progress: number) => void) {
+    return uploadFile(filePath, directory, onProgress)
   }
 
   /** 上传 H5 Blob 文件 */
@@ -88,11 +88,24 @@ export function useMediaUploader() {
     })
   }
 
+  /** 获取本地视频信息 */
+  function getLocalVideoInfo(src: string) {
+    return new Promise<Record<string, any> | null>((resolve) => {
+      const getVideoInfo = (uni as any).getVideoInfo
+      if (typeof getVideoInfo !== 'function') {
+        resolve(null)
+        return
+      }
+      getVideoInfo({ src, success: resolve, fail: () => resolve(null) })
+    })
+  }
+
   return {
     chooseChatFile,
     validateFileSize,
     uploadLocalFile,
     uploadBlob,
     getLocalImageInfo,
+    getLocalVideoInfo,
   }
 }

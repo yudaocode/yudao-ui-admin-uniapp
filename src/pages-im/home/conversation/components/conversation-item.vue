@@ -6,7 +6,14 @@
     @longpress="emit('longpress', conversation)"
   >
     <view class="relative py-22rpx">
-      <ImAvatar :src="conversation.avatar" :name="conversation.name" :round="false" size="96rpx" />
+      <GroupAvatar
+        v-if="isGroup"
+        :group-id="conversation.targetId"
+        :src="conversation.avatar"
+        :name="conversation.name"
+        size="96rpx"
+      />
+      <ImAvatar v-else :src="conversation.avatar" :name="conversation.name" :round="false" size="96rpx" />
       <view
         v-if="conversation.unreadCount > 0"
         class="unread-badge"
@@ -53,6 +60,7 @@ import { useFriendStore } from '../../store/friendStore'
 import { useGroupRequestStore } from '../../store/groupRequestStore'
 import { useGroupStore } from '../../store/groupStore'
 import ImAvatar from '../../components/im-avatar.vue'
+import GroupAvatar from '../../components/group-avatar.vue'
 
 const props = defineProps<{
   conversation: ConversationDO // 当前会话

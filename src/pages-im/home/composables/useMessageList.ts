@@ -12,7 +12,6 @@ import {
   MESSAGE_TIME_TIP_GAP_MS,
 } from '@/pages-im/utils/config'
 import {
-  getMessageIdentityKey,
   isSameConversationMessage,
   parseRecallMessageId,
 } from '@/pages-im/utils/message'
@@ -59,7 +58,8 @@ export function useMessageList(options: {
 
   /** 是否已在当前设备删除 */
   function isLocallyDeleted(message: Message) {
-    return deletedMessageKeys.value.has(getMessageIdentityKey(message))
+    return (message.id && deletedMessageKeys.value.has(`id:${message.id}`))
+      || deletedMessageKeys.value.has(`client:${message.clientMessageId}`)
   }
 
   /** 查询历史消息 */
@@ -179,12 +179,19 @@ export function useMessageList(options: {
       }
       let messages = normalizeMessages(normalizeRecallMessages(data))
       if (isFirstPage) {
-        const pendingMessages = (await messageStore.getConversationPendingMessages(clientConversationId))
+        const activeClientMessageIds = new Set([...messageList.value, ...pendingLatestMessages.value]
+          .filter(item => item.selfSend && item.status === ImMessageStatus.SENDING)
+          .map(item => item.clientMessageId))
+        const pendingMessages = (await messageStore.getConversationPendingMessages(
+          clientConversationId,
+          activeClientMessageIds,
+        ))
           .map(buildMessageFromDO)
         if (!options.isPageContextActive(context)) {
           return
         }
-        messages = normalizeMessages([...pendingMessages, ...messages])
+        messages = normalizeMessages([...pendingLatestMessages.value, ...pendingMessages, ...messages])
+          .filter(message => !isLocallyDeleted(message))
           .filter((message, index, rows) =>
             rows.findIndex(item => isSameConversationMessage(item, message)) === index)
       }
@@ -362,7 +369,8 @@ export function useMessageList(options: {
   /** 去重后追加最新消息 */
   function addLatestMessage(message: Message, forceBottom = false) {
     const appliedMessage = applyKnownRecall(message)
-    if (messageList.value.some(item => isSameConversationMessage(item, appliedMessage))
+    if (isLocallyDeleted(appliedMessage)
+      || messageList.value.some(item => isSameConversationMessage(item, appliedMessage))
       || pendingLatestMessages.value.some(item => isSameConversationMessage(item, appliedMessage))) {
       return false
     }
@@ -399,21 +407,30 @@ export function useMessageList(options: {
   /** 用服务端消息替换本地发送占位 */
   function replaceLocalMessage(clientMessageId: string, message: Message) {
     const appliedMessage = applyKnownRecall(message)
+    if (isLocallyDeleted(appliedMessage)) {
+      return false
+    }
+    let replaced = false
     const pendingIndex = pendingLatestMessages.value.findIndex(item => item.clientMessageId === clientMessageId)
     if (pendingIndex >= 0) {
       const nextMessages = [...pendingLatestMessages.value]
       nextMessages[pendingIndex] = appliedMessage
       pendingLatestMessages.value = nextMessages
-      return
+      replaced = true
     }
     const index = messageList.value.findIndex(item => item.clientMessageId === clientMessageId)
-    if (index < 0) {
-      addLatestMessage(appliedMessage, true)
-      return
+    if (index >= 0) {
+      const nextMessages = [...messageList.value]
+      nextMessages[index] = appliedMessage
+      options.pagingRef.value?.resetTotalData(nextMessages)
+      replaced = true
     }
-    const nextMessages = [...messageList.value]
-    nextMessages[index] = appliedMessage
-    options.pagingRef.value?.resetTotalData(nextMessages)
+    return replaced || addLatestMessage(appliedMessage, true)
+  }
+
+  /** 指定本地消息是否已被用户删除 */
+  function isLocalMessageDeleted(clientMessageId: string) {
+    return deletedMessageKeys.value.has(`client:${clientMessageId}`)
   }
 
   /** 应用当前页面已知的撤回终态 */
@@ -457,10 +474,18 @@ export function useMessageList(options: {
 
   /** 从当前列表移除已在本机删除的消息 */
   function removeDeletedMessages(messages: Message[]) {
-    messages.forEach(message => deletedMessageKeys.value.add(getMessageIdentityKey(message)))
-    const clientMessageIds = new Set(messages.map(message => message.clientMessageId))
-    const nextMessages = messageList.value
-      .filter(message => !clientMessageIds.has(message.clientMessageId))
+    const deletedKeys = new Set(messages.flatMap((message) => {
+      const keys = [`client:${message.clientMessageId}`]
+      if (message.id) {
+        keys.push(`id:${message.id}`)
+      }
+      return keys
+    }))
+    deletedKeys.forEach(key => deletedMessageKeys.value.add(key))
+    const retained = (message: Message) => !deletedKeys.has(`client:${message.clientMessageId}`)
+      && (!message.id || !deletedKeys.has(`id:${message.id}`))
+    pendingLatestMessages.value = pendingLatestMessages.value.filter(retained)
+    const nextMessages = messageList.value.filter(retained)
     options.pagingRef.value?.resetTotalData(nextMessages)
     return nextMessages.length
   }
@@ -497,6 +522,7 @@ export function useMessageList(options: {
     addLatestMessage,
     addStoredMessage,
     replaceLocalMessage,
+    isLocalMessageDeleted,
     markMessageRecalled,
     updateMessageReceipt,
     removeDeletedMessages,

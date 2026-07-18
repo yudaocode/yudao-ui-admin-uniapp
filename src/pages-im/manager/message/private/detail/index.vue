@@ -39,7 +39,11 @@
           消息内容
         </view>
         <view v-if="formData" class="inline-block max-w-full rounded-12rpx bg-[#f7f8fa] p-20rpx text-28rpx text-[#333]">
-          <MessageContent :type="formData.type" :content="formData.content" />
+          <MessageContent
+            :type="formData.type"
+            :content="formData.content"
+            :conversation-type="ImConversationType.PRIVATE"
+          />
         </view>
       </view>
 
@@ -60,6 +64,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { getManagerPrivateMessage } from '@/api/im/manager/message/private'
 import MessageContent from '@/pages-im/home/components/message-content.vue'
+import { ImConversationType } from '@/pages-im/utils/constants'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

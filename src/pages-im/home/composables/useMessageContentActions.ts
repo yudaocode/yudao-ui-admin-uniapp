@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import type { CardMessage, MaterialMessage } from '@/pages-im/utils/message'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { useUserStore } from '@/store/user'
-import { openUrl } from '@/utils/url'
+import { openSafeUrl } from '@/utils/url'
 import {
   IM_AT_ALL_USER_ID,
   ImConversationType,
@@ -30,13 +30,16 @@ export function useMessageContentActions(options: {
 
   /** 点击频道素材 */
   function handleMaterialClick(payload: MaterialMessage) {
+    if (payload.url) {
+      openSafeUrl(payload.url)
+      return
+    }
     if (payload.materialId) {
       uni.navigateTo({
         url: `/pages-im/home/conversation/material/index?id=${payload.materialId}&type=${options.conversationType.value}&targetId=${options.targetId.value}`,
       })
       return
     }
-    openUrl(payload.url)
   }
 
   /** 打开个人或群名片 */

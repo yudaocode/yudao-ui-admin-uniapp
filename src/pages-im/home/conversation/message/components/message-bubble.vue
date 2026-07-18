@@ -8,17 +8,21 @@
     @longpress="emit('longpress')"
   >
     <ReplyPreview
-      v-if="quoteTitle"
-      :title="quoteTitle"
+      v-if="quote"
+      :quote="quote"
+      :sender-name="quoteSenderName"
+      :recalled="quoteRecalled"
       clickable
       :mirrored="isSelf"
       class="mb-12rpx"
-      @locate="emit('scroll-to-quote', message.content)"
+      @locate="emit('scroll-to-quote', $event)"
     />
     <MessageContent
       :type="message.type"
       :content="message.content"
+      :conversation-type="conversationType"
       :mentions="mentions"
+      :upload-progress="message.uploadProgress"
       @material-click="emit('material-click', $event)"
       @merge-click="emit('merge-click', $event)"
       @card-click="emit('card-click', $event)"
@@ -32,6 +36,7 @@ import type {
   CardMessage,
   MaterialMessage,
   MentionCandidate,
+  QuoteMessage,
 } from '@/pages-im/utils/message'
 import type { Message } from '../../../types'
 import { computed } from 'vue'
@@ -42,14 +47,17 @@ import ReplyPreview from './reply-preview.vue'
 const props = defineProps<{
   message: Message // 消息数据
   isSelf: boolean // 是否自己发送
-  quoteTitle?: string // 引用展示文案
+  conversationType: number // 当前会话类型
+  quote?: QuoteMessage // 引用消息快照
+  quoteSenderName?: string // 引用发送人名称
+  quoteRecalled?: boolean // 原消息是否已撤回
   mentions?: MentionCandidate[] // 文本中的 @ 候选
   centered?: boolean // 是否使用居中无箭头样式
 }>()
 
 const emit = defineEmits<{
   'longpress': [] // 长按消息
-  'scroll-to-quote': [content: string] // 定位引用原消息
+  'scroll-to-quote': [messageId: number] // 定位引用原消息
   'material-click': [payload: MaterialMessage] // 点击频道素材
   'merge-click': [content: string] // 点击合并转发
   'card-click': [payload: CardMessage] // 点击名片

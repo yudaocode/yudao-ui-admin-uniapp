@@ -1,7 +1,7 @@
 // IM 本地数据库：H5 IndexedDB 适配层
 // 仅在 H5 端打包（见 ../db.ts 的条件编译导入）
 
-import type { ImDbClient } from './client'
+import type { ImDbClient, MessageDOPageResult } from './client'
 import type { DbStoreName, MessageDO, SettingDO } from './types'
 import { DB_SCHEMA_VERSION, STORE_SCHEMA } from './types'
 
@@ -131,15 +131,16 @@ export class IndexedDbClient implements ImDbClient {
 
   async getMessageListByConversation(
     clientConversationId: string,
-    options?: { beforeSendTime?: number, limit?: number },
-  ): Promise<MessageDO[]> {
+    options?: Parameters<ImDbClient['getMessageListByConversation']>[1],
+  ): Promise<MessageDOPageResult> {
     const limit = options?.limit ?? 50
-    const upper = options?.beforeSendTime ?? Number.MAX_SAFE_INTEGER
+    const before = options?.before
+    const upper = before?.sendTime ?? Number.MAX_SAFE_INTEGER
     const range = IDBKeyRange.bound(
       [clientConversationId, 0],
       [clientConversationId, upper],
       false,
-      true,
+      false,
     )
     const tx = this.rawDb().transaction(['messages'], 'readonly')
     const index = tx.objectStore('messages').index('clientConversationId+sendTime')
@@ -149,15 +150,29 @@ export class IndexedDbClient implements ImDbClient {
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
         const cursor = request.result
-        if (!cursor || out.length >= limit) {
+        if (!cursor) {
           resolve()
           return
         }
-        out.push(cursor.value as MessageDO)
+        const message = cursor.value as MessageDO
+        if (before
+          && message.sendTime === before.sendTime
+          && message.messageKey >= before.messageKey) {
+          cursor.continue()
+          return
+        }
+        out.push(message)
+        if (out.length > limit) {
+          resolve()
+          return
+        }
         cursor.continue()
       }
     })
-    return out.reverse()
+    return {
+      list: out.slice(0, limit).reverse(),
+      hasMore: out.length > limit,
+    }
   }
 
   async getSetting<T>(key: string): Promise<T | undefined> {

@@ -17,13 +17,43 @@ export function parseUrl(url: string): { path: string, query: Record<string, str
   return { path, query }
 }
 
+const OPENABLE_URL_PROTOCOLS = new Set(['http:', 'https:', 'blob:']) // 服务端外链允许协议
+
+/** 解析允许打开的服务端 URL */
+function resolveOpenableUrl(url?: string | null) {
+  const value = url?.trim()
+  if (!value) {
+    return
+  }
+  if (value.startsWith('//')) {
+    return `https:${value}`
+  }
+  const protocol = value.match(/^([a-z][a-z\d+.-]*:)/i)?.[1].toLowerCase()
+  if (protocol) {
+    return OPENABLE_URL_PROTOCOLS.has(protocol) ? value : undefined
+  }
+  // #ifdef H5
+  try {
+    const resolved = new URL(value, window.location.origin)
+    return OPENABLE_URL_PROTOCOLS.has(resolved.protocol) ? resolved.toString() : undefined
+  } catch {
+    return
+  }
+  // #endif
+}
+
+/** 判断服务端 URL 是否允许打开 */
+export function isOpenableUrl(url?: string | null) {
+  return !!resolveOpenableUrl(url)
+}
+
 /** 打开外部链接：H5 新窗口 / App 系统浏览器 / 小程序复制链接兜底 */
 export function openUrl(url?: string) {
   if (!url) {
     return
   }
   // #ifdef H5
-  window.open(url, '_blank')
+  window.open(url, '_blank', 'noopener,noreferrer')
   // #endif
   // #ifdef APP-PLUS
   plus.runtime.openURL(url)
@@ -34,6 +64,14 @@ export function openUrl(url?: string) {
     success: () => uni.showToast({ title: '链接已复制，请在浏览器打开', icon: 'none' }),
   })
   // #endif
+}
+
+/** 安全打开服务端提供的外部链接 */
+export function openSafeUrl(url?: string | null) {
+  const resolved = resolveOpenableUrl(url)
+  if (resolved) {
+    openUrl(resolved)
+  }
 }
 
 /**

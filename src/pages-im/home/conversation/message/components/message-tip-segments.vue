@@ -12,7 +12,7 @@
 <script lang="ts" setup>
 import type { TipSegment } from '@/pages-im/utils/message'
 import { IM_AT_ALL_USER_ID } from '@/pages-im/utils/constants'
-import { openUrl } from '@/utils/url'
+import { openSafeUrl } from '@/utils/url'
 
 defineProps<{
   segments: TipSegment[] // 消息提示分段
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 /** 点击消息提示分段 */
 function handleSegmentTap(segment: TipSegment) {
   if (segment.type === 'link') {
-    openUrl(segment.href)
+    openSafeUrl(segment.href)
   } else if (segment.type === 'mention' && segment.userId !== IM_AT_ALL_USER_ID) {
     emit('mention-click', segment.userId)
   }

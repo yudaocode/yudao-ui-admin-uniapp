@@ -35,13 +35,13 @@
           selectable
         />
         <view
-          v-else-if="detail.url"
+          v-if="detail.url"
           class="mt-32rpx break-all text-28rpx text-[#576b95] leading-44rpx"
-          @click="openUrl(detail.url)"
+          @click="openSafeUrl(detail.url)"
         >
           查看原文
         </view>
-        <wd-empty v-else class="mt-80rpx" icon="content" tip="暂无正文" />
+        <wd-empty v-if="!detail.content && !detail.url" class="mt-80rpx" icon="content" tip="暂无正文" />
       </view>
       <wd-empty v-else class="mt-160rpx" icon="content" tip="频道消息不存在" />
     </scroll-view>
@@ -55,7 +55,7 @@ import { getChannelMaterial } from '@/api/im/channel/material'
 import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { navigateBackPlus } from '@/utils'
-import { openUrl } from '@/utils/url'
+import { openSafeUrl } from '@/utils/url'
 
 const props = defineProps<{
   id?: number | string

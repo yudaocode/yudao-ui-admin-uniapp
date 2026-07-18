@@ -7,8 +7,10 @@
     <template v-else>
       <!-- 回复预览 -->
       <ReplyPreview
-        v-if="replyTitle"
-        :title="replyTitle"
+        v-if="replyTarget"
+        :quote="replyTarget"
+        :sender-name="replySenderName"
+        :recalled="replyRecalled"
         closable
         class="mb-14rpx"
         @close="emit('clear-reply')"
@@ -96,6 +98,12 @@
             </view>
             <text>{{ fileSending ? '发送中' : '文件' }}</text>
           </view>
+          <view v-if="isGroup" class="im-tool-item" @click="openMentionPicker">
+            <view class="im-tool-icon">
+              <wd-icon name="user-add" size="52rpx" color="#555" />
+            </view>
+            <text>@成员</text>
+          </view>
           <view v-if="isGroup && MESSAGE_GROUP_READ_ENABLED" class="im-tool-item" @click="enableReceiptMode">
             <view class="im-tool-icon">
               <wd-icon name="check-circle" size="52rpx" color="#555" />
@@ -132,6 +140,7 @@ import type {
   QuoteMessage,
   VideoMessage,
 } from '@/pages-im/utils/message'
+import type { UploadMessageData } from '../../../composables/useMessageSender'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
@@ -149,6 +158,7 @@ import {
   ImMessageType,
 } from '@/pages-im/utils/constants'
 import { useMediaUploader } from '../../../composables/useMediaUploader'
+import { generateClientMessageId } from '@/pages-im/utils/message'
 import FacePicker from './face-picker.vue'
 import MentionPicker from './mention-picker.vue'
 import ReplyPreview from './reply-preview.vue'
@@ -172,18 +182,31 @@ const props = defineProps<{
   targetId: number // 会话目标编号
   groupMembers: GroupMember[] // 群成员
   selfUserId?: number // 当前用户编号
+  active: boolean // 当前聊天页是否可见
   replyTarget?: QuoteMessage // 当前回复目标
-  replyTitle?: string // 回复预览文案（为空表示无回复）
+  replySenderName?: string // 回复目标发送人名称
+  replyRecalled?: boolean // 回复目标是否已撤回
   disabledTip?: string // 不可发送提示
 }>()
 
 const emit = defineEmits<{
   'send': [data: SendPayload] // 发送消息
   'clear-reply': [] // 清除回复
+  'upload-start': [data: UploadMessageData, resolve: (accepted: boolean) => void] // 添加上传占位消息
+  'upload-progress': [clientMessageId: string, progress: number] // 更新上传进度
+  'upload-complete': [data: UploadMessageData] // 完成上传并发送
+  'upload-failed': [clientMessageId: string] // 标记上传失败
 }>()
 
 const toast = useToast()
-const { chooseChatFile, validateFileSize, uploadLocalFile, uploadBlob, getLocalImageInfo } = useMediaUploader()
+const {
+  chooseChatFile,
+  validateFileSize,
+  uploadLocalFile,
+  uploadBlob,
+  getLocalImageInfo,
+  getLocalVideoInfo,
+} = useMediaUploader()
 const inputContent = defineModel<string>({ default: '' }) // 输入内容
 const mentionUserIds = ref<number[]>([]) // 本次文本 @ 的用户
 const faceVisible = ref(false) // 表情面板
@@ -245,6 +268,13 @@ function enableReceiptMode() {
   voiceMode.value = false
   moreVisible.value = false
   void focusTextInput()
+}
+
+/** 从更多面板打开 @ 成员搜索 */
+function openMentionPicker() {
+  mentionTriggerIndex.value = undefined
+  moreVisible.value = false
+  mentionVisible.value = true
 }
 
 /** 选中表情：发送表情消息 */
@@ -380,27 +410,42 @@ function handleSendImage(sourceType: Array<'album' | 'camera'> = ['album', 'came
       if (!validateFileSize(res.tempFiles?.[0]?.size, MESSAGE_MEDIA_MAX_BYTES)) {
         return
       }
-      const quote = consumeReply()
       imageSending.value = true
+      let clientMessageId: string | undefined
       try {
-        const [url, imageInfo] = await Promise.all([
-          uploadLocalFile(filePath, 'im/message'),
-          getLocalImageInfo(filePath),
-        ])
+        const imageInfo = await getLocalImageInfo(filePath)
+        if (!isSendContextActive(context) || !canSend()) {
+          return
+        }
+        const quote = consumeReply()
+        clientMessageId = startMediaUpload(ImMessageType.IMAGE, {
+          url: filePath,
+          width: imageInfo?.width,
+          height: imageInfo?.height,
+          size: res.tempFiles?.[0]?.size,
+        }, quote)
+        if (!clientMessageId) {
+          return
+        }
+        const url = await uploadLocalFile(filePath, 'im/message', progress =>
+          emit('upload-progress', clientMessageId, progress))
         const payload: ImageMessage = {
           url,
           width: imageInfo?.width,
           height: imageInfo?.height,
           size: res.tempFiles?.[0]?.size,
         }
-        if (!isSendContextActive(context) || !canSend()) {
-          return
-        }
-        emit('send', {
+        emit('upload-complete', {
+          clientMessageId,
           type: ImMessageType.IMAGE,
           payload,
           options: { quote, quoteCaptured: true },
         })
+        moreVisible.value = false
+      } catch {
+        if (clientMessageId) {
+          emit('upload-failed', clientMessageId)
+        }
       } finally {
         imageSending.value = false
       }
@@ -426,20 +471,34 @@ async function handleSendFile() {
   if (!validateFileSize(file.size, MESSAGE_MEDIA_MAX_BYTES)) {
     return
   }
+  if (!canSend()) {
+    return
+  }
   const quote = consumeReply()
   fileSending.value = true
+  const clientMessageId = startMediaUpload(ImMessageType.FILE, {
+    url: file.path,
+    name: file.name || '文件',
+    size: file.size,
+    type: file.type,
+  }, quote)
+  if (!clientMessageId) {
+    fileSending.value = false
+    return
+  }
   try {
-    const url = await uploadLocalFile(file.path, 'im/file')
-    if (!isSendContextActive(context) || !canSend()) {
-      return
-    }
+    const url = await uploadLocalFile(file.path, 'im/file', progress =>
+      emit('upload-progress', clientMessageId, progress))
     const payload: FileMessage = { url, name: file.name || '文件', size: file.size, type: file.type }
-    emit('send', {
+    emit('upload-complete', {
+      clientMessageId,
       type: ImMessageType.FILE,
       payload,
       options: { quote, quoteCaptured: true },
     })
     moreVisible.value = false
+  } catch {
+    emit('upload-failed', clientMessageId)
   } finally {
     fileSending.value = false
   }
@@ -461,20 +520,52 @@ function handleSendVideo() {
       if (!validateFileSize(res.size, MESSAGE_MEDIA_MAX_BYTES)) {
         return
       }
-      const quote = consumeReply()
       videoSending.value = true
+      let clientMessageId: string | undefined
       try {
-        const url = await uploadLocalFile(res.tempFilePath, 'im/video')
+        const videoInfo = await getLocalVideoInfo(res.tempFilePath)
+        const coverPath = String(videoInfo?.thumbTempFilePath || (res as any).thumbTempFilePath || '')
+        const width = Number(videoInfo?.width || (res as any).width || 0) || undefined
+        const height = Number(videoInfo?.height || (res as any).height || 0) || undefined
+        const duration = Math.round(res.duration || Number(videoInfo?.duration) || 0)
         if (!isSendContextActive(context) || !canSend()) {
           return
         }
-        const payload: VideoMessage = { url, duration: Math.round(res.duration || 0), size: res.size }
-        emit('send', {
+        const quote = consumeReply()
+        clientMessageId = startMediaUpload(ImMessageType.VIDEO, {
+          url: res.tempFilePath,
+          coverUrl: coverPath || undefined,
+          duration,
+          width,
+          height,
+          size: res.size,
+        }, quote)
+        if (!clientMessageId) {
+          return
+        }
+        const url = await uploadLocalFile(res.tempFilePath, 'im/video', progress =>
+          emit('upload-progress', clientMessageId, Math.round(progress * (coverPath ? 0.9 : 1))))
+        let coverUrl: string | undefined
+        if (coverPath) {
+          try {
+            coverUrl = await uploadLocalFile(coverPath, 'im/video-cover', progress =>
+              emit('upload-progress', clientMessageId, 90 + Math.round(progress * 0.1)))
+          } catch (error) {
+            console.warn('[IM 消息输入] 视频封面上传失败，继续发送原视频', error)
+          }
+        }
+        const payload: VideoMessage = { url, coverUrl, duration, width, height, size: res.size }
+        emit('upload-complete', {
+          clientMessageId,
           type: ImMessageType.VIDEO,
           payload,
           options: { quote, quoteCaptured: true },
         })
         moreVisible.value = false
+      } catch {
+        if (clientMessageId) {
+          emit('upload-failed', clientMessageId)
+        }
       } finally {
         videoSending.value = false
       }
@@ -491,38 +582,66 @@ function handleSendVoice(payload: AudioMessage) {
   moreVisible.value = false
 }
 
+/** 添加媒体上传占位消息 */
+function startMediaUpload(
+  type: number,
+  payload: Record<string, any>,
+  quote?: QuoteMessage,
+) {
+  const clientMessageId = generateClientMessageId()
+  let accepted = false
+  emit('upload-start', {
+    clientMessageId,
+    type,
+    payload,
+    options: { quote, quoteCaptured: true },
+  }, value => accepted = value)
+  return accepted ? clientMessageId : undefined
+}
+
 // #ifdef H5
 /** H5 粘贴图片直接发送 */
 async function handleH5Paste(event: ClipboardEvent) {
+  const context = getSendContext()
+  if (!isSendContextActive(context)) {
+    return
+  }
   const image = Array.from(event.clipboardData?.items || [])
     .find(item => item.kind === 'file' && item.type.startsWith('image/'))
     ?.getAsFile()
   if (!image || imageSending.value || !canSend()) {
     return
   }
-  const context = getSendContext()
   if (!validateFileSize(image.size, MESSAGE_MEDIA_MAX_BYTES)) {
     return
   }
   event.preventDefault()
   const quote = consumeReply()
   imageSending.value = true
+  const blobUrl = URL.createObjectURL(image)
+  const clientMessageId = startMediaUpload(ImMessageType.IMAGE, {
+    url: blobUrl,
+    size: image.size,
+  }, quote)
+  if (!clientMessageId) {
+    URL.revokeObjectURL(blobUrl)
+    imageSending.value = false
+    return
+  }
   try {
     const extension = image.type.split('/')[1] || 'png'
     const url = await uploadBlob(image, `paste-${Date.now()}.${extension}`, 'im/message')
-    if (!isSendContextActive(context) || !canSend()) {
-      return
-    }
-    emit('send', {
+    emit('upload-progress', clientMessageId, 100)
+    emit('upload-complete', {
+      clientMessageId,
       type: ImMessageType.IMAGE,
       payload: { url, size: image.size } satisfies ImageMessage,
       options: { quote, quoteCaptured: true },
     })
   } catch {
-    if (isSendContextActive(context)) {
-      toast.error('粘贴图片发送失败')
-    }
+    emit('upload-failed', clientMessageId)
   } finally {
+    URL.revokeObjectURL(blobUrl)
     imageSending.value = false
   }
 }
@@ -557,7 +676,7 @@ function getSendContext() {
 
 /** 判断异步上传结果是否仍属于当前账号与会话 */
 function isSendContextActive(context: ReturnType<typeof getSendContext>) {
-  return !disposed
+  return !disposed && props.active
     && context.userId === props.selfUserId
     && context.conversationType === props.conversationType
     && context.targetId === props.targetId

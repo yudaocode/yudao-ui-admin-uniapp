@@ -25,6 +25,7 @@
                 <MessageContent
                   :type="item.type"
                   :content="item.content"
+                  :conversation-type="conversationType"
                   @merge-click="handleNestedOpen"
                   @material-click="handleMaterialClick"
                   @card-click="handleCardClick"

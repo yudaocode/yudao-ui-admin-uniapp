@@ -175,6 +175,17 @@ export const IM_AT_ALL_USER_ID = -1
 /** @全体成员的展示名 */
 export const IM_AT_ALL_NICKNAME = '所有人'
 
+/** IM WebSocket 外层帧类型 */
+export const ImWebSocketMessageType = {
+  NOTIFICATION: 'im-notification',
+} as const
+
+/** IM 转发模式 */
+export const ImForwardMode = {
+  SINGLE: 'single',
+  MERGE: 'merge',
+} as const
+
 /** 判断是否群广播事件 */
 export function isGroupNotification(type: number): boolean {
   return type >= ImMessageType.GROUP_CREATE

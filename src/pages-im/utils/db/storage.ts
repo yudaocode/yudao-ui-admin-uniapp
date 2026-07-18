@@ -1,7 +1,7 @@
 // IM 本地数据库：微信小程序 storage 适配层
 // messages 按「会话 + 分页」分片，限制单 Key 体积并按页淘汰历史消息
 
-import type { ImDbClient } from './client'
+import type { ImDbClient, MessageDOPageResult } from './client'
 import type { DbStoreName, MessageDO, SettingDO } from './types'
 import { STORE_SCHEMA } from './types'
 
@@ -316,20 +316,26 @@ export class StorageDbClient implements ImDbClient {
 
   async getMessageListByConversation(
     clientConversationId: string,
-    options?: { beforeSendTime?: number, limit?: number },
-  ): Promise<MessageDO[]> {
+    options?: Parameters<ImDbClient['getMessageListByConversation']>[1],
+  ): Promise<MessageDOPageResult> {
     const limit = options?.limit ?? 50
-    const upper = options?.beforeSendTime ?? Number.MAX_SAFE_INTEGER
+    const before = options?.before
     const meta = this.readMessageMeta(clientConversationId)
     const list: MessageDO[] = []
     for (const page of [...meta.pages].sort((a, b) => b.maxSendTime - a.maxSendTime)) {
       list.push(...Object.values(this.readMap(this.messagePageKey(clientConversationId, page.id))) as MessageDO[])
     }
-    return list
-      .filter(message => message.sendTime < upper)
-      .sort((a, b) => b.sendTime - a.sendTime)
-      .slice(0, limit)
-      .reverse()
+    const matched = list
+      .filter(message => !before
+        || message.sendTime < before.sendTime
+        || (message.sendTime === before.sendTime && message.messageKey < before.messageKey))
+      .sort((left, right) => right.sendTime - left.sendTime
+        || right.messageKey.localeCompare(left.messageKey))
+      .slice(0, limit + 1)
+    return {
+      list: matched.slice(0, limit).reverse(),
+      hasMore: matched.length > limit,
+    }
   }
 
   async getSetting<T>(key: string): Promise<T | undefined> {

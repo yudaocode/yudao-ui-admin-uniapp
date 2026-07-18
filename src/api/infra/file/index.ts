@@ -66,11 +66,15 @@ export function deleteFile(id: number) {
  * @param directory 目录（可选）
  * @returns 文件访问 URL
  */
-export async function uploadFile(filePath: string, directory?: string): Promise<string> {
+export async function uploadFile(
+  filePath: string,
+  directory?: string,
+  onProgress?: (progress: number) => void,
+): Promise<string> {
   const userStore = useUserStore()
   const token = await useTokenStore().tryGetValidToken()
   return new Promise((resolve, reject) => {
-    uni.uploadFile({
+    const task = uni.uploadFile({
       url: `${getEnvBaseUrl()}/infra/file/upload`,
       filePath,
       name: 'file',
@@ -97,5 +101,6 @@ export async function uploadFile(filePath: string, directory?: string): Promise<
         reject(err)
       },
     })
+    task.onProgressUpdate?.(event => onProgress?.(event.progress))
   })
 }

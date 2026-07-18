@@ -6,6 +6,7 @@ import { isH5, isMpWeixin } from '@uni-helper/uni-env'
 import { useTokenStore, useUserStore } from '@/store'
 import { getEnvBaseUrl } from '@/utils'
 import { stringifyQuery } from '@/http/tools/queryString'
+import { openSafeUrl } from '@/utils/url'
 
 /** 下载后端接口文件 */
 export async function downloadApiFile(url: string, params?: Record<string, any>, fileName?: string): Promise<void> {
@@ -282,7 +283,7 @@ export function openAttachment(url?: string) {
     return
   }
   // #ifdef H5
-  window.open(fullUrl, '_blank')
+  openSafeUrl(fullUrl)
   // #endif
   // #ifndef H5
   uni.showLoading({

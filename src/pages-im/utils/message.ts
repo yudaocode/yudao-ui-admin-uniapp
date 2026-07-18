@@ -313,13 +313,14 @@ export function toGroupCardTarget(group: GroupLite | null | undefined): CardTarg
 
 /** 生成客户端消息编号 */
 export function generateClientMessageId() {
-  const random = Math.random().toString(16).slice(2)
-  return `${Date.now().toString(36)}-${random}`
-}
-
-/** 获取会话内消息标识 */
-export function getMessageIdentityKey(message: Pick<Message, 'id' | 'clientMessageId'>) {
-  return message.id ? `id:${message.id}` : `client:${message.clientMessageId}`
+  const randomValues = typeof crypto === 'object' && typeof crypto.getRandomValues === 'function'
+    ? crypto.getRandomValues(new Uint8Array(16))
+    : Array.from({ length: 16 }, () => Math.floor(Math.random() * 256))
+  const bytes = Array.from(randomValues)
+  bytes[6] = (bytes[6] & 0x0F) | 0x40
+  bytes[8] = (bytes[8] & 0x3F) | 0x80
+  const hex = bytes.map(value => value.toString(16).padStart(2, '0'))
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`
 }
 
 /** 判断会话内是否为同一条消息 */

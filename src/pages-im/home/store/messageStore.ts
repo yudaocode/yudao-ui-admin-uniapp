@@ -25,7 +25,9 @@ import {
 import {
   generateClientMessageId,
   getPrivateMessagePeerId,
+  parseMessage,
   parseRecallMessageId,
+  serializeMessage,
 } from '@/pages-im/utils/message'
 import { runMinIdPull } from '@/pages-im/utils/pull'
 import { toTimestamp } from '@/pages-im/utils/time'
@@ -55,13 +57,40 @@ export function buildMessageFromDO(message: MessageDO): Message {
 
 /** 前端消息转本地数据库消息 */
 export function buildMessageDO(message: Message, conversationType: number): MessageDO {
+  const {
+    uploadProgress: _uploadProgress,
+    _localFile,
+    _ackMerging,
+    ...persistentMessage
+  } = message
   return {
-    ...message,
+    ...persistentMessage,
     messageKey: message.id
       ? getServerMessageKey(conversationType, message.id)
       : getClientMessageKey(message.clientMessageId),
     conversationType,
     clientConversationId: getClientConversationId(conversationType, message.targetId),
+  }
+}
+
+/** 将重启前未完成的本地消息降级为可识别的失败态 */
+function recoverPendingMessage(message: MessageDO): MessageDO {
+  if (message.status !== ImMessageStatus.SENDING) {
+    return message
+  }
+  const payload = parseMessage<Record<string, any>>(message.content)
+  if (!payload?._uploadPending) {
+    return { ...message, status: ImMessageStatus.FAILED }
+  }
+  const { url: _localUrl, coverUrl: _localCoverUrl, ...persistedPayload } = payload
+  return {
+    ...message,
+    content: serializeMessage({
+      ...persistedPayload,
+      _uploadPending: false,
+      _uploadFailed: true,
+    }),
+    status: ImMessageStatus.FAILED,
   }
 }
 
@@ -429,7 +458,10 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   }
 
   /** 获取当前会话未完成的本地消息；重启后的发送中消息统一降级为失败 */
-  async function getConversationPendingMessages(clientConversationId: string): Promise<MessageDO[]> {
+  async function getConversationPendingMessages(
+    clientConversationId: string,
+    activeClientMessageIds = new Set<string>(),
+  ): Promise<MessageDO[]> {
     await initImDb()
     const db = getImDb()
     const allMessages = await db.filter<MessageDO>(
@@ -445,17 +477,20 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     const messages = allMessages.filter(item => !item.id
       && !serverClientMessageIds.has(item.clientMessageId)
       && (item.status === ImMessageStatus.SENDING || item.status === ImMessageStatus.FAILED))
-    const recovered = messages.map(message => message.status === ImMessageStatus.SENDING
-      ? { ...message, status: ImMessageStatus.FAILED }
-      : message)
-    await db.bulkPut<MessageDO>('messages', recovered)
+    const recovered = messages.map(message => activeClientMessageIds.has(message.clientMessageId)
+      ? message
+      : recoverPendingMessage(message))
+    const recoveredChanges = recovered.filter((message, index) => message !== messages[index])
+    if (recoveredChanges.length > 0) {
+      await db.bulkPut<MessageDO>('messages', recoveredChanges)
+    }
     return recovered.sort((left, right) => right.sendTime - left.sendTime)
   }
 
   /** 获取当前会话本地缓存消息 */
   async function getConversationStoredMessages(clientConversationId: string, limit = 50) {
     await initImDb()
-    return getImDb().getMessageListByConversation(clientConversationId, { limit })
+    return (await getImDb().getMessageListByConversation(clientConversationId, { limit })).list
   }
 
   /** 获取会话本地清理边界 */

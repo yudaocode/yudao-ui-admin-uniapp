@@ -65,7 +65,10 @@
           <MessageBubble
             :message="message"
             :is-self="isSelf"
-            :quote-title="quoteTitle"
+            :conversation-type="conversationType"
+            :quote="quote"
+            :quote-sender-name="quoteSenderName"
+            :quote-recalled="quoteRecalled"
             :mentions="mentionCandidates"
             :centered="isChannelMaterial"
             @longpress="onBubbleLongpress"
@@ -150,6 +153,7 @@ const props = defineProps<{
   peerName?: string // 私聊对方昵称
   peerAvatar?: string // 私聊对方头像
   groupMembers: GroupMember[] // 当前群成员
+  messageMap?: Map<number, Message> // 当前已加载消息索引
   privateMaxReadMessageId?: number // 私聊对方已读位置
   showTime?: boolean // 是否展示时间分隔
   selectMode?: boolean // 多选模式
@@ -158,7 +162,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'longpress': [message: Message] // 长按消息
-  'scroll-to-quote': [content: string] // 点击引用滚动到原消息
+  'scroll-to-quote': [messageId: number] // 点击引用滚动到原消息
   'material-click': [payload: MaterialMessage] // 点击频道素材
   'merge-click': [content: string] // 点击合并转发
   'card-click': [payload: CardMessage] // 点击名片
@@ -360,14 +364,10 @@ function getQuoteSenderName(quote: QuoteMessage) {
   return props.peerName || `用户 ${quote.senderId}`
 }
 
-/** 引用展示文案 */
-const quoteTitle = computed(() => {
-  const quote = getQuoteFromMessage(props.message.content)
-  if (!quote) {
-    return ''
-  }
-  return `${getQuoteSenderName(quote)}：${getMessageSummary(quote.type, quote.content)}`
-})
+const quote = computed(() => getQuoteFromMessage(props.message.content) || undefined) // 引用消息快照
+const quoteSenderName = computed(() => quote.value ? getQuoteSenderName(quote.value) : '') // 引用发送人名称
+const quoteRecalled = computed(() => !!quote.value?.messageId
+  && props.messageMap?.get(quote.value.messageId)?.type === ImMessageType.RECALL) // 原消息是否已撤回
 
 /** 是否展示群消息已读状态 */
 const showGroupReadStatus = computed(() => isSelf.value

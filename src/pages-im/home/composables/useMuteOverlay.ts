@@ -59,14 +59,13 @@ export function useMuteOverlay(): ComputedRef<MuteOverlayInfo | null> {
       return { text: '该群已被管理员封禁，无法发送消息', icon: 'warning' }
     }
     const canManage = userStore.userInfo.userId === group.ownerUserId
-      || member?.role === ImGroupMemberRole.OWNER
       || member?.role === ImGroupMemberRole.ADMIN
     if (group.mutedAll && group.membersLoaded && !canManage) {
       return { text: '全群禁言中，暂时无法发送消息', icon: 'mic-off' }
     }
     if (member?.muteEndTime && toTimestamp(member.muteEndTime) > sharedNow.value) {
       return {
-        text: `你已被禁言至 ${formatDate(member.muteEndTime, 'MM-DD HH:mm')}`,
+        text: `您已被禁言，解除时间：${formatDate(member.muteEndTime, 'MM-DD HH:mm')}`,
         icon: 'mic-off',
       }
     }

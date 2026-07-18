@@ -2,7 +2,7 @@
 // 使用 HTML5+ plus.sqlite，统一表保存各业务 store 的 JSON 记录
 // noinspection SqlNoDataSourceInspection
 
-import type { ImDbClient } from './client'
+import type { ImDbClient, MessageDOPageResult } from './client'
 import type { DbStoreName, MessageDO, SettingDO } from './types'
 import { STORE_SCHEMA } from './types'
 
@@ -165,16 +165,22 @@ export class SqliteDbClient implements ImDbClient {
 
   async getMessageListByConversation(
     clientConversationId: string,
-    options?: { beforeSendTime?: number, limit?: number },
-  ): Promise<MessageDO[]> {
-    const upper = Number(options?.beforeSendTime ?? Number.MAX_SAFE_INTEGER)
+    options?: Parameters<ImDbClient['getMessageListByConversation']>[1],
+  ): Promise<MessageDOPageResult> {
+    const before = options?.before
     const limit = Math.max(1, Number(options?.limit ?? 50))
+    const cursorSql = before
+      ? ` AND (send_time < ${Number(before.sendTime)} OR (send_time = ${Number(before.sendTime)} AND record_key < ${this.sqlValue(before.messageKey)}))`
+      : ''
     const rows = await this.select<SqliteRow>(
       `SELECT value FROM im_records WHERE store_name = 'messages'`
-      + ` AND conversation_id = ${this.sqlValue(clientConversationId)} AND send_time < ${upper}`
-      + ` ORDER BY send_time DESC LIMIT ${limit}`,
+      + ` AND conversation_id = ${this.sqlValue(clientConversationId)}${cursorSql}`
+      + ` ORDER BY send_time DESC, record_key DESC LIMIT ${limit + 1}`,
     )
-    return rows.map(row => JSON.parse(row.value) as MessageDO).reverse()
+    return {
+      list: rows.slice(0, limit).map(row => JSON.parse(row.value) as MessageDO).reverse(),
+      hasMore: rows.length > limit,
+    }
   }
 
   async getSetting<T>(key: string): Promise<T | undefined> {

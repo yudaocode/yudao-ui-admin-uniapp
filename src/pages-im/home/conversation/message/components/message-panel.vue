@@ -89,6 +89,7 @@
             :peer-name="pageTitle"
             :peer-avatar="privateFriend?.avatar"
             :group-members="groupMembers"
+            :message-map="messageMap"
             :private-max-read-message-id="privateMaxReadMessageId"
             :show-time="shouldShowTime(index)"
             :select-mode="selectMode"
@@ -123,11 +124,17 @@
           :target-id="targetId"
           :group-members="groupMembers"
           :self-user-id="userStore.userInfo.userId"
+          :active="active"
           :reply-target="replyTarget"
-          :reply-title="getQuoteTitleByQuote(replyTarget)"
+          :reply-sender-name="replySenderName"
+          :reply-recalled="replyRecalled"
           :disabled-tip="inputDisabledTip"
           @send="handleSend"
           @clear-reply="clearReplyTarget"
+          @upload-start="handleUploadStart"
+          @upload-progress="handleUploadProgress"
+          @upload-complete="handleUploadComplete"
+          @upload-failed="handleUploadFailed"
         />
         <MessageMultiSelectBar
           v-else-if="selectMode && !isChannel"
@@ -210,12 +217,11 @@ import type { MessageDO } from '@/pages-im/utils/db'
 import type { Message } from '../../../types'
 import type { QuoteMessage } from '@/pages-im/utils/message'
 import type { GroupCardPreviewOptions } from '../../../composables/useMessageContentActions'
+import type { UploadMessageData } from '../../../composables/useMessageSender'
 import {
   buildQuoteFromMessage,
-  getQuoteFromMessage,
   parseRecallMessageId,
 } from '@/pages-im/utils/message'
-import { getMessageSummary } from '@/pages-im/utils/conversation'
 import { MESSAGE_CHAT_PAGE_SIZE } from '@/pages-im/utils/config'
 import { getMemberDisplayName } from '@/pages-im/utils/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -386,6 +392,7 @@ const {
   addLatestMessage,
   addStoredMessage,
   replaceLocalMessage,
+  isLocalMessageDeleted,
   markMessageRecalled,
   updateMessageReceipt,
   removeDeletedMessages,
@@ -401,6 +408,12 @@ const {
   markRead,
   syncPrivateReadStatus: syncPrivateReadStatusForList,
 })
+const messageMap = computed(() => new Map(messageList.value
+  .filter(message => !!message.id)
+  .map(message => [message.id!, message]))) // 当前已加载消息索引
+const replySenderName = computed(() => replyTarget.value ? getQuoteSenderName(replyTarget.value) : '') // 回复发送人名称
+const replyRecalled = computed(() => !!replyTarget.value?.messageId
+  && messageMap.value.get(replyTarget.value.messageId)?.type === ImMessageType.RECALL) // 回复目标是否已撤回
 
 /** 打开消息转发弹窗 */
 function openForward(messages: Message[], merge = false) {
@@ -415,6 +428,10 @@ function openForward(messages: Message[], merge = false) {
 }
 const {
   sendRaw,
+  startUploadMessage,
+  updateUploadProgress,
+  completeUploadMessage,
+  failUploadMessage,
   retryMessage,
   readActive,
   syncPrivateReadStatus,
@@ -425,6 +442,8 @@ const {
   replyTarget,
   addLatestMessage,
   replaceLocalMessage,
+  isLocalMessageDeleted,
+  getSendDisabledTip: () => inputDisabledTip.value,
   clearReplyTarget,
 })
 
@@ -524,26 +543,17 @@ function getQuoteSenderName(quote: QuoteMessage) {
   return quote.senderId === targetId.value ? pageTitle.value : `用户 ${quote.senderId}`
 }
 
-/** 获取引用展示文案 */
-function getQuoteTitleByQuote(quote?: QuoteMessage | null) {
-  if (!quote) {
-    return ''
-  }
-  return `${getQuoteSenderName(quote)}：${getMessageSummary(quote.type, quote.content)}`
-}
-
 /** 滚动到引用消息 */
-async function scrollToQuote(content: string) {
-  const quote = getQuoteFromMessage(content)
-  if (!quote?.messageId) {
+async function scrollToQuote(messageId: number) {
+  if (!messageId) {
     return
   }
-  if (!messageList.value.some(item => item.id === quote.messageId)) {
+  if (!messageMap.value.has(messageId)) {
     toast.show('原消息不在视野')
     return
   }
   await nextTick()
-  pagingRef.value?.scrollIntoViewById(`msg-${quote.messageId}`, 0, true)
+  pagingRef.value?.scrollIntoViewById(`msg-${messageId}`, 0, true)
 }
 
 /** 清空回复目标 */
@@ -583,8 +593,9 @@ async function confirmDelete(messages: Message[]) {
   } catch {
     return
   }
+  const remainingCount = removeDeletedMessages(messages)
   await removeMessageList(currentCcid.value, messages)
-  if (removeDeletedMessages(messages) === 0) {
+  if (remainingCount === 0) {
     await loadOlderMessagesAfterClear()
   }
   exitSelectMode()
@@ -602,6 +613,26 @@ function handleSend(data: SendData) {
     return false
   }
   return sendRaw(data.type, data.payload, data.options)
+}
+
+/** 添加上传占位消息 */
+function handleUploadStart(data: UploadMessageData, resolve: (accepted: boolean) => void) {
+  resolve(startUploadMessage(data))
+}
+
+/** 更新上传进度 */
+function handleUploadProgress(clientMessageId: string, progress: number) {
+  updateUploadProgress(clientMessageId, progress)
+}
+
+/** 完成上传并发送消息 */
+function handleUploadComplete(data: UploadMessageData) {
+  void completeUploadMessage(data)
+}
+
+/** 标记上传失败 */
+function handleUploadFailed(clientMessageId: string) {
+  void failUploadMessage(clientMessageId)
 }
 
 /** 重试失败消息 */

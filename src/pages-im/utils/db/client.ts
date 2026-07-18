@@ -4,6 +4,18 @@
 import type { MessageDO } from '@/pages-im/home/types'
 import type { DbStoreName } from './types'
 
+/** 数据库消息分页游标 */
+export interface MessageDOPageCursor {
+  sendTime: number
+  messageKey: string
+}
+
+/** 数据库消息分页结果 */
+export interface MessageDOPageResult {
+  list: MessageDO[]
+  hasMore: boolean
+}
+
 /** 跨端本地 DB 客户端接口（去掉 IndexedDB 专有的事务参数，按平台各自实现原子性） */
 export interface ImDbClient {
   /** 打开/切换到某用户的库 */
@@ -26,11 +38,11 @@ export interface ImDbClient {
   filter: <T>(store: DbStoreName, predicate: (record: T) => boolean) => Promise<T[]>
   /** 条件删除 */
   removeWhere: <T>(store: DbStoreName, predicate: (record: T) => boolean) => Promise<void>
-  /** 按会话分页取消息（按 sendTime 由新到旧取一页，返回时升序） */
+  /** 按会话分页取消息 */
   getMessageListByConversation: (
     clientConversationId: string,
-    options?: { beforeSendTime?: number, limit?: number }
-  ) => Promise<MessageDO[]>
+    options?: { before?: MessageDOPageCursor, limit?: number }
+  ) => Promise<MessageDOPageResult>
   /** 读取设置 */
   getSetting: <T>(key: string) => Promise<T | undefined>
   /** 写入设置 */
