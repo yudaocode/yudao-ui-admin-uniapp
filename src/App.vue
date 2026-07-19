@@ -4,6 +4,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { navigateToInterceptor } from '@/router/interceptor'
 import { useDictStore, useTokenStore } from '@/store'
 import { tabbarStore } from '@/tabbar/store'
+import { currRoute } from '@/utils'
 
 onLaunch((options) => {
   console.log('App.vue onLaunch', options)
@@ -19,13 +20,19 @@ onShow((options) => {
     void dictStore.loadDictCacheWithRetry()
   }
 
-  // 处理直接进入页面路由的情况：如h5直接输入路由、微信小程序分享后进入等
+  // 直接进入时使用启动路径；从文件、地图等系统页面返回时保留当前页面
   // https://github.com/unibest-tech/unibest/issues/192
-  if (options?.path) {
-    navigateToInterceptor.invoke({ url: `/${options.path}`, query: options.query })
-  } else {
-    navigateToInterceptor.invoke({ url: '/' })
+  // https://gitee.com/yudaocode/yudao-ui-admin-uniapp/issues/IK1L9Q
+  const currentRoute = currRoute()
+  const path = options?.path || currentRoute.path
+  if (!path) {
+    return
   }
+  const url = path.startsWith('/') ? path : `/${path}`
+  navigateToInterceptor.invoke({
+    url,
+    query: options?.path ? options.query : currentRoute.query,
+  })
   tabbarStore.syncCurIdxByCurrentPageAsync()
 })
 onHide(() => {

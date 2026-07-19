@@ -38,6 +38,13 @@ function allowRoute(path: string) {
   return true
 }
 
+const ENCODED_QUERY_COMPONENT_RE = /^(?:[\w.!~*'()-]|%[\da-f]{2})*$/i // 已编码查询参数的合法字符
+
+/** 规范化查询参数编码，保留完整的已有编码 */
+function encodeQueryComponent(value: string) {
+  return ENCODED_QUERY_COMPONENT_RE.test(value) ? value : encodeURIComponent(value)
+}
+
 export const navigateToInterceptor = {
   // 注意，这里的url是 '/' 开头的，如 '/pages/index/index'，跟 'pages.json' 里面的 path 不同
   // 增加对相对路径的处理，BY 网友 @ideal
@@ -102,7 +109,10 @@ export const navigateToInterceptor = {
     let fullPath = path
 
     if (Object.keys(myQuery).length) {
-      fullPath += `?${Object.keys(myQuery).map(key => `${key}=${myQuery[key]}`).join('&')}`
+      const queryString = Object.entries(myQuery)
+        .map(([key, value]) => `${encodeQueryComponent(key)}=${encodeQueryComponent(value)}`)
+        .join('&')
+      fullPath += `?${queryString}`
     }
     const redirectQuery = `?redirect=${encodeURIComponent(fullPath)}`
 
