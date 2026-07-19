@@ -19,6 +19,8 @@
               :rule="fieldRule"
               :api="api"
               :option="formOption"
+              :root-api="api"
+              :root-rules="props.rule"
               :title-width="titleWidth"
               :disabled="isDisabled(fieldRule)"
               style=""
@@ -76,6 +78,7 @@ import { deepMerge, hasOwn } from '../../utils/src'
 import FcFieldRenderer from './components/fieldRenderer.vue'
 import FcSubForm from './components/subForm.vue'
 import getConfig from './core/config'
+import { invokeRuleEventHandlers } from './core/event'
 import {
   getRuleEmitEvents,
   getRuleEventHandler,
@@ -216,13 +219,13 @@ function callOptionHook(name: keyof FormCreateOption, ...args: any[]) {
 
 function handleRuleEvent(rule: NormalizedFormCreateRule, eventName: string, ...args: any[]) {
   const handler = getRuleEventHandler(rule, eventName)
-  if (typeof handler === 'function') {
-    try {
-      handler(...args, rule, api)
-    } catch (error) {
-      console.warn(`[form-create] rule ${eventName} event failed`, error)
-    }
-  }
+  invokeRuleEventHandlers(handler, {
+    api,
+    args,
+    option: formOption.value,
+    rootRules: props.rule,
+    rule,
+  }, error => console.warn(`[form-create] rule ${eventName} event failed`, error))
   emit('emit-event', eventName, ...args, rule, api)
   getRuleEmitEvents(rule, eventName, args, api).forEach((event) => {
     ;(emit as any)(event.name, ...event.args)

@@ -1,7 +1,7 @@
 <template>
   <wd-form-item :title="rule.title" :title-width="titleWidth" :prop="rule.field" layout="vertical">
     <view class="fc-sub-form">
-      <view v-for="(item, itemIndex) in rows" :key="itemIndex" class="fc-sub-form__item">
+      <view v-for="(item, itemIndex) in rows" :key="getItemRowKey(item)" class="fc-sub-form__item">
         <view class="fc-sub-form__header">
           <view class="fc-sub-form__header-main" @click="toggleItem(itemIndex)">
             <text class="fc-sub-form__title">{{ getItemTitle(itemIndex) }}</text>
@@ -23,13 +23,15 @@
         </view>
 
         <view v-show="!isItemCollapsed(itemIndex)" class="fc-sub-form__body">
-          <template v-for="childRule in getItemRules(itemIndex)" :key="`${itemIndex}_${childRule.__fcId}`">
+          <template v-for="childRule in getItemRules(itemIndex)" :key="`${getItemRowKey(item)}_${childRule.__fcId}`">
             <FcSubForm
               v-if="isSubFormType(childRule)"
               :model-value="getItemValue(itemIndex, childRule.field)"
               :rule="getRenderRule(childRule, itemIndex)"
-              :api="api"
+              :api="createItemApi(itemIndex)"
               :option="option"
+              :root-api="rootApi || api"
+              :root-rules="rootRules"
               :title-width="childTitleWidth"
               :disabled="isChildDisabled(childRule, itemIndex)"
               style=""
@@ -46,7 +48,7 @@
               :disabled="isChildDisabled(childRule, itemIndex)"
               unsupported-suffix="子字段"
               style=""
-              @rule-event="(eventName, ...args) => handleChildRuleEvent(getRenderRule(childRule, itemIndex), eventName, ...args)"
+              @rule-event="(eventName, ...args) => handleChildRuleEvent(itemIndex, getRenderRule(childRule, itemIndex), childRule, undefined, eventName, ...args)"
               @update:model-value="setItemValue(itemIndex, childRule.field, $event)"
             />
           </template>
@@ -67,8 +69,8 @@
 <script lang="ts" setup>
 import type { FormCreateApi, FormCreateFieldState, FormCreateOption, FormCreateRule, NormalizedFormCreateRule } from '../../../../types/typing'
 import type { FormCreateProviderContext, FormCreateProviderState } from '../../../core/src/provider'
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import { applyControlRules, applyRuleProviders, getDefaultValue, isRuleDisabled, isRuleHidden, normalizeSubFormRules, resolveRuleFetchEffects } from '../../../core/src'
+import { computed, onBeforeUnmount, reactive, ref, toRaw, watch } from 'vue'
+import { applyControlRules, applyRuleProviders, fetchProviderData, getDefaultValue, getProviderData, isRuleDisabled, isRuleHidden, normalizeSubFormRules, resolveRuleFetchEffects, translate } from '../../../core/src'
 import { deepMerge, hasOwn } from '../../../utils/src'
 import {
   getRuleEmitEvents,
@@ -76,6 +78,7 @@ import {
   INTERNAL_LAYOUT_TITLE_TYPE,
   isSubFormType,
 } from '../core/utils'
+import { invokeRuleEventHandlers } from '../core/event'
 import { parseRules } from '../parsers'
 import FcFieldRenderer from './fieldRenderer.vue'
 
@@ -88,6 +91,8 @@ const props = defineProps<{
   disabled?: boolean
   modelValue?: any
   option?: FormCreateOption
+  rootApi?: FormCreateApi
+  rootRules?: FormCreateRule[]
   rule: NormalizedFormCreateRule
   titleWidth?: string | number
 }>()
@@ -103,6 +108,7 @@ const collapsedRows = ref<Record<number, boolean>>({})
 const itemFieldStates = reactive<Record<string, Record<string, FormCreateFieldState>>>({})
 const itemRulePatches = reactive<Record<string, Record<string, Partial<NormalizedFormCreateRule>>>>({})
 const providerStates = reactive<Record<string, Record<string, FormCreateProviderState>>>({})
+const itemRowKeys = new WeakMap<Record<string, any>, string>()
 const EMPTY_PROVIDER_STATES: Record<string, FormCreateProviderState> = {}
 const baseChildRules = computed(() => normalizeSubFormRules(props.rule, parseRules, {
   createColumnTitleRule,
@@ -119,6 +125,7 @@ const canRemove = computed(() => !props.disabled && rows.value.length > min.valu
 const canAdd = computed(() => !props.disabled && (!max.value || rows.value.length < max.value))
 let providerFetchVersion = 0
 let providerFetchTimer: ReturnType<typeof setTimeout> | undefined
+let itemRowKeySequence = 0
 const MAX_RULE_UPDATE_DEPTH = 5
 
 interface ItemRuleUpdateTask {
@@ -330,36 +337,185 @@ function getItemValue(itemIndex: number, field?: string) {
   return rows.value[itemIndex]?.[field]
 }
 
+function getItemRowKey(row: Record<string, any>) {
+  const rawRow = toRaw(row)
+  let key = itemRowKeys.get(rawRow)
+  if (!key) {
+    itemRowKeySequence += 1
+    key = `form-create-sub-form-row-${itemRowKeySequence}`
+    itemRowKeys.set(rawRow, key)
+  }
+  return key
+}
+
+function setItemRowValues(
+  targetRows: Record<string, any>[],
+  itemIndex: number,
+  values: Record<string, any>,
+  cover = false,
+) {
+  const currentRow = targetRows[itemIndex] || {}
+  const nextRow = cover ? { ...values } : { ...currentRow, ...values }
+  itemRowKeys.set(toRaw(nextRow), getItemRowKey(currentRow))
+  targetRows[itemIndex] = nextRow
+}
+
 function setItemValue(itemIndex: number, field: string | undefined, value: any) {
   if (!field) {
     return
   }
   const nextRows = [...rows.value]
-  nextRows[itemIndex] = {
-    ...(nextRows[itemIndex] || {}),
-    [field]: value,
-  }
+  setItemRowValues(nextRows, itemIndex, { [field]: value })
   const rule = getItemAllRules(itemIndex, nextRows[itemIndex]).find(item => item.field === field)
   if (rule) {
-    handleChildRuleEvent(getRenderRule(rule, itemIndex), 'change', value)
     runItemRuleUpdates(itemIndex, rule, value, nextRows)
   }
   emitValue(nextRows)
+  if (rule) {
+    handleChildRuleEvent(itemIndex, getRenderRule(rule, itemIndex), rule, nextRows, 'change', value)
+  }
 }
 
-function handleChildRuleEvent(rule: NormalizedFormCreateRule, eventName: string, ...args: any[]) {
+function handleChildRuleEvent(
+  itemIndex: number,
+  rule: NormalizedFormCreateRule,
+  selfRule: NormalizedFormCreateRule,
+  eventRows: Record<string, any>[] | undefined,
+  eventName: string,
+  ...args: any[]
+) {
+  const itemApi = createItemApi(itemIndex, eventRows)
+  const legacyApi = props.rootApi || props.api
   const handler = getRuleEventHandler(rule, eventName)
-  if (typeof handler === 'function') {
-    try {
-      handler(...args, rule, props.api)
-    } catch (error) {
-      console.warn(`[form-create] child rule ${eventName} event failed`, error)
-    }
-  }
-  emit('emit-event', eventName, ...args, rule, props.api)
-  getRuleEmitEvents(rule, eventName, args, props.api).forEach((event) => {
+  invokeRuleEventHandlers(handler, {
+    api: itemApi,
+    args,
+    legacyApi,
+    option: props.option,
+    rootRules: props.rootRules,
+    rule,
+    selfRule,
+  }, error => console.warn(`[form-create] child rule ${eventName} event failed`, error))
+  emit('emit-event', eventName, ...args, rule, legacyApi)
+  getRuleEmitEvents(rule, eventName, args, legacyApi).forEach((event) => {
     emit('rule-emit', event.name, ...event.args)
   })
+}
+
+function createItemApi(itemIndex: number, initialRows?: Record<string, any>[]): FormCreateApi | undefined {
+  const rootApi = props.api
+  if (!rootApi) {
+    return undefined
+  }
+  let localRows = initialRows
+  const initialRow = (initialRows || rows.value)[itemIndex]
+  if (!initialRow) {
+    return undefined
+  }
+  const rowKey = getItemRowKey(initialRow)
+  const releaseRows = (value: Record<string, any>[]) => {
+    void Promise.resolve().then(() => {
+      if (localRows === value) {
+        localRows = undefined
+      }
+    })
+  }
+  if (initialRows) {
+    releaseRows(initialRows)
+  }
+  const currentRows = () => localRows || rows.value
+  const currentItemIndex = () => currentRows().findIndex(row => getItemRowKey(row) === rowKey)
+  const currentRow = () => {
+    const currentIndex = currentItemIndex()
+    return currentIndex >= 0 ? currentRows()[currentIndex] : {}
+  }
+  const currentRules = () => {
+    const currentIndex = currentItemIndex()
+    return currentIndex >= 0 ? getItemAllRules(currentIndex, currentRow()) : []
+  }
+  const findRule = (field: string) => currentRules().find(rule =>
+    rule.field === field
+    || rule.name === field
+    || rule.__fcId === field
+    || getChildProp(currentItemIndex(), rule.field) === field,
+  )
+  const normalizeFields = (fields?: string | string[]) => {
+    if (fields === undefined) {
+      return currentRules().map(rule => rule.field).filter(Boolean) as string[]
+    }
+    return Array.isArray(fields) ? fields : [fields]
+  }
+  const emitRows = (value: Record<string, any>[]) => {
+    localRows = value
+    emitValue(value)
+    releaseRows(value)
+  }
+  const updateRow = (values: Record<string, any>, cover = false) => {
+    const currentIndex = currentItemIndex()
+    if (currentIndex < 0) {
+      return
+    }
+    const nextRows = [...currentRows()]
+    setItemRowValues(nextRows, currentIndex, values, cover)
+    emitRows(nextRows)
+  }
+  const providerContext = (api: FormCreateApi): FormCreateProviderContext => {
+    const currentIndex = currentItemIndex()
+    return {
+      api,
+      formData: currentRow(),
+      option: props.option,
+      states: currentIndex >= 0 ? getItemProviderStates(currentIndex) || EMPTY_PROVIDER_STATES : EMPTY_PROVIDER_STATES,
+    }
+  }
+  let itemApi: FormCreateApi
+  const overrides: Partial<FormCreateApi> = {
+    formData() {
+      return { ...currentRow() }
+    },
+    getFormData() {
+      return itemApi.formData()
+    },
+    getValue(field) {
+      return currentRow()[findRule(field)?.field || field]
+    },
+    fields() {
+      return normalizeFields()
+    },
+    getRule(field) {
+      return findRule(field)
+    },
+    fetch(option) {
+      return fetchProviderData(option, providerContext(itemApi), undefined, { rawResponse: true })
+    },
+    getData(id, defaultValue) {
+      return getProviderData(id, providerContext(itemApi), defaultValue)
+    },
+    async getGlobalData(name) {
+      const source = props.option?.globalData?.[name]
+      if (source?.type === 'fetch') {
+        return fetchProviderData({ key: name }, providerContext(itemApi))
+      }
+      return itemApi.getData(`$globalData.${name}`)
+    },
+    setValue(values, value) {
+      updateRow(typeof values === 'string' ? { [values]: value } : values)
+    },
+    coverValue(values) {
+      updateRow(values, true)
+    },
+    t(id, params) {
+      return translate(id, params, providerContext(itemApi))
+    },
+  }
+  itemApi = new Proxy(rootApi, {
+    get(target, key, receiver) {
+      return Object.prototype.hasOwnProperty.call(overrides, key)
+        ? Reflect.get(overrides, key, overrides)
+        : Reflect.get(target, key, receiver)
+    },
+  })
+  return itemApi
 }
 
 function emitChildEvent(name: string, ...args: any[]) {
@@ -530,10 +686,7 @@ function mergeItemRule(
     __originType: rule.__originType,
   } as Partial<NormalizedFormCreateRule>
   if (rule.field && hasOwn(patch, 'value')) {
-    nextRows[itemIndex] = {
-      ...(nextRows[itemIndex] || {}),
-      [rule.field]: patch.value,
-    }
+    setItemRowValues(nextRows, itemIndex, { [rule.field]: patch.value })
   }
   scheduleProviderFetchEffects()
 }

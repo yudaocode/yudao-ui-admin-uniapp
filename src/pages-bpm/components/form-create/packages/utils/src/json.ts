@@ -1,3 +1,7 @@
+// #ifdef MP
+import Sval from 'sval'
+// #endif
+
 const FUNCTION_PREFIX = '[[FORM-CREATE-PREFIX-'
 const FUNCTION_SUFFIX = '-FORM-CREATE-SUFFIX]]'
 
@@ -94,9 +98,33 @@ export function toJson(value: unknown, space?: number) {
 }
 
 function makeFn(fn: string) {
+  let parsed: JsonFunction | undefined
+  // #ifdef MP
+  parsed = makeInterpretedFn(fn)
+  // #endif
+  // #ifndef MP
   // eslint-disable-next-line no-new-func -- 兼容可信表单 schema 的函数反序列化
-  return (new Function(`return ${fn}`))()
+  parsed = (new Function(`return ${fn}`))()
+  // #endif
+  return parsed as JsonFunction
 }
+
+// #ifdef MP
+/** 小程序通过解释器恢复设计器函数，规避动态 Function 限制 */
+function makeInterpretedFn(fn: string): JsonFunction {
+  const interpreter = new Sval({
+    ecmaVer: 'latest',
+    sandBox: true,
+    sourceType: 'script',
+  })
+  interpreter.run(`exports.default = (${fn})`)
+  const parsed = interpreter.exports.default
+  if (typeof parsed !== 'function') {
+    throw new TypeError('form-create schema function is invalid')
+  }
+  return parsed as JsonFunction
+}
+// #endif
 
 function getParseFallback<T>(fallbackOrMode: T | boolean): T {
   return typeof fallbackOrMode === 'boolean' ? {} as T : fallbackOrMode

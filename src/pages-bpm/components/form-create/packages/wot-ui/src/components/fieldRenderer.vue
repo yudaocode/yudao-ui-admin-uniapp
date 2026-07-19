@@ -62,6 +62,7 @@
         v-bind="getRuleProps(rule)"
         @blur="emitRuleEvent('blur', $event)"
         @clear="emitRuleEvent('clear')"
+        @focus="emitRuleEvent('focus', $event)"
         @update:model-value="emitUpdate"
       />
     </wd-form-item>
@@ -75,6 +76,7 @@
         v-bind="getRuleProps(rule)"
         @blur="emitRuleEvent('blur', $event)"
         @clear="emitRuleEvent('clear')"
+        @focus="emitRuleEvent('focus', $event)"
         @update:model-value="emitUpdate"
       />
     </wd-form-item>
@@ -89,6 +91,8 @@
         :allow-null="rule.props?.allowNull ?? true"
         :update-on-init="rule.props?.updateOnInit ?? false"
         :disabled="disabled"
+        @blur="emitRuleEvent('blur', $event)"
+        @focus="emitRuleEvent('focus', $event)"
         @update:model-value="emitUpdate"
       />
     </wd-form-item>

@@ -1,4 +1,5 @@
 import { isRef } from 'vue'
+import { parseJson } from '@/pages-bpm/components/form-create/packages/utils/src'
 
 export interface FormCreateRule {
   type: string
@@ -26,11 +27,7 @@ export function decodeConf(conf?: string | Record<string, any>): Record<string, 
   if (typeof conf !== 'string') {
     return conf
   }
-  try {
-    return JSON.parse(conf)
-  } catch {
-    return {}
-  }
+  return parseJson<Record<string, any>>(conf, {})
 }
 
 /** 解码表单字段 */
@@ -43,11 +40,7 @@ export function decodeFields(fields?: Array<FormCreateRule | string>): FormCreat
       if (typeof item !== 'string') {
         return item
       }
-      try {
-        return JSON.parse(item)
-      } catch {
-        return undefined
-      }
+      return parseJson<FormCreateRule | undefined>(item, undefined)
     })
     .filter(Boolean) as FormCreateRule[]
 }

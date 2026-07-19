@@ -239,11 +239,12 @@ export function createApi(ctx: FormCreateApiContext): FormCreateApi {
       ctx.refresh?.()
     },
     fetch(option) {
+      // 事件脚本按原版 form-create 使用 res.data；请求仍走项目 http 自动携带登录态。
       return fetchProviderData(option, {
         api,
         formData: ctx.formData.value,
         option: ctx.option?.value,
-      })
+      }, undefined, { rawResponse: true })
     },
     getData(id, defaultValue) {
       return getProviderData(id, {
@@ -255,7 +256,11 @@ export function createApi(ctx: FormCreateApiContext): FormCreateApi {
     async getGlobalData(name) {
       const source = ctx.option?.value.globalData?.[name]
       if (source?.type === 'fetch') {
-        return api.fetch({ key: name })
+        return fetchProviderData({ key: name }, {
+          api,
+          formData: ctx.formData.value,
+          option: ctx.option?.value,
+        })
       }
       return api.getData(`$globalData.${name}`)
     },

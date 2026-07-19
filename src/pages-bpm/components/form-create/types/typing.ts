@@ -89,6 +89,7 @@ export interface FormCreateRule {
   emitPrefix?: string
   info?: string
   ignore?: boolean | 'hidden'
+  inject?: boolean | Record<string, any>
   name?: string
   className?: string
   control?: FormCreateControl | FormCreateControl[]
@@ -128,6 +129,7 @@ export interface FormCreateOption {
   fetch?: (option: FormCreateFetchOption, context?: { api?: FormCreateApi, rule?: FormCreateRule }) => Promise<any>
   form?: Record<string, any>
   ignoreHiddenFields?: boolean
+  injectEvent?: boolean | Record<string, any>
   row?: Record<string, any>
   submitBtn?: boolean | Record<string, any>
   resetBtn?: boolean | Record<string, any>
@@ -187,6 +189,7 @@ export interface FormCreateApi {
   mergeRule: (field: string, rule: Partial<FormCreateRule>) => void
   refresh: () => void
   sync: (field?: string | string[]) => void
+  /** 发起设计器请求并返回完整后端响应；登录态由项目请求拦截器自动携带。 */
   fetch: (option: FormCreateFetchOption) => Promise<any>
   getData: (id: string, defaultValue?: any) => any
   getGlobalData: (name: string) => Promise<any>

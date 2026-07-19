@@ -7,6 +7,8 @@ export type CustomRequestOptions = UniApp.RequestOptions & {
   hideErrorToast?: boolean
   /** 是否返回原始数据 add by panda 25.12.10 */
   original?: boolean
+  /** 是否在业务码校验通过后返回完整响应数据 */
+  returnRawResponse?: boolean
   /** 是否 API 加密 add by panda 25.12.24 */
   isEncrypt?: boolean
   /** 内部标记：刷新 token 后重试过，避免 401 无限刷新 */

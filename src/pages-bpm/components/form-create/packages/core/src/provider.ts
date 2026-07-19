@@ -28,6 +28,10 @@ export interface FormCreateProviderFetchResult {
   patch?: Record<string, any>
 }
 
+export interface FormCreateProviderFetchOptions {
+  rawResponse?: boolean
+}
+
 export function getRequiredRule(rule: FormCreateRule, state?: FormCreateFieldState): FormCreateValidateRule | undefined {
   if (state?.required === true || state?.controlRequired === true) {
     return {
@@ -127,7 +131,12 @@ export function getProviderData(id: string, context: FormCreateProviderContext =
   return getGlobalData(id, context, defaultValue)
 }
 
-export async function fetchProviderData(option: string | FormCreateFetchOption, context: FormCreateProviderContext = {}, rule?: FormCreateRule) {
+export async function fetchProviderData(
+  option: string | FormCreateFetchOption,
+  context: FormCreateProviderContext = {},
+  rule?: FormCreateRule,
+  fetchOptions: FormCreateProviderFetchOptions = {},
+) {
   const normalized = normalizeFetchOption(option, context, rule)
   if (!normalized) {
     return undefined
@@ -138,14 +147,14 @@ export async function fetchProviderData(option: string | FormCreateFetchOption, 
       return fetchProviderData({
         ...globalData,
         parse: normalized.parse ?? globalData.parse,
-      }, context, rule)
+      }, context, rule, fetchOptions)
     }
     const data = getProviderData(`$globalData.${normalized.key}`, context)
     return data === undefined ? undefined : data
   }
   if (typeof normalized.action === 'function') {
     const body = await normalized.action(rule, context.api)
-    return parseFetchBody(body, normalized, rule, context)
+    return parseFetchBody(body, normalized, rule, context, !fetchOptions.rawResponse)
   }
   if (!normalized.action) {
     return undefined
@@ -162,9 +171,10 @@ export async function fetchProviderData(option: string | FormCreateFetchOption, 
         hideErrorToast: true,
         method: method as UniApp.RequestOptions['method'],
         query,
-        url: action,
+        returnRawResponse: fetchOptions.rawResponse,
+        url: normalizeFetchAction(action),
       }))
-  return parseFetchBody(body, normalized, rule, context)
+  return parseFetchBody(body, normalized, rule, context, !fetchOptions.rawResponse)
 }
 
 export function translate(id: string, params?: Record<string, any>, context: FormCreateProviderContext = {}) {
@@ -331,17 +341,35 @@ function normalizeFetchOption(
   }
 }
 
-function parseFetchBody(body: any, option: FormCreateFetchOption, rule?: FormCreateRule, context?: FormCreateProviderContext) {
+function parseFetchBody(
+  body: any,
+  option: FormCreateFetchOption,
+  rule?: FormCreateRule,
+  context?: FormCreateProviderContext,
+  unwrapData = true,
+) {
   if (typeof option.parse === 'function') {
     return option.parse(body, rule, context?.api)
   }
   if (typeof option.parse === 'string' && option.parse) {
     return getByPath(body, option.parse)
   }
-  if (body && typeof body === 'object' && 'data' in body && !Array.isArray(body)) {
+  if (unwrapData && body && typeof body === 'object' && 'data' in body && !Array.isArray(body)) {
     return body.data
   }
   return body
+}
+
+/** 兼容设计器里携带网关前缀的相对接口地址 */
+export function normalizeFetchAction(action: string, proxyPrefix = import.meta.env.VITE_APP_PROXY_PREFIX) {
+  if (!proxyPrefix || /^https?:\/\//i.test(action)) {
+    return action
+  }
+  const prefix = String(proxyPrefix).replace(/\/+$/, '')
+  if (action === prefix) {
+    return '/'
+  }
+  return action.startsWith(`${prefix}/`) ? action.slice(prefix.length) : action
 }
 
 function getGlobalData(id: string, context: FormCreateProviderContext, defaultValue?: any) {

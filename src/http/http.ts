@@ -185,6 +185,9 @@ export function http<T>(options: CustomRequestOptions) {
             // add by 芋艿：reject 替代原本的 resolve，避免调用的地方以为请求成功
             return reject(responseData)
           }
+          if (options.returnRawResponse) {
+            return resolve(responseData as unknown as T)
+          }
           return resolve(responseData.data)
         }
 
