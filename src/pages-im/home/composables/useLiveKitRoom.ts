@@ -1,3 +1,5 @@
+// noinspection UnreachableCodeJS
+
 import type { Ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref, shallowRef } from 'vue'
@@ -16,6 +18,8 @@ export interface RtcParticipantTracks {
   audioMuted?: boolean
 }
 
+let roomDisposeTask: Promise<void> | undefined // 跨通话页面串行释放物理房间
+
 /** 管理 H5 LiveKit 房间及本地媒体设备 */
 export function useLiveKitRoom(options: {
   initialCameraEnabled: Readonly<Ref<boolean>>
@@ -31,6 +35,11 @@ export function useLiveKitRoom(options: {
   const screenShareEnabled = ref(false) // 屏幕共享状态
   const participantTracks = shallowRef<RtcParticipantTracks[]>([]) // 按参与者归属的媒体轨道
   let room: Room | undefined
+
+  /** 当前是否已有新的房间 owner */
+  function hasActiveRoom() {
+    return !!room
+  }
 
   /** 释放已经失效的房间实例 */
   async function disconnectStaleRoom(staleRoom: Room) {
@@ -124,17 +133,25 @@ export function useLiveKitRoom(options: {
     toast.show('当前通话页面仅支持 H5')
     return
     // #endif
+    await roomDisposeTask
     if (!call.value?.token || !call.value.livekitUrl || room) {
       return
     }
     const currentRoom = new Room({ adaptiveStream: true, dynacast: true })
     let connected = false
     room = currentRoom
+    const isCurrentRoom = () => room === currentRoom
     currentRoom
       .on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         upsertParticipantTrack(track, Number(participant.identity), false)
       })
       .on(RoomEvent.LocalTrackPublished, (publication) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         if (publication.track) {
           upsertParticipantTrack(
             publication.track,
@@ -144,6 +161,9 @@ export function useLiveKitRoom(options: {
         }
       })
       .on(RoomEvent.LocalTrackUnpublished, (publication) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         removeParticipantTrack(
           Number(currentRoom.localParticipant.identity),
           publication.track,
@@ -151,21 +171,36 @@ export function useLiveKitRoom(options: {
         )
       })
       .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         removeParticipantTrack(Number(participant.identity), track, publication.trackSid)
       })
       .on(RoomEvent.TrackMuted, (publication, participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, true)
       })
       .on(RoomEvent.TrackUnmuted, (publication, participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, false)
       })
       .on(RoomEvent.ParticipantConnected, (participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         const userId = Number(participant.identity)
         if (userId) {
           syncParticipant(userId, true)
         }
       })
       .on(RoomEvent.ParticipantDisconnected, (participant) => {
+        if (!isCurrentRoom()) {
+          return
+        }
         const userId = Number(participant.identity)
         if (userId) {
           syncParticipant(userId, false)
@@ -173,9 +208,15 @@ export function useLiveKitRoom(options: {
         }
       })
       .on(RoomEvent.Reconnecting, () => {
+        if (!isCurrentRoom()) {
+          return
+        }
         reconnecting.value = true
       })
       .on(RoomEvent.Reconnected, () => {
+        if (!isCurrentRoom()) {
+          return
+        }
         reconnecting.value = false
       })
       .on(RoomEvent.Disconnected, () => {
@@ -230,13 +271,16 @@ export function useLiveKitRoom(options: {
 
   /** 切换屏幕共享 */
   async function toggleScreenShare() {
-    if (!room) {
+    const currentRoom = room
+    if (!currentRoom) {
       return
     }
     const enabled = !screenShareEnabled.value
     try {
-      await room.localParticipant.setScreenShareEnabled(enabled)
-      screenShareEnabled.value = enabled
+      await currentRoom.localParticipant.setScreenShareEnabled(enabled)
+      if (room === currentRoom) {
+        screenShareEnabled.value = enabled
+      }
     } catch {
       toast.show('无法共享屏幕，请检查浏览器权限')
     }
@@ -244,13 +288,16 @@ export function useLiveKitRoom(options: {
 
   /** 切换麦克风 */
   async function toggleMic() {
-    if (!room) {
+    const currentRoom = room
+    if (!currentRoom) {
       return
     }
     const enabled = !micEnabled.value
     try {
-      await room.localParticipant.setMicrophoneEnabled(enabled)
-      micEnabled.value = enabled
+      await currentRoom.localParticipant.setMicrophoneEnabled(enabled)
+      if (room === currentRoom) {
+        micEnabled.value = enabled
+      }
     } catch {
       toast.show('无法切换麦克风，请检查设备权限')
     }
@@ -258,44 +305,58 @@ export function useLiveKitRoom(options: {
 
   /** 切换摄像头 */
   async function toggleCamera() {
-    if (!room) {
+    const currentRoom = room
+    if (!currentRoom) {
       return
     }
     const enabled = !cameraEnabled.value
     try {
-      await room.localParticipant.setCameraEnabled(enabled)
-      cameraEnabled.value = enabled
+      await currentRoom.localParticipant.setCameraEnabled(enabled)
+      if (room === currentRoom) {
+        cameraEnabled.value = enabled
+      }
     } catch {
       toast.show('无法切换摄像头，请检查设备权限')
     }
   }
 
   /** 释放房间和本地媒体资源 */
-  async function disposeRoom() {
+  function disposeRoom(): Promise<void> {
+    if (!room && roomDisposeTask) {
+      return roomDisposeTask
+    }
     const currentRoom = room
     room = undefined
-    if (currentRoom && screenShareEnabled.value) {
-      try {
-        await currentRoom.localParticipant.setScreenShareEnabled(false)
-      } catch {
-        // 共享关闭失败时仍继续释放房间
-      } finally {
-        screenShareEnabled.value = false
-      }
-    }
     currentRoom?.removeAllListeners()
-    try {
-      await currentRoom?.disconnect()
-    } catch {
-      // 断开失败时仍清理本地媒体元素
-    } finally {
-      reconnecting.value = false
-      micEnabled.value = true
-      cameraEnabled.value = false
-      speakerEnabled.value = true
-      screenShareEnabled.value = false
-      clearParticipantTracks()
-    }
+    const task = (async () => {
+      if (currentRoom && screenShareEnabled.value) {
+        try {
+          await currentRoom.localParticipant.setScreenShareEnabled(false)
+        } catch {
+          // 共享关闭失败时仍继续释放房间
+        }
+      }
+      try {
+        await currentRoom?.disconnect()
+      } catch {
+        // 断开失败时仍清理本地媒体元素
+      } finally {
+        if (!hasActiveRoom()) {
+          reconnecting.value = false
+          micEnabled.value = true
+          cameraEnabled.value = false
+          speakerEnabled.value = true
+          screenShareEnabled.value = false
+          clearParticipantTracks()
+        }
+      }
+    })().finally(() => {
+      if (roomDisposeTask === task) {
+        roomDisposeTask = undefined
+      }
+    })
+    roomDisposeTask = task
+    return task
   }
 
   return {

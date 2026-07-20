@@ -102,6 +102,7 @@ export const StorageKeys = {
     conversationReadPullCursor: 'conversationReadPullCursor',
     conversationClearBeforePrefix: 'conversationClearBefore:', // 移动端单会话清理边界
     conversationDeletedMessagesPrefix: 'conversationDeletedMessages:', // 移动端单条本地删除记录
+    conversationRecalledMessagesPrefix: 'conversationRecalledMessages:', // 移动端撤回消息记录
   },
 } as const
 

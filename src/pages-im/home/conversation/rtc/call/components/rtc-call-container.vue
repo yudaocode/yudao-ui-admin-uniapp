@@ -113,6 +113,7 @@ const rejecting = ref(false) // 拒绝进行状态
 let durationTimer: ReturnType<typeof setInterval> | undefined
 let noAnswerTimer: ReturnType<typeof setInterval> | undefined
 let pageLeaving = false
+let runtimeReady = false // IM 运行时就绪后才允许连接房间
 let releaseTask: Promise<void> | undefined
 let finishTask: Promise<void> | undefined
 let localEndContext: ReturnType<typeof snapshotEndContext> | undefined
@@ -216,14 +217,12 @@ const statusText = computed(() => {
 async function loadGroupMembers() {
   const currentGroupId = call.value?.groupId ?? incomingPayload.value?.groupId
   const currentRoom = call.value?.room ?? incomingPayload.value?.room
-  const userId = userStore.userInfo.userId
   if (!currentGroupId) {
     groupMembers.value = []
     return
   }
   const rows = await groupStore.fetchGroupMemberList(currentGroupId)
   if (pageLeaving
-    || userStore.userInfo.userId !== userId
     || (call.value?.groupId ?? incomingPayload.value?.groupId) !== currentGroupId
     || (call.value?.room ?? incomingPayload.value?.room) !== currentRoom) {
     return
@@ -249,7 +248,6 @@ async function handleAccept() {
     return
   }
   const context = {
-    accountId: userStore.userInfo.userId,
     room: incomingPayload.value?.room || '',
   }
   accepting.value = true
@@ -260,7 +258,6 @@ async function handleAccept() {
     const acceptedRoom = call.value?.room || ''
     if (pageLeaving
       || finishTask
-      || userStore.userInfo.userId !== context.accountId
       || !context.room
       || acceptedRoom !== context.room
       || stage.value !== ImRtcCallStage.RUNNING) {
@@ -333,6 +330,7 @@ function finishCall(source: 'local' | 'remote' | 'page-unload') {
     localEndContext = snapshot
   }
   pageLeaving = true
+  runtimeReady = false
   finishTask = (async () => {
     if (localEndContext) {
       await Promise.allSettled([releaseLocalResources(), hangup()])
@@ -373,18 +371,34 @@ function checkNoAnswer() {
   void noAnswerCallCheck(source.room).catch(() => undefined)
 }
 
-watch(() => call.value?.token, () => connectRoom())
+watch(() => call.value?.token, () => {
+  if (runtimeReady) {
+    void connectRoom()
+  }
+})
 watch(groupId, loadGroupMembers, { immediate: true })
 
 /** 初始化通话页 */
-onMounted(() => {
-  void useImRuntimeStore().ensure()
+onMounted(async () => {
+  try {
+    if (!await useImRuntimeStore().ensure()) {
+      pageLeaving = true
+      emitEnded()
+      return
+    }
+  } catch (error) {
+    console.warn('[IM rtc] 运行时初始化失败', error)
+    pageLeaving = true
+    emitEnded()
+    return
+  }
+  runtimeReady = true
   if (stage.value === ImRtcCallStage.IDLE) {
     pageLeaving = true
     emitEnded()
     return
   }
-  connectRoom()
+  void connectRoom()
   refreshDuration()
   durationTimer = setInterval(refreshDuration, 1000)
   noAnswerTimer = setInterval(checkNoAnswer, RTC_NO_ANSWER_CALL_CHECK_INTERVAL_MS)

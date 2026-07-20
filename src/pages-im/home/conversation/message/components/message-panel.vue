@@ -337,8 +337,6 @@ const {
   isQuitGroup: isQuitGroupConversation,
   canManageGroup,
   inputDisabledTip,
-  getPageContext,
-  isPageContextActive,
   activate: activateConversation,
   deactivate,
   refreshGroup,
@@ -399,8 +397,8 @@ const {
   resetAfterConversationClear,
 } = useMessageList({
   pagingRef,
-  getPageContext,
-  isPageContextActive,
+  conversationType,
+  targetId,
   getLocateMessageId: () => props.locateMessageId,
   getMentionMessageId: () => props.mentionMessageId,
   convertGroupMessage,
@@ -443,7 +441,6 @@ const {
   addLatestMessage,
   replaceLocalMessage,
   isLocalMessageDeleted,
-  getSendDisabledTip: () => inputDisabledTip.value,
   clearReplyTarget,
 })
 
@@ -589,13 +586,17 @@ async function confirmDelete(messages: Message[]) {
   if (messages.length === 0) {
     return
   }
+  const clientConversationId = currentCcid.value
   try {
     await dialog.confirm({ title: '提示', msg: `确定删除选中的 ${messages.length} 条消息吗？` })
   } catch {
     return
   }
+  if (currentCcid.value !== clientConversationId) {
+    return
+  }
   const remainingCount = removeDeletedMessages(messages)
-  await removeMessageList(currentCcid.value, messages)
+  await removeMessageList(clientConversationId, messages)
   if (remainingCount === 0) {
     await loadOlderMessagesAfterClear()
   }
@@ -746,11 +747,8 @@ onMounted(() => {
 
 /** 激活聊天面板 */
 async function activate() {
-  const context = getPageContext()
   await activateConversation()
-  if (!isPageContextActive(context)) {
-    return
-  }
+  pagingRef.value?.reload()
   if (conversationClearPending.value) {
     conversationClearPending.value = false
     pagingRef.value?.reload()
@@ -760,7 +758,7 @@ async function activate() {
 /** 响应页面可见状态 */
 watch(() => props.active, (active) => {
   if (active) {
-    void activate()
+    void activate().catch(error => console.warn('[IM message panel] 激活失败', error))
   } else {
     deactivate()
   }

@@ -103,7 +103,7 @@ function navigateToCreatedGroup(groupId: number) {
 }
 
 /** 确保新群会话存在并打开消息页 */
-async function openCreatedGroup(runtimeReady: Promise<void>) {
+async function openCreatedGroup(runtimeReady: Promise<boolean>) {
   const groupInfo = createdGroup
   if (!groupInfo) {
     return
@@ -115,7 +115,9 @@ async function openCreatedGroup(runtimeReady: Promise<void>) {
   createdGroupOpening = true
   createdGroupOpenRequested = false
   try {
-    await runtimeReady
+    if (!await runtimeReady) {
+      return
+    }
     if (!pageVisible || createdGroup !== groupInfo) {
       return
     }
@@ -177,6 +179,8 @@ onShow(() => {
   const runtimeReady = useImRuntimeStore().ensure()
   if (createdGroup) {
     void openCreatedGroup(runtimeReady)
+  } else {
+    void runtimeReady.catch(error => console.warn('[IM conversation] 运行时启动失败', error))
   }
 })
 

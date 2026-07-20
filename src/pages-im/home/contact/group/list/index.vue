@@ -78,8 +78,14 @@ function openChat(item: Group) {
   })
 }
 
-onShow(() => {
-  void useImRuntimeStore().ensure()
-  void groupStore.fetchGroupList()
+onShow(async () => {
+  try {
+    if (!await useImRuntimeStore().ensure()) {
+      return
+    }
+    await groupStore.fetchGroupList()
+  } catch (error) {
+    console.warn('[IM group list] 加载失败', error)
+  }
 })
 </script>

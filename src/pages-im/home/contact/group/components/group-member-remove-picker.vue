@@ -48,18 +48,20 @@ function open() {
 
 /** 确认批量移出 */
 async function confirm(memberUserIds: number[]) {
-  if (!props.groupId || memberUserIds.length === 0) {
+  const groupId = props.groupId
+  const targetUserIds = [...memberUserIds]
+  if (!groupId || targetUserIds.length === 0) {
     return
   }
   try {
-    await dialog.confirm({ title: '移出群聊', msg: `确定将选中的 ${memberUserIds.length} 位成员移出群聊吗？` })
+    await dialog.confirm({ title: '移出群聊', msg: `确定将选中的 ${targetUserIds.length} 位成员移出群聊吗？` })
   } catch {
     return
   }
   submitting.value = true
   try {
-    await removeGroupMember({ groupId: props.groupId, memberUserIds })
-    toast.success(`已移出 ${memberUserIds.length} 位成员`)
+    await removeGroupMember({ groupId, memberUserIds: targetUserIds })
+    toast.success(`已移出 ${targetUserIds.length} 位成员`)
     pickerRef.value?.close()
     emit('success')
   } finally {

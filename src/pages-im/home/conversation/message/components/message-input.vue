@@ -221,7 +221,6 @@ const inputFocused = ref(false) // 是否聚焦文本输入框
 const inputCursor = ref(-1) // 文本输入框光标位置
 const mentionTriggerIndex = ref<number>() // 输入框内触发 @ 的位置
 let previousInputContent = inputContent.value // 上一次输入内容，用于识别新输入的 @
-let disposed = false // 组件是否已卸载
 
 const isGroup = computed(() => props.conversationType === ImConversationType.GROUP) // 是否群聊
 
@@ -395,14 +394,10 @@ function handleSendImage(sourceType: Array<'album' | 'camera'> = ['album', 'came
   if (imageSending.value || !canSend()) {
     return
   }
-  const context = getSendContext()
   uni.chooseImage({
     count: 1,
     sourceType,
     success: async (res) => {
-      if (!isSendContextActive(context)) {
-        return
-      }
       const filePath = res.tempFilePaths?.[0]
       if (!filePath) {
         return
@@ -414,7 +409,7 @@ function handleSendImage(sourceType: Array<'album' | 'camera'> = ['album', 'came
       let clientMessageId: string | undefined
       try {
         const imageInfo = await getLocalImageInfo(filePath)
-        if (!isSendContextActive(context) || !canSend()) {
+        if (!canSend()) {
           return
         }
         const quote = consumeReply()
@@ -458,9 +453,8 @@ async function handleSendFile() {
   if (fileSending.value || !canSend()) {
     return
   }
-  const context = getSendContext()
   const file = await chooseChatFile()
-  if (!isSendContextActive(context) || !file?.path) {
+  if (!file?.path) {
     return
   }
   const extension = file.name?.split('.').pop()?.toLowerCase() || ''
@@ -509,12 +503,11 @@ function handleSendVideo() {
   if (videoSending.value || !canSend()) {
     return
   }
-  const context = getSendContext()
   uni.chooseVideo({
     sourceType: ['album', 'camera'],
     compressed: true,
     success: async (res) => {
-      if (!isSendContextActive(context) || !res.tempFilePath) {
+      if (!res.tempFilePath) {
         return
       }
       if (!validateFileSize(res.size, MESSAGE_MEDIA_MAX_BYTES)) {
@@ -528,7 +521,7 @@ function handleSendVideo() {
         const width = Number(videoInfo?.width || (res as any).width || 0) || undefined
         const height = Number(videoInfo?.height || (res as any).height || 0) || undefined
         const duration = Math.round(res.duration || Number(videoInfo?.duration) || 0)
-        if (!isSendContextActive(context) || !canSend()) {
+        if (!canSend()) {
           return
         }
         const quote = consumeReply()
@@ -602,10 +595,6 @@ function startMediaUpload(
 // #ifdef H5
 /** H5 粘贴图片直接发送 */
 async function handleH5Paste(event: ClipboardEvent) {
-  const context = getSendContext()
-  if (!isSendContextActive(context)) {
-    return
-  }
   const image = Array.from(event.clipboardData?.items || [])
     .find(item => item.kind === 'file' && item.type.startsWith('image/'))
     ?.getAsFile()
@@ -665,23 +654,6 @@ function consumeReply() {
   return quote
 }
 
-/** 快照异步上传发起时的账号与会话 */
-function getSendContext() {
-  return {
-    userId: props.selfUserId,
-    conversationType: props.conversationType,
-    targetId: props.targetId,
-  }
-}
-
-/** 判断异步上传结果是否仍属于当前账号与会话 */
-function isSendContextActive(context: ReturnType<typeof getSendContext>) {
-  return !disposed && props.active
-    && context.userId === props.selfUserId
-    && context.conversationType === props.conversationType
-    && context.targetId === props.targetId
-}
-
 /** 监听 H5 粘贴图片 */
 onMounted(() => {
   // #ifdef H5
@@ -691,7 +663,6 @@ onMounted(() => {
 
 /** 移除 H5 粘贴图片监听 */
 onUnmounted(() => {
-  disposed = true
   // #ifdef H5
   document.removeEventListener('paste', handleH5Paste)
   // #endif

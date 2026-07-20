@@ -46,11 +46,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   let manualClosed = false
   let reconnectAttempts = 0
   let resyncOnReopen = false // 断线重连成功后需补拉一次，补齐断线期间漏收的消息
-  let connectionUrl = '' // 当前连接身份；仅用于识别账号或令牌是否切换
-  let connectionGeneration = 0 // 连接代次；忽略已被替换连接的迟到回调
+  let connectionUrl = '' // 当前连接地址；用于复用同一令牌的连接
+  let connectionOwner = {} // 当前连接 owner；忽略已被替换连接的迟到回调
   let heartbeatTimer: ReturnType<typeof setInterval> | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  let frameProcessing: Promise<void> = Promise.resolve() // 按连接顺序串行处理 WebSocket 帧
+  let frameProcessingTail: Promise<void> = Promise.resolve() // 按连接顺序串行处理 WebSocket 帧
 
   /** 拼接 ws 地址 */
   function buildWsUrl(): string | undefined {
@@ -98,7 +98,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   }
 
   /** 处理收到的原始帧 */
-  async function handleFrame(data: string, isActive: () => boolean, currentUserId: number) {
+  async function handleFrame(data: string, isActive: () => boolean) {
     if (!isActive() || !data || data === 'pong') {
       return
     }
@@ -112,25 +112,24 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       || notification.conversationType == null) {
       return
     }
-    await dispatchFrame(notification, isActive, currentUserId)
+    await dispatchFrame(notification, isActive)
   }
 
   /** 按会话类型分发通知 */
   async function dispatchFrame(
     notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
     if (notification.conversationType === ImConversationType.NONE) {
       await dispatchNoConversationFrame(notification)
       return
     }
     if (notification.conversationType === ImConversationType.PRIVATE) {
-      await dispatchPrivateFrame(notification, isActive, currentUserId)
+      await dispatchPrivateFrame(notification, isActive)
     } else if (notification.conversationType === ImConversationType.GROUP) {
-      await dispatchGroupFrame(notification, isActive, currentUserId)
+      await dispatchGroupFrame(notification, isActive)
     } else if (notification.conversationType === ImConversationType.CHANNEL) {
-      await dispatchChannelFrame(notification, isActive, currentUserId)
+      await dispatchChannelFrame(notification, isActive)
     }
   }
 
@@ -177,8 +176,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   async function dispatchPrivateFrame(
     notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
+    const currentUserId = useUserStore().userInfo.userId
     const { conversationType, contentType, payload } = notification
     if (Number(payload.senderId) !== currentUserId
       && Number(payload.receiverId) !== currentUserId) {
@@ -187,22 +186,22 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (contentType === ImMessageType.READ) {
       await handlePrivateRead(payload, isActive)
     } else if (contentType === ImMessageType.RECEIPT) {
-      await handlePrivateReceipt(payload, currentUserId)
+      await handlePrivateReceipt(payload)
     } else if (contentType === ImMessageType.RECALL) {
-      await handleRecall(conversationType, contentType, payload, isActive, currentUserId)
+      await handleRecall(conversationType, contentType, payload, isActive)
       return
     } else if (contentType === ImMessageType.RTC_CALL_END) {
       handleRtcCallEnd(payload)
     }
-    await handleMessage(notification, isActive, currentUserId)
+    await handleMessage(notification, isActive)
   }
 
   /** 分发群聊通知 */
   async function dispatchGroupFrame(
     notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
+    const currentUserId = useUserStore().userInfo.userId
     const { conversationType, contentType, payload } = notification
     if (Number(payload.senderId) !== currentUserId
       && Array.isArray(payload.receiverUserIds)
@@ -213,28 +212,27 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (contentType === ImMessageType.READ) {
       await handleGroupRead(payload, isActive)
     } else if (contentType === ImMessageType.RECEIPT) {
-      await handleGroupReceipt(payload, currentUserId)
+      await handleGroupReceipt(payload)
     } else if (contentType === ImMessageType.RECALL) {
-      await handleRecall(conversationType, contentType, payload, isActive, currentUserId)
+      await handleRecall(conversationType, contentType, payload, isActive)
       return
     } else if (contentType === ImMessageType.RTC_CALL_START) {
       handleRtcCallStart(payload)
     } else if (contentType === ImMessageType.RTC_CALL_END) {
       handleRtcCallEnd(payload)
     }
-    await handleMessage(notification, isActive, currentUserId)
+    await handleMessage(notification, isActive)
   }
 
   /** 分发频道通知 */
   async function dispatchChannelFrame(
     notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
     if (notification.contentType === ImMessageType.READ) {
       await handleChannelRead(notification.payload, isActive)
     }
-    await handleMessage(notification, isActive, currentUserId)
+    await handleMessage(notification, isActive)
   }
 
   /** 应用私聊已读位置 */
@@ -275,11 +273,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       targetId,
       messageId,
       updateTime: payload.updateTime,
-    }], isActive)
+    }])
   }
 
   /** 应用私聊回执 */
-  async function handlePrivateReceipt(payload: any, currentUserId: number) {
+  async function handlePrivateReceipt(payload: any) {
     if (!MESSAGE_PRIVATE_READ_ENABLED) {
       return
     }
@@ -287,11 +285,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       conversationType: ImConversationType.PRIVATE,
       targetId: Number(payload.senderId),
       privateReadMaxId: Number(payload.messageId || payload.id),
-    }, currentUserId)
+    })
   }
 
   /** 应用群聊回执 */
-  async function handleGroupReceipt(payload: any, currentUserId: number) {
+  async function handleGroupReceipt(payload: any) {
     if (!MESSAGE_GROUP_READ_ENABLED) {
       return
     }
@@ -301,7 +299,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       groupMessageId: Number(payload.messageId || payload.id),
       readCount: payload.readCount,
       receiptStatus: payload.receiptStatus,
-    }, currentUserId)
+    })
   }
 
   /** 应用撤回通知 */
@@ -310,20 +308,18 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     contentType: number,
     payload: any,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
     const messageStore = useMessageStore()
     const signal = messageStore.buildIncomingMessage(
       conversationType,
       { ...payload, type: contentType },
-      currentUserId,
+      useUserStore().userInfo.userId,
     )
     if (signal) {
       await messageStore.recallMessage(
         conversationType,
         signal.targetId,
         signal.content,
-        currentUserId,
       )
     }
     if (isActive()) {
@@ -335,13 +331,13 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   async function handleMessage(
     notification: ImNotificationWebSocketDTO,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
+    const currentUserId = useUserStore().userInfo.userId
     const { conversationType, contentType, payload } = notification
     if (!isActive()) {
       return
     }
-    const removedSelf = await dispatchRelationEvent(contentType, payload, isActive, currentUserId)
+    const removedSelf = await dispatchRelationEvent(contentType, payload, isActive)
     if (!isActive()) {
       return
     }
@@ -381,7 +377,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (!message) {
       return
     }
-    const appliedMessage = await messageStore.insertMessage(message, currentUserId, true)
+    const appliedMessage = await messageStore.insertMessage(message, true)
     if (!isActive() || !appliedMessage
       || appliedMessage.type === ImMessageType.RECALL
       || appliedMessage.status === ImMessageStatus.RECALL) {
@@ -507,8 +503,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     contentType: number,
     payload: any,
     isActive: () => boolean,
-    currentUserId: number,
   ) {
+    const currentUserId = useUserStore().userInfo.userId
     if (contentType >= ImMessageType.FRIEND_REQUEST_APPROVED && contentType <= ImMessageType.FRIEND_UPDATE) {
       const eventContent = typeof payload.content === 'string' ? safeParse(payload.content) || {} : payload
       const peerUserId = Number(payload.senderId) === currentUserId
@@ -539,7 +535,11 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     } else if (contentType === ImMessageType.GROUP_MEMBER_NICKNAME_UPDATE) {
       await handleGroupMemberNicknameUpdate(groupId, groupEventContent)
     } else {
-      await useGroupStore().applyGroupNotification(groupId, contentType, groupEventContent)
+      await useGroupStore().applyGroupNotification(
+        groupId,
+        contentType,
+        groupEventContent,
+      )
     }
     if (contentType === ImMessageType.GROUP_REQUEST_RECEIVED
       || contentType === ImMessageType.GROUP_REQUEST_APPROVED
@@ -558,9 +558,6 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
         && Number(eventContent.operatorUserId || payload.operatorUserId) === currentUserId)
       || (contentType === ImMessageType.GROUP_MEMBER_KICK
         && (eventContent.memberUserIds || payload.memberUserIds || []).map(Number).includes(currentUserId))
-    if (removedSelf && groupId) {
-      await useConversationStore().removeGroupConversation(groupId)
-    }
     return removedSelf
   }
 
@@ -590,16 +587,16 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (!url) {
       return
     }
-    // 同一身份处于 CONNECTING / OPEN 时直接复用，避免页面 onShow 叠加连接
-    if (socketTask && connectionUrl === url && (isConnecting.value || isConnected.value)) {
+    // 同一地址处于 CONNECTING / OPEN 时直接复用，避免页面 onShow 叠加连接
+    if (socketTask && connectionUrl === url
+      && (isConnecting.value || isConnected.value)) {
       return
     }
-    // 账号或令牌变化时替换旧连接；旧连接的迟到回调由 generation 隔离
+    // 令牌变化时替换旧连接；旧连接的迟到回调由 owner 隔离
     const previousTask = socketTask
-    connectionGeneration++
-    const generation = connectionGeneration
-    const connectionUserId = useUserStore().userInfo.userId
-    frameProcessing = Promise.resolve()
+    const owner = {}
+    connectionOwner = owner
+    frameProcessingTail = Promise.resolve()
     socketTask = null
     isConnecting.value = true
     isConnected.value = false
@@ -610,7 +607,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     const task = uni.connectSocket({
       url,
       fail: () => {
-        if (generation !== connectionGeneration) {
+        if (connectionOwner !== owner) {
           return
         }
         isConnecting.value = false
@@ -625,7 +622,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     }
     socketTask = task
     task.onOpen(() => {
-      if (generation !== connectionGeneration || socketTask !== task) {
+      if (connectionOwner !== owner || socketTask !== task) {
         return
       }
       isConnecting.value = false
@@ -643,14 +640,14 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       }
     })
     task.onMessage((res) => {
-      const isActive = () => generation === connectionGeneration
+      const isActive = () => connectionOwner === owner
         && socketTask === task
-        && useUserStore().userInfo.userId === connectionUserId
+
       if (!isActive()) {
         return
       }
-      frameProcessing = frameProcessing
-        .then(() => isActive() ? handleFrame(res.data as string, isActive, connectionUserId) : undefined)
+      frameProcessingTail = frameProcessingTail
+        .then(() => isActive() ? handleFrame(res.data as string, isActive) : undefined)
         .catch((error) => {
           if (isActive()) {
             console.warn('[IM WebSocket] 消息处理失败', error)
@@ -658,7 +655,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
         })
     })
     task.onClose(() => {
-      if (generation !== connectionGeneration || socketTask !== task) {
+      if (connectionOwner !== owner || socketTask !== task) {
         return
       }
       isConnecting.value = false
@@ -669,7 +666,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       reconnect()
     })
     task.onError(() => {
-      if (generation !== connectionGeneration || socketTask !== task) {
+      if (connectionOwner !== owner || socketTask !== task) {
         return
       }
       isConnecting.value = false
@@ -682,7 +679,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   /** 主动断开（退出登录时调用） */
   function disconnect() {
     manualClosed = true
-    connectionGeneration++
+    connectionOwner = {}
     stopHeartbeat()
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
@@ -693,10 +690,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     connectionUrl = ''
     isConnecting.value = false
     isConnected.value = false
-    frameProcessing = Promise.resolve()
+    frameProcessingTail = Promise.resolve()
   }
-
-  uni.$on('auth:logout', disconnect)
 
   /** 暴露连接状态与动作 */
   return {

@@ -12,11 +12,11 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import * as FileApi from '@/api/infra/file'
 
 /** 上传类型 */
-const UPLOAD_TYPE = {
-  /** 客户端直接上传（只支持S3服务） */
-  CLIENT: 'client',
+export enum UploadType {
+  /** 客户端直接上传（只支持 S3 服务） */
+  CLIENT = 'client',
   /** 客户端发送到后端上传 */
-  SERVER: 'server',
+  SERVER = 'server',
 }
 
 /**
@@ -63,13 +63,19 @@ function createFileRecord(presignedInfo: FileApi.FilePresignedUrlRespVO, file: {
  * @param fileName 原始文件名（可选；H5 的 blob 路径不含文件名/扩展名时需传入，否则 S3 key 会丢扩展名）
  * @returns 文件访问 URL
  */
-export async function uploadFileFromPath(filePath: string, directory?: string, fileType?: string, fileName?: string): Promise<string> {
+export async function uploadFileFromPath(
+  filePath: string,
+  directory?: string,
+  fileType?: string,
+  fileName?: string,
+  onProgress?: (progress: number) => void,
+): Promise<string> {
   // 优先用传入的原始文件名（H5 的 blob:xxx 路径推不出文件名/扩展名）
   const name = fileName || (filePath.includes('/') ? filePath.substring(filePath.lastIndexOf('/') + 1) : filePath)
-  const uploadType = import.meta.env.VITE_UPLOAD_TYPE || UPLOAD_TYPE.SERVER
+  const uploadType = import.meta.env.VITE_UPLOAD_TYPE || UploadType.SERVER
 
   // 情况一：前端直连上传（仅 S3）
-  if (uploadType === UPLOAD_TYPE.CLIENT) {
+  if (uploadType === UploadType.CLIENT) {
     // 1.1 获取文件预签名地址
     const presignedInfo = await FileApi.getFilePresignedUrl(name, directory)
 
@@ -108,7 +114,7 @@ export async function uploadFileFromPath(filePath: string, directory?: string, f
     })
   } else {
     // 情况二：后端上传
-    return FileApi.uploadFile(filePath, directory)
+    return FileApi.uploadFile(filePath, directory, onProgress)
   }
 }
 

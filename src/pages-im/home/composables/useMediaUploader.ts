@@ -1,8 +1,8 @@
-import { uploadFile } from '@/api/infra/file'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
 import { getEnvBaseUrl } from '@/utils'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { uploadFileFromPath, UploadType } from '@/utils/uploadFile'
 
 export interface SelectedChatFile {
   path: string
@@ -57,28 +57,37 @@ export function useMediaUploader() {
 
   /** 上传本地临时文件 */
   function uploadLocalFile(filePath: string, directory: string, onProgress?: (progress: number) => void) {
-    return uploadFile(filePath, directory, onProgress)
+    return uploadFileFromPath(filePath, directory, undefined, undefined, onProgress)
   }
 
   /** 上传 H5 Blob 文件 */
   async function uploadBlob(blob: Blob, fileName: string, directory: string) {
-    const token = await useTokenStore().tryGetValidToken()
-    const formData = new FormData()
-    formData.append('file', blob, fileName)
-    formData.append('directory', directory)
-    const response = await fetch(`${getEnvBaseUrl()}/infra/file/upload`, {
-      method: 'POST',
-      headers: {
-        'tenant-id': String(useUserStore().tenantId),
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    })
-    const result = await response.json()
-    if (!response.ok || result.code !== 0) {
-      throw new Error(result.msg || '上传失败')
+    const uploadType = import.meta.env.VITE_UPLOAD_TYPE || UploadType.SERVER
+    if (uploadType === UploadType.SERVER) {
+      const token = await useTokenStore().tryGetValidToken()
+      const formData = new FormData()
+      formData.append('file', blob, fileName)
+      formData.append('directory', directory)
+      const response = await fetch(`${getEnvBaseUrl()}/infra/file/upload`, {
+        method: 'POST',
+        headers: {
+          'tenant-id': String(useUserStore().tenantId),
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      })
+      const result = await response.json()
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.msg || '上传失败')
+      }
+      return result.data as string
     }
-    return result.data as string
+    const blobUrl = URL.createObjectURL(blob)
+    try {
+      return await uploadFileFromPath(blobUrl, directory, blob.type, fileName)
+    } finally {
+      URL.revokeObjectURL(blobUrl)
+    }
   }
 
   /** 获取本地图片信息 */

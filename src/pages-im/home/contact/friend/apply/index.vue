@@ -120,20 +120,17 @@ async function handleSubmit() {
     toast.warning('对方已经是好友')
     return
   }
-  const expectedUserId = userStore.userInfo.userId
+  const targetUserId = formData.value.toUserId
   formLoading.value = true
   try {
     const requestId = await friendStore.applyFriendRequest({
-      toUserId: formData.value.toUserId,
+      toUserId: targetUserId,
       displayName: formData.value.displayName.trim() || undefined,
       applyContent: formData.value.applyContent.trim() || undefined,
       addSource: props.source ? Number(props.source) : ImFriendAddSource.SEARCH,
     })
-    if (userStore.userInfo.userId !== expectedUserId) {
-      return
-    }
     if (requestId === null) {
-      await friendStore.fetchFriendInfo(formData.value.toUserId)
+      await friendStore.fetchFriendInfo(targetUserId)
     }
     toast.success(requestId ? '申请已发送，等待对方验证' : '已添加为好友')
     delay(handleBack)
@@ -144,6 +141,7 @@ async function handleSubmit() {
 
 /** 初始化 IM 运行时 */
 onMounted(() => {
-  void useImRuntimeStore().ensure()
+  void useImRuntimeStore().ensure().catch(error =>
+    console.warn('[IM friend apply] 运行时预热失败', error))
 })
 </script>

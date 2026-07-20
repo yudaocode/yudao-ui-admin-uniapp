@@ -78,6 +78,7 @@ import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useFriendBuckets } from '../../composables/useFriendBuckets'
 import { useFriendStore } from '../../store/friendStore'
+import { useImRuntimeStore } from '../../store/runtimeStore'
 import FriendItem from './friend-item.vue'
 
 const emit = defineEmits<{
@@ -131,7 +132,16 @@ function scrollTo(letter: string) {
 }
 
 /** 加载联系人 */
-onMounted(() => void friendStore.fetchFriendList())
+onMounted(async () => {
+  try {
+    if (!await useImRuntimeStore().ensure()) {
+      return
+    }
+    await friendStore.fetchFriendList()
+  } catch (error) {
+    console.warn('[IM friend list] 加载失败', error)
+  }
+})
 </script>
 
 <style lang="scss" scoped>

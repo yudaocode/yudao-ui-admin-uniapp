@@ -6,6 +6,7 @@ import type {
 } from '@/pages-im/utils/constants'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { cancelCall, leaveCall, rejectCall } from '@/api/im/rtc'
 import {
   ImConversationType,
   ImRtcCallStage,
@@ -389,6 +390,16 @@ export const useRtcStore = defineStore('imRtc', () => {
 
   /** 退出登录时清理全部通话状态 */
   function handleLogout() {
+    const room = call.value?.room || incomingPayload.value?.room
+    const currentStage = stage.value
+    if (room) {
+      const request = currentStage === ImRtcCallStage.INVITING
+        ? cancelCall(room)
+        : currentStage === ImRtcCallStage.INCOMING
+          ? rejectCall(room)
+          : leaveCall(room)
+      void request.catch(() => undefined)
+    }
     reset()
     clearLeftUsers()
     clearGroupCallCache()

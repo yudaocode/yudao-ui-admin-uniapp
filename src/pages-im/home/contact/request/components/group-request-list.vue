@@ -100,7 +100,6 @@ const singleGroupChangeKey = computed(() => props.groupId
       .map(request => `${request.id}:${request.inviterUserId ?? ''}:${request.applyContent ?? ''}`)
       .join(',')
   : '') // 指定群聊的实时申请变更标识
-let singleGroupLoadSeq = 0 // 指定群聊申请加载序号
 
 /** 同意加群申请 */
 async function handleAgree(item: ImGroupRequestRespVO) {
@@ -177,17 +176,11 @@ async function load() {
     return
   }
   const targetGroupId = props.groupId
-  const loadSeq = ++singleGroupLoadSeq
   singleGroupLoading.value = true
   try {
-    const list = await getGroupRequestListByGroupId(targetGroupId)
-    if (loadSeq === singleGroupLoadSeq && props.groupId === targetGroupId) {
-      singleGroupRequests.value = list
-    }
+    singleGroupRequests.value = await getGroupRequestListByGroupId(targetGroupId)
   } finally {
-    if (loadSeq === singleGroupLoadSeq) {
-      singleGroupLoading.value = false
-    }
+    singleGroupLoading.value = false
   }
 }
 

@@ -102,7 +102,14 @@ async function handleTabChange() {
 
 /** 初始化 */
 onShow(async () => {
-  void useImRuntimeStore().ensure()
+  try {
+    if (!await useImRuntimeStore().ensure()) {
+      return
+    }
+  } catch (error) {
+    console.warn('[IM contact request] 运行时初始化失败', error)
+    return
+  }
   activeTab.value = singleGroupId.value || props.tab === 'group' ? 1 : activeTab.value
   await nextTick()
   loadData()

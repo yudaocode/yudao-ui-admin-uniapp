@@ -63,8 +63,8 @@ import { getSimpleUser } from '@/api/system/user'
 import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { ImConversationType, ImFriendAddSource, ImRtcCallMediaType } from '@/pages-im/utils/constants'
-import { delay, navigateBackPlus } from '@/utils'
 import { useUserStore } from '@/store/user'
+import { delay, navigateBackPlus } from '@/utils'
 import { useImRtc } from '../../../composables/useImRtc'
 import { useFriendStore } from '../../../store/friendStore'
 import { useImRuntimeStore } from '../../../store/runtimeStore'
@@ -78,14 +78,10 @@ const props = defineProps<{
 
 definePage({ style: { navigationBarTitleText: '', navigationStyle: 'custom' } })
 
-const userStore = useUserStore()
 const friendStore = useFriendStore()
 const user = ref<User | null>(null) // 用户精简资料
 const relation = ref<UserInfoRelation | null>(null) // 当前用户关系
 const loading = ref(false) // 资料加载状态
-let loadEpoch = 0 // 资料加载轮次
-let loadedAccountId = 0 // 当前展示资料所属账号
-let loadedTargetId = 0 // 当前展示资料目标编号
 const callActionVisible = ref(false) // 通话方式菜单显示状态
 const callActions = [ // 通话方式菜单项
   { name: '语音通话', value: ImRtcCallMediaType.VOICE },
@@ -111,47 +107,28 @@ const displayName = computed(() => friend.value ? getFriendDisplayName(friend.va
 
 /** 加载用户关系和资料 */
 async function loadUserInfo() {
-  const epoch = ++loadEpoch
-  const accountId = userStore.userInfo.userId
   const targetId = friendUserId.value
-  if (!accountId || !targetId) {
+  if (!targetId || !await useImRuntimeStore().ensure()) {
     return
   }
+  const currentUserId = useUserStore().userInfo.userId
   loading.value = true
-  if (loadedAccountId !== accountId || loadedTargetId !== targetId) {
-    user.value = null
-    relation.value = null
-  }
   try {
-    await useImRuntimeStore().ensure()
     await friendStore.fetchFriendList(true)
-    if (epoch !== loadEpoch
-      || userStore.userInfo.userId !== accountId
-      || friendUserId.value !== targetId) {
-      return
-    }
-    const initialRelation: UserInfoRelation = targetId === accountId
+    const initialRelation: UserInfoRelation = targetId === currentUserId
       ? 'self'
       : friendStore.isActiveFriend(targetId) ? 'friend' : 'stranger'
     if (initialRelation === 'friend') {
       await friendStore.fetchFriendInfo(targetId)
     }
     const nextUser = await getSimpleUser(targetId)
-    if (epoch === loadEpoch
-      && userStore.userInfo.userId === accountId
-      && friendUserId.value === targetId) {
-      const nextRelation: UserInfoRelation = targetId === accountId
-        ? 'self'
-        : friendStore.isActiveFriend(targetId) ? 'friend' : 'stranger'
-      user.value = nextUser
-      relation.value = nextRelation
-      loadedAccountId = accountId
-      loadedTargetId = targetId
-    }
+    const nextRelation: UserInfoRelation = targetId === currentUserId
+      ? 'self'
+      : friendStore.isActiveFriend(targetId) ? 'friend' : 'stranger'
+    user.value = nextUser
+    relation.value = nextRelation
   } finally {
-    if (epoch === loadEpoch) {
-      loading.value = false
-    }
+    loading.value = false
   }
 }
 
@@ -186,5 +163,7 @@ function handleCallAction({ item }: { item: { value: number } }) {
   startRtcCall({ conversationType: ImConversationType.PRIVATE, mediaType: item.value, inviteeIds: [friendUserId.value] })
 }
 
-onShow(() => void loadUserInfo())
+onShow(() => {
+  void loadUserInfo().catch(error => console.warn('[IM friend detail] 加载失败', error))
+})
 </script>

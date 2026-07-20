@@ -41,7 +41,6 @@ import {
   serializeMessage,
 } from '@/pages-im/utils/message'
 import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
-import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../../../store/conversationStore'
 import { sendMessageToConversation } from '../../../composables/useMessageSender'
 import { useMessageMultiSelect } from '../../../composables/useMessageMultiSelect'
@@ -62,7 +61,6 @@ const props = defineProps<{
 }>()
 
 const toast = useToast()
-const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const { exit: exitSelectMode } = useMessageMultiSelect()
 const visible = ref(false) // 转发弹窗
@@ -72,9 +70,6 @@ const mode = ref<MessageForwardMode>('single') // 转发方式
 const leaveMessage = ref('') // 转发留言
 const sending = ref(false) // 是否正在发送
 const creatingGroup = ref(false) // 是否正在新建群聊后续转
-let taskUserId = 0 // 转发任务所属用户
-let taskConversationType = 0 // 来源会话类型快照
-let taskTargetId = 0 // 来源会话目标快照
 let sourceConversation: ConversationDO | undefined // 来源会话快照
 
 const forwardPreview = computed(() => { // 待转发内容预览
@@ -92,14 +87,6 @@ const forwardPreview = computed(() => { // 待转发内容预览
     : `待转发：${summaries.join('、')}`
 })
 
-/** 当前转发任务是否仍有效 */
-function isTaskActive() {
-  return taskUserId > 0
-    && taskUserId === userStore.userInfo.userId
-    && taskConversationType === props.conversationType
-    && taskTargetId === props.targetId
-}
-
 /** 清理转发任务 */
 function reset() {
   visible.value = false
@@ -109,9 +96,6 @@ function reset() {
   leaveMessage.value = ''
   sending.value = false
   creatingGroup.value = false
-  taskUserId = 0
-  taskConversationType = 0
-  taskTargetId = 0
   sourceConversation = undefined
 }
 
@@ -124,9 +108,6 @@ function open(options: MessageForwardDialogOpenOptions) {
   mode.value = options.mode
   leaveMessage.value = ''
   creatingGroup.value = false
-  taskUserId = userStore.userInfo.userId
-  taskConversationType = props.conversationType
-  taskTargetId = props.targetId
   sourceConversation = options.sourceConversation ? { ...options.sourceConversation } : undefined
   visible.value = true
 }
@@ -140,7 +121,7 @@ function handleEmoji(value: string) {
 
 /** 发送一条转发消息 */
 function sendForwardMessage(target: ConversationDO, type: number, content: string) {
-  return sendMessageToConversation(target, type, content, {}, taskUserId)
+  return sendMessageToConversation(target, type, content)
 }
 
 /** 给单个目标发送合并或逐条转发消息 */
@@ -171,16 +152,12 @@ async function forwardToTarget(target: ConversationDO) {
 
 /** 确认转发到目标会话 */
 async function handleConfirm(targets: ConversationDO[]) {
-  if (!isTaskActive() || sending.value) {
+  if (sending.value || messages.value.length === 0) {
     return
   }
   sending.value = true
   const results: Array<{ target: ConversationDO, success: boolean }> = []
   for (const target of targets) {
-    if (!isTaskActive()) {
-      sending.value = false
-      return
-    }
     try {
       results.push({ target, success: await forwardToTarget(target) })
     } catch {
@@ -189,12 +166,7 @@ async function handleConfirm(targets: ConversationDO[]) {
   }
   await conversationStore.pushRecentForwardConversationKeyList(
     targets.map(item => item.clientConversationId),
-    taskUserId,
   )
-  if (!isTaskActive()) {
-    sending.value = false
-    return
-  }
   const failedNames = results
     .filter(item => !item.success)
     .map(item => item.target.name || '未命名会话')
@@ -211,7 +183,7 @@ async function handleConfirm(targets: ConversationDO[]) {
 
 /** 打开新建群聊页，创建成功后继续转发 */
 function createGroupAndForward() {
-  if (!isTaskActive()) {
+  if (messages.value.length === 0) {
     return
   }
   creatingGroup.value = true
@@ -227,7 +199,7 @@ function createGroupAndForward() {
 /** 接收新建群聊结果并完成转发 */
 async function onGroupCreated(groupInfo: { id: number, name?: string, avatar?: string }) {
   creatingGroup.value = false
-  if (!groupInfo?.id || messages.value.length === 0 || !isTaskActive()) {
+  if (!groupInfo?.id || messages.value.length === 0) {
     return
   }
   await handleConfirm([{

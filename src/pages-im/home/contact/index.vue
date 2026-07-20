@@ -62,6 +62,7 @@ function handleAddAction({ item }: { item: { value: string } }) {
 
 /** 进入页面时确保 IM 运行时已启动 */
 onShow(() => {
-  void useImRuntimeStore().ensure()
+  void useImRuntimeStore().ensure().catch(error =>
+    console.warn('[IM contact] 运行时预热失败', error))
 })
 </script>

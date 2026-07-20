@@ -7,6 +7,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { nextTick, ref } from 'vue'
 import { getGroupMessageList } from '@/api/im/message/group'
 import { getPrivateMessageList } from '@/api/im/message/private'
+import { useUserStore } from '@/store/user'
 import {
   MESSAGE_CHAT_PAGE_SIZE,
   MESSAGE_TIME_TIP_GAP_MS,
@@ -20,25 +21,20 @@ import { ImConversationType, ImMessageStatus, ImMessageType } from '@/pages-im/u
 import { getClientConversationId } from '@/pages-im/utils/db'
 import { buildMessageFromDO, useMessageStore } from '../store/messageStore'
 
-interface MessagePageContext {
-  userId: number
-  conversationType: number
-  targetId: number
-}
-
 /** 管理聊天消息列表、历史分页、定位与首屏实时消息合并 */
 export function useMessageList(options: {
   pagingRef: Ref<any>
-  getPageContext: () => MessagePageContext
-  isPageContextActive: (context: MessagePageContext) => boolean
+  conversationType: Readonly<Ref<number>>
+  targetId: Readonly<Ref<number>>
   getLocateMessageId: () => number
   getMentionMessageId: () => number
-  convertGroupMessage: (message: ImGroupMessageRespVO, currentUserId?: number) => Message | null
-  convertPrivateMessage: (message: ImPrivateMessageRespVO, currentUserId?: number) => Message | null
+  convertGroupMessage: (message: ImGroupMessageRespVO, currentUserId: number) => Message | null
+  convertPrivateMessage: (message: ImPrivateMessageRespVO, currentUserId: number) => Message | null
   markRead: (message?: Message) => Promise<void>
   syncPrivateReadStatus: () => Promise<void>
 }) {
   const toast = useToast()
+  const userStore = useUserStore()
   const messageStore = useMessageStore()
   const messageList = ref<Message[]>([]) // 消息列表（最新在前）
   const firstPageLoading = ref(false) // 首屏消息加载状态
@@ -53,7 +49,7 @@ export function useMessageList(options: {
   const newMessageCount = ref(0) // 未自动滚动的新消息数
   const mentionPromptVisible = ref(!!options.getMentionMessageId()) // @我定位提示
   let locateConsumed = false
-  let requestedLocateMessageId = 0 // 页面内临时请求定位的消息编号
+  let requestedLocateMessageId = 0
   let deletedKeysLoaded = false
 
   /** 是否已在当前设备删除 */
@@ -64,27 +60,31 @@ export function useMessageList(options: {
 
   /** 查询历史消息 */
   async function queryMessages(
-    context: MessagePageContext,
+    conversationType: number,
+    targetId: number,
     maxId?: number,
     limit = MESSAGE_CHAT_PAGE_SIZE,
   ): Promise<Message[]> {
-    if (context.conversationType === ImConversationType.CHANNEL) {
-      const clientConversationId = getClientConversationId(context.conversationType, context.targetId)
-      const stored = await messageStore.getConversationStoredMessages(clientConversationId, 5000)
+    if (conversationType === ImConversationType.CHANNEL) {
+      const clientConversationId = getClientConversationId(conversationType, targetId)
+      const stored = await messageStore.getConversationStoredMessages(
+        clientConversationId,
+        5000,
+      )
       return stored
         .filter(item => !maxId || (item.id || 0) < maxId)
         .slice(-limit)
         .map(buildMessageFromDO)
     }
-    if (context.conversationType === ImConversationType.GROUP) {
-      const list = await getGroupMessageList({ groupId: context.targetId, maxId, limit })
+    if (conversationType === ImConversationType.GROUP) {
+      const list = await getGroupMessageList({ groupId: targetId, maxId, limit })
       return list
-        .map(message => options.convertGroupMessage(message, context.userId))
+        .map(message => options.convertGroupMessage(message, userStore.userInfo.userId))
         .filter((message): message is Message => !!message)
     }
-    const list = await getPrivateMessageList({ receiverId: context.targetId, maxId, limit })
+    const list = await getPrivateMessageList({ receiverId: targetId, maxId, limit })
     return list
-      .map(message => options.convertPrivateMessage(message, context.userId))
+      .map(message => options.convertPrivateMessage(message, userStore.userInfo.userId))
       .filter((message): message is Message => !!message)
   }
 
@@ -93,13 +93,16 @@ export function useMessageList(options: {
     if (!historyMaxId.value) {
       return
     }
-    const context = options.getPageContext()
+    const conversationType = options.conversationType.value
+    const targetId = options.targetId.value
     historyLoadFailed.value = false
     try {
-      const response = await queryMessages(context, historyMaxId.value, MESSAGE_CHAT_PAGE_SIZE)
-      if (!options.isPageContextActive(context)) {
-        return
-      }
+      const response = await queryMessages(
+        conversationType,
+        targetId,
+        historyMaxId.value,
+        MESSAGE_CHAT_PAGE_SIZE,
+      )
       const messages = normalizeMessages(normalizeRecallMessages(response))
         .filter(item => !isLocallyDeleted(item))
       const nextHistoryId = Math.min(...response.map(item => item.id || Number.MAX_SAFE_INTEGER))
@@ -117,14 +120,15 @@ export function useMessageList(options: {
 
   /** 分页查询：第一页加载最新消息，后续按最早消息编号向前加载 */
   async function queryList(pageNo: number, pageSize: number) {
-    const context = options.getPageContext()
-    const clientConversationId = getClientConversationId(context.conversationType, context.targetId)
+    const conversationType = options.conversationType.value
+    const targetId = options.targetId.value
     const isFirstPage = pageNo === 1
+    const clientConversationId = getClientConversationId(conversationType, targetId)
     let querySucceeded = false
     if (isFirstPage) {
       firstPageLoading.value = true
     }
-    if (!context.targetId) {
+    if (!targetId) {
       await options.pagingRef.value?.complete([])
       if (isFirstPage) {
         flushPendingLatestMessages()
@@ -132,21 +136,12 @@ export function useMessageList(options: {
       return
     }
     try {
-      await loadDeletedMessageKeys(context, clientConversationId)
-      if (!options.isPageContextActive(context)) {
-        return
-      }
+      await loadDeletedMessageKeys(clientConversationId)
       const clearBefore = clearBeforeMessageId.value
         || await messageStore.getConversationClearBefore(clientConversationId)
-      if (!options.isPageContextActive(context)) {
-        return
-      }
       clearBeforeMessageId.value = clearBefore
       const maxId = isFirstPage ? undefined : historyMaxId.value
-      const firstResponse = await queryMessages(context, maxId, pageSize)
-      if (!options.isPageContextActive(context)) {
-        return
-      }
+      const firstResponse = await queryMessages(conversationType, targetId, maxId, pageSize)
       let rawResponses = [...firstResponse]
       let responseCount = firstResponse.length
       let reachedClearBoundary = firstResponse.some(item => item.id <= clearBeforeMessageId.value)
@@ -162,10 +157,7 @@ export function useMessageList(options: {
             || responseCount < pageSize || reachedClearBoundary) {
             break
           }
-          const earlierResponse = await queryMessages(context, nextMaxId, pageSize)
-          if (!options.isPageContextActive(context)) {
-            return
-          }
+          const earlierResponse = await queryMessages(conversationType, targetId, nextMaxId, pageSize)
           const earlier = earlierResponse
             .filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
           rawResponses = [...rawResponses, ...earlierResponse]
@@ -187,9 +179,6 @@ export function useMessageList(options: {
           activeClientMessageIds,
         ))
           .map(buildMessageFromDO)
-        if (!options.isPageContextActive(context)) {
-          return
-        }
         messages = normalizeMessages([...pendingLatestMessages.value, ...pendingMessages, ...messages])
           .filter(message => !isLocallyDeleted(message))
           .filter((message, index, rows) =>
@@ -205,16 +194,13 @@ export function useMessageList(options: {
       )
       querySucceeded = true
     } catch {
-      if (!options.isPageContextActive(context)) {
-        return
-      }
       if (isFirstPage) {
-        const cachedMessages = (await messageStore.getConversationStoredMessages(clientConversationId, pageSize))
+        const cachedMessages = (await messageStore.getConversationStoredMessages(
+          clientConversationId,
+          pageSize,
+        ))
           .map(buildMessageFromDO)
           .filter(item => (!item.id || item.id > clearBeforeMessageId.value) && !isLocallyDeleted(item))
-        if (!options.isPageContextActive(context)) {
-          return
-        }
         await options.pagingRef.value?.complete(
           normalizeMessages(normalizeRecallMessages(cachedMessages)),
         )
@@ -224,11 +210,11 @@ export function useMessageList(options: {
       await options.pagingRef.value?.complete(false).catch(() => undefined)
       return
     } finally {
-      if (isFirstPage && querySucceeded && options.isPageContextActive(context)) {
+      if (isFirstPage && querySucceeded) {
         flushPendingLatestMessages()
       }
     }
-    if (isFirstPage && options.isPageContextActive(context)) {
+    if (isFirstPage) {
       await options.markRead()
       await options.syncPrivateReadStatus()
       await locateInitialMessage()
@@ -236,14 +222,13 @@ export function useMessageList(options: {
   }
 
   /** 加载当前设备已删除的消息标识 */
-  async function loadDeletedMessageKeys(context: MessagePageContext, clientConversationId: string) {
+  async function loadDeletedMessageKeys(clientConversationId: string) {
     if (deletedKeysLoaded) {
       return
     }
-    const keys = await messageStore.getConversationDeletedMessageKeys(clientConversationId)
-    if (!options.isPageContextActive(context)) {
-      return
-    }
+    const keys = await messageStore.getConversationDeletedMessageKeys(
+      clientConversationId,
+    )
     deletedMessageKeys.value = new Set(keys)
     deletedKeysLoaded = true
   }
@@ -384,7 +369,7 @@ export function useMessageList(options: {
     } else {
       messageList.value = [appliedMessage, ...messageList.value]
     }
-    if (!toBottom && appliedMessage.senderId !== options.getPageContext().userId) {
+    if (!toBottom && appliedMessage.senderId !== userStore.userInfo.userId) {
       newMessageCount.value += 1
     }
     return true
@@ -464,10 +449,15 @@ export function useMessageList(options: {
       return
     }
     const nextMessages = [...messageList.value]
+    const current = nextMessages[index]
     nextMessages[index] = {
-      ...nextMessages[index],
-      ...(readCount !== undefined ? { readCount } : {}),
-      ...(receiptStatus !== undefined ? { receiptStatus } : {}),
+      ...current,
+      ...(readCount !== undefined
+        ? { readCount: Math.max(current.readCount || 0, readCount) }
+        : {}),
+      ...(receiptStatus !== undefined
+        ? { receiptStatus: Math.max(current.receiptStatus || 0, receiptStatus) }
+        : {}),
     }
     options.pagingRef.value?.resetTotalData(nextMessages)
   }
@@ -492,8 +482,16 @@ export function useMessageList(options: {
 
   /** 清空会话后的消息列表状态 */
   function resetAfterConversationClear(reload = true) {
+    const clearedMessages = [...messageList.value, ...pendingLatestMessages.value]
+    clearedMessages.forEach((message) => {
+      deletedMessageKeys.value.add(`client:${message.clientMessageId}`)
+      if (message.id) {
+        deletedMessageKeys.value.add(`id:${message.id}`)
+      }
+    })
     historyMaxId.value = undefined
-    clearBeforeMessageId.value = messageList.value[0]?.id || 0
+    clearBeforeMessageId.value = 0
+    deletedKeysLoaded = false
     historyLoadFailed.value = false
     firstPageLoading.value = false
     pendingLatestMessages.value = []

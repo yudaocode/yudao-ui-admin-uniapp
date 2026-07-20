@@ -18,10 +18,10 @@ export interface MessageDOPageResult {
 
 /** 跨端本地 DB 客户端接口（去掉 IndexedDB 专有的事务参数，按平台各自实现原子性） */
 export interface ImDbClient {
-  /** 打开/切换到某用户的库 */
+  /** 打开/切换到某账号的库 */
   open: (userId: number) => Promise<void>
   /** 关闭连接 */
-  close: () => void
+  close: () => Promise<void>
   /** 按主键取单条 */
   get: <T>(store: DbStoreName, key: string | number) => Promise<T | undefined>
   /** 取整表 */

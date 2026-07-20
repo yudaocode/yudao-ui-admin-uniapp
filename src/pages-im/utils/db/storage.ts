@@ -19,30 +19,38 @@ const MAX_PAGES_PER_CONVERSATION = 12
 const MAX_TOTAL_MESSAGE_PAGES = 80
 
 export class StorageDbClient implements ImDbClient {
-  private prefix = ''
+  private userId = 0
 
   async open(userId: number): Promise<void> {
-    this.prefix = `im:${userId}:`
+    this.userId = userId
     this.pruneMessagePages()
   }
 
-  close(): void {
-    this.prefix = ''
+  async close(): Promise<void> {
+    this.userId = 0
+  }
+
+  /** 获取已绑定的用户编号 */
+  private getUserId(): number {
+    if (this.userId <= 0) {
+      throw new Error('IM DB 未初始化')
+    }
+    return this.userId
   }
 
   /** 普通表的存储 key */
   private storeKey(store: DbStoreName): string {
-    return `${this.prefix}${store}`
+    return `im:${this.getUserId()}:${store}`
   }
 
   /** messages 会话元数据 key */
   private messageMetaKey(clientConversationId: string): string {
-    return `${this.prefix}messages:${clientConversationId}:meta`
+    return `im:${this.getUserId()}:messages:${clientConversationId}:meta`
   }
 
   /** messages 分页 key */
   private messagePageKey(clientConversationId: string, pageId: number): string {
-    return `${this.prefix}messages:${clientConversationId}:page:${pageId}`
+    return `im:${this.getUserId()}:messages:${clientConversationId}:page:${pageId}`
   }
 
   /** 当前用户全部 storage keys */
@@ -56,13 +64,13 @@ export class StorageDbClient implements ImDbClient {
 
   /** 列出 messages 会话元数据 key */
   private messageMetaKeys(): string[] {
-    const prefix = `${this.prefix}messages:`
+    const prefix = `im:${this.getUserId()}:messages:`
     return this.storageKeys().filter(key => key.startsWith(prefix) && key.endsWith(':meta'))
   }
 
   /** 从元数据 key 解析会话编号 */
   private conversationIdFromMetaKey(key: string): string {
-    return key.slice(`${this.prefix}messages:`.length, -':meta'.length)
+    return key.slice(`im:${this.getUserId()}:messages:`.length, -':meta'.length)
   }
 
   /** 读取一个 map（不存在返回空对象） */

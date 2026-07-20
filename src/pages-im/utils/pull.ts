@@ -1,4 +1,4 @@
-import { getDb } from './db'
+import type { ImDbClient } from './db'
 
 /** 增量拉取游标 */
 export interface PullCursor {
@@ -17,39 +17,30 @@ const PULL_OVERLAP_MS = 5000 // 状态事件拉取回扫窗口
 const MIN_ID_PULL_MAX_PAGES = 1000 // 消息类单轮最多翻页数
 
 /** 读取某模块的拉取游标 */
-export async function getPullCursor(key: string): Promise<PullCursor> {
-  return (await getDb().getSetting<PullCursor>(key)) ?? {}
+export async function getPullCursor(db: ImDbClient, key: string): Promise<PullCursor> {
+  return (await db.getSetting<PullCursor>(key)) ?? {}
 }
 
 /** 按更新时间和编号增量拉取状态记录 */
 export async function runIncrementalPull<T extends PullRecord>(
+  db: ImDbClient,
   cursorKey: string,
   fetchPage: (params: { lastUpdateTime?: number, lastId?: number, limit: number }) => Promise<T[]>,
   apply: (records: T[]) => boolean | Promise<boolean>,
-  isActive?: () => boolean,
 ): Promise<void> {
-  const storedCursor = await getPullCursor(cursorKey)
+  const storedCursor = await getPullCursor(db, cursorKey)
   const highWater = { ...storedCursor }
   let cursor = storedCursor.lastUpdateTime != null
     ? { lastUpdateTime: Math.max(0, storedCursor.lastUpdateTime - PULL_OVERLAP_MS), lastId: 0 }
     : {}
   for (let page = 0; page < PULL_MAX_PAGES; page++) {
-    if (isActive && !isActive()) {
-      return
-    }
     const list = await fetchPage({
       lastUpdateTime: cursor.lastUpdateTime,
       lastId: cursor.lastId,
       limit: PULL_PAGE_SIZE,
     })
-    if (isActive && !isActive()) {
-      return
-    }
     if (list.length) {
       if (await apply(list) === false) {
-        return
-      }
-      if (isActive && !isActive()) {
         return
       }
       const last = list[list.length - 1]
@@ -63,7 +54,7 @@ export async function runIncrementalPull<T extends PullRecord>(
           && cursor.lastId > (highWater.lastId ?? 0))) {
         highWater.lastUpdateTime = cursor.lastUpdateTime
         highWater.lastId = cursor.lastId
-        await getDb().setSetting(cursorKey, highWater)
+        await db.setSetting(cursorKey, highWater)
       }
     }
     if (list.length < PULL_PAGE_SIZE) {
@@ -79,20 +70,13 @@ export async function runMinIdPull<T extends { id?: number }>(options: {
   pageSize: number
   fetchPage: (params: { minId: number, size: number }) => Promise<T[]>
   applyPage: (records: T[], nextMinId?: number) => Promise<boolean | void>
-  isActive?: () => boolean
   maxPages?: number
 }): Promise<void> {
-  const { initialMinId, pageSize, fetchPage, applyPage, isActive } = options
+  const { initialMinId, pageSize, fetchPage, applyPage } = options
   const maxPages = options.maxPages ?? MIN_ID_PULL_MAX_PAGES
   let minId = initialMinId || 0
   for (let page = 0; page < maxPages; page++) {
-    if (isActive && !isActive()) {
-      return
-    }
     const list = await fetchPage({ minId, size: pageSize })
-    if (isActive && !isActive()) {
-      return
-    }
     if (!list || list.length === 0) {
       return
     }

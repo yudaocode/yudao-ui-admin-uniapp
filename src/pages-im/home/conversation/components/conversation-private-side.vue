@@ -30,7 +30,6 @@ import { computed, ref, watch } from 'vue'
 import { getClientConversationId } from '@/pages-im/utils/db'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { ImConversationType } from '@/pages-im/utils/constants'
-import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../../store/conversationStore'
 import { useFriendStore } from '../../store/friendStore'
 import { useImRuntimeStore } from '../../store/runtimeStore'
@@ -47,14 +46,12 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const dialog = useDialog()
-const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const { clearConversationMessages, ensureConversation, setConversationTop } = conversationStore
 const friendStore = useFriendStore()
 const silent = ref(false) // 消息免打扰
 const pinned = ref(false) // 是否置顶
 const pinPending = ref(false) // 置顶状态提交中
-let pinEpoch = 0 // 置顶操作轮次
 const friendUserId = computed(() => Number(props.friendUserId)) // 好友编号
 const friend = computed(() => friendStore.isActiveFriend(friendUserId.value)
   ? friendStore.getFriend(friendUserId.value)
@@ -67,17 +64,11 @@ function getConversation(targetId = friendUserId.value) {
     item.clientConversationId === getClientConversationId(ImConversationType.PRIVATE, targetId))
 }
 
-/** 判断账号与目标仍属于当前组件上下文 */
-function isContextActive(accountId: number, targetId: number) {
-  return userStore.userInfo.userId === accountId && friendUserId.value === targetId
-}
-
 /** 编辑好友备注 */
 async function editRemark() {
-  const accountId = userStore.userInfo.userId
   const targetId = friendUserId.value
   const currentFriend = friend.value
-  if (!accountId || !targetId || !currentFriend) {
+  if (!targetId || !currentFriend) {
     return
   }
   let value: string | number | undefined
@@ -91,38 +82,29 @@ async function editRemark() {
   } catch {
     return
   }
-  if (!isContextActive(accountId, targetId)) {
-    return
-  }
-  if (await friendStore.setFriendDisplayName(targetId, String(value || '').trim())
-    && isContextActive(accountId, targetId)) {
+  if (await friendStore.setFriendDisplayName(targetId, String(value || '').trim())) {
     toast.success('已保存')
   }
 }
 
 /** 切换免打扰 */
 async function onSilentChange() {
-  const accountId = userStore.userInfo.userId
   const targetId = friendUserId.value
   const nextSilent = silent.value
   try {
     const success = await friendStore.setFriendSilent(targetId, nextSilent)
-    if (isContextActive(accountId, targetId) && !success) {
+    if (!success) {
       silent.value = !nextSilent
     }
   } catch {
-    if (isContextActive(accountId, targetId)) {
-      silent.value = !nextSilent
-    }
+    silent.value = !nextSilent
   }
 }
 
 /** 切换置顶 */
 async function onPinnedChange() {
   const nextPinned = pinned.value
-  const operationUserId = userStore.userInfo.userId
   const targetId = friendUserId.value
-  const operationEpoch = ++pinEpoch
   const currentFriend = friend.value
   pinPending.value = true
   try {
@@ -135,43 +117,31 @@ async function onPinnedChange() {
         silent: currentFriend.silent,
       })
     }
-    if (!isContextActive(operationUserId, targetId)
-      || operationEpoch !== pinEpoch
-      || !getConversation(targetId)) {
+    if (!getConversation(targetId)) {
       pinned.value = false
       return
     }
     await setConversationTop(ImConversationType.PRIVATE, targetId, nextPinned)
-    if (isContextActive(operationUserId, targetId) && operationEpoch === pinEpoch) {
-      pinned.value = nextPinned
-    }
+    pinned.value = nextPinned
   } catch {
-    if (isContextActive(operationUserId, targetId) && operationEpoch === pinEpoch) {
-      pinned.value = !!getConversation(targetId)?.top
-    }
+    pinned.value = !!getConversation(targetId)?.top
   } finally {
-    if (operationEpoch === pinEpoch) {
-      pinPending.value = false
-    }
+    pinPending.value = false
   }
 }
 
 /** 清空当前私聊的本地聊天记录 */
 async function clearHistory() {
-  const accountId = userStore.userInfo.userId
   const targetId = friendUserId.value
   try {
     await dialog.confirm({ title: '提示', msg: '确定清空本机中的聊天记录吗？该操作不可恢复。' })
   } catch {
     return
   }
-  if (!isContextActive(accountId, targetId)) {
-    return
-  }
-  await clearConversationMessages(getClientConversationId(ImConversationType.PRIVATE, targetId))
-  if (isContextActive(accountId, targetId)) {
-    toast.success('聊天记录已清空')
-  }
+  await clearConversationMessages(
+    getClientConversationId(ImConversationType.PRIVATE, targetId),
+  )
+  toast.success('聊天记录已清空')
 }
 
 watch(
@@ -187,19 +157,17 @@ watch(
 
 /** 激活时刷新好友与会话状态 */
 watch(() => props.active, (active) => {
-  if (active === false || !friendUserId.value) {
+  if (!active || !friendUserId.value) {
     return
   }
-  const userId = userStore.userInfo.userId
   const targetId = friendUserId.value
   void (async () => {
-    await useImRuntimeStore().ensure()
-    await friendStore.fetchFriendInfo(targetId)
-    if (!isContextActive(userId, targetId)) {
+    if (!await useImRuntimeStore().ensure()) {
       return
     }
+    await friendStore.fetchFriendInfo(targetId)
     silent.value = !!friend.value?.silent
     pinned.value = !!getConversation()?.top
-  })()
+  })().catch(error => console.warn('[IM friend detail] 加载失败', error))
 }, { immediate: true })
 </script>

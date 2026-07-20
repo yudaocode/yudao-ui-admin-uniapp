@@ -5,7 +5,7 @@ import type { QuoteMessage } from '@/pages-im/utils/message'
 import type { Ref } from 'vue'
 import type { Message } from '../types'
 import { readChannelMessages } from '@/api/im/message/channel'
-import { getClientConversationId } from '@/pages-im/utils/db'
+import { getClientConversationId, getDb, initDb } from '@/pages-im/utils/db'
 import {
   readGroupMessages,
   recallGroupMessage,
@@ -23,13 +23,13 @@ import {
   serializeMessage,
   withQuotePayload,
 } from '@/pages-im/utils/message'
-import { useUserStore } from '@/store/user'
 import {
   ImConversationType,
   ImMessageReceiptStatus,
   ImMessageStatus,
 } from '@/pages-im/utils/constants'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../store/conversationStore'
 import {
   buildMessageDO,
@@ -92,12 +92,9 @@ export async function sendMessageToConversation(
   type: number,
   content: string,
   sendOptions: SendExtOptions = {},
-  expectedUserId = useUserStore().userInfo.userId,
 ) {
-  const isActive = () => expectedUserId > 0 && useUserStore().userInfo.userId === expectedUserId
-  if (!isActive()) {
-    return false
-  }
+  const db = await initDb()
+  const currentUserId = useUserStore().userInfo.userId
   const message = await requestConversationMessage(
     { conversationType: conversation.type, targetId: conversation.targetId },
     generateClientMessageId(),
@@ -105,30 +102,25 @@ export async function sendMessageToConversation(
     content,
     sendOptions,
   )
-  if (!isActive()) {
-    return false
-  }
   const messageStore = useMessageStore()
   const incoming = messageStore.buildIncomingMessage(
     conversation.type,
     message,
-    expectedUserId,
+    currentUserId,
   )
   if (!incoming) {
     return true
   }
   try {
-    const appliedMessage = await messageStore.insertMessage(incoming, expectedUserId)
-    if (isActive() && appliedMessage) {
+    const appliedMessage = await messageStore.insertMessage(incoming, false, db)
+    if (appliedMessage) {
       uni.$emit('im:message', { message: appliedMessage })
     }
   } catch (error) {
     console.warn('[IM 消息发送] 指定会话本地缓存同步失败', error)
-    if (isActive()) {
-      void useConversationStore().loadConversationList().catch(() => undefined)
-    }
+    void useConversationStore().loadConversationList().catch(() => undefined)
   }
-  return isActive()
+  return true
 }
 
 /** 管理聊天消息的本地占位、接口发送和失败重试 */
@@ -139,11 +131,9 @@ export function useMessageSender(options: {
   addLatestMessage: (message: Message, forceBottom?: boolean) => boolean
   replaceLocalMessage: (clientMessageId: string, message: Message) => boolean
   isLocalMessageDeleted: (clientMessageId: string) => boolean
-  getSendDisabledTip: () => string
   clearReplyTarget: () => void
 }) {
   const toast = useToast()
-  const userStore = useUserStore()
   const conversationStore = useConversationStore()
   const messageStore = useMessageStore()
   const {
@@ -160,55 +150,33 @@ export function useMessageSender(options: {
     markConversationReadReported,
   } = conversationStore
   const uploadMessages = new Map<string, {
-    context: ReturnType<typeof getSendContext>
+    context: ReturnType<typeof getSendTarget>
     localMessage: Message
     options: SendExtOptions
     ready: Promise<unknown>
   }>() // 上传中的媒体消息
 
-  /** 快照当前发送账号与会话上下文 */
-  function getSendContext() {
+  /** 获取当前消息发送目标 */
+  function getSendTarget() {
     return {
-      userId: userStore.userInfo.userId,
       conversationType: options.conversationType.value,
       targetId: options.targetId.value,
+      currentUserId: useUserStore().userInfo.userId,
+      db: getDb(),
     }
-  }
-
-  /** 判断发送任务是否仍属于当前页面会话 */
-  function isSendPageContext(context: ReturnType<typeof getSendContext>) {
-    return isSendAccountActive(context)
-      && options.conversationType.value === context.conversationType
-      && options.targetId.value === context.targetId
-  }
-
-  /** 判断发送上下文是否仍允许发送 */
-  function isSendContextActive(context: ReturnType<typeof getSendContext>) {
-    return isSendPageContext(context)
-      && conversationStore.isActiveConversation(context.conversationType, context.targetId)
-  }
-
-  /** 判断发送任务是否仍属于发起账号 */
-  function isSendAccountActive(context: ReturnType<typeof getSendContext>) {
-    return context.userId > 0 && userStore.userInfo.userId === context.userId
-  }
-
-  /** 判断当前会话仍处于打开状态 */
-  function isReadContextActive(context: ReturnType<typeof getSendContext>) {
-    return isSendContextActive(context)
-      && conversationStore.isActiveConversation(context.conversationType, context.targetId)
   }
 
   /** 清理删除期间可能被异步持久化重新写入的消息 */
   async function cleanupDeletedMessage(
-    context: ReturnType<typeof getSendContext>,
+    context: ReturnType<typeof getSendTarget>,
     message: { id?: number, clientMessageId?: string },
   ) {
     try {
       await removeMessageList(
         getClientConversationId(context.conversationType, context.targetId),
         [message],
-        context.userId,
+        context.db,
+        context.currentUserId,
       )
     } catch (error) {
       console.warn('[IM 消息发送] 已删除消息本地缓存清理失败', error)
@@ -217,7 +185,7 @@ export function useMessageSender(options: {
 
   /** 清理删除期间可能被异步持久化重新写入的上传消息 */
   async function cleanupDeletedUploadMessage(
-    state: { context: ReturnType<typeof getSendContext>, localMessage: Message },
+    state: { context: ReturnType<typeof getSendTarget>, localMessage: Message },
     message: Pick<Message, 'id' | 'clientMessageId'> = state.localMessage,
   ) {
     uploadMessages.delete(state.localMessage.clientMessageId)
@@ -226,7 +194,7 @@ export function useMessageSender(options: {
 
   /** 等待首次持久化结束后清理已删除的上传消息 */
   async function cleanupDeletedUploadMessageAfterReady(
-    state: { context: ReturnType<typeof getSendContext>, localMessage: Message, ready: Promise<unknown> },
+    state: { context: ReturnType<typeof getSendTarget>, localMessage: Message, ready: Promise<unknown> },
   ) {
     uploadMessages.delete(state.localMessage.clientMessageId)
     await state.ready
@@ -235,7 +203,7 @@ export function useMessageSender(options: {
 
   /** 调用当前会话发送接口 */
   function requestSendMessage(
-    context: ReturnType<typeof getSendContext>,
+    context: ReturnType<typeof getSendTarget>,
     clientMessageId: string,
     type: number,
     content: string,
@@ -247,17 +215,22 @@ export function useMessageSender(options: {
   /** 同步本地或已发送消息到会话列表与本地库 */
   async function syncSentMessage(
     message: Message | SendMessageResponse,
-    context: ReturnType<typeof getSendContext>,
+    context: ReturnType<typeof getSendTarget>,
     local = false,
+    waitForReplay = false,
   ) {
-    if (!isSendAccountActive(context)) {
-      return
-    }
     const incoming = local
       ? buildMessageDO(message as Message, context.conversationType)
-      : buildIncomingMessage(context.conversationType, message as SendMessageResponse, context.userId)
+      : buildIncomingMessage(
+          context.conversationType,
+          message as SendMessageResponse,
+          context.currentUserId,
+        )
     if (incoming) {
-      const applied = await insertMessage(incoming, context.userId)
+      const applied = await insertMessage(incoming, waitForReplay, context.db)
+      if (applied === false) {
+        return
+      }
       return buildMessageFromDO(applied || incoming)
     }
   }
@@ -265,14 +238,15 @@ export function useMessageSender(options: {
   /** 尽力同步本地缓存；缓存异常不改变服务端发送结果 */
   async function syncSentMessageSafely(
     message: Message | SendMessageResponse,
-    context: ReturnType<typeof getSendContext>,
+    context: ReturnType<typeof getSendTarget>,
     local = false,
+    waitForReplay = false,
   ) {
     try {
-      return await syncSentMessage(message, context, local)
+      return await syncSentMessage(message, context, local, waitForReplay)
     } catch (error) {
       console.warn('[IM 消息发送] 本地缓存同步失败', error)
-      if (isSendAccountActive(context) && message.senderId === context.userId) {
+      if (message.senderId === context.currentUserId) {
         void loadConversationList().catch(() => undefined)
       }
       if (local) {
@@ -281,18 +255,27 @@ export function useMessageSender(options: {
       const incoming = buildIncomingMessage(
         context.conversationType,
         message as SendMessageResponse,
-        context.userId,
+        context.currentUserId,
       )
       return incoming ? buildMessageFromDO(incoming) : undefined
     }
   }
 
+  /** 持久化失败态，并以 Store 归约后的真实终态刷新当前页面 */
+  async function syncFailedMessage(
+    message: Message,
+    context: ReturnType<typeof getSendTarget>,
+  ) {
+    const syncedMessage = await syncSentMessageSafely(message, context, true, true)
+    if (syncedMessage) {
+      options.replaceLocalMessage(message.clientMessageId, syncedMessage)
+    }
+    return syncedMessage || message
+  }
+
   /** 发送原始消息，并在失败后保留可重试占位 */
   async function sendRaw(type: number, payload: Record<string, any>, sendOptions: SendExtOptions = {}) {
-    const context = getSendContext()
-    if (!isSendContextActive(context)) {
-      return false
-    }
+    const context = getSendTarget()
     const quote = sendOptions.quoteCaptured ? sendOptions.quote : options.replyTarget.value
     if (!sendOptions.quoteCaptured && quote && options.replyTarget.value === quote) {
       options.clearReplyTarget()
@@ -301,7 +284,7 @@ export function useMessageSender(options: {
     const clientMessageId = generateClientMessageId()
     const localMessage: Message = {
       clientMessageId,
-      senderId: context.userId,
+      senderId: context.currentUserId,
       type,
       content,
       status: ImMessageStatus.SENDING,
@@ -317,9 +300,6 @@ export function useMessageSender(options: {
       return false
     }
     await syncSentMessageSafely(localMessage, context, true)
-    if (!isSendAccountActive(context)) {
-      return false
-    }
     if (options.isLocalMessageDeleted(clientMessageId)) {
       await cleanupDeletedMessage(context, localMessage)
       return false
@@ -328,29 +308,20 @@ export function useMessageSender(options: {
     try {
       message = await requestSendMessage(context, clientMessageId, type, content, sendOptions)
     } catch {
-      if (!isSendAccountActive(context)) {
-        return false
-      }
       if (options.isLocalMessageDeleted(clientMessageId)) {
         await cleanupDeletedMessage(context, localMessage)
         return false
       }
       const failedMessage: Message = { ...localMessage, status: ImMessageStatus.FAILED }
-      if (isSendPageContext(context)) {
-        options.replaceLocalMessage(clientMessageId, failedMessage)
-      }
-      await syncSentMessageSafely(failedMessage, context, true)
+      const appliedMessage = await syncFailedMessage(failedMessage, context)
       if (options.isLocalMessageDeleted(clientMessageId)) {
-        await cleanupDeletedMessage(context, failedMessage)
+        await cleanupDeletedMessage(context, appliedMessage)
         return false
       }
-      if (isSendContextActive(context)) {
+      if (appliedMessage.status === ImMessageStatus.FAILED) {
         toast.error('发送失败，点击状态可重试')
       }
-      return false
-    }
-    if (!isSendAccountActive(context)) {
-      return false
+      return appliedMessage.status === ImMessageStatus.NORMAL && !!appliedMessage.id
     }
     if (options.isLocalMessageDeleted(clientMessageId)) {
       await cleanupDeletedMessage(context, message)
@@ -361,7 +332,7 @@ export function useMessageSender(options: {
       await cleanupDeletedMessage(context, syncedMessage || message)
       return false
     }
-    if (isSendPageContext(context) && syncedMessage) {
+    if (syncedMessage) {
       options.replaceLocalMessage(clientMessageId, syncedMessage)
     }
     return true
@@ -369,16 +340,13 @@ export function useMessageSender(options: {
 
   /** 添加媒体上传占位消息 */
   function startUploadMessage(data: UploadMessageData) {
-    const context = getSendContext()
-    if (!isSendContextActive(context)) {
-      return false
-    }
+    const context = getSendTarget()
     const sendOptions = data.options || {}
     const pendingPayload: Record<string, any> = { ...data.payload, _uploadPending: true }
     const content = serializeMessage(withQuotePayload(pendingPayload, sendOptions.quote))
     const localMessage: Message = {
       clientMessageId: data.clientMessageId,
-      senderId: context.userId,
+      senderId: context.currentUserId,
       type: data.type,
       content,
       status: ImMessageStatus.SENDING,
@@ -399,7 +367,7 @@ export function useMessageSender(options: {
   /** 更新媒体上传进度 */
   function updateUploadProgress(clientMessageId: string, progress: number) {
     const state = uploadMessages.get(clientMessageId)
-    if (!state || !isSendAccountActive(state.context)) {
+    if (!state) {
       return
     }
     if (options.isLocalMessageDeleted(clientMessageId)) {
@@ -410,9 +378,7 @@ export function useMessageSender(options: {
       ...state.localMessage,
       uploadProgress: Math.min(100, Math.max(0, Math.round(progress))),
     }
-    if (isSendPageContext(state.context)) {
-      options.replaceLocalMessage(clientMessageId, state.localMessage)
-    }
+    options.replaceLocalMessage(clientMessageId, state.localMessage)
   }
 
   /** 完成媒体上传并发送消息 */
@@ -427,42 +393,15 @@ export function useMessageSender(options: {
     }
     const content = serializeMessage(withQuotePayload(data.payload, state.options.quote))
     state.localMessage = { ...state.localMessage, content, uploadProgress: undefined }
-    if (isSendPageContext(state.context)) {
-      options.replaceLocalMessage(data.clientMessageId, state.localMessage)
-    }
+    options.replaceLocalMessage(data.clientMessageId, state.localMessage)
     await state.ready
-    if (!isSendAccountActive(state.context)) {
-      uploadMessages.delete(data.clientMessageId)
-      return false
-    }
     if (options.isLocalMessageDeleted(data.clientMessageId)) {
       await cleanupDeletedUploadMessage(state)
       return false
     }
     await syncSentMessageSafely(state.localMessage, state.context, true)
-    if (!isSendAccountActive(state.context)) {
-      uploadMessages.delete(data.clientMessageId)
-      return false
-    }
     if (options.isLocalMessageDeleted(data.clientMessageId)) {
       await cleanupDeletedUploadMessage(state)
-      return false
-    }
-    const sendDisabledTip = isSendContextActive(state.context) ? options.getSendDisabledTip() : ''
-    if (!isSendContextActive(state.context) || sendDisabledTip) {
-      const failedMessage = { ...state.localMessage, status: ImMessageStatus.FAILED }
-      if (isSendPageContext(state.context)) {
-        options.replaceLocalMessage(data.clientMessageId, failedMessage)
-        if (isSendContextActive(state.context) && sendDisabledTip) {
-          toast.show(sendDisabledTip)
-        }
-      }
-      await syncSentMessageSafely(failedMessage, state.context, true)
-      if (options.isLocalMessageDeleted(data.clientMessageId)) {
-        await cleanupDeletedUploadMessage(state, failedMessage)
-        return false
-      }
-      uploadMessages.delete(data.clientMessageId)
       return false
     }
     let response: SendMessageResponse
@@ -480,19 +419,16 @@ export function useMessageSender(options: {
         return false
       }
       const failedMessage = { ...state.localMessage, status: ImMessageStatus.FAILED }
-      if (isSendPageContext(state.context)) {
-        options.replaceLocalMessage(data.clientMessageId, failedMessage)
-        if (isSendContextActive(state.context)) {
-          toast.error('发送失败，点击状态可重试')
-        }
-      }
-      await syncSentMessageSafely(failedMessage, state.context, true)
+      const appliedMessage = await syncFailedMessage(failedMessage, state.context)
       if (options.isLocalMessageDeleted(data.clientMessageId)) {
-        await cleanupDeletedUploadMessage(state, failedMessage)
+        await cleanupDeletedUploadMessage(state, appliedMessage)
         return false
       }
       uploadMessages.delete(data.clientMessageId)
-      return false
+      if (appliedMessage.status === ImMessageStatus.FAILED) {
+        toast.error('发送失败，点击状态可重试')
+      }
+      return appliedMessage.status === ImMessageStatus.NORMAL && !!appliedMessage.id
     }
     if (options.isLocalMessageDeleted(data.clientMessageId)) {
       await cleanupDeletedUploadMessage(state)
@@ -503,7 +439,7 @@ export function useMessageSender(options: {
       await cleanupDeletedUploadMessage(state, syncedMessage || state.localMessage)
       return false
     }
-    if (isSendPageContext(state.context) && syncedMessage) {
+    if (syncedMessage) {
       options.replaceLocalMessage(data.clientMessageId, syncedMessage)
     }
     uploadMessages.delete(data.clientMessageId)
@@ -528,24 +464,16 @@ export function useMessageSender(options: {
       status: ImMessageStatus.FAILED,
       uploadProgress: undefined,
     }
-    if (isSendPageContext(state.context)) {
-      options.replaceLocalMessage(clientMessageId, failedMessage)
-      if (isSendContextActive(state.context)) {
-        toast.error('上传失败，请重新选择文件')
-      }
-    }
+    options.replaceLocalMessage(clientMessageId, failedMessage)
+    toast.error('上传失败，请重新选择文件')
     await state.ready
-    if (!isSendAccountActive(state.context) || options.isLocalMessageDeleted(clientMessageId)) {
-      if (options.isLocalMessageDeleted(clientMessageId)) {
-        await cleanupDeletedUploadMessage(state)
-      } else {
-        uploadMessages.delete(clientMessageId)
-      }
+    if (options.isLocalMessageDeleted(clientMessageId)) {
+      await cleanupDeletedUploadMessage(state)
       return
     }
-    await syncSentMessageSafely(failedMessage, state.context, true)
+    const appliedMessage = await syncFailedMessage(failedMessage, state.context)
     if (options.isLocalMessageDeleted(clientMessageId)) {
-      await cleanupDeletedUploadMessage(state, failedMessage)
+      await cleanupDeletedUploadMessage(state, appliedMessage)
       return
     }
     uploadMessages.delete(clientMessageId)
@@ -556,7 +484,7 @@ export function useMessageSender(options: {
     if (item.status !== ImMessageStatus.FAILED) {
       return
     }
-    const context = getSendContext()
+    const context = getSendTarget()
     const uploadState = JSON.parse(item.content || '{}') as {
       _uploadFailed?: boolean
       _uploadPending?: boolean
@@ -568,8 +496,11 @@ export function useMessageSender(options: {
     const quote = getQuoteFromMessage(item.content)
     const sending: Message = { ...item, status: ImMessageStatus.SENDING }
     options.replaceLocalMessage(item.clientMessageId, sending)
-    await syncSentMessageSafely(sending, context, true)
-    if (!isSendAccountActive(context)) {
+    const preparedMessage = await syncSentMessageSafely(sending, context, true)
+    if (preparedMessage) {
+      options.replaceLocalMessage(item.clientMessageId, preparedMessage)
+    }
+    if (preparedMessage?.status === ImMessageStatus.NORMAL && preparedMessage.id) {
       return
     }
     if (options.isLocalMessageDeleted(item.clientMessageId)) {
@@ -584,27 +515,18 @@ export function useMessageSender(options: {
       }
       message = await requestSendMessage(context, item.clientMessageId, item.type, item.content, sendOptions)
     } catch {
-      if (!isSendAccountActive(context)) {
-        return
-      }
       if (options.isLocalMessageDeleted(item.clientMessageId)) {
         await cleanupDeletedMessage(context, item)
         return
       }
-      if (isSendPageContext(context)) {
-        options.replaceLocalMessage(item.clientMessageId, item)
-      }
-      await syncSentMessageSafely(item, context, true)
+      const appliedMessage = await syncFailedMessage(item, context)
       if (options.isLocalMessageDeleted(item.clientMessageId)) {
-        await cleanupDeletedMessage(context, item)
+        await cleanupDeletedMessage(context, appliedMessage)
         return
       }
-      if (isSendContextActive(context)) {
+      if (appliedMessage.status === ImMessageStatus.FAILED) {
         toast.error('重试失败')
       }
-      return
-    }
-    if (!isSendAccountActive(context)) {
       return
     }
     if (options.isLocalMessageDeleted(item.clientMessageId)) {
@@ -616,11 +538,10 @@ export function useMessageSender(options: {
       await cleanupDeletedMessage(context, syncedMessage || message)
       return
     }
-    if (isSendPageContext(context) && syncedMessage) {
+    if (syncedMessage) {
       options.replaceLocalMessage(item.clientMessageId, syncedMessage)
     }
-    if (isSendContextActive(context)
-      && quote?.messageId
+    if (quote?.messageId
       && options.replyTarget.value?.messageId === quote.messageId) {
       options.clearReplyTarget()
     }
@@ -628,10 +549,7 @@ export function useMessageSender(options: {
 
   /** 标记当前会话已读，并按会话类型上报服务端 */
   async function readActive(latestMessageId = 0) {
-    const context = getSendContext()
-    if (!isReadContextActive(context)) {
-      return
-    }
+    const context = getSendTarget()
     const conversation = getConversation(context.conversationType, context.targetId)
     const messageId = Math.max(latestMessageId, conversation?.lastMessageId || 0)
     if (!messageId) {
@@ -646,9 +564,9 @@ export function useMessageSender(options: {
       context.conversationType,
       context.targetId,
       messageId,
-      context.userId,
+      context.db,
     )
-    if (readReported || !isReadContextActive(context)) {
+    if (readReported) {
       return
     }
     const shouldReport = context.conversationType === ImConversationType.CHANNEL
@@ -669,22 +587,19 @@ export function useMessageSender(options: {
         context.conversationType,
         context.targetId,
         messageId,
-        context.userId,
+        context.db,
       )
     } catch (error) {
-      if (isSendAccountActive(context)) {
-        console.warn('[IM 消息发送] 标记已读失败', error)
-      }
+      console.warn('[IM 消息发送] 标记已读失败', error)
     }
   }
 
   /** 补齐私聊对方已读位置 */
   async function syncPrivateReadStatus() {
-    const context = getSendContext()
+    const context = getSendTarget()
     if (context.conversationType !== ImConversationType.PRIVATE
       || !context.targetId
-      || !MESSAGE_PRIVATE_READ_ENABLED
-      || !isReadContextActive(context)) {
+      || !MESSAGE_PRIVATE_READ_ENABLED) {
       return
     }
     const cachedMaxReadMessageId = messageStore.getPrivateReadMaxId(context.targetId)
@@ -693,22 +608,17 @@ export function useMessageSender(options: {
     }
     try {
       const maxReadMessageId = await getPrivateMaxReadMessageId(context.targetId)
-      if (!isSendAccountActive(context)) {
-        return
-      }
       messageStore.updatePrivateReadMaxId(context.targetId, maxReadMessageId)
       if (maxReadMessageId) {
         await messageStore.applyMessageReadReceipt({
           conversationType: ImConversationType.PRIVATE,
           targetId: context.targetId,
           privateReadMaxId: maxReadMessageId,
-        }, context.userId)
+        }, context.db)
       }
       return maxReadMessageId
     } catch (error) {
-      if (isSendAccountActive(context)) {
-        console.warn('[IM 消息发送] 拉取对方已读位置失败', { peerId: context.targetId }, error)
-      }
+      console.warn('[IM 消息发送] 拉取对方已读位置失败', { peerId: context.targetId }, error)
     }
   }
 
@@ -717,23 +627,17 @@ export function useMessageSender(options: {
     if (!item.id) {
       return false
     }
-    const context = getSendContext()
-    if (!isSendContextActive(context)) {
-      return false
-    }
+    const context = getSendTarget()
     const signal = context.conversationType === ImConversationType.GROUP
       ? await recallGroupMessage(item.id)
       : await recallPrivateMessage(item.id)
-    if (!isSendAccountActive(context)) {
-      return false
-    }
     await applyRecallMessage(
       context.conversationType,
       context.targetId,
       signal.content,
-      context.userId,
+      context.db,
     )
-    return isSendContextActive(context)
+    return true
   }
 
   return {

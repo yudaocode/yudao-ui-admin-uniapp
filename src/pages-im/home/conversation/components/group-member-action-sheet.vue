@@ -71,7 +71,8 @@ function open(item: GroupMember) {
 /** 执行成员管理操作 */
 async function handleSelect({ item: action }: { item: MemberAction }) {
   const current = member.value
-  if (!current || !props.groupId) {
+  const groupId = props.groupId
+  if (!current || !groupId) {
     return
   }
   if (action.value === 'addAdmin') {
@@ -80,10 +81,10 @@ async function handleSelect({ item: action }: { item: MemberAction }) {
       toast.show(`群管理员上限为 ${GROUP_ADMIN_MAX_COUNT} 人`)
       return
     }
-    await addGroupAdmin({ id: props.groupId, userIds: [current.userId] })
+    await addGroupAdmin({ id: groupId, userIds: [current.userId] })
     toast.success('已设为管理员')
   } else if (action.value === 'removeAdmin') {
-    await removeGroupAdmin({ id: props.groupId, userIds: [current.userId] })
+    await removeGroupAdmin({ id: groupId, userIds: [current.userId] })
     toast.success('已撤销管理员')
   } else if (action.value === 'transferOwner') {
     try {
@@ -91,13 +92,13 @@ async function handleSelect({ item: action }: { item: MemberAction }) {
     } catch {
       return
     }
-    await transferGroupOwner({ id: props.groupId, newOwnerUserId: current.userId })
+    await transferGroupOwner({ id: groupId, newOwnerUserId: current.userId })
     toast.success('已转让群主')
   } else if (action.value === 'mute') {
     mutePickerRef.value?.open(current)
     return
   } else if (action.value === 'cancelMute') {
-    await cancelMuteMember({ id: props.groupId, userId: current.userId })
+    await cancelMuteMember({ id: groupId, userId: current.userId })
     toast.success('已取消禁言')
   } else if (action.value === 'remove') {
     try {
@@ -105,7 +106,7 @@ async function handleSelect({ item: action }: { item: MemberAction }) {
     } catch {
       return
     }
-    await removeGroupMember({ groupId: props.groupId, memberUserIds: [current.userId] })
+    await removeGroupMember({ groupId, memberUserIds: [current.userId] })
     toast.success('已移出群聊')
   }
   emit('reload')

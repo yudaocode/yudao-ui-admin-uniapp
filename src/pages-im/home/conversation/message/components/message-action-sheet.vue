@@ -209,7 +209,9 @@ async function addFace(item: Message) {
 
 /** 解除消息发送成员的禁言 */
 async function unmuteSender(item: Message) {
-  if (!group.value?.id || !getManageableSender(item)) {
+  const groupId = group.value?.id
+  const senderId = item.senderId
+  if (!groupId || !getManageableSender(item)) {
     return
   }
   try {
@@ -217,7 +219,7 @@ async function unmuteSender(item: Message) {
   } catch {
     return
   }
-  await cancelMuteMember({ id: group.value.id, userId: item.senderId })
+  await cancelMuteMember({ id: groupId, userId: senderId })
   toast.success('已解除禁言')
   emit('reload-group-members')
 }
@@ -225,7 +227,9 @@ async function unmuteSender(item: Message) {
 /** 将消息发送成员移出群聊 */
 async function removeSender(item: Message) {
   const sender = getManageableSender(item)
-  if (!group.value?.id || !sender) {
+  const groupId = group.value?.id
+  const senderId = item.senderId
+  if (!groupId || !sender) {
     return
   }
   try {
@@ -233,14 +237,17 @@ async function removeSender(item: Message) {
   } catch {
     return
   }
-  await removeGroupMember({ groupId: group.value.id, memberUserIds: [item.senderId] })
+  await removeGroupMember({ groupId, memberUserIds: [senderId] })
   toast.success('已移出群聊')
   emit('reload-group-members')
 }
 
 /** 置顶群消息 */
 async function pinMessage(item: Message) {
-  if (!item.id || !group.value?.id || isPinnedMessage(item.id) || pinningMessageId.value != null) {
+  const messageId = item.id
+  const groupId = group.value?.id
+  if (!messageId || !groupId || isPinnedMessage(messageId)
+    || pinningMessageId.value != null) {
     return
   }
   try {
@@ -248,9 +255,9 @@ async function pinMessage(item: Message) {
   } catch {
     return
   }
-  pinningMessageId.value = item.id
+  pinningMessageId.value = messageId
   try {
-    await pinGroupMessage({ id: group.value.id, messageId: item.id })
+    await pinGroupMessage({ id: groupId, messageId })
     toast.success('已置顶')
     emit('reload-group-state')
   } finally {
@@ -260,7 +267,9 @@ async function pinMessage(item: Message) {
 
 /** 撤回消息 */
 async function recall(item: Message) {
-  if (!item.id || !canRecallMessage(item, props.conversationType, userStore.userInfo.userId)) {
+  const messageId = item.id
+  if (!messageId
+    || !canRecallMessage(item, props.conversationType, userStore.userInfo.userId)) {
     return
   }
   try {
@@ -271,7 +280,7 @@ async function recall(item: Message) {
   if (!await props.recallMessage(item)) {
     return
   }
-  emit('recalled', item.id)
+  emit('recalled', messageId)
   toast.success('已撤回')
 }
 

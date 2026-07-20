@@ -228,7 +228,9 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(async () => {
-  await useImRuntimeStore().ensure()
+  if (!await useImRuntimeStore().ensure()) {
+    return
+  }
   if (!props.id && props.memberUserIds) {
     formData.value.memberUserIds = lockedMemberUserIds.value
   }

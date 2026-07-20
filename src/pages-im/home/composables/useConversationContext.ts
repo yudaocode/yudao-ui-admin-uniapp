@@ -94,28 +94,14 @@ export function useConversationContext(options: {
     return muteOverlay.value?.text || ''
   })
 
-  /** 快照当前聊天页账号与会话 */
-  function getPageContext() {
-    return {
-      userId: userStore.userInfo.userId,
-      conversationType: options.conversationType.value,
-      targetId: options.targetId.value,
-    }
-  }
-
-  /** 判断异步结果是否仍属于当前聊天页 */
-  function isPageContextActive(context: ReturnType<typeof getPageContext>) {
-    return options.active.value
-      && context.userId === userStore.userInfo.userId
-      && context.conversationType === options.conversationType.value
-      && context.targetId === options.targetId.value
-  }
-
   /** 同步群资料到会话列表 */
-  async function syncGroupConversation(groupDetail: NonNullable<typeof group.value>) {
+  async function syncGroupConversation(
+    groupDetail: NonNullable<typeof group.value>,
+    targetId: number,
+  ) {
     await conversationStore.ensureConversation({
       type: ImConversationType.GROUP,
-      targetId: options.targetId.value,
+      targetId,
       name: getGroupDisplayName(groupDetail),
       avatar: groupDetail.avatar || '',
       silent: groupDetail.silent,
@@ -127,17 +113,14 @@ export function useConversationContext(options: {
     if (options.conversationType.value !== ImConversationType.PRIVATE) {
       return
     }
-    const context = getPageContext()
+    const targetId = options.targetId.value
     try {
-      const friends = await friendStore.fetchFriendList()
-      if (!isPageContextActive(context)) {
-        return
-      }
-      const friend = friends.find(item => item.friendUserId === context.targetId
+      const friends = await friendStore.fetchFriendList(false)
+      const friend = friends.find(item => item.friendUserId === targetId
         && item.status !== CommonStatusEnum.DISABLE)
       await conversationStore.ensureConversation({
-        type: context.conversationType,
-        targetId: context.targetId,
+        type: ImConversationType.PRIVATE,
+        targetId,
         name: friend
           ? getFriendDisplayName(friend)
           : conversation.value?.name || '聊天',
@@ -145,9 +128,7 @@ export function useConversationContext(options: {
         silent: friend?.silent,
       })
     } finally {
-      if (isPageContextActive(context)) {
-        friendLoaded.value = true
-      }
+      friendLoaded.value = true
     }
   }
 
@@ -157,38 +138,29 @@ export function useConversationContext(options: {
       return
     }
     groupMembersReady.value = false
-    const context = getPageContext()
-    await groupStore.loadGroupMemberList(options.targetId.value)
-    if (!isPageContextActive(context)) {
-      return
-    }
-    const cachedGroup = groupStore.getGroup(options.targetId.value)
+    const targetId = options.targetId.value
+    await groupStore.loadGroupMemberList(targetId)
+    const cachedGroup = groupStore.getGroup(targetId)
     groupMembers.value = cachedGroup?.members || []
     const [memberList, groupDetail, activeCall] = await Promise.all([
       !cachedGroup?.membersLoaded || cachedGroup.membersExpired
-        ? groupStore.fetchGroupMemberList(options.targetId.value)
+        ? groupStore.fetchGroupMemberList(targetId, false)
         : Promise.resolve(cachedGroup.members || []),
-      groupStore.fetchGroupInfo(options.targetId.value, true),
-      getActiveCall(options.targetId.value),
+      groupStore.fetchGroupInfo(targetId, true),
+      getActiveCall(targetId),
     ])
-    if (!isPageContextActive(context)) {
-      return
-    }
     groupMembers.value = memberList
     groupMembersReady.value = true
     if (activeCall) {
       rtcStore.setGroupCall(activeCall)
     } else {
-      rtcStore.removeGroupCall(options.targetId.value)
+      rtcStore.removeGroupCall(targetId)
     }
     if (groupDetail) {
-      await syncGroupConversation(groupDetail)
+      await syncGroupConversation(groupDetail, targetId)
     }
     if (canManageGroup.value) {
       await groupRequestStore.fetchUnhandledGroupRequestList()
-      if (!isPageContextActive(context)) {
-        return
-      }
     }
   }
 
@@ -197,21 +169,18 @@ export function useConversationContext(options: {
     if (options.conversationType.value !== ImConversationType.GROUP || !options.targetId.value) {
       return
     }
-    const context = getPageContext()
+    const targetId = options.targetId.value
     const [groupDetail, activeCall] = await Promise.all([
-      groupStore.fetchGroupInfo(options.targetId.value, true),
-      getActiveCall(options.targetId.value),
+      groupStore.fetchGroupInfo(targetId, true),
+      getActiveCall(targetId),
     ])
-    if (!isPageContextActive(context)) {
-      return
-    }
     if (activeCall) {
       rtcStore.setGroupCall(activeCall)
     } else {
-      rtcStore.removeGroupCall(options.targetId.value)
+      rtcStore.removeGroupCall(targetId)
     }
     if (groupDetail) {
-      await syncGroupConversation(groupDetail)
+      await syncGroupConversation(groupDetail, targetId)
     }
   }
 
@@ -220,38 +189,36 @@ export function useConversationContext(options: {
     if (options.conversationType.value !== ImConversationType.CHANNEL) {
       return
     }
-    const context = getPageContext()
-    await channelStore.fetchChannelList()
-    if (!isPageContextActive(context)) {
-      return
-    }
+    const targetId = options.targetId.value
+    await channelStore.fetchChannelList(false)
+    const currentChannel = channelStore.getChannel(targetId)
     await conversationStore.ensureConversation({
-      type: context.conversationType,
-      targetId: context.targetId,
-      name: channel.value?.name || '频道',
-      avatar: channel.value?.avatar || '',
+      type: ImConversationType.CHANNEL,
+      targetId,
+      name: currentChannel?.name || '频道',
+      avatar: currentChannel?.avatar || '',
     })
   }
 
   /** 激活当前会话 */
   async function activate() {
-    const context = getPageContext()
-    if (context.userId <= 0) {
+    if (!await useImRuntimeStore().ensure()) {
+      return
+    }
+    const conversationType = options.conversationType.value
+    const targetId = options.targetId.value
+    if (!targetId) {
       return
     }
     conversationStore.setActiveConversation({
-      type: context.conversationType,
-      targetId: context.targetId,
+      type: conversationType,
+      targetId,
     }, activeConversationOwner)
-    await useImRuntimeStore().ensure()
-    if (!isPageContextActive(context)) {
-      return
-    }
-    if (context.conversationType === ImConversationType.GROUP) {
+    if (conversationType === ImConversationType.GROUP) {
       await refreshGroupMembers()
-    } else if (context.conversationType === ImConversationType.PRIVATE) {
+    } else if (conversationType === ImConversationType.PRIVATE) {
       await refreshFriend()
-    } else if (context.conversationType === ImConversationType.CHANNEL) {
+    } else if (conversationType === ImConversationType.CHANNEL) {
       await refreshChannel()
     }
   }
@@ -272,8 +239,6 @@ export function useConversationContext(options: {
     isQuitGroup,
     canManageGroup,
     inputDisabledTip,
-    getPageContext,
-    isPageContextActive,
     activate,
     deactivate,
     refreshGroup,

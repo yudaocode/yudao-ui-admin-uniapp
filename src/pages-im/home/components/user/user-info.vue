@@ -69,7 +69,6 @@ import { toUserCardTarget } from '@/pages-im/utils/message'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
-import { useUserStore } from '@/store/user'
 import { useFriendStore } from '../../store/friendStore'
 import ImAvatar from '../im-avatar.vue'
 import RecommendCardPicker from './recommend-card-picker.vue'
@@ -94,7 +93,6 @@ const emit = defineEmits<{
 const toast = useToast()
 const dialog = useDialog()
 const friendStore = useFriendStore()
-const userStore = useUserStore()
 const recommendVisible = ref(false) // 推荐名片弹窗
 const blocked = ref(false) // 是否加入黑名单
 const friend = computed<Friend | undefined>(() => props.user?.id
@@ -111,17 +109,11 @@ const friendCard = computed(() => props.user?.id
     })
   : undefined) // 个人名片
 
-/** 判断账号与目标仍属于当前资料上下文 */
-function isContextActive(accountId: number, targetId: number) {
-  return userStore.userInfo.userId === accountId && props.user?.id === targetId
-}
-
 /** 编辑好友备注 */
 async function editRemark() {
-  const accountId = userStore.userInfo.userId
   const targetId = props.user?.id
   const inputValue = friend.value?.displayName || ''
-  if (!accountId || !targetId) {
+  if (!targetId) {
     return
   }
   let value: string | number | undefined
@@ -135,12 +127,8 @@ async function editRemark() {
   } catch {
     return
   }
-  if (!isContextActive(accountId, targetId)) {
-    return
-  }
   const displayName = String(value || '').trim()
-  if (await friendStore.setFriendDisplayName(targetId, displayName)
-    && isContextActive(accountId, targetId)) {
+  if (await friendStore.setFriendDisplayName(targetId, displayName)) {
     toast.success('已保存')
     emit('saved', displayName)
   }
@@ -148,32 +136,29 @@ async function editRemark() {
 
 /** 切换黑名单 */
 async function onBlockedChange() {
-  const accountId = userStore.userInfo.userId
   const targetId = props.user?.id
   const nextBlocked = blocked.value
-  if (!accountId || !targetId) {
+  if (!targetId) {
+    blocked.value = !nextBlocked
     return
   }
   try {
     const success = nextBlocked
       ? await friendStore.blockFriend(targetId)
       : await friendStore.unblockFriend(targetId)
-    if (isContextActive(accountId, targetId) && !success) {
+    if (!success) {
       blocked.value = !nextBlocked
     }
   } catch {
-    if (isContextActive(accountId, targetId)) {
-      blocked.value = !nextBlocked
-    }
+    blocked.value = !nextBlocked
   }
 }
 
 /** 删除好友 */
 async function handleDelete() {
-  const accountId = userStore.userInfo.userId
   const target = props.user
   const targetId = target?.id
-  if (!accountId || !targetId || !target) {
+  if (!targetId || !target) {
     return
   }
   try {
@@ -181,10 +166,7 @@ async function handleDelete() {
   } catch {
     return
   }
-  if (!isContextActive(accountId, targetId)) {
-    return
-  }
-  if (await friendStore.deleteFriend(targetId) && isContextActive(accountId, targetId)) {
+  if (await friendStore.deleteFriend(targetId)) {
     toast.success('已删除')
     emit('deleted', target)
   }

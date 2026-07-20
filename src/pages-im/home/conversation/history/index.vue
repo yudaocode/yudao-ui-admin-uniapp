@@ -4,7 +4,7 @@
     <wd-navbar title="查找聊天内容" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
     <!-- 历史消息 -->
     <MessageHistory
-      :key="`${accountId}:${conversationType}:${targetId}`"
+      :key="`${conversationType}:${targetId}`"
       :type="conversationType"
       :target-id="targetId"
       :title="title"
@@ -20,7 +20,6 @@ import { computed, ref } from 'vue'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { buildConversationMessageUrl } from '@/pages-im/utils/conversation'
 import { navigateBackPlus } from '@/utils'
-import { useUserStore } from '@/store/user'
 import MessageHistory from '../message/components/message-history.vue'
 
 const props = defineProps<{
@@ -37,7 +36,6 @@ definePage({
 })
 
 const active = ref(true) // 页面是否显示
-const accountId = computed(() => useUserStore().userInfo.userId) // 当前账号编号
 const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 会话类型
 const targetId = computed(() => Number(props.targetId)) // 会话目标编号
 

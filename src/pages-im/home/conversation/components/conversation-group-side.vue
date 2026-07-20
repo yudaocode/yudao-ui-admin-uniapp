@@ -214,12 +214,8 @@ const joinApproval = ref(false) // 进群审批
 const pinned = ref(false) // 是否置顶当前群聊
 const pinPending = ref(false) // 置顶状态提交中
 const mySilent = ref(false) // 我的群免打扰
-const pageVisible = computed(() => props.active !== false) // 当前组件是否可见
 const groupRelationInvalid = ref(false) // 当前账号与群关系是否已终止
 const memberDetailLoaded = ref(false) // 当前成员关系是否已成功刷新
-let pageUserId = 0 // 当前页面所属账号
-let pinEpoch = 0 // 置顶操作轮次；群关系失效后旧操作不得恢复会话
-let detailEpoch = 0 // 群详情加载轮次
 const conversationStore = useConversationStore()
 const {
   clearConversationMessages,
@@ -265,33 +261,6 @@ const groupCard = computed(() => toGroupCardTarget({ // 群名片
 /** 获取指定群会话 */
 function getConversation(groupId = Number(props.id)) {
   return conversationStore.getConversation(ImConversationType.GROUP, groupId)
-}
-
-/** 获取当前群页面上下文 */
-function getPageContext() {
-  const accountId = userStore.userInfo.userId
-  const groupId = Number(props.id)
-  if (!accountId || !groupId || !pageVisible.value) {
-    return undefined
-  }
-  return { accountId, groupId }
-}
-
-/** 获取当前群操作上下文 */
-function getOperationContext() {
-  const context = getPageContext()
-  return context && formData.value?.id === context.groupId ? context : undefined
-}
-
-/** 判断账号与群聊仍属于当前上下文 */
-function isSameContext(context: { accountId: number, groupId: number }) {
-  return userStore.userInfo.userId === context.accountId
-    && Number(props.id) === context.groupId
-}
-
-/** 判断群操作仍属于当前显示上下文 */
-function isContextActive(context: { accountId: number, groupId: number }) {
-  return pageVisible.value && isSameContext(context)
 }
 
 /** 清空已失效的群详情状态 */
@@ -355,8 +324,8 @@ function editGroupInfo() {
 
 /** 编辑我在本群的昵称 */
 async function editMyNick() {
-  const context = getOperationContext()
-  if (!context || isQuitGroupDetail.value) {
+  const groupId = Number(props.id)
+  if (!groupId || isQuitGroupDetail.value) {
     return
   }
   let value: string | number | undefined
@@ -370,23 +339,15 @@ async function editMyNick() {
   } catch {
     return
   }
-  if (!isContextActive(context)) {
-    return
-  }
-  await groupStore.updateMyGroupMember(context.groupId, { displayUserName: String(value || '') })
-  if (!isContextActive(context)) {
-    return
-  }
-  await getDetail()
-  if (isContextActive(context)) {
-    toast.success('已保存')
-  }
+  await groupStore.updateMyGroupMember(groupId, { displayUserName: String(value || '') })
+  await loadDetail(groupId)
+  toast.success('已保存')
 }
 
 /** 编辑仅自己可见的群聊备注 */
 async function editGroupRemark() {
-  const context = getOperationContext()
-  if (!context || isQuitGroupDetail.value) {
+  const groupId = Number(props.id)
+  if (!groupId || isQuitGroupDetail.value) {
     return
   }
   let value: string | number | undefined
@@ -400,17 +361,9 @@ async function editGroupRemark() {
   } catch {
     return
   }
-  if (!isContextActive(context)) {
-    return
-  }
-  await groupStore.updateMyGroupMember(context.groupId, { groupRemark: String(value || '') })
-  if (!isContextActive(context)) {
-    return
-  }
-  await getDetail()
-  if (isContextActive(context)) {
-    toast.success('已保存')
-  }
+  await groupStore.updateMyGroupMember(groupId, { groupRemark: String(value || '') })
+  await loadDetail(groupId)
+  toast.success('已保存')
 }
 
 /** 查找聊天内容 */
@@ -423,8 +376,8 @@ function goHistory() {
 
 /** 清空当前群的本地聊天记录 */
 async function clearHistory() {
-  const context = getOperationContext()
-  if (!context) {
+  const groupId = Number(props.id)
+  if (!groupId) {
     return
   }
   try {
@@ -432,13 +385,10 @@ async function clearHistory() {
   } catch {
     return
   }
-  if (!isContextActive(context)) {
-    return
-  }
-  await clearConversationMessages(getClientConversationId(ImConversationType.GROUP, context.groupId))
-  if (isContextActive(context)) {
-    toast.success('聊天记录已清空')
-  }
+  await clearConversationMessages(
+    getClientConversationId(ImConversationType.GROUP, groupId),
+  )
+  toast.success('聊天记录已清空')
 }
 
 /** 进群申请 */
@@ -461,110 +411,95 @@ function openOwnerTransferPicker() {
 
 /** 全员禁言切换 */
 async function onMuteAllChange() {
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const nextMutedAll = mutedAll.value
-  if (!context || isQuitGroupDetail.value) {
+  if (!groupId || isQuitGroupDetail.value) {
     mutedAll.value = !!formData.value?.mutedAll
     return
   }
   try {
-    await muteAll({ id: context.groupId, mutedAll: nextMutedAll })
+    await muteAll({ id: groupId, mutedAll: nextMutedAll })
   } catch {
-    if (isContextActive(context)) {
-      mutedAll.value = !nextMutedAll
-    }
+    mutedAll.value = !nextMutedAll
   }
 }
 
 /** 进群审批切换 */
 async function onJoinApprovalChange() {
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const nextJoinApproval = joinApproval.value
-  if (!context || isQuitGroupDetail.value) {
+  if (!groupId || isQuitGroupDetail.value) {
     joinApproval.value = !!formData.value?.joinApproval
     return
   }
   try {
-    await updateGroup({ id: context.groupId, joinApproval: nextJoinApproval })
+    await updateGroup({ id: groupId, joinApproval: nextJoinApproval })
   } catch {
-    if (isContextActive(context)) {
-      joinApproval.value = !nextJoinApproval
-    }
+    joinApproval.value = !nextJoinApproval
   }
 }
 
 /** 群免打扰切换 */
 async function onSilentChange() {
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const nextSilent = mySilent.value
-  if (!context || isQuitGroupDetail.value) {
+  if (!groupId || isQuitGroupDetail.value) {
     mySilent.value = !!formData.value?.silent
     return
   }
   try {
-    await groupStore.updateMyGroupMember(context.groupId, { silent: nextSilent })
+    await groupStore.updateMyGroupMember(groupId, { silent: nextSilent })
   } catch {
-    if (isContextActive(context)) {
-      mySilent.value = !nextSilent
-    }
+    mySilent.value = !nextSilent
   }
 }
 
 /** 切换群聊置顶 */
 async function onPinnedChange() {
   const nextPinned = pinned.value
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const group = formData.value ? { ...formData.value } : undefined
-  if (!context || !group || isQuitGroupDetail.value) {
+  if (!groupId || !group || isQuitGroupDetail.value) {
     pinned.value = !!getConversation()?.top
     return
   }
-  const operationEpoch = ++pinEpoch
   pinPending.value = true
   try {
-    if (!getConversation(context.groupId) && nextPinned) {
+    if (!getConversation(groupId) && nextPinned) {
       await ensureConversation({
         type: ImConversationType.GROUP,
-        targetId: context.groupId,
+        targetId: groupId,
         name: group.name,
         avatar: group.avatar || '',
         silent: group.silent,
       })
     }
-    if (!isSameContext(context)) {
-      return
-    }
-    if (operationEpoch !== pinEpoch) {
-      return
-    }
     if (isQuitGroupDetail.value) {
-      await removeGroupConversation(context.groupId)
+      await removeGroupConversation(groupId, undefined)
       return
     }
-    if (!getConversation(context.groupId)) {
+    if (!getConversation(groupId)) {
       pinned.value = false
       return
     }
-    await setConversationTop(ImConversationType.GROUP, context.groupId, nextPinned)
-    if (operationEpoch === pinEpoch && isSameContext(context)) {
-      pinned.value = nextPinned
-    }
+    await setConversationTop(
+      ImConversationType.GROUP,
+      groupId,
+      nextPinned,
+    )
+    pinned.value = nextPinned
   } catch {
-    if (operationEpoch === pinEpoch && isSameContext(context)) {
-      pinned.value = !!getConversation(context.groupId)?.top
-    }
+    pinned.value = !!getConversation(groupId)?.top
   } finally {
-    if (operationEpoch === pinEpoch && isSameContext(context)) {
-      pinPending.value = false
-    }
+    pinPending.value = false
   }
 }
 
 /** 退出群聊 */
 async function handleQuit() {
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const groupName = formData.value?.name || ''
-  if (!context) {
+  if (!groupId) {
     return
   }
   try {
@@ -572,23 +507,17 @@ async function handleQuit() {
   } catch {
     return
   }
-  if (!isContextActive(context)) {
-    return
-  }
-  await quitGroup(context.groupId)
-  if (!isContextActive(context)) {
-    return
-  }
-  groupStore.removeGroup(context.groupId)
+  await quitGroup(groupId)
+  await groupStore.removeGroup(groupId)
   toast.success('已退出群聊')
   delay(() => emit('close'))
 }
 
 /** 解散群聊 */
 async function handleDissolve() {
-  const context = getOperationContext()
+  const groupId = Number(props.id)
   const groupName = formData.value?.name || ''
-  if (!context) {
+  if (!groupId) {
     return
   }
   try {
@@ -596,38 +525,27 @@ async function handleDissolve() {
   } catch {
     return
   }
-  if (!isContextActive(context)) {
-    return
-  }
-  await dissolveGroup(context.groupId)
-  if (!isContextActive(context)) {
-    return
-  }
-  groupStore.removeGroup(context.groupId)
+  await dissolveGroup(groupId)
+  await groupStore.removeGroup(groupId)
   toast.success('已解散群聊')
   delay(() => emit('close'))
 }
 
-/** 加载详情 */
-async function getDetail() {
-  const context = getPageContext()
-  if (!context) {
-    return
-  }
-  const epoch = ++detailEpoch
+/** 加载群详情 */
+async function loadDetail(groupId: number) {
   memberDetailLoaded.value = false
   loading.value = true
   try {
     const [group, memberList] = await Promise.all([
-      groupStore.fetchGroupInfo(context.groupId, true),
-      groupStore.fetchGroupMemberList(context.groupId, true),
+      groupStore.fetchGroupInfo(groupId, true),
+      groupStore.fetchGroupMemberList(groupId, true),
     ])
-    if (epoch !== detailEpoch || !isContextActive(context) || !group) {
+    if (!group) {
       return
     }
     formData.value = group
     members.value = memberList
-    const activeSelfMember = memberList.find(member => member.userId === context.accountId
+    const activeSelfMember = memberList.find(member => member.userId === useUserStore().userInfo.userId
       && member.status !== CommonStatusEnum.DISABLE)
     groupRelationInvalid.value = !activeSelfMember
     memberDetailLoaded.value = !!activeSelfMember
@@ -636,10 +554,17 @@ async function getDetail() {
     mySilent.value = !!group.silent
     emit('loaded', group, memberList.filter(member => member.status !== CommonStatusEnum.DISABLE).length)
   } finally {
-    if (epoch === detailEpoch) {
-      loading.value = false
-    }
+    loading.value = false
   }
+}
+
+/** 加载详情 */
+async function getDetail() {
+  const groupId = Number(props.id)
+  if (!groupId) {
+    return
+  }
+  await loadDetail(groupId)
 }
 
 /** 同步群会话置顶状态 */
@@ -655,31 +580,21 @@ watch(
 
 /** 账号、群聊或显示状态变化时刷新群资料 */
 watch(
-  () => [props.active !== false, Number(props.id), userStore.userInfo.userId] as const,
-  ([active, groupId, accountId], previous) => {
+  () => [props.active !== false, Number(props.id)] as const,
+  ([active, groupId], previous) => {
     const previousGroupId = previous?.[1]
-    const previousAccountId = previous?.[2]
-    const contextChanged = !!previous
-      && (previousGroupId !== groupId || previousAccountId !== accountId)
-    const activationEpoch = ++detailEpoch
-    if (contextChanged) {
-      pinEpoch++
+    if (previous && previousGroupId !== groupId) {
       resetDetailState()
     }
     if (!active || !groupId) {
       return
     }
     void (async () => {
-      await useImRuntimeStore().ensure()
-      if (activationEpoch !== detailEpoch || !pageVisible.value || Number(props.id) !== groupId) {
+      if (!await useImRuntimeStore().ensure()) {
         return
       }
-      pageUserId = userStore.userInfo.userId
-      if (!pageUserId) {
-        return
-      }
-      await getDetail()
-    })()
+      await loadDetail(groupId)
+    })().catch(error => console.warn('[IM group detail] 加载失败', error))
   },
   { immediate: true },
 )
@@ -698,8 +613,7 @@ function parseGroupEventContent(payload: any) {
 
 /** 接收当前群详情的实时状态事件 */
 function handleImEvent(data: { conversationType?: number, contentType?: number, payload?: any }) {
-  if (pageUserId !== userStore.userInfo.userId
-    || data.conversationType !== ImConversationType.GROUP || !data.contentType || !data.payload) {
+  if (data.conversationType !== ImConversationType.GROUP || !data.contentType || !data.payload) {
     return
   }
   const groupId = Number(data.payload.groupId)
@@ -707,15 +621,13 @@ function handleImEvent(data: { conversationType?: number, contentType?: number, 
     return
   }
   const content = parseGroupEventContent(data.payload)
-  const userId = userStore.userInfo.userId
+  const userId = useUserStore().userInfo.userId
   const removedSelf = data.contentType === ImMessageType.GROUP_DISSOLVE
     || (data.contentType === ImMessageType.GROUP_MEMBER_QUIT
       && Number(content.operatorUserId || data.payload.operatorUserId) === userId)
     || (data.contentType === ImMessageType.GROUP_MEMBER_KICK
       && (content.memberUserIds || data.payload.memberUserIds || []).map(Number).includes(userId))
   if (removedSelf) {
-    detailEpoch++
-    pinEpoch++
     groupRelationInvalid.value = true
     memberDetailLoaded.value = false
     pinned.value = false
@@ -732,7 +644,7 @@ function handleImEvent(data: { conversationType?: number, contentType?: number, 
     }
     return
   }
-  if (!pageVisible.value) {
+  if (props.active === false) {
     return
   }
   void getDetail().catch(() => undefined)

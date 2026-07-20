@@ -32,7 +32,6 @@ import { computed, ref, watch } from 'vue'
 import { serializeMessage } from '@/pages-im/utils/message'
 import { ImConversationType, ImMessageType } from '@/pages-im/utils/constants'
 import { getClientConversationId } from '@/pages-im/utils/db'
-import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../../store/conversationStore'
 import { sendMessageToConversation } from '../../composables/useMessageSender'
 import ForwardPicker from '../../conversation/message/components/forward-picker.vue'
@@ -47,7 +46,6 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
-const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const visible = computed({
   get: () => props.modelValue,
@@ -62,25 +60,15 @@ const leaveMessage = ref('') // 推荐留言
 /** 发送名片到选中会话 */
 async function handleConfirm(targets: ConversationDO[]) {
   waitingCreatedGroup.value = false
-  const expectedUserId = userStore.userInfo.userId
-  const isActive = () => expectedUserId > 0 && userStore.userInfo.userId === expectedUserId
-  if (!isActive()) {
-    return
-  }
   const content = serializeMessage(props.card)
   const leaveText = leaveMessage.value.trim()
   const failedNames: string[] = []
   for (const target of targets) {
-    if (!isActive()) {
-      return
-    }
     try {
       const success = await sendMessageToConversation(
         target,
         ImMessageType.CARD,
         content,
-        {},
-        expectedUserId,
       )
       if (!success) {
         failedNames.push(target.name || '未命名会话')
@@ -90,8 +78,6 @@ async function handleConfirm(targets: ConversationDO[]) {
         target,
         ImMessageType.TEXT,
         leaveText,
-        {},
-        expectedUserId,
       )) {
         failedNames.push(target.name || '未命名会话')
       }
@@ -99,16 +85,9 @@ async function handleConfirm(targets: ConversationDO[]) {
       failedNames.push(target.name || '未命名会话')
     }
   }
-  if (!isActive()) {
-    return
-  }
   await conversationStore.pushRecentForwardConversationKeyList(
     targets.map(item => item.clientConversationId),
-    expectedUserId,
   )
-  if (!isActive()) {
-    return
-  }
   if (failedNames.length === 0) {
     toast.success('名片已发送')
   } else if (failedNames.length === targets.length) {

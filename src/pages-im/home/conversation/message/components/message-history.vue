@@ -128,7 +128,7 @@
 
 <script lang="ts" setup>
 import type { GroupMember, Message } from '../../../types'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getGroupMessageList } from '@/api/im/message/group'
 import { getPrivateMessageList } from '@/api/im/message/private'
 import { getClientConversationId } from '@/pages-im/utils/db'
@@ -193,7 +193,6 @@ const selectedMemberId = ref<number>() // 当前群成员筛选
 const memberVisible = ref(false) // 群成员选择弹窗
 const memberKeyword = ref('') // 群成员搜索关键词
 let localStateLoaded = false
-let componentMounted = true
 const filterTabs = [ // 消息类型筛选
   { label: '全部', value: 0 },
   { label: '图片', value: ImMessageType.IMAGE },
@@ -229,30 +228,13 @@ const filteredMembers = computed(() => { // 搜索后的群成员
       || String(member.userId).includes(word)))
 })
 
-/** 快照当前历史页账号与会话 */
-function getPageContext() {
-  return {
-    userId: userStore.userInfo.userId,
-    conversationType: conversationType.value,
-    targetId: targetId.value,
-  }
-}
-
-/** 判断异步结果是否仍属于当前历史页 */
-function isPageContextActive(context: ReturnType<typeof getPageContext>) {
-  return componentMounted
-    && context.userId === userStore.userInfo.userId
-    && context.conversationType === conversationType.value
-    && context.targetId === targetId.value
-}
-
 /** 查询原始历史消息 */
-async function queryMessages(context: ReturnType<typeof getPageContext>, maxId?: number) {
-  const list = context.conversationType === ImConversationType.GROUP
-    ? (await getGroupMessageList({ groupId: context.targetId, maxId, limit: PAGE_SIZE }))
-        .map(message => convertGroupMessage(message, context.userId))
-    : (await getPrivateMessageList({ receiverId: context.targetId, maxId, limit: PAGE_SIZE }))
-        .map(message => convertPrivateMessage(message, context.userId))
+async function queryMessages(type: number, target: number, maxId?: number) {
+  const list = type === ImConversationType.GROUP
+    ? (await getGroupMessageList({ groupId: target, maxId, limit: PAGE_SIZE }))
+        .map(message => convertGroupMessage(message, userStore.userInfo.userId))
+    : (await getPrivateMessageList({ receiverId: target, maxId, limit: PAGE_SIZE }))
+        .map(message => convertPrivateMessage(message, userStore.userInfo.userId))
   return list.filter((message): message is Message => !!message)
 }
 
@@ -295,29 +277,24 @@ function normalizeRecallMessages(data: Message[]) {
 
 /** 查询聊天历史 */
 async function queryList(pageNo: number) {
-  if (!targetId.value) {
-    await pagingRef.value?.complete([])
-    return
-  }
-  const context = getPageContext()
-  const clientConversationId = getClientConversationId(context.conversationType, context.targetId)
   try {
+    if (!targetId.value || !await useImRuntimeStore().ensure()) {
+      await pagingRef.value?.complete([])
+      return
+    }
+    const type = conversationType.value
+    const target = targetId.value
+    const clientConversationId = getClientConversationId(type, target)
     if (!localStateLoaded) {
       const [clearBefore, deletedKeys] = await Promise.all([
         getConversationClearBefore(clientConversationId),
         getConversationDeletedMessageKeys(clientConversationId),
       ])
-      if (!isPageContextActive(context)) {
-        return
-      }
       clearBeforeMessageId.value = clearBefore
       deletedMessageKeys.value = new Set(deletedKeys)
       localStateLoaded = true
     }
-    const response = await queryMessages(context, pageNo === 1 ? undefined : historyMaxId.value)
-    if (!isPageContextActive(context)) {
-      return
-    }
+    const response = await queryMessages(type, target, pageNo === 1 ? undefined : historyMaxId.value)
     const raw = response.filter(item => item.id > clearBeforeMessageId.value
       && !deletedMessageKeys.value.has(`id:${item.id}`))
     historyMaxId.value = response.at(-1)?.id
@@ -326,9 +303,6 @@ async function queryList(pageNo: number) {
     const messages = normalizeRecallMessages(raw)
     await pagingRef.value?.completeByNoMore(messages.filter(matchesFilter), serverNoMore.value)
   } catch {
-    if (!isPageContextActive(context)) {
-      return
-    }
     await pagingRef.value?.complete(false).catch(() => undefined)
   }
 }
@@ -435,23 +409,17 @@ watch([keyword, messageType, activeDate, selectedMemberId], reload)
 
 /** 初始化群成员 */
 onMounted(async () => {
-  const context = getPageContext()
-  await useImRuntimeStore().ensure()
-  if (!isPageContextActive(context)) {
-    return
-  }
-  if (context.conversationType === ImConversationType.GROUP && context.targetId) {
-    const members = await groupStore.fetchGroupMemberList(context.targetId)
-    if (isPageContextActive(context)) {
-      groupMembers.value = members
+  try {
+    if (!await useImRuntimeStore().ensure()) {
+      return
     }
-  } else if (context.conversationType === ImConversationType.PRIVATE && context.targetId) {
-    await friendStore.fetchFriendList()
+    if (conversationType.value === ImConversationType.GROUP && targetId.value) {
+      groupMembers.value = await groupStore.fetchGroupMemberList(targetId.value)
+    } else if (conversationType.value === ImConversationType.PRIVATE && targetId.value) {
+      await friendStore.fetchFriendList()
+    }
+  } catch (error) {
+    console.warn('[IM message history] 初始化失败', error)
   }
-})
-
-/** 卸载页面 */
-onUnmounted(() => {
-  componentMounted = false
 })
 </script>

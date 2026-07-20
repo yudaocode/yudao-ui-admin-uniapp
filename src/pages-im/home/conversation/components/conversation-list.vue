@@ -62,6 +62,7 @@ import { ImConversationType } from '@/pages-im/utils/constants'
 import { useConversationStore } from '../../store/conversationStore'
 import { useFriendStore } from '../../store/friendStore'
 import { useGroupStore } from '../../store/groupStore'
+import { useImRuntimeStore } from '../../store/runtimeStore'
 import ConversationItem from './conversation-item.vue'
 
 const emit = defineEmits<{
@@ -150,19 +151,25 @@ async function handleConversationAction({ item: action }: { item: { value: 'top'
 
 /** 确认删除会话 */
 async function confirmRemove(item: ConversationDO) {
+  const { type, targetId } = item
   try {
     await dialog.confirm({ title: '提示', msg: '确定删除该会话吗？' })
   } catch {
     return
   }
-  await removeConversation(item.type, item.targetId)
+  await removeConversation(type, targetId)
 }
 
 /** 下拉刷新 */
 async function onRefresh() {
   refreshing.value = true
   try {
+    if (!await useImRuntimeStore().ensure()) {
+      return
+    }
     await loadConversationList(true)
+  } catch (error) {
+    console.warn('[IM conversation list] 刷新失败', error)
   } finally {
     refreshing.value = false
   }

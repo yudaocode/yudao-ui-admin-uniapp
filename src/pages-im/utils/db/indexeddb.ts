@@ -59,7 +59,7 @@ export class IndexedDbClient implements ImDbClient {
     })
   }
 
-  close(): void {
+  async close(): Promise<void> {
     this.db?.close()
     this.db = null
     this.userId = 0

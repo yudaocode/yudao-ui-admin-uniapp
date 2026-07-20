@@ -13,50 +13,70 @@ interface SqliteRow {
 }
 
 export class SqliteDbClient implements ImDbClient {
-  private name = ''
-  private path = ''
+  private userId = 0
   private opened = false
   private settingMaxQueue: Promise<void> = Promise.resolve()
 
   async open(userId: number): Promise<void> {
-    const name = `im_user_${userId}`
-    if (this.opened && this.name === name) {
+    if (this.opened && this.userId === userId) {
       return
     }
-    this.close()
-    this.name = name
-    this.path = `_doc/${name}.db`
-    if (!plus.sqlite.isOpenDatabase({ name: this.name, path: this.path })) {
+    await this.close()
+    this.userId = userId
+    const name = this.getName()
+    const path = this.getPath()
+    if (!plus.sqlite.isOpenDatabase({ name, path })) {
       await new Promise<void>((resolve, reject) => {
         plus.sqlite.openDatabase({
-          name: this.name,
-          path: this.path,
+          name,
+          path,
           success: resolve,
           fail: reject,
         })
       })
     }
     this.opened = true
-    await this.execute(`
-      CREATE TABLE IF NOT EXISTS im_records (
-        store_name TEXT NOT NULL,
-        record_key TEXT NOT NULL,
-        conversation_id TEXT,
-        send_time INTEGER NOT NULL DEFAULT 0,
-        value TEXT NOT NULL,
-        PRIMARY KEY (store_name, record_key)
-      )
-    `)
-    await this.execute('CREATE INDEX IF NOT EXISTS idx_im_message_conversation_time ON im_records(store_name, conversation_id, send_time)')
+    try {
+      await this.execute(`
+        CREATE TABLE IF NOT EXISTS im_records (
+          store_name TEXT NOT NULL,
+          record_key TEXT NOT NULL,
+          conversation_id TEXT,
+          send_time INTEGER NOT NULL DEFAULT 0,
+          value TEXT NOT NULL,
+          PRIMARY KEY (store_name, record_key)
+        )
+      `)
+      await this.execute('CREATE INDEX IF NOT EXISTS idx_im_message_conversation_time ON im_records(store_name, conversation_id, send_time)')
+    } catch (error) {
+      await this.close()
+      throw error
+    }
   }
 
-  close(): void {
-    if (this.opened && plus.sqlite.isOpenDatabase({ name: this.name, path: this.path })) {
-      plus.sqlite.closeDatabase({ name: this.name, success: () => undefined, fail: () => undefined })
+  async close(): Promise<void> {
+    const name = this.getName()
+    const path = this.getPath()
+    try {
+      if (this.opened && plus.sqlite.isOpenDatabase({ name, path })) {
+        await new Promise<void>((resolve, reject) => {
+          plus.sqlite.closeDatabase({ name, success: resolve, fail: reject })
+        })
+      }
+    } finally {
+      this.opened = false
+      this.userId = 0
     }
-    this.opened = false
-    this.name = ''
-    this.path = ''
+  }
+
+  /** 获取当前用户数据库名称 */
+  private getName(): string {
+    return `im_user_${this.userId}`
+  }
+
+  /** 获取当前用户数据库路径 */
+  private getPath(): string {
+    return `_doc/${this.getName()}.db`
   }
 
   /** SQL 字符串安全转义 */
@@ -67,21 +87,21 @@ export class SqliteDbClient implements ImDbClient {
   /** 执行 SQL */
   private execute(sql: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      plus.sqlite.executeSql({ name: this.name, sql, success: () => resolve(), fail: reject })
+      plus.sqlite.executeSql({ name: this.getName(), sql, success: () => resolve(), fail: reject })
     })
   }
 
   /** 查询 SQL */
   private select<T>(sql: string): Promise<T[]> {
     return new Promise((resolve, reject) => {
-      plus.sqlite.selectSql({ name: this.name, sql, success: resolve, fail: reject })
+      plus.sqlite.selectSql({ name: this.getName(), sql, success: resolve, fail: reject })
     })
   }
 
   /** 事务操作 */
   private transaction(operation: 'begin' | 'commit' | 'rollback'): Promise<void> {
     return new Promise((resolve, reject) => {
-      plus.sqlite.transaction({ name: this.name, operation, success: resolve, fail: reject })
+      plus.sqlite.transaction({ name: this.getName(), operation, success: resolve, fail: reject })
     })
   }
 
@@ -192,13 +212,13 @@ export class SqliteDbClient implements ImDbClient {
   }
 
   setSettingMax(key: string, value: number): Promise<void> {
-    const expectedName = this.name
+    const expectedUserId = this.userId
     const operation = this.settingMaxQueue.catch(() => undefined).then(async () => {
-      if (!this.opened || this.name !== expectedName) {
+      if (!this.opened || this.userId !== expectedUserId) {
         return
       }
       const current = await this.getSetting<number>(key)
-      if (!this.opened || this.name !== expectedName || value <= Number(current || 0)) {
+      if (!this.opened || this.userId !== expectedUserId || value <= Number(current || 0)) {
         return
       }
       await this.setSetting(key, value)

@@ -62,7 +62,6 @@ import { computed, ref, watch } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { IM_EMOJI_LIST } from '@/pages-im/utils/emoji'
-import { useUserStore } from '@/store/user'
 import { useMediaUploader } from '../../../composables/useMediaUploader'
 import { useFaceStore } from '../../../store/faceStore'
 
@@ -86,7 +85,6 @@ const visible = computed({
 
 const activeTab = ref('emoji') // 当前页签：emoji=文本表情 / user=收藏 / 表情包 id
 const faceStore = useFaceStore()
-const userStore = useUserStore()
 const dialog = useDialog()
 const toast = useToast()
 const { uploadLocalFile, getLocalImageInfo, validateFileSize } = useMediaUploader()
@@ -106,7 +104,6 @@ function handleUpload() {
   if (uploading.value) {
     return
   }
-  const expectedUserId = userStore.userInfo.userId
   uploading.value = true
   uni.chooseImage({
     count: 1,
@@ -120,17 +117,11 @@ function handleUpload() {
       }
       try {
         const imageInfo = await getLocalImageInfo(filePath)
-        if (userStore.userInfo.userId !== expectedUserId) {
-          return
-        }
         if (!imageInfo) {
           toast.show('无法读取图片信息')
           return
         }
         const url = await uploadLocalFile(filePath, 'im/face')
-        if (userStore.userInfo.userId !== expectedUserId) {
-          return
-        }
         await faceStore.addFaceUserItem({
           url,
           width: imageInfo.width,

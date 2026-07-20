@@ -46,21 +46,24 @@ function open() {
 
 /** 确认转让群主 */
 async function confirm(userIds: number[]) {
+  const groupId = props.groupId
   const newOwner = props.members.find(item => item.userId === userIds[0])
-  if (!props.groupId || !newOwner) {
+  if (!groupId || !newOwner) {
     return
   }
+  const newOwnerUserId = newOwner.userId
+  const newOwnerName = getMemberDisplayName(newOwner)
   try {
     await dialog.confirm({
       title: '确认转让群主',
-      msg: `确定将群主转让给“${getMemberDisplayName(newOwner)}”吗？转让后你将变为普通成员，无法撤销。`,
+      msg: `确定将群主转让给“${newOwnerName}”吗？转让后你将变为普通成员，无法撤销。`,
     })
   } catch {
     return
   }
   submitting.value = true
   try {
-    await transferGroupOwner({ id: props.groupId, newOwnerUserId: newOwner.userId })
+    await transferGroupOwner({ id: groupId, newOwnerUserId })
     toast.success('群主转让成功')
     pickerRef.value?.close()
     emit('success')
