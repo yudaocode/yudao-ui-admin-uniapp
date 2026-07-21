@@ -592,9 +592,6 @@ async function confirmDelete(messages: Message[]) {
   } catch {
     return
   }
-  if (currentCcid.value !== clientConversationId) {
-    return
-  }
   const remainingCount = removeDeletedMessages(messages)
   await removeMessageList(clientConversationId, messages)
   if (remainingCount === 0) {
@@ -748,11 +745,10 @@ onMounted(() => {
 /** 激活聊天面板 */
 async function activate() {
   await activateConversation()
-  pagingRef.value?.reload()
   if (conversationClearPending.value) {
     conversationClearPending.value = false
-    pagingRef.value?.reload()
   }
+  pagingRef.value?.reload()
 }
 
 /** 响应页面可见状态 */

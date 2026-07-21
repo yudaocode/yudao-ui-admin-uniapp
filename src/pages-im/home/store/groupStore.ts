@@ -1,8 +1,17 @@
 import type { ImGroupRespVO } from '@/api/im/group'
-import { getGroup as getGroupApi, getMyGroupList } from '@/api/im/group'
+import {
+  dissolveGroup as dissolveGroupApi,
+  getGroup as getGroupApi,
+  getMyGroupList,
+} from '@/api/im/group'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImGroupMemberRespVO } from '@/api/im/group/member'
-import { getGroupMember, getGroupMemberList, updateGroupMember } from '@/api/im/group/member'
+import {
+  getGroupMember,
+  getGroupMemberList,
+  quitGroup as quitGroupApi,
+  updateGroupMember,
+} from '@/api/im/group/member'
 import type { ImDbClient } from '@/pages-im/utils/db'
 import { getClientConversationId, getDb, initDb } from '@/pages-im/utils/db'
 import type { GroupNotificationPayload } from '@/pages-im/utils/message'
@@ -10,7 +19,6 @@ import type { Group, GroupDO, GroupMember, GroupMemberDO, Message } from '../typ
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getGroupDisplayName } from '@/pages-im/utils/user'
-import { useUserStore } from '@/store/user'
 import {
   CommonStatusEnum,
   ImConversationType,
@@ -48,6 +56,17 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   const memberReloadQueued = new Set<number>() // 当前成员加载完成后需刷新的群
   const detailReloadQueued = new Set<number>() // 当前详情加载完成后需刷新的群
   let groupMembersExpired = false // 进入 IM / 重连后置位，成员桶下次访问时刷新
+
+  /** 获取当前群关系代际，首次访问时创建 */
+  function ensureGroupRelationVersion(groupId: number): number {
+    const current = groupRelationVersions.get(groupId)
+    if (current !== undefined) {
+      return current
+    }
+    const next = ++groupRelationVersionSequence
+    groupRelationVersions.set(groupId, next)
+    return next
+  }
 
   /** 从本地库恢复群列表 */
   async function loadGroupList(): Promise<boolean> {
@@ -129,9 +148,9 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       return cachedGroup.members
     }
     try {
-      const relationVersion = groupRelationVersions.get(groupId) || 0
+      const relationVersion = ensureGroupRelationVersion(groupId)
       const isRelationCurrent = () =>
-        (groupRelationVersions.get(groupId) || 0) === relationVersion
+        groupRelationVersions.get(groupId) === relationVersion
         && !isRelationTerminated(clientConversationId)
       const db = await initDb()
       const cached = await db.filter<GroupMemberDO>(
@@ -141,8 +160,8 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       if (!cached || cached.length === 0) {
         return null
       }
-      // TODO @AI：可以 inline 掉
-      const result = await enqueueConversationWrite(clientConversationId, async () => {
+      // TODO @AI：【done】直接返回会话写入结果
+      return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return null
         }
@@ -165,7 +184,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         }
         return members
       })
-      return result
     } catch (error) {
       console.warn('[IM groupStore] 本地群成员缓存读取失败', { groupId }, error)
       return null
@@ -181,7 +199,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       const db = await initDb()
       loading.value = true
       try {
-        const rows = (await getMyGroupList()).map(convertGroup)
+        const rows = (await getMyGroupList()).map(group => convertGroup(group, db.userId))
         const conversationIds = Array.from(new Set([...groups.value, ...rows].map(group =>
           getClientConversationId(ImConversationType.GROUP, group.id))))
         return await enqueueConversationWrites(conversationIds, async () => {
@@ -252,14 +270,14 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       }
       return pending
     }
-    const relationVersion = groupRelationVersions.get(groupId) || 0
+    const relationVersion = ensureGroupRelationVersion(groupId)
     const isRelationCurrent = () =>
-      (groupRelationVersions.get(groupId) || 0) === relationVersion
+      groupRelationVersions.get(groupId) === relationVersion
       && !isRelationTerminated(clientConversationId)
     const task = (async () => {
-      const group = convertGroup(await getGroupApi(groupId))
-      // TODO @AI：可以 inline 掉
-      const result = await enqueueConversationWrite(clientConversationId, async () => {
+      const group = convertGroup(await getGroupApi(groupId), db.userId)
+      // TODO @AI：【done】直接返回会话写入结果
+      return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return undefined
         }
@@ -267,7 +285,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         detailLoadedGroupIds.add(groupId)
         return getGroup(groupId)
       })
-      return result
     })().finally(() => {
       if (detailLoadTasks.get(groupId) === task) {
         const shouldReload = detailReloadQueued.has(groupId)
@@ -288,7 +305,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     force = false,
     db: ImDbClient = getDb(),
-    currentUserId = useUserStore().userInfo.userId,
   ): Promise<GroupMember[]> {
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, groupId)
     if (groupId <= 0 || isRelationTerminated(clientConversationId)) {
@@ -305,18 +321,18 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       }
       return pending
     }
-    const relationVersion = groupRelationVersions.get(groupId) || 0
+    const relationVersion = ensureGroupRelationVersion(groupId)
     const isRelationCurrent = () =>
-      (groupRelationVersions.get(groupId) || 0) === relationVersion
+      groupRelationVersions.get(groupId) === relationVersion
       && !isRelationTerminated(clientConversationId)
     const task = (async () => {
       const rawRows = await getGroupMemberList(groupId)
       const rows = rawRows.map(member => convertGroupMember(member, groupId))
-      const selfMember = rawRows.find(member => member.userId === currentUserId)
+      const selfMember = rawRows.find(member => member.userId === db.userId)
       const silent = !!selfMember?.silent
       const groupRemark = selfMember?.groupRemark || ''
-      // TODO @AI：可以 inline 掉
-      const result = await enqueueConversationWrite(clientConversationId, async () => {
+      // TODO @AI：【done】直接返回会话写入结果
+      return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return []
         }
@@ -352,7 +368,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         }
         return rows
       })
-      return result
     })().finally(() => {
       if (memberLoadTasks.get(groupId) === task) {
         const shouldReload = memberReloadQueued.has(groupId)
@@ -360,7 +375,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         memberLoadTasks.delete(groupId)
         memberReloadQueued.delete(groupId)
         if (shouldReload) {
-          void fetchGroupMemberList(groupId, true, db, currentUserId).catch(() => undefined)
+          void fetchGroupMemberList(groupId, true, db).catch(() => undefined)
         }
       }
     })
@@ -373,7 +388,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     memberUserId: number,
   ): Promise<GroupMember | undefined> {
-    const userId = useUserStore().userInfo.userId
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, groupId)
     if (groupId <= 0
       || memberUserId <= 0
@@ -384,14 +398,14 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     if (cached) {
       return Promise.resolve(cached)
     }
-    const relationVersion = groupRelationVersions.get(groupId) || 0
+    const relationVersion = ensureGroupRelationVersion(groupId)
     const key = `${groupId}:${relationVersion}:${memberUserId}`
     const pending = singleMemberLoadTasks.get(key)
     if (pending) {
       return pending
     }
     const isRelationCurrent = () =>
-      (groupRelationVersions.get(groupId) || 0) === relationVersion
+      groupRelationVersions.get(groupId) === relationVersion
       && !isRelationTerminated(clientConversationId)
     const task = (async () => {
       const rawMember = await getGroupMember(groupId, memberUserId)
@@ -399,8 +413,8 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         return undefined
       }
       const member = convertGroupMember(rawMember, groupId)
-      // TODO @AI：可以 inline 掉
-      const result = await enqueueConversationWrite(clientConversationId, async () => {
+      // TODO @AI：【done】直接返回会话写入结果
+      return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return undefined
         }
@@ -419,7 +433,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         group.members = members
         return member
       })
-      return result
     })().finally(() => {
       if (singleMemberLoadTasks.get(key) === task) {
         singleMemberLoadTasks.delete(key)
@@ -559,11 +572,10 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     fields: { displayUserName?: string, groupRemark?: string, silent?: boolean },
   ) {
-    const userId = useUserStore().userInfo.userId
     const db = await initDb()
     await updateGroupMember({ groupId, ...fields })
     if (fields.displayUserName !== undefined) {
-      updateGroupMemberDisplayUserName(groupId, userId, fields.displayUserName, db)
+      updateGroupMemberDisplayUserName(groupId, db.userId, fields.displayUserName, db)
     }
     const groupFields: Partial<Group> = {}
     if (fields.groupRemark !== undefined) {
@@ -691,25 +703,45 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 本地移除群及其会话 */
   function removeGroup(
     groupId: number,
-    db: ImDbClient = getDb(),
+    db: ImDbClient,
+    expectedRelationVersion?: number,
   ) {
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, groupId)
     return useConversationStore().removeGroupConversation(groupId, async () => {
+      if (expectedRelationVersion !== undefined
+        && groupRelationVersions.get(groupId) !== expectedRelationVersion) {
+        return false
+      }
       markRelationTerminated(clientConversationId)
       const relationVersion = ++groupRelationVersionSequence
       groupRelationVersions.set(groupId, relationVersion)
       groups.value = groups.value.filter(group => group.id !== groupId)
       detailLoadedGroupIds.delete(groupId)
       try {
-        const client = db || await initDb()
         await Promise.all([
-          client.delete('groups', groupId),
-          client.removeWhere<GroupMemberDO>('groupMembers', member => member.groupId === groupId),
+          db.delete('groups', groupId),
+          db.removeWhere<GroupMemberDO>('groupMembers', member => member.groupId === groupId),
         ])
       } catch (error) {
         console.warn(`[IM groupStore] 群缓存删除失败 (groupId=${groupId})`, error)
       }
     }, db)
+  }
+
+  /** 退出群聊并清理本地数据 */
+  async function quitGroup(groupId: number): Promise<void> {
+    const db = getDb()
+    const relationVersion = ensureGroupRelationVersion(groupId)
+    await quitGroupApi(groupId)
+    await removeGroup(groupId, db, relationVersion)
+  }
+
+  /** 解散群聊并清理本地数据 */
+  async function dissolveGroup(groupId: number): Promise<void> {
+    const db = getDb()
+    const relationVersion = ensureGroupRelationVersion(groupId)
+    await dissolveGroupApi(groupId)
+    await removeGroup(groupId, db, relationVersion)
   }
 
   /** 在群会话 lane 内清除关系终态，仅显式创建、邀请或进群可调用 */
@@ -856,7 +888,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       await fetchGroupInfo(groupId, true, db)
     }
     markGroupMembersExpired(groupId)
-    void fetchGroupMemberList(groupId, true, db, currentUserId).catch(() => undefined)
+    void fetchGroupMemberList(groupId, true, db).catch(() => undefined)
   }
 
   /** 成员主动进群 */
@@ -873,7 +905,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       await fetchGroupInfo(groupId, true, db)
     }
     markGroupMembersExpired(groupId)
-    void fetchGroupMemberList(groupId, true, db, currentUserId).catch(() => undefined)
+    void fetchGroupMemberList(groupId, true, db).catch(() => undefined)
   }
 
   /** 成员主动退群 */
@@ -976,11 +1008,11 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     type: number,
     content?: string,
     db: ImDbClient = getDb(),
-    currentUserId = useUserStore().userInfo.userId,
   ) {
     if (!groupId) {
       return
     }
+    const currentUserId = db.userId
     let payload: GroupNotificationPayload
     try {
       payload = content ? JSON.parse(content) : {}
@@ -1084,7 +1116,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     detailLoadTasks.clear()
     detailLoadedGroupIds.clear()
     groupRelationVersions.clear()
-    groupRelationVersionSequence = 0
     memberReloadQueued.clear()
     detailReloadQueued.clear()
     groupMembersExpired = false
@@ -1130,21 +1161,23 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     setGroupSilent,
     updateMyGroupMember,
     updateGroupFields,
-    removeGroup,
+    quitGroup,
+    dissolveGroup,
     applyGroupNotification,
     clear,
   }
 })
 
 /** 后端群响应转换为本地域模型 */
-function convertGroup(group: ImGroupRespVO): Group {
+function convertGroup(group: ImGroupRespVO, currentUserId: number): Group {
   return {
     id: group.id,
     name: group.name,
     avatar: group.avatar,
     notice: group.notice,
     ownerUserId: group.ownerUserId,
-    pinnedMessages: group.pinnedMessages?.map(convertGroupMessage),
+    pinnedMessages: group.pinnedMessages?.map(message =>
+      convertGroupMessage(message, currentUserId)),
     mutedAll: group.mutedAll,
     banned: group.banned,
     status: group.status,
@@ -1156,8 +1189,7 @@ function convertGroup(group: ImGroupRespVO): Group {
 }
 
 /** 后端群消息响应转换为本地消息 */
-function convertGroupMessage(message: ImGroupMessageRespVO): Message {
-  const currentUserId = useUserStore().userInfo.userId
+function convertGroupMessage(message: ImGroupMessageRespVO, currentUserId: number): Message {
   return {
     id: message.id,
     clientMessageId: message.clientMessageId || '',

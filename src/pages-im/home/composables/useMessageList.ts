@@ -18,7 +18,7 @@ import {
 } from '@/pages-im/utils/message'
 import { toTimestamp } from '@/pages-im/utils/time'
 import { ImConversationType, ImMessageStatus, ImMessageType } from '@/pages-im/utils/constants'
-import { getClientConversationId } from '@/pages-im/utils/db'
+import { getClientConversationId, initDb } from '@/pages-im/utils/db'
 import { buildMessageFromDO, useMessageStore } from '../store/messageStore'
 
 /** 管理聊天消息列表、历史分页、定位与首屏实时消息合并 */
@@ -136,10 +136,10 @@ export function useMessageList(options: {
       return
     }
     try {
+      const db = await initDb()
       await loadDeletedMessageKeys(clientConversationId)
-      const clearBefore = clearBeforeMessageId.value
-        || await messageStore.getConversationClearBefore(clientConversationId)
-      clearBeforeMessageId.value = clearBefore
+      clearBeforeMessageId.value
+        ||= await messageStore.getConversationClearBefore(clientConversationId)
       const maxId = isFirstPage ? undefined : historyMaxId.value
       const firstResponse = await queryMessages(conversationType, targetId, maxId, pageSize)
       let rawResponses = [...firstResponse]
@@ -177,6 +177,7 @@ export function useMessageList(options: {
         const pendingMessages = (await messageStore.getConversationPendingMessages(
           clientConversationId,
           activeClientMessageIds,
+          db,
         ))
           .map(buildMessageFromDO)
         messages = normalizeMessages([...pendingLatestMessages.value, ...pendingMessages, ...messages])

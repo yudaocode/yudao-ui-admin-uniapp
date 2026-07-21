@@ -13,7 +13,7 @@ interface ConversationWriteState {
   tails: Map<string, Promise<void>> // 各会话写入尾部
 }
 
-const writeState: ConversationWriteState = { // 当前运行时的会话写状态
+let writeState: ConversationWriteState = { // 当前运行时的会话写状态
   barrierTail: Promise.resolve(),
   tails: new Map(),
 }
@@ -33,20 +33,21 @@ export async function enqueueConversationWrites<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
   // 1. 等待全量屏障和所有目标会话的前驱写入
+  const state = writeState
   const keys = Array.from(new Set(clientConversationIds)).sort()
   const predecessors = [
-    writeState.barrierTail,
-    ...keys.map(key => writeState.tails.get(key) || Promise.resolve()),
+    state.barrierTail,
+    ...keys.map(key => state.tails.get(key) || Promise.resolve()),
   ]
   const current = Promise.all(predecessors.map(task => task.catch(() => undefined)))
-    .then(operation)
+    .then(() => writeState === state ? operation() : undefined as T)
   const settled = current.then(() => undefined, () => undefined)
   // 2. 先发布 recovery tail；完成时仅清理仍指向本任务的 lane
-  keys.forEach(key => writeState.tails.set(key, settled))
+  keys.forEach(key => state.tails.set(key, settled))
   return await current.finally(() => {
     keys.forEach((key) => {
-      if (writeState.tails.get(key) === settled) {
-        writeState.tails.delete(key)
+      if (state.tails.get(key) === settled) {
+        state.tails.delete(key)
       }
     })
   })
@@ -57,17 +58,21 @@ export function enqueueConversationBarrier<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
   // 1. 同步发布 gate，阻止后续会话写越过本次全量操作
-  const previousBarrier = writeState.barrierTail
-  const existingWrites = Array.from(writeState.tails.values())
+  const state = writeState
+  const previousBarrier = state.barrierTail
+  const existingWrites = Array.from(state.tails.values())
   let release!: () => void
   const gate = new Promise<void>((resolve) => {
     release = resolve
   })
-  writeState.barrierTail = previousBarrier.catch(() => undefined).then(() => gate)
+  state.barrierTail = previousBarrier.catch(() => undefined).then(() => gate)
   return (async () => {
     // 2. 排空封门前的屏障和会话写，再独占执行全量操作
     await previousBarrier.catch(() => undefined)
     await Promise.all(existingWrites.map(task => task.catch(() => undefined)))
+    if (writeState !== state) {
+      return undefined as T
+    }
     return await operation()
   })().finally(release)
 }
@@ -153,7 +158,9 @@ export function isRelationTerminated(clientConversationId: string): boolean {
 
 /** 清理当前 IM 运行时的消息写入与关系终态 */
 export function clearMessageSyncState(): void {
-  writeState.barrierTail = Promise.resolve()
-  writeState.tails.clear()
+  writeState = {
+    barrierTail: Promise.resolve(),
+    tails: new Map(),
+  }
   terminatedRelations.clear()
 }

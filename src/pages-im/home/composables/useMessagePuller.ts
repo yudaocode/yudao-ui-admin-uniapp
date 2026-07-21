@@ -8,6 +8,7 @@ import type { ConversationDO } from '../types'
 import { ImConversationType } from '@/pages-im/utils/constants'
 import { getPrivateMaxReadMessageId } from '@/api/im/message/private'
 import { MESSAGE_PRIVATE_READ_ENABLED } from '@/pages-im/utils/config'
+import { initDb } from '@/pages-im/utils/db'
 
 /** 编排 IM 消息、关系元数据与已读位置补拉 */
 export function useMessagePuller(options?: {
@@ -45,6 +46,7 @@ export function useMessagePuller(options?: {
     })
     const active = options?.getActiveConversation()
     if (MESSAGE_PRIVATE_READ_ENABLED && active?.type === ImConversationType.PRIVATE) {
+      const db = await initDb()
       const maxReadId = await getPrivateMaxReadMessageId(active.targetId)
       messageStore.updatePrivateReadMaxId(active.targetId, maxReadId)
       if (maxReadId) {
@@ -52,7 +54,7 @@ export function useMessagePuller(options?: {
           conversationType: ImConversationType.PRIVATE,
           targetId: active.targetId,
           privateReadMaxId: maxReadId,
-        })
+        }, db)
       }
     }
     return { friends, groups, channels: channelStore.channels }

@@ -16,7 +16,6 @@ import {
   initDb,
   StorageKeys,
 } from '@/pages-im/utils/db'
-import { useUserStore } from '@/store/user'
 import {
   MESSAGE_GROUP_PULL_SIZE,
   MESSAGE_PRIVATE_PULL_SIZE,
@@ -280,7 +279,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     fetchPage: (minId: number) => Promise<T[]>,
     mapper: (vo: T, currentUserId: number) => MessageDO,
   ) {
-    const currentUserId = useUserStore().userInfo.userId
+    const currentUserId = db.userId
     const initialMinId = conversationType === ImConversationType.PRIVATE
       ? privateMessageMaxId.value
       : conversationType === ImConversationType.GROUP
@@ -567,13 +566,12 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   /** 实际清空会话消息；调用方必须持有当前会话写 lane */
   async function deleteConversationMessageListNow(
     clientConversationId: string,
-    pendingClientMessageIds: string[] = [],
-    db?: ImDbClient,
+    pendingClientMessageIds: string[],
+    db: ImDbClient,
   ) {
-    const client = db || await initDb()
     const conversation = useConversationStore().conversations.find(item =>
       item.clientConversationId === clientConversationId)
-    const messages = await client.filter<MessageDO>(
+    const messages = await db.filter<MessageDO>(
       'messages',
       item => item.clientConversationId === clientConversationId,
     )
@@ -583,24 +581,24 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     )
     const deletedSettingKey
       = `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`
-    const oldDeletedKeys = (await client.getSetting<string[]>(deletedSettingKey)) || []
+    const oldDeletedKeys = (await db.getSetting<string[]>(deletedSettingKey)) || []
     const pendingClientKeys = messages
       .filter(message => !message.id)
       .map(message => `client:${message.clientMessageId}`)
     pendingClientKeys.push(...pendingClientMessageIds.map(clientMessageId =>
       `client:${clientMessageId}`))
-    await client.setSetting(
+    await db.setSetting(
       deletedSettingKey,
       Array.from(new Set([...oldDeletedKeys, ...pendingClientKeys])),
     )
-    await client.setSetting(
+    await db.setSettingMax(
       `${StorageKeys.settings.conversationClearBeforePrefix}${clientConversationId}`,
       clearBeforeMessageId,
     )
     await Promise.all([
-      client.removeWhere<MessageDO>('messages', item =>
+      db.removeWhere<MessageDO>('messages', item =>
         item.clientConversationId === clientConversationId),
-      client.removeWhere<ConversationReadDO>('conversationReads', item =>
+      db.removeWhere<ConversationReadDO>('conversationReads', item =>
         item.clientConversationId === clientConversationId),
     ])
   }
@@ -610,11 +608,10 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     clientConversationId: string,
     messages: Array<{ id?: number, clientMessageId?: string }>,
     db: ImDbClient = getDb(),
-    currentUserId = useUserStore().userInfo.userId,
   ) {
     await enqueueConversationWrite(
       clientConversationId,
-      () => removeMessageListNow(clientConversationId, messages, db, currentUserId),
+      () => removeMessageListNow(clientConversationId, messages, db),
     )
   }
 
@@ -623,7 +620,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     clientConversationId: string,
     messages: Array<{ id?: number, clientMessageId?: string }>,
     db: ImDbClient,
-    currentUserId: number,
   ) {
     const oldKeys = (await db.getSetting<string[]>(
       `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`,
@@ -652,7 +648,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     await useConversationStore().recomputeConversationFromStoredMessages(
       clientConversationId,
       db,
-      currentUserId,
     )
   }
 

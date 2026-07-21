@@ -138,9 +138,7 @@ async function clearHistory() {
   } catch {
     return
   }
-  await clearConversationMessages(
-    getClientConversationId(ImConversationType.PRIVATE, targetId),
-  )
+  await clearConversationMessages(getClientConversationId(ImConversationType.PRIVATE, targetId))
   toast.success('聊天记录已清空')
 }
 

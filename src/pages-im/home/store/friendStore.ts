@@ -22,7 +22,7 @@ import {
   pullMyFriendRequestList,
 } from '@/api/im/friend/request'
 import { FRIEND_REQUEST_PAGE_SIZE } from '@/pages-im/utils/config'
-import { initDb, StorageKeys } from '@/pages-im/utils/db'
+import { getDb, initDb, StorageKeys } from '@/pages-im/utils/db'
 import { runIncrementalPull } from '@/pages-im/utils/pull'
 import { getFriendDisplayName } from '@/pages-im/utils/user'
 import { useUserStore } from '@/store/user'
@@ -349,8 +349,11 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   }
 
   /** 删除好友 */
-  async function deleteFriend(friendUserId: number, clear = true) {
-    const db = await initDb()
+  async function deleteFriend(
+    friendUserId: number,
+    clear = true,
+    db: ImDbClient = getDb(),
+  ) {
     await deleteFriendApi(friendUserId, clear)
     removeFriend(friendUserId, clear, db)
     return true

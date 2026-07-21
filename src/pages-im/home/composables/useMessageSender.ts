@@ -29,7 +29,6 @@ import {
   ImMessageStatus,
 } from '@/pages-im/utils/constants'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { useUserStore } from '@/store/user'
 import { useConversationStore } from '../store/conversationStore'
 import {
   buildMessageDO,
@@ -94,7 +93,6 @@ export async function sendMessageToConversation(
   sendOptions: SendExtOptions = {},
 ) {
   const db = await initDb()
-  const currentUserId = useUserStore().userInfo.userId
   const message = await requestConversationMessage(
     { conversationType: conversation.type, targetId: conversation.targetId },
     generateClientMessageId(),
@@ -106,7 +104,7 @@ export async function sendMessageToConversation(
   const incoming = messageStore.buildIncomingMessage(
     conversation.type,
     message,
-    currentUserId,
+    db.userId,
   )
   if (!incoming) {
     return true
@@ -161,7 +159,6 @@ export function useMessageSender(options: {
     return {
       conversationType: options.conversationType.value,
       targetId: options.targetId.value,
-      currentUserId: useUserStore().userInfo.userId,
       db: getDb(),
     }
   }
@@ -176,7 +173,6 @@ export function useMessageSender(options: {
         getClientConversationId(context.conversationType, context.targetId),
         [message],
         context.db,
-        context.currentUserId,
       )
     } catch (error) {
       console.warn('[IM 消息发送] 已删除消息本地缓存清理失败', error)
@@ -224,7 +220,7 @@ export function useMessageSender(options: {
       : buildIncomingMessage(
           context.conversationType,
           message as SendMessageResponse,
-          context.currentUserId,
+          context.db.userId,
         )
     if (incoming) {
       const applied = await insertMessage(incoming, waitForReplay, context.db)
@@ -246,7 +242,7 @@ export function useMessageSender(options: {
       return await syncSentMessage(message, context, local, waitForReplay)
     } catch (error) {
       console.warn('[IM 消息发送] 本地缓存同步失败', error)
-      if (message.senderId === context.currentUserId) {
+      if (message.senderId === context.db.userId) {
         void loadConversationList().catch(() => undefined)
       }
       if (local) {
@@ -255,7 +251,7 @@ export function useMessageSender(options: {
       const incoming = buildIncomingMessage(
         context.conversationType,
         message as SendMessageResponse,
-        context.currentUserId,
+        context.db.userId,
       )
       return incoming ? buildMessageFromDO(incoming) : undefined
     }
@@ -284,7 +280,7 @@ export function useMessageSender(options: {
     const clientMessageId = generateClientMessageId()
     const localMessage: Message = {
       clientMessageId,
-      senderId: context.currentUserId,
+      senderId: context.db.userId,
       type,
       content,
       status: ImMessageStatus.SENDING,
@@ -346,7 +342,7 @@ export function useMessageSender(options: {
     const content = serializeMessage(withQuotePayload(pendingPayload, sendOptions.quote))
     const localMessage: Message = {
       clientMessageId: data.clientMessageId,
-      senderId: context.currentUserId,
+      senderId: context.db.userId,
       type: data.type,
       content,
       status: ImMessageStatus.SENDING,

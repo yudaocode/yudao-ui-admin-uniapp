@@ -154,12 +154,7 @@ import { toGroupCardTarget } from '@/pages-im/utils/message'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import {
-  dissolveGroup,
-  muteAll,
-  updateGroup,
-} from '@/api/im/group'
-import { quitGroup } from '@/api/im/group/member'
+import { muteAll, updateGroup } from '@/api/im/group'
 import { getClientConversationId } from '@/pages-im/utils/db'
 import { GROUP_MAX_MEMBER } from '@/pages-im/utils/config'
 import { isGroupQuit } from '@/pages-im/utils/user'
@@ -220,7 +215,6 @@ const conversationStore = useConversationStore()
 const {
   clearConversationMessages,
   ensureConversation,
-  removeGroupConversation,
   setConversationTop,
 } = conversationStore
 
@@ -385,9 +379,7 @@ async function clearHistory() {
   } catch {
     return
   }
-  await clearConversationMessages(
-    getClientConversationId(ImConversationType.GROUP, groupId),
-  )
+  await clearConversationMessages(getClientConversationId(ImConversationType.GROUP, groupId))
   toast.success('聊天记录已清空')
 }
 
@@ -474,10 +466,6 @@ async function onPinnedChange() {
         silent: group.silent,
       })
     }
-    if (isQuitGroupDetail.value) {
-      await removeGroupConversation(groupId, undefined)
-      return
-    }
     if (!getConversation(groupId)) {
       pinned.value = false
       return
@@ -507,8 +495,7 @@ async function handleQuit() {
   } catch {
     return
   }
-  await quitGroup(groupId)
-  await groupStore.removeGroup(groupId)
+  await groupStore.quitGroup(groupId)
   toast.success('已退出群聊')
   delay(() => emit('close'))
 }
@@ -525,8 +512,7 @@ async function handleDissolve() {
   } catch {
     return
   }
-  await dissolveGroup(groupId)
-  await groupStore.removeGroup(groupId)
+  await groupStore.dissolveGroup(groupId)
   toast.success('已解散群聊')
   delay(() => emit('close'))
 }

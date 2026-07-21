@@ -19,7 +19,7 @@ const MAX_PAGES_PER_CONVERSATION = 12
 const MAX_TOTAL_MESSAGE_PAGES = 80
 
 export class StorageDbClient implements ImDbClient {
-  private userId = 0
+  userId = 0
 
   async open(userId: number): Promise<void> {
     this.userId = userId

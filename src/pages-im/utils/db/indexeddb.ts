@@ -39,7 +39,7 @@ function upgradeSchema(db: IDBDatabase, transaction: IDBTransaction) {
 
 export class IndexedDbClient implements ImDbClient {
   private db: IDBDatabase | null = null
-  private userId = 0
+  userId = 0
 
   async open(userId: number): Promise<void> {
     if (this.db && this.userId === userId) {

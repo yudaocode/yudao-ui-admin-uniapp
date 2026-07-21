@@ -18,6 +18,8 @@ export interface MessageDOPageResult {
 
 /** 跨端本地 DB 客户端接口（去掉 IndexedDB 专有的事务参数，按平台各自实现原子性） */
 export interface ImDbClient {
+  /** 当前数据库所属用户 */
+  readonly userId: number
   /** 打开/切换到某账号的库 */
   open: (userId: number) => Promise<void>
   /** 关闭连接 */

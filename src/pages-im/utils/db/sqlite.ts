@@ -13,7 +13,7 @@ interface SqliteRow {
 }
 
 export class SqliteDbClient implements ImDbClient {
-  private userId = 0
+  userId = 0
   private opened = false
   private settingMaxQueue: Promise<void> = Promise.resolve()
 

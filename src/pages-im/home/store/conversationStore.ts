@@ -16,7 +16,6 @@ import {
   initDb,
   StorageKeys,
 } from '@/pages-im/utils/db'
-import { useUserStore } from '@/store/user'
 import {
   IM_AT_ALL_USER_ID,
   ImConversationType,
@@ -44,6 +43,35 @@ import {
 } from '@/pages-im/utils/messageSync'
 import { useMessagePuller } from '../composables/useMessagePuller'
 import { useMessageStore } from './messageStore'
+
+/** 本地消息保留顺序：服务端消息按 id，本地待发送消息排在其后并按时间排序 */
+function compareMessageRetentionOrder(left: MessageDO, right: MessageDO): number {
+  if (left.id && right.id) {
+    return left.id - right.id
+  }
+  if (!!left.id !== !!right.id) {
+    return left.id ? -1 : 1
+  }
+  return left.sendTime - right.sendTime || left.messageKey.localeCompare(right.messageKey)
+}
+
+/** 会话摘要顺序：服务端消息按 id，混合本地消息时按发送时间 */
+function compareConversationSummaryOrder(left: MessageDO, right: MessageDO): number {
+  if (left.id && right.id) {
+    return left.id - right.id
+  }
+  return left.sendTime - right.sendTime || compareMessageRetentionOrder(left, right)
+}
+
+/** 获取最新的会话摘要消息 */
+function getLatestConversationMessage(messages: MessageDO[]): MessageDO | undefined {
+  return messages.reduce<MessageDO | undefined>((latest, message) => {
+    if (!latest || compareConversationSummaryOrder(latest, message) <= 0) {
+      return message
+    }
+    return latest
+  }, undefined)
+}
 
 /** IM 会话 Store */
 export const useConversationStore = defineStore('imConversationStore', () => {
@@ -180,12 +208,12 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     const result: ConversationDO[] = []
     const expiredMessageKeys: string[] = []
     grouped.forEach((list, clientConversationId) => {
-      list.sort((left, right) => left.sendTime - right.sendTime)
+      list.sort(compareMessageRetentionOrder)
       if (list.length > MESSAGE_LOCAL_MAX_COUNT) {
         const expired = list.splice(0, list.length - MESSAGE_LOCAL_MAX_COUNT)
         expiredMessageKeys.push(...expired.map(item => item.messageKey))
       }
-      const last = list[list.length - 1]
+      const last = getLatestConversationMessage(list)!
       const type = last.conversationType
       const targetId = last.targetId
       const old = existingMap.get(clientConversationId)
@@ -214,7 +242,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
         && (item.id || 0) > readMessageId
         && isNormalMessage(item.type)
         && item.status !== ImMessageStatus.RECALL)
-      const atMessage = findLatestAtMessage(unreadMessages, useUserStore().userInfo.userId)
+      const atMessage = findLatestAtMessage(unreadMessages, db.userId)
       const atAllMessage = findLatestAtMessage(unreadMessages, IM_AT_ALL_USER_ID)
       const senderDisplayName = deriveLastSenderDisplayName({
         type,
@@ -667,7 +695,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       && (!appliedMessage.id || appliedMessage.id > (read?.messageId || 0))
     if (isUnread) {
       conv.unreadCount = (conv.unreadCount || 0) + 1
-      if (appliedMessage.atUserIds?.includes(useUserStore().userInfo.userId)) {
+      if (appliedMessage.atUserIds?.includes(client.userId)) {
         conv.atMe = true
         conv.atMessageId = appliedMessage.id
       }
@@ -732,10 +760,18 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     const clientConversationId = getClientConversationId(conversationType, targetId)
     const recallSettingKey
       = `${StorageKeys.settings.conversationRecalledMessagesPrefix}${clientConversationId}`
-    const recalledKeys = (await client.getSetting<string[]>(recallSettingKey)) || []
+    const [clearBefore, recalledKeys] = await Promise.all([
+      client.getSetting<number>(
+        `${StorageKeys.settings.conversationClearBeforePrefix}${clientConversationId}`,
+      ),
+      client.getSetting<string[]>(recallSettingKey),
+    ])
+    if (messageId <= (clearBefore || 0)) {
+      return
+    }
     await client.setSetting(
       recallSettingKey,
-      Array.from(new Set([...recalledKeys, `id:${messageId}`])),
+      Array.from(new Set([...(recalledKeys || []), `id:${messageId}`])),
     )
     const messageKey = getServerMessageKey(conversationType, messageId)
     const original = await client.get<MessageDO>('messages', messageKey)
@@ -763,7 +799,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       && isNormalMessage(item.type)
       && item.status !== ImMessageStatus.RECALL)
     conversation.unreadCount = unreadMessages.length
-    const atMessage = findLatestAtMessage(unreadMessages, useUserStore().userInfo.userId)
+    const atMessage = findLatestAtMessage(unreadMessages, client.userId)
     const atAllMessage = findLatestAtMessage(unreadMessages, IM_AT_ALL_USER_ID)
     conversation.atMe = !!atMessage
     conversation.atAll = !!atAllMessage
@@ -1163,50 +1199,60 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     })
   }
 
-  /** 删除会话及其本地消息；再来新消息时恢复会话 */
-  async function removeConversation(
-    type: number,
-    targetId: number,
-    beforeRemove?: () => Promise<void> | void,
-    db: ImDbClient = getDb(),
+  /** 在会话 lane 内删除会话及其本地消息 */
+  function enqueueConversationRemoval(
+    clientConversationId: string,
+    db: ImDbClient,
+    beforeRemove?: () => Promise<boolean | void> | boolean | void,
   ) {
+    return enqueueConversationLocalOperation(clientConversationId, async () => {
+      if (await beforeRemove?.() === false) {
+        return
+      }
+      await removeConversationNow(clientConversationId, db)
+    })
+  }
+
+  /** 删除会话及其本地消息 */
+  function removeConversation(type: number, targetId: number) {
+    const db = getDb()
     const clientConversationId = getClientConversationId(type, targetId)
-    return enqueueConversationLocalOperation(
-      clientConversationId,
-      async () => {
-        await beforeRemove?.()
-        await removeConversationNow(clientConversationId, db)
-      },
-    )
+    return enqueueConversationRemoval(clientConversationId, db)
   }
 
   /** 删除私聊会话 */
   function removePrivateConversation(
     friendId: number,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ) {
-    return removeConversation(ImConversationType.PRIVATE, friendId, undefined, db)
+    return enqueueConversationRemoval(
+      getClientConversationId(ImConversationType.PRIVATE, friendId),
+      db,
+    )
   }
 
   /** 删除群聊会话 */
   function removeGroupConversation(
     groupId: number,
-    beforeRemove?: () => Promise<void> | void,
-    db?: ImDbClient,
+    beforeRemoveInLane?: () => Promise<boolean | void> | boolean | void,
+    db: ImDbClient = getDb(),
   ) {
-    return removeConversation(ImConversationType.GROUP, groupId, beforeRemove, db)
+    return enqueueConversationRemoval(
+      getClientConversationId(ImConversationType.GROUP, groupId),
+      db,
+      beforeRemoveInLane,
+    )
   }
 
   /** 实际删除会话及其本地消息 */
   async function removeConversationNow(
     clientConversationId: string,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
-    const client = db || await initDb()
     const memoryConversation = conversations.value.find(item =>
       item.clientConversationId === clientConversationId)
     const conversation = memoryConversation
-      || await client.get<ConversationDO>('conversations', clientConversationId)
+      || await db.get<ConversationDO>('conversations', clientConversationId)
     if (!conversation) {
       return
     }
@@ -1217,9 +1263,9 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     await useMessageStore().deleteConversationMessageListNow(
       clientConversationId,
       pendingClientMessageIds,
-      client,
+      db,
     )
-    await client.put<ConversationDO>('conversations', JSON.parse(JSON.stringify(nextConversation)))
+    await db.put<ConversationDO>('conversations', JSON.parse(JSON.stringify(nextConversation)))
     if (memoryConversation) {
       Object.assign(memoryConversation, nextConversation)
       if (activeClientConversationId.value === clientConversationId) {
@@ -1233,8 +1279,8 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   /** 清空单个会话的本地聊天记录 */
   async function clearConversationMessages(
     clientConversationId: string,
+    db: ImDbClient = getDb(),
   ) {
-    const db = getDb()
     return enqueueConversationLocalOperation(clientConversationId, async () => {
       const pendingClientMessageIds = pendingIncomingMessages
         .filter(item => item.message.clientConversationId === clientConversationId)
@@ -1270,7 +1316,6 @@ export const useConversationStore = defineStore('imConversationStore', () => {
   async function recomputeConversationFromStoredMessages(
     clientConversationId: string,
     db: ImDbClient = getDb(),
-    currentUserId = useUserStore().userInfo.userId,
   ) {
     const conversation = conversations.value.find(item => item.clientConversationId === clientConversationId)
     if (!conversation) {
@@ -1280,8 +1325,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       db.filter<MessageDO>('messages', item => item.clientConversationId === clientConversationId),
       db.get<ConversationReadDO>('conversationReads', clientConversationId),
     ])
-    messages.sort((left, right) => left.sendTime - right.sendTime)
-    const last = messages[messages.length - 1]
+    const last = getLatestConversationMessage(messages)
     if (last) {
       const senderDisplayName = deriveLastSenderDisplayName(conversation, last.senderId)
       conversation.lastContent = resolveConversationLastContent(
@@ -1315,7 +1359,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       && (item.id || 0) > (read?.messageId || 0)
       && isNormalMessage(item.type)
       && item.status !== ImMessageStatus.RECALL)
-    const atMessage = findLatestAtMessage(unreadMessages, currentUserId)
+    const atMessage = findLatestAtMessage(unreadMessages, db.userId)
     const atAllMessage = findLatestAtMessage(unreadMessages, IM_AT_ALL_USER_ID)
     conversation.unreadCount = unreadMessages.length
     conversation.atMe = !!atMessage

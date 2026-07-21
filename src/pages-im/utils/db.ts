@@ -18,7 +18,6 @@ import { SqliteDbClient } from './db/sqlite'
 // #endif
 
 let client: ImDbClient | null = null
-let clientUserId = 0
 let initialization: {
   userId: number
   promise: Promise<ImDbClient>
@@ -45,7 +44,7 @@ export async function initImDb(): Promise<ImDbClient> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error('当前用户不存在，无法初始化 IM 本地库')
   }
-  if (client && clientUserId === userId) {
+  if (client?.userId === userId) {
     return client
   }
   if (initialization?.userId === userId) {
@@ -68,7 +67,6 @@ export async function initImDb(): Promise<ImDbClient> {
     }
     const previousClient = client
     client = nextClient
-    clientUserId = userId
     if (previousClient) {
       await previousClient.close()
     }
@@ -89,7 +87,7 @@ export const initDb = initImDb
 
 /** 获取当前 IM 本地库客户端 */
 export function getImDb(): ImDbClient {
-  if (!client || clientUserId !== useUserStore().userInfo.userId) {
+  if (!client || client.userId !== useUserStore().userInfo.userId) {
     throw new Error('IM 本地库未初始化，请先调用 initImDb()')
   }
   return client
@@ -103,7 +101,6 @@ export async function closeImDb(): Promise<void> {
   initialization = undefined
   const previousClient = client
   client = null
-  clientUserId = 0
   await previousClient?.close()
 }
 
