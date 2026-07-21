@@ -80,13 +80,12 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         ImConversationType.GROUP,
         group.id,
       ))
-      const result = await enqueueConversationWrites(conversationIds, async () => {
+      return await enqueueConversationWrites(conversationIds, async () => {
         const activeGroups = cached.filter(group => !isRelationTerminated(getClientConversationId(ImConversationType.GROUP, group.id),
         ))
         groups.value = activeGroups
         return activeGroups.length > 0
       })
-      return result
     } catch (error) {
       console.warn('[IM groupStore] 本地群缓存读取失败', error)
       return false
@@ -95,43 +94,40 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 保存群列表 */
   async function saveGroupList(
-    rows = [...groups.value],
-    db?: ImDbClient,
+    rows: Group[],
+    db: ImDbClient,
   ): Promise<void> {
-    const client = db || await initDb()
-    await client.clearStore('groups')
-    await client.bulkPut<GroupDO>('groups', rows.map(buildGroupDO))
+    await db.clearStore('groups')
+    await db.bulkPut<GroupDO>('groups', rows.map(buildGroupDO))
   }
 
   /** 保存单个群 */
   async function saveGroupRecord(
     group: Group | undefined,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     if (!group) {
       return
     }
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, group.id)
-    const client = db || await initDb()
     if (isRelationTerminated(clientConversationId)) {
       return
     }
-    await client.put('groups', buildGroupDO(group))
+    await db.put('groups', buildGroupDO(group))
   }
 
   /** 异步保存单个群 */
   function saveGroup(
     group: Group | undefined,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): void {
     if (!group) {
       return
     }
-    const client = db || getDb()
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, group.id)
     const snapshot = { ...group }
     void enqueueConversationWrite(clientConversationId, () =>
-      saveGroupRecord(snapshot, client)).catch(error =>
+      saveGroupRecord(snapshot, db)).catch(error =>
       console.warn('[IM groupStore] 本地群写入失败', error))
   }
 
@@ -487,16 +483,15 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 保存指定群成员缓存；调用方必须持有群会话写 lane */
   async function saveGroupMemberListRecord(
     groupId: number,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     const group = getGroup(groupId)
     if (!group?.members) {
       return
     }
     const records = JSON.parse(JSON.stringify(group.members)) as GroupMemberDO[]
-    const client = db || await initDb()
-    await client.removeWhere<GroupMemberDO>('groupMembers', member => member.groupId === groupId)
-    await client.bulkPut('groupMembers', records)
+    await db.removeWhere<GroupMemberDO>('groupMembers', member => member.groupId === groupId)
+    await db.bulkPut('groupMembers', records)
   }
 
   /** 串行保存指定群成员缓存 */
@@ -511,7 +506,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   }
 
   /** 同步群资料到已有会话 */
-  function syncGroupConversation(group: Group, db?: ImDbClient) {
+  function syncGroupConversation(group: Group, db: ImDbClient) {
     useConversationStore().updateConversation(ImConversationType.GROUP, group.id, {
       name: getGroupDisplayName(group),
       avatar: group.avatar || '',
@@ -530,7 +525,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 按群编号插入或合并群并保存 */
   async function upsertGroupAndSave(
     group: Group,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     const clientConversationId = getClientConversationId(ImConversationType.GROUP, group.id)
     if (isRelationTerminated(clientConversationId)) {
@@ -551,7 +546,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   function updateGroupFields(
     groupId: number,
     fields: Partial<Group>,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ) {
     const group = getGroup(groupId)
     if (!group) {
@@ -608,7 +603,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     userIds: number[],
     role: number,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
     const group = getGroup(groupId)
     const members = group?.members
@@ -635,7 +630,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     oldOwnerId: number,
     newOwnerId: number,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
     const group = getGroup(groupId)
     if (!group) {
@@ -653,7 +648,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   function removeLocalGroupMemberList(
     groupId: number,
     userIds: number[],
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
     const group = getGroup(groupId)
     const members = group?.members
@@ -675,7 +670,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     userId: number,
     status: number,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
     const member = getGroup(groupId)?.members?.find(item => item.userId === userId)
     if (!member || member.status === status) {
@@ -690,7 +685,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupId: number,
     userId: number,
     displayUserName: string,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
     const member = getGroup(groupId)?.members?.find(item => item.userId === userId)
     if (!member || member.displayUserName === displayUserName) {

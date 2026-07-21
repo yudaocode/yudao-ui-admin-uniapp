@@ -112,12 +112,11 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   }
 
   /** 加载消息游标 */
-  async function loadMessageCursorList(db?: ImDbClient) {
-    const client = db || await initDb()
+  async function loadMessageCursorList(db: ImDbClient) {
     const [privateMaxId, groupMaxId, channelMaxId] = await Promise.all([
-      client.getSetting<number>(StorageKeys.settings.privateMessageMaxId),
-      client.getSetting<number>(StorageKeys.settings.groupMessageMaxId),
-      client.getSetting<number>(StorageKeys.settings.channelMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.privateMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.groupMessageMaxId),
+      db.getSetting<number>(StorageKeys.settings.channelMessageMaxId),
     ])
     privateMessageMaxId.value = privateMaxId || 0
     groupMessageMaxId.value = groupMaxId || 0
@@ -310,7 +309,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
           ...candidates.map(item => item.clientConversationId),
           ...recallSignals.map(item => mapper(item, currentUserId).clientConversationId),
         ]
-        const applied = await enqueueConversationWrites(conversationIds, async () => {
+        return enqueueConversationWrites(conversationIds, async () => {
           const terminalCache = new Map<string, {
             clearBefore: number
             deleted: Set<string>
@@ -396,7 +395,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
           }
           return true
         })
-        return applied
       },
     })
   }
@@ -537,17 +535,16 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     clientConversationId: string,
     limit = 50,
   ) {
-    await initDb()
-    return (await getDb()
-      .getMessageListByConversation(clientConversationId, { limit })).list
+    const db = await initDb()
+    return (await db.getMessageListByConversation(clientConversationId, { limit })).list
   }
 
   /** 获取会话本地清理边界 */
   async function getConversationClearBefore(
     clientConversationId: string,
   ) {
-    await initDb()
-    return (await getDb().getSetting<number>(
+    const db = await initDb()
+    return (await db.getSetting<number>(
       `${StorageKeys.settings.conversationClearBeforePrefix}${clientConversationId}`,
     )) || 0
   }
@@ -556,8 +553,8 @@ export const useMessageStore = defineStore('imMessageStore', () => {
   async function getConversationDeletedMessageKeys(
     clientConversationId: string,
   ) {
-    await initDb()
-    return (await getDb().getSetting<string[]>(
+    const db = await initDb()
+    return (await db.getSetting<string[]>(
       `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`,
     )) || []
   }
@@ -640,11 +637,9 @@ export const useMessageStore = defineStore('imMessageStore', () => {
       `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`,
       keys,
     )
-    await Promise.all([
-      db.removeWhere<MessageDO>('messages', item => item.clientConversationId === clientConversationId
-        && ((item.id && keySet.has(`id:${item.id}`))
-          || keySet.has(`client:${item.clientMessageId}`))),
-    ])
+    await db.removeWhere<MessageDO>('messages', item => item.clientConversationId === clientConversationId
+      && ((item.id && keySet.has(`id:${item.id}`))
+        || keySet.has(`client:${item.clientMessageId}`)))
     await useConversationStore().recomputeConversationFromStoredMessages(
       clientConversationId,
       db,

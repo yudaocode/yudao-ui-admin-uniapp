@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { closeImDb, initImDb } from '@/pages-im/utils/db'
+import { closeDb, initDb } from '@/pages-im/utils/db'
 import { clearMessageSyncState } from '@/pages-im/utils/messageSync'
 import { clearResourceRequests } from '@/pages-im/utils/resourceRequest'
 import { useChannelStore } from './channelStore'
@@ -63,7 +63,7 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
     const conversationStore = useConversationStore()
     const groupStore = useGroupStore()
     const task = (async () => {
-      await initImDb()
+      await initDb()
       useImWebSocketStore().connect()
       void useFaceStore().ensureFacePackList().catch((error) => {
         console.warn('[IM] 预加载系统表情包失败', error)
@@ -94,7 +94,7 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
     useImWebSocketStore().disconnect()
     clearResourceRequests()
     clearMessageSyncState()
-    void closeImDb()
+    void closeDb()
     useConversationStore().clear()
     useMessageStore().clear()
     friendStore.clear()

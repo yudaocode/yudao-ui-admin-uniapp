@@ -39,7 +39,7 @@ function createImDbClient(): ImDbClient | null {
 }
 
 /** 初始化当前用户的 IM 本地库 */
-export async function initImDb(): Promise<ImDbClient> {
+export async function initDb(): Promise<ImDbClient> {
   const userId = useUserStore().userInfo.userId
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error('当前用户不存在，无法初始化 IM 本地库')
@@ -82,22 +82,16 @@ export async function initImDb(): Promise<ImDbClient> {
   }
 }
 
-/** 初始化当前用户 IM 本地库（名称与 PC 对齐） */
-export const initDb = initImDb
-
 /** 获取当前 IM 本地库客户端 */
-export function getImDb(): ImDbClient {
+export function getDb(): ImDbClient {
   if (!client || client.userId !== useUserStore().userInfo.userId) {
-    throw new Error('IM 本地库未初始化，请先调用 initImDb()')
+    throw new Error('IM 本地库未初始化，请先调用 initDb()')
   }
   return client
 }
 
-/** 获取当前 IM 本地库客户端（名称与 PC 对齐） */
-export const getDb = getImDb
-
 /** 关闭并重置 IM 本地库 */
-export async function closeImDb(): Promise<void> {
+export async function closeDb(): Promise<void> {
   initialization = undefined
   const previousClient = client
   client = null

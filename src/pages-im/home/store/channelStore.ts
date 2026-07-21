@@ -41,12 +41,11 @@ export const useChannelStore = defineStore('imChannelStore', () => {
 
   /** 保存频道列表 */
   async function saveChannelList(
-    channelList = [...channels.value],
-    db?: ImDbClient,
+    channelList: ImManagerChannelVO[],
+    db: ImDbClient,
   ): Promise<void> {
-    const client = db || await initDb()
-    await client.clearStore('channels')
-    await client.bulkPut<ChannelDO>('channels', channelList)
+    await db.clearStore('channels')
+    await db.bulkPut<ChannelDO>('channels', channelList)
   }
 
   /** 拉取启用的频道精简列表 */
@@ -69,7 +68,7 @@ export const useChannelStore = defineStore('imChannelStore', () => {
   }
 
   /** 用最新频道资料刷新已有频道会话 */
-  function syncChannelConversationMetadata(db?: ImDbClient) {
+  function syncChannelConversationMetadata(db: ImDbClient) {
     const conversationStore = useConversationStore()
     const indexed = new Map(channels.value.map(channel => [channel.id, channel]))
     conversationStore.conversations.forEach((conversation) => {

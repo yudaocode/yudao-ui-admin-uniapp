@@ -41,22 +41,6 @@ import {
   runResourceRequest,
 } from '@/pages-im/utils/resourceRequest'
 
-let friendRequestMutationSequence = 0
-const friendRequestVersions = new Map<number, number>()
-
-/** 记录好友申请的最新本地变更顺序 */
-function markFriendRequestMutation(requestId: number): void {
-  friendRequestVersions.set(requestId, ++friendRequestMutationSequence)
-}
-
-/** 判断好友申请是否在本次远端请求发出后发生过变更 */
-function wasFriendRequestMutatedAfter(
-  requestId: number,
-  requestStartedAt: number,
-): boolean {
-  return (friendRequestVersions.get(requestId) || 0) > requestStartedAt
-}
-
 /** 好友关系通知内容；字段对齐后端 BaseFriendNotification 子类 */
 export interface FriendNotificationPayload {
   operatorUserId: number
@@ -128,30 +112,28 @@ export const useFriendStore = defineStore('imFriendStore', () => {
 
   /** 保存好友列表 */
   async function saveFriendList(
-    rows = [...friends.value],
-    db?: ImDbClient,
+    rows: Friend[],
+    db: ImDbClient,
   ): Promise<void> {
-    const client = db || await initDb()
-    await client.clearStore('friends')
-    await client.bulkPut<FriendDO>('friends', rows.filter(friend => !!friend.id))
+    await db.clearStore('friends')
+    await db.bulkPut<FriendDO>('friends', rows.filter(friend => !!friend.id))
   }
 
   /** 保存单个好友 */
   async function saveFriendRecord(
     friend: Friend | undefined,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     if (!friend?.id) {
       return
     }
-    const client = db || await initDb()
-    await client.put('friends', friend)
+    await db.put('friends', friend)
   }
 
   /** 异步保存单个好友 */
   function saveFriend(
     friend: Friend | undefined,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ): void {
     void saveFriendRecord(friend, db).catch(error =>
       console.warn('[IM friendStore] 本地好友写入失败', error))
@@ -159,14 +141,13 @@ export const useFriendStore = defineStore('imFriendStore', () => {
 
   /** 保存好友申请列表 */
   function saveFriendRequestList(
-    rows = [...friendRequests.value],
-    db?: ImDbClient,
+    rows: FriendRequest[],
+    db: ImDbClient,
   ): void {
     void (async () => {
-      const client = db || await initDb()
       await enqueueResourceWrite(ResourceWriteKey.FRIEND_REQUEST_LIST, async () => {
-        await client.clearStore('friendRequests')
-        await client.bulkPut<FriendRequestDO>('friendRequests', rows)
+        await db.clearStore('friendRequests')
+        await db.bulkPut<FriendRequestDO>('friendRequests', rows)
       })
     })().catch(error => console.warn('[IM friendStore] 本地好友申请缓存写入失败', error))
   }
@@ -174,20 +155,19 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   /** 保存单条好友申请 */
   async function saveFriendRequestRecord(
     request: FriendRequest | undefined,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     if (!request) {
       return
     }
-    const client = db || await initDb()
     await enqueueResourceWrite(ResourceWriteKey.FRIEND_REQUEST_LIST, () =>
-      client.put('friendRequests', request))
+      db.put('friendRequests', request))
   }
 
   /** 异步保存单条好友申请 */
   function saveFriendRequest(
     request: FriendRequest | undefined,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ): void {
     void saveFriendRequestRecord(request, db).catch(error =>
       console.warn('[IM friendStore] 本地好友申请写入失败', error))
@@ -365,17 +345,10 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       return requestTask
     }
     requestLoading.value = true
-    const requestStartedAt = friendRequestMutationSequence
     const task = (async () => {
       const db = await initDb()
       const rows = (await getMyFriendRequestList(FRIEND_REQUEST_PAGE_SIZE)).map(convertFriendRequest)
-      const preserved = friendRequests.value.filter(request =>
-        wasFriendRequestMutatedAfter(request.id, requestStartedAt))
-      const preservedIds = new Set(preserved.map(request => request.id))
-      friendRequests.value = [
-        ...preserved,
-        ...rows.filter(request => !preservedIds.has(request.id)),
-      ].sort((left, right) => right.id - left.id)
+      friendRequests.value = rows.sort((left, right) => right.id - left.id)
       hasMoreFriendRequests.value = rows.length === FRIEND_REQUEST_PAGE_SIZE
       saveFriendRequestList([...friendRequests.value], db)
       return friendRequests.value
@@ -399,15 +372,12 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       return fetchFriendRequestList()
     }
     requestLoadingMore.value = true
-    const requestStartedAt = friendRequestMutationSequence
     const task = (async () => {
       const db = await initDb()
       const rows = (await getMyFriendRequestList(FRIEND_REQUEST_PAGE_SIZE, oldest.id))
         .map(convertFriendRequest)
       const currentIds = new Set(friendRequests.value.map(request => request.id))
-      const additions = rows.filter(request =>
-        !currentIds.has(request.id)
-        && !wasFriendRequestMutatedAfter(request.id, requestStartedAt))
+      const additions = rows.filter(request => !currentIds.has(request.id))
       friendRequests.value.push(...additions)
       hasMoreFriendRequests.value = rows.length === FRIEND_REQUEST_PAGE_SIZE
       saveFriendRequestList([...friendRequests.value], db)
@@ -430,39 +400,20 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   /** 按编号拉取好友申请 */
   async function fetchFriendRequest(
     requestId: number,
-    db?: ImDbClient,
+    db: ImDbClient,
   ) {
-    const client = db || await initDb()
-    const requestStartedAt = friendRequestMutationSequence
     const data = await getMyFriendRequest(requestId)
     if (!data) {
       return
     }
-    await upsertFriendRequestForPull(
-      convertFriendRequest(data),
-      requestStartedAt,
-      client,
-    )
-  }
-
-  /** 本地合并单条好友申请 */
-  function upsertFriendRequest(
-    next: FriendRequest,
-  ) {
-    void upsertFriendRequestForPull(next).catch(error =>
-      console.warn('[IM friendStore] 本地好友申请写入失败', error))
+    await upsertFriendRequestForPull(convertFriendRequest(data), db)
   }
 
   /** 增量拉取时合并单条好友申请 */
   async function upsertFriendRequestForPull(
     next: FriendRequest,
-    requestStartedAt = friendRequestMutationSequence,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
-    if (wasFriendRequestMutatedAfter(next.id, requestStartedAt)) {
-      return
-    }
-    markFriendRequestMutation(next.id)
     const existing = getFriendRequest(next.id)
     if (existing) {
       Object.assign(existing, next)
@@ -487,24 +438,22 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     if (requestPullTask) {
       return requestPullTask
     }
-    const pageRequestStarts = new WeakMap<ImFriendRequestRespVO[], number>()
     const task = (async () => {
       const db = await initDb()
       if (requestTask) {
         await requestTask
       }
-      await runIncrementalPull(db, StorageKeys.settings.friendRequestPullCursor, async (params) => {
-        const requestStartedAt = friendRequestMutationSequence
-        const records = await pullMyFriendRequestList(params)
-        pageRequestStarts.set(records, requestStartedAt)
-        return records
-      }, async (records) => {
-        const converted = records.map(convertFriendRequest)
-        const requestStartedAt = pageRequestStarts.get(records) ?? friendRequestMutationSequence
-        await Promise.all(converted.map(request =>
-          upsertFriendRequestForPull(request, requestStartedAt, db)))
-        return true
-      })
+      await runIncrementalPull(
+        db,
+        StorageKeys.settings.friendRequestPullCursor,
+        params => pullMyFriendRequestList(params),
+        async (records) => {
+          const converted = records.map(convertFriendRequest)
+          await Promise.all(converted.map(request =>
+            upsertFriendRequestForPull(request, db)))
+          return true
+        },
+      )
       return friendRequests.value
     })().finally(() => {
       if (requestPullTask === task) {
@@ -536,11 +485,10 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     requestId: number,
     result: number,
     handleContent?: string,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ): Promise<void> {
     const request = getFriendRequest(requestId)
     if (request) {
-      markFriendRequestMutation(requestId)
       request.handleResult = result
       if (handleContent !== undefined) {
         request.handleContent = handleContent
@@ -559,7 +507,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   }
 
   /** 同步好友对应的会话展示字段 */
-  function syncFriendConversation(friend: Friend, db?: ImDbClient) {
+  function syncFriendConversation(friend: Friend, db: ImDbClient) {
     useConversationStore().updateConversation(ImConversationType.PRIVATE, friend.friendUserId, {
       name: getFriendDisplayName(friend),
       avatar: friend.avatar || '',
@@ -570,7 +518,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   /** 本地合并好友关系 */
   async function upsertFriendForPull(
     friend: Friend,
-    db?: ImDbClient,
+    db: ImDbClient,
   ): Promise<void> {
     const index = friends.value.findIndex(item => item.friendUserId === friend.friendUserId)
     const next = {
@@ -591,7 +539,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   function removeFriend(
     friendUserId: number,
     clear = true,
-    db?: ImDbClient,
+    db: ImDbClient = getDb(),
   ) {
     const friend = getFriend(friendUserId)
     if (friend) {
@@ -630,7 +578,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
         fromNickname: payload.fromNickname,
         fromAvatar: payload.fromAvatar,
       }
-      markFriendRequestMutation(next.id)
       friendRequests.value.unshift(next)
       saveFriendRequest(next)
       return
@@ -646,7 +593,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       fromNickname: payload.fromNickname,
       fromAvatar: payload.fromAvatar,
     }
-    markFriendRequestMutation(next.id)
     friendRequests.value.unshift(next)
     saveFriendRequest(next)
   }
@@ -722,8 +668,9 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     if (payload.pinned != null) {
       friend.pinned = payload.pinned
     }
-    syncFriendConversation(friend)
-    saveFriend(friend)
+    const db = getDb()
+    syncFriendConversation(friend, db)
+    saveFriend(friend, db)
   }
 
   /** 清理好友内存状态 */
@@ -739,7 +686,6 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     friendPullTask = undefined
     requestPullTask = undefined
     detailLoadTasks.clear()
-    friendRequestVersions.clear()
   }
 
   /** 收到好友关系变化时刷新列表 */
