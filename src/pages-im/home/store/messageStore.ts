@@ -342,7 +342,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
           const messages: MessageDO[] = []
           for (const candidate of candidates) {
             const terminal = await getTerminal(candidate.clientConversationId)
-            // TODO @AI：【done】清理与删除终态统一由 isMessageTerminated 判断
             if (isMessageTerminated(candidate, terminal.clearBefore, terminal.deleted)) {
               continue
             }
@@ -559,7 +558,6 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     )) || []
   }
 
-  // TODO @AI：【done】外层包装没有调用；清空入口已在 conversationStore 持有同一会话 lane
   /** 实际清空会话消息；调用方必须持有当前会话写 lane */
   async function deleteConversationMessageListNow(
     clientConversationId: string,

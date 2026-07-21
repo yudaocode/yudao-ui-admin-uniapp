@@ -154,7 +154,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       if (!cached || cached.length === 0) {
         return null
       }
-      // TODO @AI：【done】直接返回会话写入结果
       return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return null
@@ -270,7 +269,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       && !isRelationTerminated(clientConversationId)
     const task = (async () => {
       const group = convertGroup(await getGroupApi(groupId), db.userId)
-      // TODO @AI：【done】直接返回会话写入结果
       return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return undefined
@@ -325,7 +323,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
       const selfMember = rawRows.find(member => member.userId === db.userId)
       const silent = !!selfMember?.silent
       const groupRemark = selfMember?.groupRemark || ''
-      // TODO @AI：【done】直接返回会话写入结果
       return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return []
@@ -407,7 +404,6 @@ export const useGroupStore = defineStore('imGroupStore', () => {
         return undefined
       }
       const member = convertGroupMember(rawMember, groupId)
-      // TODO @AI：【done】直接返回会话写入结果
       return await enqueueConversationWrite(clientConversationId, async () => {
         if (!isRelationCurrent()) {
           return undefined
