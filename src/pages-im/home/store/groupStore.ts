@@ -45,7 +45,7 @@ import {
 /** IM 群聊 Store */
 export const useGroupStore = defineStore('imGroupStore', () => {
   const groups = ref<Group[]>([]) // 当前账号群聊列表
-  const loaded = ref(false) // 是否已从服务端加载群列表
+  let loaded = false // 是否已从服务端加载群列表
   const loading = ref(false) // 群聊加载状态
   const memberLoadTasks = new Map<number, Promise<GroupMember[]>>() // 群成员加载任务
   const singleMemberLoadTasks = new Map<string, Promise<GroupMember | undefined>>() // 单个群成员加载任务
@@ -69,26 +69,24 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   }
 
   /** 从本地库恢复群列表 */
-  async function loadGroupList(): Promise<boolean> {
+  async function loadGroupList(): Promise<void> {
     try {
       const db = await initDb()
       const cached = await db.getAll<GroupDO>('groups')
-      if (!cached || cached.length === 0) {
-        return false
+      if (cached.length === 0) {
+        return
       }
       const conversationIds = cached.map(group => getClientConversationId(
         ImConversationType.GROUP,
         group.id,
       ))
-      return await enqueueConversationWrites(conversationIds, async () => {
+      await enqueueConversationWrites(conversationIds, async () => {
         const activeGroups = cached.filter(group => !isRelationTerminated(getClientConversationId(ImConversationType.GROUP, group.id),
         ))
         groups.value = activeGroups
-        return activeGroups.length > 0
       })
     } catch (error) {
       console.warn('[IM groupStore] 本地群缓存读取失败', error)
-      return false
     }
   }
 
@@ -188,7 +186,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
 
   /** 加载群聊列表 */
   async function fetchGroupList(force = false): Promise<Group[]> {
-    if (!force && loaded.value) {
+    if (!force && loaded) {
       return groups.value
     }
     return runResourceRequest(ResourceRequestKey.GROUP_LIST, async () => {
@@ -223,7 +221,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
               membersExpired: previous.membersExpired,
             }
           })
-          loaded.value = true
+          loaded = true
           groups.value.forEach(group => syncGroupConversation(group, db))
           await saveGroupList([...groups.value], db).catch(error =>
             console.warn('[IM groupStore] 本地群缓存写入失败', error))
@@ -819,10 +817,11 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     db: ImDbClient,
     currentUserId: number,
   ) {
-    if (isSelfInMembers(payload, currentUserId)) {
+    const includesSelf = isSelfInMembers(payload, currentUserId)
+    if (includesSelf) {
       await reopenGroupRelation(groupId)
     }
-    if (!isSelfInMembers(payload, currentUserId)) {
+    if (!includesSelf) {
       return
     }
     if (payload.operatorUserId === currentUserId && getGroup(groupId)) {
@@ -876,10 +875,11 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     db: ImDbClient,
     currentUserId: number,
   ) {
-    if (isSelfInMembers(payload, currentUserId)) {
+    const includesSelf = isSelfInMembers(payload, currentUserId)
+    if (includesSelf) {
       await reopenGroupRelation(groupId)
     }
-    if (isSelfInMembers(payload, currentUserId) && !getGroup(groupId)) {
+    if (includesSelf && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true, db)
     }
     markGroupMembersExpired(groupId)
@@ -893,10 +893,11 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     db: ImDbClient,
     currentUserId: number,
   ) {
-    if (payload.entrantUserId === currentUserId) {
+    const isSelf = payload.entrantUserId === currentUserId
+    if (isSelf) {
       await reopenGroupRelation(groupId)
     }
-    if (payload.entrantUserId === currentUserId && !getGroup(groupId)) {
+    if (isSelf && !getGroup(groupId)) {
       await fetchGroupInfo(groupId, true, db)
     }
     markGroupMembersExpired(groupId)
@@ -1104,7 +1105,7 @@ export const useGroupStore = defineStore('imGroupStore', () => {
   /** 清理群聊内存状态 */
   function clear() {
     groups.value = []
-    loaded.value = false
+    loaded = false
     loading.value = false
     memberLoadTasks.clear()
     singleMemberLoadTasks.clear()
@@ -1116,29 +1117,8 @@ export const useGroupStore = defineStore('imGroupStore', () => {
     groupMembersExpired = false
   }
 
-  /** 收到群关系变化时刷新列表 */
-  function handleReload() {
-    void fetchGroupList(true).catch(() => undefined)
-  }
-
-  /** 收到群详情变化时刷新已缓存成员 */
-  function handleDetailReload(groupId?: number) {
-    if (!groupId) {
-      return
-    }
-    if (getGroup(groupId)?.membersLoaded) {
-      void fetchGroupMemberList(groupId, true).catch(() => undefined)
-    }
-    if (getGroup(groupId)) {
-      void fetchGroupInfo(groupId, true).catch(() => undefined)
-    }
-  }
-
-  uni.$on('im:groups:reload', handleReload)
-  uni.$on('im:group-detail:reload', handleDetailReload)
   return {
     groups,
-    loaded,
     loading,
     loadGroupList,
     loadGroupMemberList,

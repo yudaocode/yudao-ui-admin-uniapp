@@ -15,14 +15,15 @@ import { runIncrementalPull } from '@/pages-im/utils/pull'
 import { ImGroupRequestHandleResult } from '@/pages-im/utils/constants'
 import {
   enqueueResourceWrite,
+  ResourceRequestKey,
+  ResourceRequestMode,
   ResourceWriteKey,
+  runResourceRequest,
 } from '@/pages-im/utils/resourceRequest'
 
-let pendingUnhandledFetch: Promise<void> | null = null // 未处理申请加载任务
 /** IM 加群申请 Store */
 export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
   const unhandledList = ref<ImGroupRequestRespVO[]>([]) // 当前未处理加群申请
-  const loaded = ref(false) // 是否已成功加载未处理申请
   const loading = ref(false) // 移动端申请列表加载状态
 
   const getUnhandledGroupRequestCountMap = computed(() => { // 各群未处理申请数量
@@ -39,66 +40,37 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
   }
 
   /** 从本地库恢复加群申请 */
-  async function loadGroupRequestList(): Promise<boolean> {
+  async function loadGroupRequestList(): Promise<void> {
     try {
       const db = await initDb()
       const cached = await db.getAll<GroupRequestDO>('groupRequests')
-      if (!cached || cached.length === 0) {
-        return false
+      if (cached.length === 0) {
+        return
       }
       unhandledList.value = cached
         .filter(request => request.handleResult === ImGroupRequestHandleResult.UNHANDLED)
         .sort((left, right) => right.id - left.id)
-      return true
     } catch (error) {
       console.warn('[IM groupRequestStore] 本地加群申请缓存读取失败', error)
-      return false
     }
-  }
-
-  /** 保存加群申请列表 */
-  function saveGroupRequestList(
-    rows: ImGroupRequestRespVO[],
-    db: ImDbClient,
-  ): void {
-    void (async () => {
-      await enqueueResourceWrite(ResourceWriteKey.GROUP_REQUEST_LIST, async () => {
-        await db.clearStore('groupRequests')
-        await db.bulkPut<GroupRequestDO>('groupRequests', rows)
-      })
-    })().catch(error => console.warn('[IM groupRequestStore] 本地加群申请缓存写入失败', error))
-  }
-
-  /** 保存单条加群申请 */
-  async function saveGroupRequestRecord(
-    request: ImGroupRequestRespVO,
-    db: ImDbClient,
-  ): Promise<void> {
-    await enqueueResourceWrite(ResourceWriteKey.GROUP_REQUEST_LIST, () =>
-      db.put('groupRequests', request))
   }
 
   /** 拉取我管理群下的未处理申请 */
-  async function fetchUnhandledGroupRequestList(
-  ) {
-    if (pendingUnhandledFetch) {
-      return pendingUnhandledFetch
-    }
-    loading.value = true
-    const promise = (async () => {
-      const db = await initDb()
-      const list = await apiGetUnhandledRequestList()
-      unhandledList.value = list || []
-      loaded.value = true
-      saveGroupRequestList([...unhandledList.value], db)
-    })().finally(() => {
-      if (pendingUnhandledFetch === promise) {
-        pendingUnhandledFetch = null
+  function fetchUnhandledGroupRequestList(): Promise<void> {
+    return runResourceRequest(ResourceRequestKey.GROUP_REQUEST_UNHANDLED, async () => {
+      loading.value = true
+      try {
+        const db = await initDb()
+        unhandledList.value = await apiGetUnhandledRequestList()
+        const rows = [...unhandledList.value]
+        void enqueueResourceWrite(ResourceWriteKey.GROUP_REQUEST_LIST, async () => {
+          await db.clearStore('groupRequests')
+          await db.bulkPut<GroupRequestDO>('groupRequests', rows)
+        }).catch(error => console.warn('[IM groupRequestStore] 本地加群申请缓存写入失败', error))
+      } finally {
         loading.value = false
       }
-    })
-    pendingUnhandledFetch = promise
-    return promise
+    }, { mode: ResourceRequestMode.SINGLE_FLIGHT })
   }
 
   /** 按编号加载并置顶一条加群申请 */
@@ -121,7 +93,8 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
       return
     }
     unhandledList.value = [request, ...unhandledList.value.filter(item => item.id !== request.id)]
-    await saveGroupRequestRecord(request, db)
+    await enqueueResourceWrite(ResourceWriteKey.GROUP_REQUEST_LIST, () =>
+      db.put('groupRequests', request))
   }
 
   /** 增量拉取加群申请变更 */
@@ -137,7 +110,6 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
         return true
       },
     )
-    loaded.value = true
   }
 
   /** 按编号移除已处理申请 */
@@ -166,7 +138,6 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
     const db = await initDb()
     await apiAgreeGroupRequest(requestId)
     removeGroupRequestById(requestId, db)
-    return true
   }
 
   /** 拒绝加群申请 */
@@ -174,20 +145,16 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
     const db = await initDb()
     await apiRefuseGroupRequest(requestId, handleContent)
     removeGroupRequestById(requestId, db)
-    return true
   }
 
   /** 清空加群申请内存 */
   function clear() {
     unhandledList.value = []
-    loaded.value = false
     loading.value = false
-    pendingUnhandledFetch = null
   }
 
   return {
     unhandledList,
-    loaded,
     loading,
     getUnhandledGroupRequestCount,
     loadGroupRequestList,

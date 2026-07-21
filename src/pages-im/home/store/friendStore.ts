@@ -60,7 +60,7 @@ export interface FriendNotificationPayload {
 /** IM 好友 Store */
 export const useFriendStore = defineStore('imFriendStore', () => {
   const friends = ref<Friend[]>([]) // 当前账号好友列表
-  const loaded = ref(false) // 是否已从服务端加载好友列表
+  let loaded = false // 是否已从服务端加载好友列表
   const friendRequests = ref<FriendRequest[]>([]) // 当前账号好友申请
   const loading = ref(false) // 好友加载状态
   const requestLoading = ref(false) // 好友申请刷新状态
@@ -88,7 +88,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   })
 
   /** 从本地库恢复好友和好友申请 */
-  async function loadFriendData(): Promise<boolean> {
+  async function loadFriendData(): Promise<void> {
     try {
       const db = await initDb()
       const [cachedFriends, cachedRequests] = await Promise.all([
@@ -103,10 +103,8 @@ export const useFriendStore = defineStore('imFriendStore', () => {
           .sort((left, right) => right.id - left.id)
         hasMoreFriendRequests.value = cachedRequests.length >= FRIEND_REQUEST_PAGE_SIZE
       }
-      return cachedFriends.length > 0
     } catch (error) {
       console.warn('[IM friendStore] 本地好友缓存读取失败', error)
-      return false
     }
   }
 
@@ -144,12 +142,10 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     rows: FriendRequest[],
     db: ImDbClient,
   ): void {
-    void (async () => {
-      await enqueueResourceWrite(ResourceWriteKey.FRIEND_REQUEST_LIST, async () => {
-        await db.clearStore('friendRequests')
-        await db.bulkPut<FriendRequestDO>('friendRequests', rows)
-      })
-    })().catch(error => console.warn('[IM friendStore] 本地好友申请缓存写入失败', error))
+    void enqueueResourceWrite(ResourceWriteKey.FRIEND_REQUEST_LIST, async () => {
+      await db.clearStore('friendRequests')
+      await db.bulkPut<FriendRequestDO>('friendRequests', rows)
+    }).catch(error => console.warn('[IM friendStore] 本地好友申请缓存写入失败', error))
   }
 
   /** 保存单条好友申请 */
@@ -174,18 +170,17 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   }
 
   /** 发起好友申请 */
-  async function applyFriendRequest(
+  function applyFriendRequest(
     data: ImFriendRequestApplyReq,
   ) {
-    const id = await applyFriendRequestApi(data)
-    return id
+    return applyFriendRequestApi(data)
   }
 
   /** 加载好友列表 */
   async function fetchFriendList(
     force = false,
   ): Promise<Friend[]> {
-    if (!force && loaded.value) {
+    if (!force && loaded) {
       return friends.value
     }
     return runResourceRequest(ResourceRequestKey.FRIEND_LIST, async () => {
@@ -194,7 +189,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       try {
         const rows = (await getMyFriendList()).map(convertFriend)
         friends.value = rows
-        loaded.value = true
+        loaded = true
         for (const friend of friends.value) {
           if (friend.status !== CommonStatusEnum.DISABLE) {
             syncFriendConversation(friend, db)
@@ -227,7 +222,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
         await Promise.all(converted.map(friend => upsertFriendForPull(friend, db)))
         return true
       })
-      loaded.value = true
+      loaded = true
       return friends.value
     })().finally(() => {
       if (friendPullTask === task) {
@@ -677,7 +672,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
   function clear() {
     friends.value = []
     friendRequests.value = []
-    loaded.value = false
+    loaded = false
     loading.value = false
     requestLoading.value = false
     requestLoadingMore.value = false
@@ -688,21 +683,8 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     detailLoadTasks.clear()
   }
 
-  /** 收到好友关系变化时刷新列表 */
-  function handleReload() {
-    void fetchFriendList(true).catch(() => undefined)
-  }
-
-  /** 收到申请变化时刷新列表 */
-  function handleRequestReload() {
-    void fetchFriendRequestList().catch(() => undefined)
-  }
-
-  uni.$on('im:friends:reload', handleReload)
-  uni.$on('im:requests:reload', handleRequestReload)
   return {
     friends,
-    loaded,
     friendRequests,
     getActiveFriendList,
     getActiveFriendLiteList,

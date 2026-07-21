@@ -80,15 +80,3 @@ export function formatCallDuration(seconds?: number) {
     ? `${hours}:${pad(minutes)}:${pad(remainSeconds)}`
     : `${pad(minutes)}:${pad(remainSeconds)}`
 }
-
-/** 计算接通到结束的 RTC 通话时长 */
-export function resolveCallDuration(
-  acceptTime: Date | string | undefined,
-  endTime: Date | string | undefined,
-) {
-  if (!acceptTime || !endTime) {
-    return '-'
-  }
-  const seconds = Math.floor((new Date(endTime).getTime() - new Date(acceptTime).getTime()) / 1000)
-  return seconds > 0 ? formatCallDuration(seconds) : '-'
-}

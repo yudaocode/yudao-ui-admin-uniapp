@@ -5,7 +5,7 @@ import type { MessageDO } from '@/pages-im/home/types'
 import type { DbStoreName } from './types'
 
 /** 数据库消息分页游标 */
-export interface MessageDOPageCursor {
+interface MessageDOPageCursor {
   sendTime: number
   messageKey: string
 }
@@ -56,19 +56,6 @@ export interface ImDbClient {
 /** 会话主键：`${type}:${targetId}` */
 export function getClientConversationId(type: number, targetId: number): string {
   return `${type}:${targetId}`
-}
-
-/** 解析会话主键 */
-export function parseClientConversationId(
-  clientConversationId: string,
-): { type: number, targetId: number } | null {
-  const [typeText, targetIdText] = clientConversationId.split(':')
-  const type = Number(typeText)
-  const targetId = Number(targetIdText)
-  if (!Number.isFinite(type) || !Number.isFinite(targetId) || targetId <= 0) {
-    return null
-  }
-  return { type, targetId }
 }
 
 /** 服务端消息主键 */

@@ -109,9 +109,7 @@ async function handleAgree(item: ImGroupRequestRespVO) {
   actingId.value = item.id
   actingAction.value = 'agree'
   try {
-    if (!await groupRequestStore.agreeGroupRequest(item.id)) {
-      return
-    }
+    await groupRequestStore.agreeGroupRequest(item.id)
     markHandled(item.id, ImGroupRequestHandleResult.AGREED)
     toast.success('已同意')
   } finally {
@@ -142,9 +140,7 @@ async function handleRefuse(item: ImGroupRequestRespVO) {
   actingId.value = item.id
   actingAction.value = 'refuse'
   try {
-    if (!await groupRequestStore.refuseGroupRequest(item.id, handleContent)) {
-      return
-    }
+    await groupRequestStore.refuseGroupRequest(item.id, handleContent)
     markHandled(item.id, ImGroupRequestHandleResult.REFUSED, handleContent)
     toast.success('已拒绝')
   } finally {

@@ -1,7 +1,7 @@
 import type { ImDbClient } from './db'
 
 /** 增量拉取游标 */
-export interface PullCursor {
+interface PullCursor {
   lastUpdateTime?: number
   lastId?: number
 }
@@ -17,7 +17,7 @@ const PULL_OVERLAP_MS = 5000 // 状态事件拉取回扫窗口
 const MIN_ID_PULL_MAX_PAGES = 1000 // 消息类单轮最多翻页数
 
 /** 读取某模块的拉取游标 */
-export async function getPullCursor(db: ImDbClient, key: string): Promise<PullCursor> {
+async function getPullCursor(db: ImDbClient, key: string): Promise<PullCursor> {
   return (await db.getSetting<PullCursor>(key)) ?? {}
 }
 

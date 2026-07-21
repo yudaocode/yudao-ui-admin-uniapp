@@ -90,7 +90,7 @@ export interface MergeMessage {
 }
 
 /** 合并转发的单条内嵌消息快照 */
-export interface MergeMessageItem {
+interface MergeMessageItem {
   messageId: number
   senderId: number
   senderNickname: string
@@ -198,7 +198,7 @@ export function tipMention(userId: number, text: string): TipSegment {
 }
 
 /** 构造链接分段 */
-export function tipLink(href: string, text: string): TipSegment {
+function tipLink(href: string, text: string): TipSegment {
   return { type: 'link', href, text }
 }
 
@@ -208,7 +208,7 @@ export function segmentsToText(segments: TipSegment[]) {
 }
 
 /** 多个用户编号按指定分隔符转换为 @ 分段 */
-export function joinMentionSegments(
+function joinMentionSegments(
   userIds: number[],
   separator: string,
   resolveName: (userId: number) => string,
@@ -282,7 +282,7 @@ export function getCardLabelInfo(card?: { targetType?: number } | null): {
 }
 
 /** 名片转发的源对象 */
-export type CardTarget = Omit<CardMessage, 'quote'>
+type CardTarget = Omit<CardMessage, 'quote'>
 
 /** 用户资料转个人名片快照；名片使用真实昵称，不带好友备注 */
 export function toUserCardTarget(user: User | null | undefined): CardTarget | null {
@@ -434,7 +434,7 @@ function mapMessageToMergeItem(
 }
 
 /** 构造合并转发标题 */
-export function buildMergeTitle(conversation: Conversation): string {
+function buildMergeTitle(conversation: Conversation): string {
   if (conversation.type === ImConversationType.GROUP) {
     return `${conversation.name || '群聊'} 的聊天记录`
   }
@@ -455,7 +455,7 @@ export function buildMergeMessagePayload(
 }
 
 /** 可添加到个人表情的数据 */
-export interface AddableFacePayload {
+interface AddableFacePayload {
   url: string
   width: number
   height: number
@@ -611,7 +611,7 @@ export function resolveFriendNotificationText(message: { type?: number }) {
 }
 
 /** RTC 通话开始内容 */
-export interface RtcCallStartPayload {
+interface RtcCallStartPayload {
   room?: string
   conversationType?: number
   mediaType?: number
@@ -621,7 +621,7 @@ export interface RtcCallStartPayload {
 }
 
 /** RTC 通话结束内容 */
-export interface RtcCallEndPayload {
+interface RtcCallEndPayload {
   room?: string
   conversationType?: number
   mediaType?: number
@@ -703,35 +703,5 @@ export function resolveRtcCallPrivateBubbleText(payload: RtcCallEndPayload | nul
       return hasDuration ? `通话中断 ${formatCallDuration(duration)}` : '通话中断'
     default:
       return hasDuration ? `通话时长 ${formatCallDuration(duration)}` : '通话已结束'
-  }
-}
-
-/** 获取 RTC 结束原因兜底文案 */
-export function resolveCallEndReasonText(reason?: number) {
-  switch (reason) {
-    case ImRtcCallEndReason.REJECT:
-      return '对方已拒绝'
-    case ImRtcCallEndReason.CANCEL:
-      return '对方已取消'
-    case ImRtcCallEndReason.BUSY:
-      return '对方忙线中'
-    case ImRtcCallEndReason.HANGUP:
-      return '通话已结束'
-    case ImRtcCallEndReason.ERROR:
-      return '通话异常'
-    default:
-      return '通话已断开'
-  }
-}
-
-/** 格式化 JSON 内容 */
-export function formatJson(content?: string) {
-  if (!content) {
-    return ''
-  }
-  try {
-    return JSON.stringify(JSON.parse(content), null, 2)
-  } catch {
-    return content
   }
 }

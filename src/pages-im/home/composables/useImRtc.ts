@@ -26,9 +26,7 @@ import { useUserStore } from '@/store/user'
 import { useRtcStore } from '../store/rtcStore'
 
 let openingPage = false // 通话页是否正在入栈
-let startCallTask: { // 发起通话 single-flight
-  task: Promise<boolean>
-} | undefined
+let startCallTask: Promise<boolean> | undefined // 发起通话 single-flight
 let joinCallTask: { // 加入通话 single-flight
   room: string
   task: Promise<boolean>
@@ -78,16 +76,15 @@ export function useImRtc() {
   }
 
   /** 发起私聊或群聊通话 */
-  async function start(options: {
+  function start(options: {
     conversationType: number
     mediaType: number
     inviteeIds: number[]
     groupId?: number
   }) {
     if (startCallTask) {
-      return startCallTask.task
+      return startCallTask
     }
-    const userId = userStore.userInfo.userId
     const task = (async () => {
       if (!supportsRtc()) {
         toast?.show('请在 H5 或 PC 端使用通话')
@@ -98,7 +95,7 @@ export function useImRtc() {
         return false
       }
       const data = await createCall(options)
-      if (startCallTask?.task !== task || userStore.userInfo.userId !== userId) {
+      if (startCallTask !== task) {
         return false
       }
       if (rtcStore.isActive) {
@@ -116,11 +113,11 @@ export function useImRtc() {
       openCallPage()
       return true
     })().finally(() => {
-      if (startCallTask?.task === task) {
+      if (startCallTask === task) {
         startCallTask = undefined
       }
     })
-    startCallTask = { task }
+    startCallTask = task
     return task
   }
 
@@ -136,10 +133,9 @@ export function useImRtc() {
     if (rtcStore.isActive) {
       return false
     }
-    const userId = userStore.userInfo.userId
     const task = (async () => {
       const data = await joinCall(room)
-      if (joinCallTask?.task !== task || userStore.userInfo.userId !== userId) {
+      if (joinCallTask?.task !== task) {
         return false
       }
       if (rtcStore.isActive) {
@@ -170,10 +166,9 @@ export function useImRtc() {
     if (acceptCallTask) {
       return acceptCallTask.room === room ? acceptCallTask.task : false
     }
-    const userId = userStore.userInfo.userId
     const task = (async () => {
       const data = await acceptCall(room)
-      if (acceptCallTask?.task !== task || userStore.userInfo.userId !== userId) {
+      if (acceptCallTask?.task !== task) {
         return false
       }
       if (rtcStore.stage !== ImRtcCallStage.INCOMING
@@ -193,22 +188,6 @@ export function useImRtc() {
     })
     acceptCallTask = { room, task }
     return task
-  }
-
-  /** 拒绝来电 */
-  async function reject() {
-    const payload = rtcStore.incomingPayload
-    if (payload?.room) {
-      await rejectCall(payload.room)
-      if (rtcStore.incomingPayload !== payload) {
-        return
-      }
-      rtcStore.applyParticipantRejected({
-        ...payload,
-        operatorUserId: useUserStore().userInfo.userId,
-      })
-    }
-    rtcStore.reset()
   }
 
   /** 取消呼叫、拒绝来电或离开通话 */
@@ -385,12 +364,10 @@ export function useImRtc() {
     start,
     join,
     accept,
-    reject,
     hangup,
     invite,
     syncParticipant,
     receiveSignal,
     end,
-    reset: rtcStore.reset,
   }
 }

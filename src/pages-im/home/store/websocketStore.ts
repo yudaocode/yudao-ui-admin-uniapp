@@ -544,14 +544,9 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (contentType === ImMessageType.GROUP_REQUEST_RECEIVED
       || contentType === ImMessageType.GROUP_REQUEST_APPROVED
       || contentType === ImMessageType.GROUP_REQUEST_REJECTED) {
-      const requestId = Number(eventContent.requestId || payload.requestId)
-      if (requestId) {
-        if (contentType === ImMessageType.GROUP_REQUEST_RECEIVED) {
-          void useGroupRequestStore().addGroupRequestById(requestId).catch(() => undefined)
-        } else {
-          useGroupRequestStore().removeGroupRequestById(requestId)
-        }
-      }
+      handleGroupRequestNotification(contentType, {
+        requestId: Number(eventContent.requestId || payload.requestId),
+      })
     }
     const removedSelf = contentType === ImMessageType.GROUP_DISSOLVE
       || (contentType === ImMessageType.GROUP_MEMBER_QUIT

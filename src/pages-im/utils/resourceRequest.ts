@@ -5,6 +5,7 @@ export enum ResourceRequestKey {
   FRIEND_LIST = 'friendList', // 好友列表
   GROUP_LIST = 'groupList', // 群列表
   CHANNEL_LIST = 'channelList', // 频道列表
+  GROUP_REQUEST_UNHANDLED = 'groupRequestUnhandled', // 未处理加群申请
 }
 
 /** 需要串行落库的固定资源 */
@@ -20,7 +21,7 @@ export enum ResourceRequestMode {
 }
 
 /** 固定资源请求策略 */
-export type ResourceRequestPolicy
+type ResourceRequestPolicy
   = | {
     mode: ResourceRequestMode.CACHE_SUCCESS
   }
