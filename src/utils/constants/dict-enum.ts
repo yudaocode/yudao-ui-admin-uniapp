@@ -56,6 +56,7 @@ const BPM_DICT = {
 /** ========== HRM - 人力资源模块 ========== */
 const HRM_DICT = {
   HRM_EMPLOYEE_STATUS: 'hrm_employee_status', // HRM 员工状态
+  HRM_EMPLOYEE_TYPE: 'hrm_employee_type', // HRM 聘用形式
 } as const
 
 /** ========== CRM - 客户管理模块 ========== */

@@ -1303,6 +1303,26 @@
       ]
     },
     {
+      "key": "hrm",
+      "name": "HRM 人力资源",
+      "subGroups": [
+        {
+          "key": "org",
+          "name": "组织管理",
+          "menus": [
+            {
+              "key": "hrmDept",
+              "name": "组织管理",
+              "icon": "organization",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/dept/index",
+              "permission": "hrm:employee:query"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "key": "erp",
       "name": "ERP 系统",
       "subGroups": [
