@@ -2242,6 +2242,14 @@
               "permission": "hrm:recruit:candidate:query"
             },
             {
+              "key": "hrmRecruitPost",
+              "name": "招聘职位",
+              "icon": "idcard",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/recruit/post/index",
+              "permission": "hrm:recruit:post:query"
+            },
+            {
               "key": "hrmRecruitChannel",
               "name": "招聘渠道",
               "icon": "share-alt",

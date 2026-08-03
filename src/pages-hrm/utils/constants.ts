@@ -36,6 +36,64 @@ export const HrmRecruitInterviewResult = {
   CANCELED: 4, // 取消
 } as const
 
+/** 招聘职位状态枚举（对齐后端 HrmRecruitPostStatusEnum） */
+export const HrmRecruitPostStatus = {
+  STOPPED: 0, // 停止招聘
+  RECRUITING: 1, // 招聘中
+} as const
+
+/** 招聘职位状态取值 */
+export type HrmRecruitPostStatusValue
+  = (typeof HrmRecruitPostStatus)[keyof typeof HrmRecruitPostStatus]
+
+/** 招聘工作性质枚举（对齐 hrm_recruit_job_nature 字典） */
+export const HrmRecruitJobNature = {
+  FULL_TIME: 1, // 全职
+  INTERNSHIP: 2, // 实习
+  PART_TIME: 3, // 兼职
+} as const
+
+/** 招聘工作经验枚举（对齐 hrm_recruit_work_time 字典） */
+export const HrmRecruitWorkTime = {
+  UNLIMITED: 1, // 不限
+  LESS_THAN_ONE_YEAR: 2, // 1 年以下
+  ONE_TO_THREE_YEARS: 3, // 1-3 年
+  THREE_TO_FIVE_YEARS: 4, // 3-5 年
+  FIVE_TO_TEN_YEARS: 5, // 5-10 年
+  MORE_THAN_TEN_YEARS: 6, // 10 年以上
+} as const
+
+/** 招聘职位学历要求枚举（对齐 hrm_recruit_post_education 字典） */
+export const HrmRecruitPostEducation = {
+  UNLIMITED: 1, // 不限
+  HIGH_SCHOOL_AND_ABOVE: 2, // 高中及以上
+  COLLEGE_AND_ABOVE: 3, // 大专及以上
+  BACHELOR_AND_ABOVE: 4, // 本科及以上
+  MASTER_AND_ABOVE: 5, // 硕士及以上
+  DOCTOR: 6, // 博士
+} as const
+
+/** 招聘薪资单位枚举（对齐 hrm_recruit_salary_unit 字典） */
+export const HrmRecruitSalaryUnit = {
+  MONTH: 1, // 元/月
+  YEAR: 2, // 元/年
+} as const
+
+/** 招聘紧急程度枚举（对齐 hrm_recruit_emergency_level 字典） */
+export const HrmRecruitEmergencyLevel = {
+  URGENT: 1, // 紧急
+  NORMAL: 2, // 一般
+} as const
+
+/** 薪资面议值（对齐后端 HrmRecruitPostDO.SALARY_NEGOTIABLE_VALUE） */
+export const SALARY_NEGOTIABLE_VALUE = -1
+
+/** 薪资面议单位值（对齐后端 HrmRecruitPostDO.SALARY_NEGOTIABLE_UNIT_VALUE） */
+export const SALARY_NEGOTIABLE_UNIT_VALUE = -1
+
+/** 年龄不限值（对齐后端 HrmRecruitPostDO.AGE_UNLIMITED_VALUE） */
+export const AGE_UNLIMITED_VALUE = -1
+
 /** 员工入职状态枚举（对齐后端 HrmEmployeeEntryStatusEnum） */
 export const HrmEmployeeEntryStatus = {
   ACTIVE: 1, // 在职

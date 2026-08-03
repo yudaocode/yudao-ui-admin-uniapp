@@ -61,6 +61,12 @@ const HRM_DICT = {
   HRM_RECRUIT_CANDIDATE_EDUCATION: 'hrm_recruit_candidate_education', // 招聘候选人学历
   HRM_RECRUIT_INTERVIEW_TYPE: 'hrm_recruit_interview_type', // 招聘面试方式
   HRM_RECRUIT_INTERVIEW_RESULT: 'hrm_recruit_interview_result', // 招聘面试结果
+  HRM_RECRUIT_POST_STATUS: 'hrm_recruit_post_status', // 招聘职位状态
+  HRM_RECRUIT_JOB_NATURE: 'hrm_recruit_job_nature', // 招聘工作性质
+  HRM_RECRUIT_WORK_TIME: 'hrm_recruit_work_time', // 招聘工作经验
+  HRM_RECRUIT_POST_EDUCATION: 'hrm_recruit_post_education', // 招聘职位学历要求
+  HRM_RECRUIT_SALARY_UNIT: 'hrm_recruit_salary_unit', // 招聘薪资单位
+  HRM_RECRUIT_EMERGENCY_LEVEL: 'hrm_recruit_emergency_level', // 招聘紧急程度
 } as const
 
 /** ========== CRM - 客户管理模块 ========== */
