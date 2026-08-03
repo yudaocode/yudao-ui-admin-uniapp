@@ -1,3 +1,10 @@
+/** HRM 业务类型枚举 */
+export const HrmBizType = {
+  RECRUIT_POST: 1, // 招聘职位
+  RECRUIT_CANDIDATE: 2, // 招聘候选人
+  EMPLOYEE: 3, // 员工档案
+} as const
+
 /** 招聘候选人状态枚举（对齐后端 HrmRecruitCandidateStatusEnum） */
 export const HrmRecruitCandidateStatus = {
   NEW: 1, // 新候选人
@@ -9,6 +16,38 @@ export const HrmRecruitCandidateStatus = {
   ELIMINATED: 7, // 已淘汰
   JOINED: 8, // 已入职
 } as const
+
+/** 招聘候选人状态取值 */
+export type HrmRecruitCandidateStatusValue
+  = (typeof HrmRecruitCandidateStatus)[keyof typeof HrmRecruitCandidateStatus]
+
+/** 招聘面试方式枚举（对齐字典 hrm_recruit_interview_type） */
+export const HrmRecruitInterviewType = {
+  ONSITE: 1, // 现场面试
+  PHONE: 2, // 电话面试
+  VIDEO: 3, // 视频面试
+} as const
+
+/** 招聘面试结果枚举（对齐后端 HrmRecruitInterviewResultEnum） */
+export const HrmRecruitInterviewResult = {
+  UNFINISHED: 1, // 未完成
+  PASS: 2, // 通过
+  NOT_PASS: 3, // 未通过
+  CANCELED: 4, // 取消
+} as const
+
+/** 员工入职状态枚举（对齐后端 HrmEmployeeEntryStatusEnum） */
+export const HrmEmployeeEntryStatus = {
+  ACTIVE: 1, // 在职
+  PENDING_ENTRY: 2, // 待入职
+  PENDING_LEAVE: 3, // 待离职
+  LEFT: 4, // 离职
+} as const
+
+/** 系统用户性别（对齐字典 system_user_sex） */
+export const SYSTEM_USER_SEX_UNKNOWN = 0 // 未知（表单选项需过滤）
+export const SYSTEM_USER_SEX_MALE = 1 // 男
+export const SYSTEM_USER_SEX_FEMALE = 2 // 女
 
 /** 首页日历事项类型（对齐 Wukong NotesType） */
 export const HrmHomeCalendarItemType = {

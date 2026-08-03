@@ -1303,26 +1303,6 @@
       ]
     },
     {
-      "key": "hrm",
-      "name": "HRM 人力资源",
-      "subGroups": [
-        {
-          "key": "org",
-          "name": "组织管理",
-          "menus": [
-            {
-              "key": "hrmDept",
-              "name": "组织管理",
-              "icon": "organization",
-              "iconColor": "#13c2c2",
-              "url": "/pages-hrm/dept/index",
-              "permission": "hrm:employee:query"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "key": "erp",
       "name": "ERP 系统",
       "subGroups": [
@@ -2210,6 +2190,70 @@
       ]
     },
     {
+      "key": "hrm",
+      "name": "HRM 人力资源",
+      "subGroups": [
+        {
+          "key": "overview",
+          "name": "工作台",
+          "menus": [
+            {
+              "key": "hrmHrHome",
+              "name": "HR 工作台",
+              "icon": "dashboard",
+              "iconColor": "#1677ff",
+              "url": "/pages-statistics/hrm/hr/index",
+              "permission": "hrm:home:hr-query"
+            },
+            {
+              "key": "hrmTeamHome",
+              "name": "团队工作台",
+              "icon": "dashboard",
+              "iconColor": "#52c41a",
+              "url": "/pages-statistics/hrm/team/index",
+              "permission": "hrm:home:team-query"
+            }
+          ]
+        },
+        {
+          "key": "org",
+          "name": "组织管理",
+          "menus": [
+            {
+              "key": "hrmDept",
+              "name": "组织管理",
+              "icon": "organization",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/dept/index",
+              "permission": "hrm:employee:query"
+            }
+          ]
+        },
+        {
+          "key": "recruit",
+          "name": "招聘管理",
+          "menus": [
+            {
+              "key": "hrmRecruitCandidate",
+              "name": "候选人",
+              "icon": "user",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/recruit/candidate/index",
+              "permission": "hrm:recruit:candidate:query"
+            },
+            {
+              "key": "hrmRecruitChannel",
+              "name": "招聘渠道",
+              "icon": "share-alt",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/recruit/channel/index",
+              "permission": "hrm:recruit:channel:query"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "key": "ai",
       "name": "AI 大模型",
       "subGroups": [
@@ -2423,7 +2467,10 @@
               "icon": "sound",
               "iconColor": "#5cdbd3",
               "url": "/pages-iot/rule/scene/index",
-              "permissions": ["iot:scene-rule:query", "iot:rule-scene:query"]
+              "permissions": [
+                "iot:scene-rule:query",
+                "iot:rule-scene:query"
+              ]
             },
             {
               "key": "iotDataFlow",
@@ -2431,7 +2478,10 @@
               "icon": "link",
               "iconColor": "#eb2f96",
               "url": "/pages-iot/rule/data/index",
-              "permissions": ["iot:data-sink:query", "iot:data-rule:query"]
+              "permissions": [
+                "iot:data-sink:query",
+                "iot:data-rule:query"
+              ]
             }
           ]
         },

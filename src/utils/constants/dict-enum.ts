@@ -57,6 +57,10 @@ const BPM_DICT = {
 const HRM_DICT = {
   HRM_EMPLOYEE_STATUS: 'hrm_employee_status', // HRM 员工状态
   HRM_EMPLOYEE_TYPE: 'hrm_employee_type', // HRM 聘用形式
+  HRM_RECRUIT_CANDIDATE_STATUS: 'hrm_recruit_candidate_status', // 招聘候选人状态
+  HRM_RECRUIT_CANDIDATE_EDUCATION: 'hrm_recruit_candidate_education', // 招聘候选人学历
+  HRM_RECRUIT_INTERVIEW_TYPE: 'hrm_recruit_interview_type', // 招聘面试方式
+  HRM_RECRUIT_INTERVIEW_RESULT: 'hrm_recruit_interview_result', // 招聘面试结果
 } as const
 
 /** ========== CRM - 客户管理模块 ========== */

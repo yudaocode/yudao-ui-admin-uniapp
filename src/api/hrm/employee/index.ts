@@ -11,6 +11,7 @@ export interface Employee {
   deptName?: string // 部门名称
   postName?: string // 职位名称
   type?: number // 聘用形式
+  entryStatus?: number // 入职状态
   entryTime?: Date | string | number // 入职时间
   status?: number // 员工状态
 }
@@ -26,6 +27,21 @@ export interface EmployeeDeptStatistics {
 /** 查询员工分页 */
 export function getEmployeePage(params: PageParam) {
   return http.get<PageResult<Employee>>('/hrm/employee/page', params)
+}
+
+/** 查询员工档案详情 */
+export function getEmployee(id: number) {
+  return http.get<Employee>(`/hrm/employee/get?id=${id}`)
+}
+
+/** 查询员工精简分页（选择器用） */
+export function getEmployeeSimplePage(params: PageParam) {
+  return http.get<PageResult<Employee>>('/hrm/employee/simple-page', params)
+}
+
+/** 查询指定员工精简列表（回显用） */
+export function getEmployeeSimpleList(ids: number[]) {
+  return http.get<Employee[]>('/hrm/employee/simple-list', { ids: ids.join(',') })
 }
 
 /** 查询员工部门统计 */
