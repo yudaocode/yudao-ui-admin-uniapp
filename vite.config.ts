@@ -117,6 +117,7 @@ export default defineConfig(({ command, mode }) => {
           'src/pages-ai', // “人工智能”模块
           'src/pages-im', // “即时通讯”模块
           'src/pages-erp', // “ERP 管理”模块
+          'src/pages-hrm', // “人力资源管理”模块
           'src/pages-wms', // “仓储管理”模块
         ],
         dts: 'src/types/uni-pages.d.ts',

@@ -53,6 +53,11 @@ const BPM_DICT = {
   BPM_TASK_STATUS: 'bpm_task_status', // BPM 任务状态
 } as const
 
+/** ========== HRM - 人力资源模块 ========== */
+const HRM_DICT = {
+  HRM_EMPLOYEE_STATUS: 'hrm_employee_status', // HRM 员工状态
+} as const
+
 /** ========== CRM - 客户管理模块 ========== */
 const CRM_DICT = {
   CRM_AUDIT_STATUS: 'crm_audit_status', // CRM 审批状态
@@ -278,6 +283,7 @@ export const DICT_TYPE = {
   ...MP_DICT,
   ...MALL_DICT,
   ...CRM_DICT,
+  ...HRM_DICT,
   ...ERP_DICT,
   ...MES_DICT,
   ...PAY_DICT,
