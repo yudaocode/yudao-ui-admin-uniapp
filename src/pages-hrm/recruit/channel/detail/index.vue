@@ -10,6 +10,7 @@
     <!-- 详情内容 -->
     <view>
       <wd-cell-group border>
+        <wd-cell title="渠道编号" :value="formData.id != null ? String(formData.id) : '-'" />
         <wd-cell title="渠道名称" :value="formData.name || '-'" />
         <wd-cell title="系统内置" :value="formData.systemFlag ? '是' : '否'" />
         <wd-cell title="状态">
@@ -72,7 +73,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import ChannelDeleteForm from './components/channel-delete-form.vue'
+import ChannelDeleteForm from '../components/channel-delete-form.vue'
 
 const props = defineProps<{
   id?: number | any
@@ -88,13 +89,13 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const formData = ref<RecruitChannel>({
+const formData = ref<RecruitChannel>({ // 详情数据
   name: '',
   sort: 0,
-}) // 详情数据
+})
 const deleteFormVisible = ref(false) // 删除弹窗
 const deleting = ref(false) // 删除中（阻止详情刷新）
-const canDelete = computed(() => !formData.value.systemFlag && hasAccessByCodes(['hrm:recruit:channel:delete']))
+const canDelete = computed(() => !formData.value.systemFlag && hasAccessByCodes(['hrm:recruit:channel:delete'])) // 非系统内置可删
 const hasFooter = computed(() => { // 底部操作区
   return hasAccessByCodes(['hrm:recruit:channel:update']) || canDelete.value
 })

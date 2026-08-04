@@ -5,17 +5,7 @@
       title="候选人"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
-    >
-      <template #right>
-        <view
-          v-if="hasAccessByCodes(['hrm:recruit:candidate:delete'])"
-          class="px-8rpx text-28rpx text-[#1677ff]"
-          @click="cleanFormRef?.open()"
-        >
-          清理
-        </view>
-      </template>
-    </wd-navbar>
+    />
 
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
@@ -44,7 +34,7 @@
       empty-view-text="暂无候选人数据"
       @query="queryList"
     >
-      <view class="p-24rpx" :class="showBatchBar ? 'pb-160rpx' : ''">
+      <view class="p-24rpx" :class="showBatchBar || hasAccessByCodes(['hrm:recruit:candidate:delete']) ? 'pb-160rpx' : ''">
         <view
           v-for="item in list"
           :key="item.id"
@@ -105,19 +95,37 @@
       </view>
     </z-paging>
 
-    <!-- 批量操作栏 -->
-    <view v-if="showBatchBar" class="yd-detail-footer">
+    <!-- 批量操作栏 / 清理 -->
+    <view
+      v-if="showBatchBar || hasAccessByCodes(['hrm:recruit:candidate:delete'])"
+      class="yd-detail-footer"
+    >
       <view class="yd-detail-footer-actions">
-        <wd-button class="flex-1" variant="plain" @click="selectedIds = []">
-          已选 {{ selectedIds.length }}
-        </wd-button>
+        <template v-if="showBatchBar">
+          <wd-button
+            class="flex-1"
+            variant="plain"
+            :disabled="!selectedIds.length"
+            @click="selectedIds = []"
+          >
+            清空
+          </wd-button>
+          <wd-button
+            class="flex-1"
+            type="primary"
+            :disabled="!selectedIds.length || !batchActions.length"
+            @click="batchActionVisible = true"
+          >
+            批量操作({{ selectedIds.length }})
+          </wd-button>
+        </template>
         <wd-button
+          v-else
           class="flex-1"
-          type="primary"
-          :disabled="!selectedIds.length || !batchActions.length"
-          @click="batchActionVisible = true"
+          variant="plain"
+          @click="cleanFormRef?.open()"
         >
-          批量操作
+          清理候选人
         </wd-button>
       </view>
     </view>
@@ -134,7 +142,9 @@
     <!-- 批量操作菜单 -->
     <wd-action-sheet
       v-model="batchActionVisible"
+      :title="`已选 ${selectedIds.length}`"
       :actions="batchActions"
+      cancel-text="取消"
       @select="handleBatchAction"
     />
 

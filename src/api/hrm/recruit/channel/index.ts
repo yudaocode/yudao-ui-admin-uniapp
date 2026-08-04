@@ -9,7 +9,7 @@ export interface RecruitChannel {
   name: string // 渠道名称
   sort: number // 显示顺序
   remark?: string // 备注
-  createTime?: Date | string // 创建时间
+  createTime?: string // 创建时间
 }
 
 /** 招聘渠道状态修改 */

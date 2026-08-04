@@ -76,21 +76,6 @@
               <text class="mr-8rpx text-[#999]">负责人：</text>{{ item.ownerEmployeeName || '-' }}
             </view>
           </view>
-          <view
-            v-if="hasAccessByCodes(['hrm:recruit:post:update'])"
-            class="mt-16rpx flex gap-32rpx border-t border-[#f0f0f0] pt-16rpx"
-          >
-            <text class="text-28rpx text-[#1677ff]" @click.stop="handleEdit(item)">
-              编辑
-            </text>
-            <text
-              class="text-28rpx"
-              :class="isRecruiting(item) ? 'text-[#fa8c16]' : 'text-[#52c41a]'"
-              @click.stop="handleStatus(item)"
-            >
-              {{ isRecruiting(item) ? '停止招聘' : '重新招聘' }}
-            </text>
-          </view>
         </view>
       </view>
     </z-paging>
@@ -103,35 +88,28 @@
       :expandable="false"
       @click="handleAdd"
     />
-
-    <!-- 停止招聘表单 -->
-    <StatusForm ref="statusFormRef" @success="reload" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { RecruitPost } from '@/api/hrm/recruit/post'
+import type { HrmRecruitPostStatusValue } from '@/pages-hrm/utils/constants'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
-import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import {
   getRecruitPostPage,
   getRecruitPostStatusCount,
-  updateRecruitPostStatus,
 } from '@/api/hrm/recruit/post'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { HrmRecruitPostStatus } from '@/pages-hrm/utils/constants'
-import type { HrmRecruitPostStatusValue } from '@/pages-hrm/utils/constants'
 import {
   formatRecruitPostProgress,
   formatRecruitPostSalary,
 } from '@/pages-hrm/utils/format'
 import SearchForm from './components/search-form.vue'
-import StatusForm from './components/status-form.vue'
 
 definePage({
   style: {
@@ -141,13 +119,10 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
-const toast = useToast()
 const list = ref<RecruitPost[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数（不含状态）
 const statusCounts = ref<Record<number, number>>({}) // 各状态数量
-const statusFormRef = ref<InstanceType<typeof StatusForm>>() // 停止招聘表单
 
 const statusTabs = computed(() => { // 状态页签（无「全部」）
   return getIntDictOptions(DICT_TYPE.HRM_RECRUIT_POST_STATUS).map(item => ({
@@ -174,11 +149,6 @@ const activeStatusValue = computed<HrmRecruitPostStatusValue>(() => {
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
-}
-
-/** 是否正在招聘 */
-function isRecruiting(post: RecruitPost) {
-  return post.status === HrmRecruitPostStatus.RECRUITING
 }
 
 /** 查询招聘职位列表 */
@@ -235,43 +205,11 @@ function handleAdd() {
   })
 }
 
-/** 编辑招聘职位 */
-function handleEdit(item: RecruitPost) {
-  uni.navigateTo({
-    url: `/pages-hrm/recruit/post/form/index?id=${item.id}`,
-  })
-}
-
 /** 查看详情 */
 function handleDetail(item: RecruitPost) {
   uni.navigateTo({
     url: `/pages-hrm/recruit/post/detail/index?id=${item.id}`,
   })
-}
-
-/** 修改招聘职位状态 */
-async function handleStatus(item: RecruitPost) {
-  if (!item.id) {
-    return
-  }
-  if (isRecruiting(item)) {
-    statusFormRef.value?.open(item.id, item.postName)
-    return
-  }
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: `确认重新招聘「${item.postName}」吗？`,
-    })
-  } catch {
-    return
-  }
-  await updateRecruitPostStatus({
-    id: item.id,
-    status: HrmRecruitPostStatus.RECRUITING,
-  })
-  toast.success('重新招聘成功')
-  reload()
 }
 
 /** 初始化 */

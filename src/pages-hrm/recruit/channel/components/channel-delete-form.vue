@@ -54,10 +54,10 @@ const toast = useToast()
 const visible = ref(false) // 弹窗显示状态
 const formLoading = ref(false) // 表单提交状态
 const channelName = ref('') // 待删除渠道名称
-const formData = ref({
+const formData = ref({ // 删除表单
   id: undefined as number | undefined,
   transferChannelId: undefined as number | undefined,
-}) // 删除表单
+})
 const formSchema = createFormSchema({
   transferChannelId: [{ required: true, message: '承接渠道不能为空' }],
 })

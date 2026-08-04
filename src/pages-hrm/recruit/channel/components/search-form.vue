@@ -49,10 +49,10 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false) // 搜索弹窗显示状态
-const formData = reactive({
+const formData = reactive({ // 搜索表单数据
   name: undefined as string | undefined,
   status: undefined as number | undefined,
-}) // 搜索表单数据
+})
 
 const placeholder = computed(() => {
   const conditions: string[] = []

@@ -37,6 +37,9 @@
             <dict-tag v-if="item.status != null" :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
           </view>
           <view class="mb-12rpx text-28rpx text-[#666]">
+            <text class="mr-8rpx text-[#999]">渠道编号：</text>{{ item.id ?? '-' }}
+          </view>
+          <view class="mb-12rpx text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">系统内置：</text>{{ item.systemFlag ? '是' : '否' }}
           </view>
           <view class="mb-12rpx text-28rpx text-[#666]">

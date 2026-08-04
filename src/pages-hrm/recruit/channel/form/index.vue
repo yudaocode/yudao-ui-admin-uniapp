@@ -72,12 +72,12 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑招聘渠道' : '新增招聘渠道')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<RecruitChannel>({
+const formData = ref<RecruitChannel>({ // 表单数据
   id: undefined,
   name: '',
   sort: 0,
   remark: '',
-}) // 表单数据
+})
 const formSchema = createFormSchema({
   name: [{ required: true, message: '渠道名称不能为空' }],
   sort: [{ required: true, message: '显示顺序不能为空' }],

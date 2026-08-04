@@ -2256,6 +2256,282 @@
               "iconColor": "#722ed1",
               "url": "/pages-hrm/recruit/channel/index",
               "permission": "hrm:recruit:channel:query"
+            },
+            {
+              "key": "hrmRecruitEliminateReason",
+              "name": "淘汰原因",
+              "icon": "exclamation-circle",
+              "iconColor": "#f5222d",
+              "url": "/pages-hrm/recruit/config/eliminate/index",
+              "permission": "hrm:recruit:config:query"
+            }
+          ]
+        },
+        {
+          "key": "employee",
+          "name": "员工管理",
+          "menus": [
+            {
+              "key": "hrmEmployee",
+              "name": "员工档案",
+              "icon": "user",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/employee/index",
+              "permission": "hrm:employee:query"
+            },
+            {
+              "key": "hrmEmployeeConfig",
+              "name": "员工设置",
+              "icon": "settings",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/employee/config/index",
+              "permission": "hrm:employee:config:query"
+            }
+          ]
+        },
+        {
+          "key": "attendance",
+          "name": "考勤管理",
+          "menus": [
+            {
+              "key": "hrmAttendanceClock",
+              "name": "打卡记录",
+              "icon": "clock-circle",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/attendance/clock/index",
+              "permission": "hrm:attendance:clock:query"
+            },
+            {
+              "key": "hrmAttendanceLeave",
+              "name": "请假记录",
+              "icon": "calendar-line",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/attendance/leave/index",
+              "permission": "hrm:attendance:leave:query"
+            },
+            {
+              "key": "hrmAttendanceStatistics",
+              "name": "月度汇总",
+              "icon": "dashboard",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/attendance/statistics/index",
+              "permission": "hrm:attendance:statistics:query"
+            },
+            {
+              "key": "hrmAttendanceGroup",
+              "name": "考勤组设置",
+              "icon": "user-group",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/attendance/config/group/index",
+              "permission": "hrm:attendance:group:query"
+            },
+            {
+              "key": "hrmAttendanceHoliday",
+              "name": "节假日设置",
+              "icon": "calendar-line",
+              "iconColor": "#fa8c16",
+              "url": "/pages-hrm/attendance/config/holiday/index",
+              "permission": "hrm:attendance:holiday:query"
+            }
+          ]
+        },
+        {
+          "key": "insurance",
+          "name": "社保管理",
+          "menus": [
+            {
+              "key": "hrmInsuranceMonthRecord",
+              "name": "社保表",
+              "icon": "safe",
+              "iconColor": "#fa8c16",
+              "url": "/pages-hrm/insurance/month-record/index",
+              "permission": "hrm:insurance:month-record:query"
+            },
+            {
+              "key": "hrmInsuranceScheme",
+              "name": "社保方案",
+              "icon": "safe",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/insurance/scheme/index",
+              "permission": "hrm:insurance:scheme:query"
+            }
+          ]
+        },
+        {
+          "key": "salary",
+          "name": "薪资管理",
+          "menus": [
+            {
+              "key": "hrmSalaryMonthRecord",
+              "name": "月度工资表",
+              "icon": "dashboard",
+              "iconColor": "#52c41a",
+              "url": "/pages-hrm/salary/month-record/index",
+              "permission": "hrm:salary:month-record:query"
+            },
+            {
+              "key": "hrmSalaryHistory",
+              "name": "历史工资表",
+              "icon": "history",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/salary/history/index",
+              "permission": "hrm:salary:month-record:query"
+            },
+            {
+              "key": "hrmSalaryEmployeeInfo",
+              "name": "薪资档案",
+              "icon": "user",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/salary/employee-info/index",
+              "permission": "hrm:salary:employee-info:query"
+            },
+            {
+              "key": "hrmSalarySlipSendRecord",
+              "name": "发放记录",
+              "icon": "send",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/salary/slip/send-record/index",
+              "permission": "hrm:salary:slip:query"
+            },
+            {
+              "key": "hrmSalaryGroup",
+              "name": "薪资组设置",
+              "icon": "user-group",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/salary/config/group/index",
+              "permission": "hrm:salary:group:query"
+            },
+            {
+              "key": "hrmSalaryTaxRule",
+              "name": "计税规则",
+              "icon": "edit",
+              "iconColor": "#fa8c16",
+              "url": "/pages-hrm/salary/config/tax-rule/index",
+              "permission": "hrm:salary:tax-rule:query"
+            },
+            {
+              "key": "hrmSalaryPayConfig",
+              "name": "计薪设置",
+              "icon": "calendar-line",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/salary/config/config/index",
+              "permission": "hrm:salary:config:query"
+            },
+            {
+              "key": "hrmSalaryOption",
+              "name": "工资表设置",
+              "icon": "list",
+              "iconColor": "#52c41a",
+              "url": "/pages-hrm/salary/config/option/index",
+              "permission": "hrm:salary:option:query"
+            },
+            {
+              "key": "hrmSalaryChangeTemplate",
+              "name": "调薪模板",
+              "icon": "file",
+              "iconColor": "#eb2f96",
+              "url": "/pages-hrm/salary/config/change-template/index",
+              "permission": "hrm:salary:change-template:query"
+            }
+          ]
+        },
+        {
+          "key": "performance",
+          "name": "绩效管理",
+          "menus": [
+            {
+              "key": "hrmPerformancePlan",
+              "name": "KPI 考核",
+              "icon": "trophy",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/performance/plan/index",
+              "permission": "hrm:performance:plan:query"
+            },
+            {
+              "key": "hrmPerformanceArchive",
+              "name": "绩效档案",
+              "icon": "folder",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/performance/assessment/index",
+              "permission": "hrm:performance:archive:query"
+            },
+            {
+              "key": "hrmPerformanceAssessmentTemplate",
+              "name": "考核指标模板",
+              "icon": "apps",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/performance/config/assessment-template/index",
+              "permission": "hrm:performance:assessment-template:query"
+            },
+            {
+              "key": "hrmPerformanceResultTemplate",
+              "name": "考核结果设置",
+              "icon": "star",
+              "iconColor": "#eb2f96",
+              "url": "/pages-hrm/performance/config/result-template/index",
+              "permission": "hrm:performance:result-template:query"
+            }
+          ]
+        },
+        {
+          "key": "portal",
+          "name": "HRM 员工端",
+          "menus": [
+            {
+              "key": "hrmPortalHome",
+              "name": "个人工作台",
+              "icon": "dashboard",
+              "iconColor": "#722ed1",
+              "url": "/pages-hrm/portal/home/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalEmployee",
+              "name": "我的档案",
+              "icon": "user",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/portal/employee/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalInsurance",
+              "name": "我的社保",
+              "icon": "safe",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/portal/insurance/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalSalarySlip",
+              "name": "我的工资条",
+              "icon": "list",
+              "iconColor": "#fa8c16",
+              "url": "/pages-hrm/portal/salary/slip/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalAttendanceReport",
+              "name": "考勤报表",
+              "icon": "calendar-line",
+              "iconColor": "#eb2f96",
+              "url": "/pages-hrm/portal/attendance/report/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalPerformanceAssessment",
+              "name": "KPI 考核",
+              "icon": "trophy",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/portal/performance/assessment/index",
+              "permission": "hrm:portal:query"
+            },
+            {
+              "key": "hrmPortalPerformanceHistory",
+              "name": "我的绩效档案",
+              "icon": "folder",
+              "iconColor": "#13c2c2",
+              "url": "/pages-hrm/portal/performance/history/index",
+              "permission": "hrm:portal:query"
             }
           ]
         }
