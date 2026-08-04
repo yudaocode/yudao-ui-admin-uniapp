@@ -20,16 +20,16 @@
           />
           <wd-form-item title="开始日期" title-width="200rpx" prop="startTime" center>
             <view class="w-full" @click="startVisible = true">
-              <wd-input :model-value="formatDate(formData.startTime) || ''" readonly align-right placeholder="请选择" />
+              <wd-input :model-value="formatDate(startPicker) || ''" readonly align-right placeholder="请选择" />
             </view>
           </wd-form-item>
-          <wd-datetime-picker v-model="formData.startTime" v-model:visible="startVisible" type="date" title="开始日期" />
+          <wd-datetime-picker v-model="startPicker" v-model:visible="startVisible" type="date" title="开始日期" />
           <wd-form-item title="结束日期" title-width="200rpx" prop="endTime" center>
             <view class="w-full" @click="endVisible = true">
-              <wd-input :model-value="formatDate(formData.endTime) || ''" readonly align-right placeholder="请选择" />
+              <wd-input :model-value="formatDate(endPicker) || ''" readonly align-right placeholder="请选择" />
             </view>
           </wd-form-item>
-          <wd-datetime-picker v-model="formData.endTime" v-model:visible="endVisible" type="date" title="结束日期" />
+          <wd-datetime-picker v-model="endPicker" v-model:visible="endVisible" type="date" title="结束日期" />
           <yd-form-picker
             v-if="formData.type !== HrmEmployeeContractType.NON_FIXED_TERM_LABOR_CONTRACT"
             v-model="formData.term"
@@ -52,10 +52,10 @@
           </wd-form-item>
           <wd-form-item title="签订日期" title-width="200rpx" prop="signTime" center>
             <view class="w-full" @click="signVisible = true">
-              <wd-input :model-value="formatDate(formData.signTime) || ''" readonly align-right placeholder="请选择" />
+              <wd-input :model-value="formatDate(signPicker) || ''" readonly align-right placeholder="请选择" />
             </view>
           </wd-form-item>
-          <wd-datetime-picker v-model="formData.signTime" v-model:visible="signVisible" type="date" title="签订日期" />
+          <wd-datetime-picker v-model="signPicker" v-model:visible="signVisible" type="date" title="签订日期" />
           <wd-form-item title="到期提醒" title-width="200rpx" prop="expireRemind" center>
             <wd-switch v-model="formData.expireRemind" />
           </wd-form-item>
@@ -105,15 +105,15 @@ const formLoading = ref(false)
 const startVisible = ref(false)
 const endVisible = ref(false)
 const signVisible = ref(false)
+const startPicker = ref<number | string>('') // 开始日期本地值
+const endPicker = ref<number | string>('') // 结束日期本地值
+const signPicker = ref<number | string>('') // 签订日期本地值
 const formRef = ref<FormInstance>()
 const formData = ref<EmployeeContract>({
   sort: 1,
   expireRemind: false,
   status: HrmEmployeeContractStatus.IN_PROGRESS,
   fileUrls: [],
-  startTime: '' as any,
-  endTime: '' as any,
-  signTime: '' as any,
 })
 const contractTypeColumns = [...HrmEmployeeContractTypeOptions]
 const termColumns = [...HrmEmployeeContractTermOptions]
@@ -125,6 +125,16 @@ const formSchema = createFormSchema({
 })
 const title = computed(() => formData.value.id ? '修改合同' : '新增合同')
 
+/** 响应日期归一为时间戳或空串 */
+// TODO @AI：看看能不能全局复用；看看别的模块是怎么处理的。
+function toPickerValue(value?: Date | string | number) {
+  if (value == null || value === '') {
+    return ''
+  }
+  const num = Number(value)
+  return Number.isNaN(num) ? '' : num
+}
+
 /** 打开弹窗 */
 function open(employeeId: number, row?: EmployeeContract) {
   visible.value = true
@@ -134,11 +144,11 @@ function open(employeeId: number, row?: EmployeeContract) {
     status: HrmEmployeeContractStatus.IN_PROGRESS,
     employeeId,
     ...row,
-    startTime: (row?.startTime ?? '') as any,
-    endTime: (row?.endTime ?? '') as any,
-    signTime: (row?.signTime ?? '') as any,
     fileUrls: row?.fileUrls ? [...row.fileUrls] : [],
   }
+  startPicker.value = toPickerValue(row?.startTime)
+  endPicker.value = toPickerValue(row?.endTime)
+  signPicker.value = toPickerValue(row?.signTime)
 }
 
 /** 无固定期限时清空期限 */
@@ -150,22 +160,19 @@ function handleTypeChange() {
 
 /** 提交表单 */
 async function handleSubmit() {
+  formData.value.startTime = startPicker.value ? Number(startPicker.value) : undefined
+  formData.value.endTime = endPicker.value ? Number(endPicker.value) : undefined
+  formData.value.signTime = signPicker.value ? Number(signPicker.value) : undefined
   const { valid } = await formRef.value!.validate()
   if (!valid) {
     return
   }
   formLoading.value = true
   try {
-    const data = {
-      ...formData.value,
-      startTime: formData.value.startTime || undefined,
-      endTime: formData.value.endTime || undefined,
-      signTime: formData.value.signTime || undefined,
-    }
-    if (data.id) {
-      await updateEmployeeContract(data)
+    if (formData.value.id) {
+      await updateEmployeeContract(formData.value)
     } else {
-      await createEmployeeContract(data)
+      await createEmployeeContract(formData.value)
     }
     toast.success('保存成功')
     visible.value = false

@@ -113,6 +113,9 @@ const templates = ref<SalarySlipTemplate[]>([]) // 模板列表
 const templateId = ref<number>() // 选中模板
 const hideEmpty = ref(true) // 隐藏空工资项
 const selectedIds = ref<number[]>([]) // 已选员工
+const queryParams = ref({ // 待发筛选，默认未发送对齐 PC
+  sent: false as boolean | undefined,
+})
 
 const templateColumns = computed(() =>
   templates.value.map(item => ({ label: item.name, value: item.id! })),
@@ -137,6 +140,7 @@ async function queryList(pageNo: number, pageSize: number) {
       pageNo,
       pageSize,
       monthRecordId: Number(props.monthRecordId),
+      sent: queryParams.value.sent,
     })
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
@@ -181,6 +185,8 @@ async function handleSubmit(all: boolean) {
       options: selectedTemplate.value.options,
       all,
       employeeIds: all ? undefined : selectedIds.value,
+      // 全部发放必须带当前筛选，避免已发员工被纳入后整单回滚
+      sent: all ? queryParams.value.sent : undefined,
     })
     toast.success('发送成功')
     handleBack()

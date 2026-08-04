@@ -23,7 +23,7 @@
           <wd-form-item title="入学日期" title-width="200rpx" prop="admissionTime" center>
             <view class="w-full" @click="admissionVisible = true">
               <wd-input
-                :model-value="formatDate(formData.admissionTime) || ''"
+                :model-value="formatDate(admissionPicker) || ''"
                 readonly
                 align-right
                 placeholder="请选择"
@@ -31,7 +31,7 @@
             </view>
           </wd-form-item>
           <wd-datetime-picker
-            v-model="formData.admissionTime"
+            v-model="admissionPicker"
             v-model:visible="admissionVisible"
             type="date"
             title="入学日期"
@@ -39,7 +39,7 @@
           <wd-form-item title="毕业日期" title-width="200rpx" prop="graduationTime" center>
             <view class="w-full" @click="graduationVisible = true">
               <wd-input
-                :model-value="formatDate(formData.graduationTime) || ''"
+                :model-value="formatDate(graduationPicker) || ''"
                 readonly
                 align-right
                 placeholder="请选择"
@@ -47,7 +47,7 @@
             </view>
           </wd-form-item>
           <wd-datetime-picker
-            v-model="formData.graduationTime"
+            v-model="graduationPicker"
             v-model:visible="graduationVisible"
             type="date"
             title="毕业日期"
@@ -100,12 +100,12 @@ const visible = ref(false)
 const formLoading = ref(false)
 const admissionVisible = ref(false)
 const graduationVisible = ref(false)
+const admissionPicker = ref<number | string>('') // 入学日期本地值
+const graduationPicker = ref<number | string>('') // 毕业日期本地值
 const formRef = ref<FormInstance>()
 const formData = ref<EmployeeEducationExperience>({
   sort: 1,
   firstDegree: false,
-  admissionTime: '' as any,
-  graduationTime: '' as any,
 })
 const teachingMethodColumns = [...HrmEmployeeTeachingMethodOptions]
 const formSchema = createFormSchema({
@@ -116,6 +116,16 @@ const formSchema = createFormSchema({
 })
 const title = computed(() => formData.value.id ? '修改教育经历' : '新增教育经历')
 
+/** 响应日期归一为时间戳或空串 */
+// TODO @AI：看看能不能全局复用；看看别的模块是怎么处理的。
+function toPickerValue(value?: Date | string | number) {
+  if (value == null || value === '') {
+    return ''
+  }
+  const num = Number(value)
+  return Number.isNaN(num) ? '' : num
+}
+
 /** 打开弹窗 */
 function open(employeeId: number, row?: EmployeeEducationExperience) {
   visible.value = true
@@ -124,19 +134,20 @@ function open(employeeId: number, row?: EmployeeEducationExperience) {
     firstDegree: false,
     employeeId,
     ...row,
-    admissionTime: (row?.admissionTime ?? '') as any,
-    graduationTime: (row?.graduationTime ?? '') as any,
   }
+  admissionPicker.value = toPickerValue(row?.admissionTime)
+  graduationPicker.value = toPickerValue(row?.graduationTime)
 }
 
 /** 提交表单 */
 async function handleSubmit() {
+  formData.value.admissionTime = admissionPicker.value ? Number(admissionPicker.value) : undefined
+  formData.value.graduationTime = graduationPicker.value ? Number(graduationPicker.value) : undefined
   const { valid } = await formRef.value!.validate()
   if (!valid) {
     return
   }
-  const admissionTime = formData.value.admissionTime || undefined
-  const graduationTime = formData.value.graduationTime || undefined
+  const { admissionTime, graduationTime } = formData.value
   if (
     admissionTime != null
     && graduationTime != null
@@ -147,15 +158,10 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    const data = {
-      ...formData.value,
-      admissionTime,
-      graduationTime,
-    }
-    if (data.id) {
-      await updateEmployeeEducationExperience(data)
+    if (formData.value.id) {
+      await updateEmployeeEducationExperience(formData.value)
     } else {
-      await createEmployeeEducationExperience(data)
+      await createEmployeeEducationExperience(formData.value)
     }
     toast.success('保存成功')
     visible.value = false
