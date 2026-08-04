@@ -69,7 +69,11 @@ const formLoading = ref(false)
 const startVisible = ref(false)
 const endVisible = ref(false)
 const formRef = ref<FormInstance>()
-const formData = ref<EmployeeTrainingExperience>({ sort: 1 })
+const formData = ref<EmployeeTrainingExperience>({
+  sort: 1,
+  startTime: '' as any,
+  endTime: '' as any,
+})
 const formSchema = createFormSchema({
   course: [{ required: true, message: '培训课程不能为空' }],
 })
@@ -77,7 +81,13 @@ const title = computed(() => formData.value.id ? '修改培训经历' : '新增�
 
 function open(employeeId: number, row?: EmployeeTrainingExperience) {
   visible.value = true
-  formData.value = { sort: 1, employeeId, ...row }
+  formData.value = {
+    sort: 1,
+    employeeId,
+    ...row,
+    startTime: (row?.startTime ?? '') as any,
+    endTime: (row?.endTime ?? '') as any,
+  }
 }
 
 async function handleSubmit() {
@@ -87,10 +97,15 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    if (formData.value.id) {
-      await updateEmployeeTrainingExperience(formData.value)
+    const data = {
+      ...formData.value,
+      startTime: formData.value.startTime || undefined,
+      endTime: formData.value.endTime || undefined,
+    }
+    if (data.id) {
+      await updateEmployeeTrainingExperience(data)
     } else {
-      await createEmployeeTrainingExperience(formData.value)
+      await createEmployeeTrainingExperience(data)
     }
     toast.success('保存成功')
     visible.value = false

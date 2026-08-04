@@ -36,6 +36,34 @@ export interface AttendanceMonthRecord {
   fullAttendance: boolean // 是否全勤
 }
 
+/** 每日打卡概况展示项 */
+export interface AttendanceDailyOverviewItem {
+  type?: string // 打卡类型
+  time?: string // 打卡时间
+  status?: string // 打卡状态
+  text?: string // 考勤结果
+}
+
+/** 每日打卡概况 */
+export interface AttendanceDailyOverview {
+  clocks: AttendanceClock[] // 打卡记录
+  attendanceResult?: string // 考勤结果
+  overviews: AttendanceDailyOverviewItem[] // 打卡概况展示项
+}
+
+/** 月度每日考勤概览（打卡概况行） */
+export interface AttendanceMonthDailyOverview {
+  employeeId: number // 员工编号
+  employeeName: string // 员工姓名
+  jobNumber?: string // 工号
+  deptId?: number // 部门编号
+  deptName?: string // 部门名称
+  postName?: string // 职位名称
+  year: number // 年份
+  month: number // 月份
+  dailyClockMap: Record<string, AttendanceDailyOverview> // 每日打卡概况；Key 为 YYYY-MM-DD
+}
+
 /** 每日考勤明细 */
 export interface AttendanceDailyDetail {
   employeeId: number // 员工编号
@@ -76,6 +104,14 @@ export function getAttendanceMonthRecordPage(params: PageParam) {
   return http.get<PageResult<AttendanceMonthRecord>>('/hrm/attendance/statistics/month-record-page', params)
 }
 
+/** 查询月度打卡概况分页 */
+export function getAttendanceMonthDailyOverviewPage(params: PageParam) {
+  return http.get<PageResult<AttendanceMonthDailyOverview>>(
+    '/hrm/attendance/statistics/month-daily-page',
+    params,
+  )
+}
+
 /** 查询月度考勤详情 */
 export function getAttendanceMonthDetail(params: {
   employeeId: number
@@ -83,4 +119,12 @@ export function getAttendanceMonthDetail(params: {
   month: number
 }) {
   return http.get<AttendanceMonthDetail>('/hrm/attendance/statistics/month-detail', params)
+}
+
+/** 查询每日考勤明细 */
+export function getAttendanceDailyDetail(params: {
+  employeeId: number
+  attendanceTime: string
+}) {
+  return http.get<AttendanceDailyDetail>('/hrm/attendance/statistics/daily-detail', params)
 }

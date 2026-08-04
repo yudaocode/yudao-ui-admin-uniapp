@@ -17,7 +17,7 @@
           <wd-form ref="formRef" :model="formData" :schema="formSchema">
             <wd-cell-group border>
               <wd-form-item title="工作日" prop="weeks" title-width="180rpx" vertical>
-                <wd-checkbox-group v-model="formData.weeks" shape="button">
+                <wd-checkbox-group v-model="formData.weeks" type="button">
                   <wd-checkbox
                     v-for="item in HRM_WEEK_OPTIONS"
                     :key="item.value"

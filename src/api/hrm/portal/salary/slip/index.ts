@@ -45,6 +45,11 @@ export function getSalarySlipList(params?: SalarySlipListReq) {
   return http.get<SalarySlip[]>('/hrm/portal/salary/slip/list', params)
 }
 
+/** 获得我的工资条详情 */
+export function getSalarySlip(id: number) {
+  return http.get<SalarySlip>(`/hrm/portal/salary/slip/get?id=${id}`)
+}
+
 /** 获得我的未读工资条概况 */
 export function getUnreadSalarySlipSummary() {
   return http.get<SalarySlipUnreadSummary>('/hrm/portal/salary/slip/unread-summary')

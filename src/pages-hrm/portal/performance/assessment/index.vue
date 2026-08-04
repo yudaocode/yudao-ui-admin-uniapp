@@ -121,6 +121,7 @@ import type {
   PortalPerformanceAssessment,
   PortalPerformanceTaskCount,
 } from '@/api/hrm/portal/performance/assessment'
+import type { PageParam } from '@/http/types'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import {
@@ -153,7 +154,7 @@ const accessible = ref(false) // 是否可访问
 const list = ref<PortalPerformanceAssessment[]>([]) // 任务列表
 const pagingRef = ref<any>() // 分页组件引用
 const mainTabIndex = ref(0) // 主阶段页签下标
-const activeStatus = ref(HrmPerformanceAssessmentStageStatus.PENDING) // 当前状态
+const activeStatus = ref<number>(HrmPerformanceAssessmentStageStatus.PENDING) // 当前状态
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const taskCount = ref<PortalPerformanceTaskCount>({
   fillPendingCount: 0,
@@ -268,7 +269,7 @@ function currentStageName(item: PortalPerformanceAssessment) {
 }
 
 /** 获取任务分页 */
-async function getTaskPage(params: Record<string, any>) {
+async function getTaskPage(params: PageParam & { search?: string, stageStatus?: number }) {
   if (activeTab.value === HrmPerformanceStageType.FILL_QUOTA) {
     return await getPortalPerformanceAssessmentFillQuotaTaskPage(params)
   }

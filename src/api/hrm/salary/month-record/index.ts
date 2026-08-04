@@ -1,9 +1,6 @@
 import type { PageParam, PageResult } from '@/http/types'
 import type { SalaryOption, SalaryOptionValue } from '@/api/hrm/salary/config/option'
 import { http } from '@/http/http'
-import { useTokenStore, useUserStore } from '@/store'
-import { getEnvBaseUrl } from '@/utils'
-import { downloadApiFile } from '@/utils/download'
 
 /** 月度工资表 */
 export interface SalaryMonthRecord {
@@ -58,24 +55,9 @@ export interface SalaryPayrollReadiness {
   noSalaryGroupEmployees?: SalaryPayrollReadinessEmployee[] // 未分配薪资组员工
 }
 
-/** 带导入文件核算请求 */
-export interface SalaryMonthComputeImportReq {
-  id: number // 工资表编号
-  syncInsuranceData: boolean // 是否同步社保数据
-  syncAttendanceData: boolean // 是否同步考勤数据
-  attendanceFilePath?: string // 考勤数据本地路径
-  cumulativeTaxFilePath?: string // 上月个税累计本地路径
-  additionalDeductionFilePath?: string // 专项附加扣除本地路径
-}
-
 /** 创建下月工资表 */
 export function createNextSalaryMonthRecord() {
   return http.post<number>('/hrm/salary/month-record/create-next')
-}
-
-/** 核算月度工资表 */
-export function computeSalaryMonthRecord(id: number) {
-  return http.post<boolean>(`/hrm/salary/month-record/compute?id=${id}`)
 }
 
 /** 删除月度工资表 */
@@ -108,114 +90,4 @@ export function getSalaryPayrollReadiness(monthRecordId?: number) {
 /** 获得月度工资薪资项汇总 */
 export function getSalaryMonthOptionSummary(params: Record<string, any>) {
   return http.get<SalaryOptionValue[]>('/hrm/salary/month-record/option-summary', params)
-}
-
-/** 下载考勤导入模板 */
-export function downloadSalaryAttendanceImportTemplate(monthRecordId?: number) {
-  return downloadApiFile(
-    '/hrm/salary/month-record/get-attendance-import-template',
-    { monthRecordId },
-    '月度工资考勤导入模板.xls',
-  )
-}
-
-/** 下载上月个税累计导入模板 */
-export function downloadSalaryCumulativeTaxImportTemplate(monthRecordId?: number) {
-  return downloadApiFile(
-    '/hrm/salary/month-record/get-cumulative-tax-import-template',
-    { monthRecordId },
-    '月度工资上月个税累计导入模板.xls',
-  )
-}
-
-/** 下载专项附加扣除导入模板 */
-export function downloadSalaryAdditionalDeductionImportTemplate(monthRecordId?: number) {
-  return downloadApiFile(
-    '/hrm/salary/month-record/get-additional-deduction-import-template',
-    { monthRecordId },
-    '月度工资专项附加扣除导入模板.xls',
-  )
-}
-
-/** 构造核算导入接口地址 */
-function buildSalaryComputeImportUrl() {
-  const path = '/hrm/salary/month-record/compute-import'
-  // #ifdef H5
-  if (JSON.parse(import.meta.env.VITE_APP_PROXY_ENABLE)) {
-    return `${import.meta.env.VITE_APP_PROXY_PREFIX}${path}`
-  }
-  // #endif
-  return `${getEnvBaseUrl()}${path}`
-}
-
-/** 带导入文件核算月度工资表 */
-export function computeSalaryMonthRecordWithImport(data: SalaryMonthComputeImportReq) {
-  const token = useTokenStore().updateNowTime().validToken
-  const tenantId = useUserStore().tenantId
-  const header = {
-    'Accept': '*/*',
-    'tenant-id': String(tenantId ?? ''),
-    'Authorization': token ? `Bearer ${token}` : '',
-  }
-  const url = buildSalaryComputeImportUrl()
-  const filePath = data.attendanceFilePath
-    || data.cumulativeTaxFilePath
-    || data.additionalDeductionFilePath
-
-  // 有本地文件时走 uni.uploadFile；仅同步开关时走 FormData
-  if (filePath) {
-    return new Promise<boolean>((resolve, reject) => {
-      uni.uploadFile({
-        url,
-        filePath,
-        name: data.attendanceFilePath
-          ? 'attendanceFile'
-          : data.cumulativeTaxFilePath
-            ? 'cumulativeTaxFile'
-            : 'additionalDeductionFile',
-        header,
-        formData: {
-          id: String(data.id),
-          syncInsuranceData: String(data.syncInsuranceData),
-          syncAttendanceData: String(data.syncAttendanceData),
-        },
-        success: (res) => {
-          try {
-            const result = JSON.parse(res.data)
-            if (result.code === 0 || result.code === 200) {
-              resolve(true)
-              return
-            }
-            uni.showToast({ icon: 'none', title: result.msg || result.message || '核算失败' })
-            reject(result)
-          } catch (error) {
-            reject(error)
-          }
-        },
-        fail: reject,
-      })
-    })
-  }
-
-  return new Promise<boolean>((resolve, reject) => {
-    const formData = new FormData()
-    formData.append('id', String(data.id))
-    formData.append('syncInsuranceData', String(data.syncInsuranceData))
-    formData.append('syncAttendanceData', String(data.syncAttendanceData))
-    fetch(url, {
-      method: 'POST',
-      headers: header as HeadersInit,
-      body: formData,
-    })
-      .then(async (response) => {
-        const result = await response.json()
-        if (result.code === 0 || result.code === 200) {
-          resolve(true)
-          return
-        }
-        uni.showToast({ icon: 'none', title: result.msg || result.message || '核算失败' })
-        reject(result)
-      })
-      .catch(reject)
-  })
 }

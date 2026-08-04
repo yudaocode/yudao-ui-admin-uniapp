@@ -466,8 +466,16 @@ async function handleMoreAction({ item }: { item: { value: string } }) {
     eliminateFormRef.value?.open(candidate.id, candidate.name)
     return
   }
-  if (item.value === 'convert-employee' || item.value === 'confirm-entry') {
-    toast.show('员工档案表单尚未迁移，请使用 PC 端完成')
+  if (item.value === 'convert-employee' && formData.value.id) {
+    uni.navigateTo({
+      url: `/pages-hrm/employee/form/index?mode=candidate&candidateId=${formData.value.id}`,
+    })
+    return
+  }
+  if (item.value === 'confirm-entry' && formData.value.employeeId) {
+    uni.navigateTo({
+      url: `/pages-hrm/employee/form/index?id=${formData.value.employeeId}&mode=confirm`,
+    })
   }
 }
 

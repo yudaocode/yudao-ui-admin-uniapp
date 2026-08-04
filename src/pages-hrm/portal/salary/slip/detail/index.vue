@@ -104,7 +104,7 @@
 <script lang="ts" setup>
 import type { SalarySlip, SalarySlipOption } from '@/api/hrm/portal/salary/slip'
 import { onMounted, ref } from 'vue'
-import { getSalarySlipList, markSalarySlipRead } from '@/api/hrm/portal/salary/slip'
+import { getSalarySlip, markSalarySlipRead } from '@/api/hrm/portal/salary/slip'
 import { formatHrmMoney, formatHrmYearMonth } from '@/pages-hrm/utils/format'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
@@ -136,16 +136,12 @@ function getOptionKey(option: SalarySlipOption) {
   return option.code !== undefined ? `option-${option.code}` : `category-${option.sort ?? option.name}`
 }
 
-/** 加载详情：门户无独立 get，从本人列表中按编号定位 */
+/** 加载详情 */
 async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = (await getSalarySlipList()) || []
-  const slip = data.find(item => item.id === Number(props.id))
-  if (!slip) {
-    return
-  }
+  const slip = await getSalarySlip(Number(props.id))
   formData.value = slip
   displayOptions.value = slip.options || []
   if (slip.readStatus === 0) {

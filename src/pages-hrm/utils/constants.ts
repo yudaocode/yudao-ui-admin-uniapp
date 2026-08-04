@@ -75,6 +75,44 @@ export const HrmRecruitPostEducation = {
   DOCTOR: 6, // 博士
 } as const
 
+/** 招聘候选人学历枚举（对齐 hrm_recruit_candidate_education 字典） */
+export const HrmRecruitCandidateEducation = {
+  PRIMARY_SCHOOL: 1, // 小学
+  JUNIOR_HIGH_SCHOOL: 2, // 初中
+  HIGH_SCHOOL: 3, // 高中
+  COLLEGE: 4, // 大专
+  BACHELOR: 5, // 本科
+  MASTER: 6, // 硕士
+  DOCTOR: 7, // 博士
+} as const
+
+/** 员工最高学历枚举（对齐 hrm_employee_education 字典） */
+export const HrmEmployeeEducation = {
+  PRIMARY_SCHOOL: 1, // 小学
+  JUNIOR_HIGH_SCHOOL: 2, // 初中
+  TECHNICAL_SECONDARY_SCHOOL: 3, // 中专
+  SECONDARY_VOCATIONAL_SCHOOL: 4, // 中职
+  TECHNICAL_SCHOOL: 5, // 技校
+  HIGH_SCHOOL: 6, // 高中
+  COLLEGE: 7, // 大专
+  BACHELOR: 8, // 本科
+  MASTER: 9, // 硕士
+  DOCTOR: 10, // 博士
+  POSTDOCTORAL: 11, // 博士后
+  OTHER: 12, // 其他
+} as const
+
+/** 候选人学历转员工最高学历，避免两套字典同值不同义 */
+export const HRM_RECRUIT_CANDIDATE_EMPLOYEE_EDUCATION_MAP: Readonly<Record<number, number>> = {
+  [HrmRecruitCandidateEducation.PRIMARY_SCHOOL]: HrmEmployeeEducation.PRIMARY_SCHOOL,
+  [HrmRecruitCandidateEducation.JUNIOR_HIGH_SCHOOL]: HrmEmployeeEducation.JUNIOR_HIGH_SCHOOL,
+  [HrmRecruitCandidateEducation.HIGH_SCHOOL]: HrmEmployeeEducation.HIGH_SCHOOL,
+  [HrmRecruitCandidateEducation.COLLEGE]: HrmEmployeeEducation.COLLEGE,
+  [HrmRecruitCandidateEducation.BACHELOR]: HrmEmployeeEducation.BACHELOR,
+  [HrmRecruitCandidateEducation.MASTER]: HrmEmployeeEducation.MASTER,
+  [HrmRecruitCandidateEducation.DOCTOR]: HrmEmployeeEducation.DOCTOR,
+}
+
 /** 招聘薪资单位枚举（对齐 hrm_recruit_salary_unit 字典） */
 export const HrmRecruitSalaryUnit = {
   MONTH: 1, // 元/月

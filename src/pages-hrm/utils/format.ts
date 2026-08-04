@@ -235,6 +235,22 @@ export function formatHrmYearMonth(year?: number | null, month?: number | null):
   return `${year}-${String(month).padStart(2, '0')}`
 }
 
+/** 格式化 HRM 月份时间戳 */
+export function formatHrmMonth(value?: dayjs.ConfigType): string {
+  if (!value) {
+    return '-'
+  }
+  return dayjs(value).isValid() ? formatDate(value, 'YYYY-MM') || '-' : '-'
+}
+
+/** 格式化 HRM 是否值 */
+export function formatHrmYesNo(value?: boolean | null): string {
+  if (value === undefined || value === null) {
+    return '-'
+  }
+  return value ? '是' : '否'
+}
+
 /** 解析年月选择器值为 year / month */
 export function getAttendanceYearMonth(month?: dayjs.ConfigType): { year: number, month: number } {
   const monthDate = dayjs(month)

@@ -14,6 +14,17 @@
           <wd-form-item v-if="isFieldVisible('name')" title="员工姓名" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" clearable placeholder="请输入员工姓名" :maxlength="255" />
           </wd-form-item>
+          <UserFormPicker
+            v-if="isFieldVisible('userId')"
+            v-model="formData.userId"
+            label="绑定用户"
+            label-width="200rpx"
+            prop="userId"
+            placeholder="请选择后台用户"
+          />
+          <wd-form-item v-if="formMode === 'candidate' && formData.candidateId" title="候选人编号" title-width="200rpx">
+            <wd-input :model-value="String(formData.candidateId)" readonly align-right />
+          </wd-form-item>
           <wd-form-item v-if="isFieldVisible('mobile')" title="手机号" title-width="200rpx" prop="mobile">
             <wd-input v-model="formData.mobile" clearable placeholder="请输入手机号" :maxlength="11" />
           </wd-form-item>
@@ -97,7 +108,7 @@
             label-width="200rpx"
             prop="entryStatus"
             :columns="entryStatusColumns"
-            :disabled="formMode === 'update' || formMode === 'confirm' || formMode === 'rehire'"
+            :disabled="formMode === 'update' || formMode === 'confirm' || formMode === 'rehire' || formMode === 'candidate'"
             placeholder="请选择入职状态"
           />
           <DeptFormPicker
@@ -245,6 +256,7 @@
 
 <script lang="ts" setup>
 import type { Employee } from '@/api/hrm/employee'
+import type { RecruitCandidate } from '@/api/hrm/recruit/candidate'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
@@ -255,7 +267,12 @@ import {
   updateEmployee,
 } from '@/api/hrm/employee'
 import { getEmployeeCreateFieldConfigList } from '@/api/hrm/employee/config'
+import {
+  convertRecruitCandidateToEmployee,
+  getRecruitCandidate,
+} from '@/api/hrm/recruit/candidate'
 import DeptFormPicker from '@/components/system-select/dept-form-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { createFormSchema } from '@/utils/wot'
 import { navigateBackPlus } from '@/utils'
@@ -267,6 +284,7 @@ import {
   HRM_EMPLOYEE_CREATE_ENTRY_STATUSES,
   HRM_EMPLOYEE_NO_PROBATION_MONTHS,
   HRM_EMPLOYEE_NON_FORMAL_STATUSES,
+  HRM_RECRUIT_CANDIDATE_EMPLOYEE_EDUCATION_MAP,
   HrmEmployeeEntryStatus,
   HrmEmployeeIdType,
   HrmEmployeeIdTypeOptions,
@@ -277,6 +295,7 @@ import {
 const props = defineProps<{
   id?: number | any
   mode?: string
+  candidateId?: number | string
 }>()
 
 definePage({
@@ -296,7 +315,7 @@ const entryTimePicker = ref<number | string>('') // 入职时间本地值
 const createFieldVisibleMap = ref<Record<number, Set<string>>>({}) // 新建字段可见配置
 
 const formMode = computed(() => { // 表单模式
-  if (props.mode === 'confirm' || props.mode === 'rehire') {
+  if (props.mode === 'confirm' || props.mode === 'rehire' || props.mode === 'candidate') {
     return props.mode
   }
   return props.id ? 'update' : 'create'
@@ -309,10 +328,13 @@ const getTitle = computed(() => {
   if (formMode.value === 'rehire') {
     return '办理再入职'
   }
+  if (formMode.value === 'candidate') {
+    return '候选人转员工'
+  }
   return props.id ? '编辑员工' : '新增员工'
 })
 
-const formData = ref<Employee>(createDefaultFormData()) // 表单数据
+const formData = ref<Employee & { candidateId?: number }>(createDefaultFormData()) // 表单数据
 
 const idTypeColumns = HrmEmployeeIdTypeOptions.map(item => ({
   label: item.label,
@@ -357,7 +379,7 @@ const formSchema = createFormSchema({
 })
 
 /** 创建默认表单数据 */
-function createDefaultFormData(): Employee {
+function createDefaultFormData(): Employee & { candidateId?: number } {
   return {
     id: undefined,
     name: '',
@@ -386,6 +408,8 @@ function createDefaultFormData(): Employee {
     workAddress: '',
     workDetailAddress: '',
     channelId: undefined,
+    userId: undefined,
+    candidateId: undefined,
     remark: '',
   }
 }
@@ -466,7 +490,38 @@ function buildSubmitData() {
   if (formMode.value === 'confirm' || formMode.value === 'rehire') {
     submitData.id = formData.value.id
   }
+  if (formMode.value === 'candidate' && formData.value.candidateId) {
+    ;(submitData as any).candidateId = formData.value.candidateId
+  }
   return submitData as Employee
+}
+
+/** 按候选人预填转员工表单 */
+function fillFromCandidate(candidate: RecruitCandidate) {
+  const entryTime = candidate.entryTime ? Number(candidate.entryTime) : Date.now()
+  formData.value = {
+    ...createDefaultFormData(),
+    candidateId: candidate.id,
+    name: candidate.name,
+    mobile: candidate.mobile,
+    sex: candidate.sex,
+    email: candidate.email || '',
+    highestEducation: candidate.education != null
+      ? HRM_RECRUIT_CANDIDATE_EMPLOYEE_EDUCATION_MAP[candidate.education]
+      : undefined,
+    deptId: candidate.deptId,
+    postName: candidate.postName || '',
+    channelId: candidate.channelId,
+    remark: candidate.remark || '',
+    entryStatus: HrmEmployeeEntryStatus.PENDING_ENTRY,
+    status: HrmEmployeeStatus.PROBATION,
+    type: HrmEmployeeType.FORMAL,
+    entryTime,
+    companyAgeStartTime: entryTime,
+    probation: 3,
+  }
+  entryTimePicker.value = entryTime
+  birthdayPicker.value = ''
 }
 
 /** 加载详情 */
@@ -521,6 +576,13 @@ async function handleSubmit() {
     if (formMode.value === 'create') {
       await createEmployee(submitData)
       toast.success('新增成功')
+    } else if (formMode.value === 'candidate') {
+      await convertRecruitCandidateToEmployee({
+        ...submitData,
+        candidateId: Number(formData.value.candidateId),
+      })
+      toast.success('已转为员工')
+      uni.$emit('hrm:recruit:candidate:reload')
     } else if (formMode.value === 'confirm') {
       await confirmEmployeeEntry(submitData)
       toast.success('已确认入职')
@@ -544,6 +606,11 @@ async function handleSubmit() {
 onMounted(async () => {
   if (formMode.value !== 'update') {
     await loadCreateFieldConfig()
+  }
+  if (formMode.value === 'candidate' && props.candidateId) {
+    const candidate = await getRecruitCandidate(Number(props.candidateId))
+    fillFromCandidate(candidate)
+    return
   }
   if (props.id) {
     await getDetail()

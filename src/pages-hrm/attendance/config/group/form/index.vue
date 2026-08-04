@@ -230,6 +230,7 @@
             <view class="flex items-center gap-12rpx">
               <wd-input-number
                 v-model="formData.deductRule.lateDeductMoney"
+                allow-null
                 :min="0"
                 :precision="2"
               />
@@ -250,6 +251,7 @@
             <view class="flex items-center gap-12rpx">
               <wd-input-number
                 v-model="formData.deductRule.earlyDeductMoney"
+                allow-null
                 :min="0"
                 :precision="2"
               />
@@ -270,6 +272,7 @@
             <view class="flex items-center gap-12rpx">
               <wd-input-number
                 v-model="formData.deductRule.absenteeismDeductMoney"
+                allow-null
                 :min="0"
                 :precision="2"
               />
@@ -288,6 +291,7 @@
             <view class="flex items-center gap-12rpx">
               <wd-input-number
                 v-model="formData.deductRule.misscardDeductMoney"
+                allow-null
                 :min="0"
                 :precision="2"
               />

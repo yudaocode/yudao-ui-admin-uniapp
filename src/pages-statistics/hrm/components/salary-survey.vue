@@ -84,7 +84,7 @@ function goSalaryRecord() {
     return
   }
   uni.navigateTo({
-    url: `/pages-hrm/salary/month-record/detail/index?id=${props.survey?.monthRecordId}`,
+    url: `/pages-hrm/salary/history/detail/index?id=${props.survey?.monthRecordId}`,
   })
 }
 </script>

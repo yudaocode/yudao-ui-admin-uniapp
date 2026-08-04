@@ -53,6 +53,10 @@
       </view>
     </view>
 
+    <view class="mt-24rpx">
+      <InsuranceInfo :employee-id="employeeId" />
+    </view>
+
     <SalaryCardForm ref="formRef" @success="getSalaryCard" />
   </view>
 </template>
@@ -67,6 +71,7 @@ import {
   getEmployeeSalaryCard,
 } from '@/api/hrm/employee/salary-card'
 import { useAccess } from '@/hooks/useAccess'
+import InsuranceInfo from './insurance-info.vue'
 import SalaryCardForm from './salary-card-form.vue'
 
 const props = defineProps<{

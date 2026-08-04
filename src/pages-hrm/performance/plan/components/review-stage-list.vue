@@ -75,6 +75,7 @@
       <wd-form-item title="权重(%)" title-width="160rpx">
         <wd-input-number
           v-model="stage.weight"
+          allow-null
           :min="0.01"
           :max="100"
           :precision="2"

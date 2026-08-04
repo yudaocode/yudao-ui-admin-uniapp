@@ -89,7 +89,11 @@ const formLoading = ref(false)
 const startVisible = ref(false)
 const endVisible = ref(false)
 const formRef = ref<FormInstance>()
-const formData = ref<EmployeeWorkExperience>({ sort: 1 })
+const formData = ref<EmployeeWorkExperience>({
+  sort: 1,
+  startTime: '' as any,
+  endTime: '' as any,
+})
 const formSchema = createFormSchema({
   workUnit: [{ required: true, message: '工作单位不能为空' }],
   postName: [{ required: true, message: '职务不能为空' }],
@@ -99,7 +103,13 @@ const title = computed(() => formData.value.id ? '修改工作经历' : '新增�
 /** 打开弹窗 */
 function open(employeeId: number, row?: EmployeeWorkExperience) {
   visible.value = true
-  formData.value = { sort: 1, employeeId, ...row }
+  formData.value = {
+    sort: 1,
+    employeeId,
+    ...row,
+    startTime: (row?.startTime ?? '') as any,
+    endTime: (row?.endTime ?? '') as any,
+  }
 }
 
 /** 提交表单 */
@@ -110,10 +120,15 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    if (formData.value.id) {
-      await updateEmployeeWorkExperience(formData.value)
+    const data = {
+      ...formData.value,
+      startTime: formData.value.startTime || undefined,
+      endTime: formData.value.endTime || undefined,
+    }
+    if (data.id) {
+      await updateEmployeeWorkExperience(data)
     } else {
-      await createEmployeeWorkExperience(formData.value)
+      await createEmployeeWorkExperience(data)
     }
     toast.success('保存成功')
     visible.value = false

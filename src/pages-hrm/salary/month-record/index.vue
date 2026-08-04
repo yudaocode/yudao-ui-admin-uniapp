@@ -161,7 +161,7 @@
             v-if="isWritable && hasAccessByCodes(['hrm:salary:month-record:compute'])"
             class="flex-1"
             type="primary"
-            @click="computeFormRef?.open(record)"
+            @click="handleCompute"
           >
             核算工资
           </wd-button>
@@ -182,7 +182,6 @@
       :actions="actionItems"
       @select="handleActionSelect"
     />
-    <ComputeForm ref="computeFormRef" @success="refreshData" />
   </view>
 </template>
 
@@ -215,7 +214,6 @@ import {
 } from '@/pages-hrm/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import ComputeForm from './components/compute-form.vue'
 import ReadinessAlert from './components/readiness-alert.vue'
 import SearchForm from './components/search-form.vue'
 
@@ -235,7 +233,6 @@ const record = ref<SalaryMonthRecord>({}) // 当前工资表
 const list = ref<SalaryMonthEmployeeRecord[]>([]) // 员工列表
 const pagingRef = ref<any>() // 分页组件引用
 const readinessAlertRef = ref<InstanceType<typeof ReadinessAlert>>() // 核算准备
-const computeFormRef = ref<InstanceType<typeof ComputeForm>>() // 核算表单
 const actionVisible = ref(false) // 操作菜单
 const tabIndex = ref(0) // 异动 tab
 const employeeChangeCount = ref<Record<number, number>>({}) // 异动分类数量
@@ -258,6 +255,12 @@ const isArchived = computed(() => record.value.status === HrmSalaryMonthStatus.H
 const isWritable = computed(() => !!record.value.id && !isArchived.value) // 是否可编辑
 const actionItems = computed(() => { // 更多菜单：底部已展示的在线编辑/核算不再重复
   const items: Array<{ name: string, value: string, color?: string }> = []
+  if (
+    record.value.status === HrmSalaryMonthStatus.COMPUTED
+    && hasAccessByCodes(['hrm:salary:slip:create'])
+  ) {
+    items.push({ name: '发送工资条', value: 'sendSlip' })
+  }
   if (hasAccessByCodes(['hrm:salary:month-record:create'])) {
     items.push({ name: '创建下月工资表', value: 'createNext' })
   }
@@ -395,6 +398,14 @@ function handleBatchEdit() {
   })
 }
 
+/** 核算工资（移动端不支持，引导 PC） */
+function handleCompute() {
+  dialog.alert({
+    title: '提示',
+    msg: '请在 PC 端管理后台完成工资核算',
+  })
+}
+
 /** 初始化月度工资表 */
 async function handleCreate() {
   createLoading.value = true
@@ -452,7 +463,13 @@ function handleActionSelect({ item }: { item: { value: string } }) {
     return
   }
   if (item.value === 'compute') {
-    computeFormRef.value?.open(record.value)
+    handleCompute()
+    return
+  }
+  if (item.value === 'sendSlip' && record.value.id) {
+    uni.navigateTo({
+      url: `/pages-hrm/salary/slip/send-record/form/index?monthRecordId=${record.value.id}`,
+    })
     return
   }
   if (item.value === 'createNext') {

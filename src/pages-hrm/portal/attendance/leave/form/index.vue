@@ -65,6 +65,7 @@
           <wd-form-item title="请假天数" title-width="200rpx" prop="day">
             <wd-input-number
               v-model="formData.day"
+              allow-null
               :min="0.01"
               :precision="2"
               :step="0.5"

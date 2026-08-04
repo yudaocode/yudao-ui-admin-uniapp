@@ -73,7 +73,12 @@ const startVisible = ref(false)
 const endVisible = ref(false)
 const issuingVisible = ref(false)
 const formRef = ref<FormInstance>()
-const formData = ref<EmployeeCertificate>({ sort: 1 })
+const formData = ref<EmployeeCertificate>({
+  sort: 1,
+  startTime: '' as any,
+  endTime: '' as any,
+  issuingTime: '' as any,
+})
 const formSchema = createFormSchema({
   name: [{ required: true, message: '证书名称不能为空' }],
 })
@@ -81,7 +86,14 @@ const title = computed(() => formData.value.id ? '修改证书' : '新增证书'
 
 function open(employeeId: number, row?: EmployeeCertificate) {
   visible.value = true
-  formData.value = { sort: 1, employeeId, ...row }
+  formData.value = {
+    sort: 1,
+    employeeId,
+    ...row,
+    startTime: (row?.startTime ?? '') as any,
+    endTime: (row?.endTime ?? '') as any,
+    issuingTime: (row?.issuingTime ?? '') as any,
+  }
 }
 
 async function handleSubmit() {
@@ -91,10 +103,16 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    if (formData.value.id) {
-      await updateEmployeeCertificate(formData.value)
+    const data = {
+      ...formData.value,
+      startTime: formData.value.startTime || undefined,
+      endTime: formData.value.endTime || undefined,
+      issuingTime: formData.value.issuingTime || undefined,
+    }
+    if (data.id) {
+      await updateEmployeeCertificate(data)
     } else {
-      await createEmployeeCertificate(formData.value)
+      await createEmployeeCertificate(data)
     }
     toast.success('保存成功')
     visible.value = false

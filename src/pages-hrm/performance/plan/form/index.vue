@@ -98,45 +98,12 @@
               </view>
             </wd-form-item>
           </template>
-          <yd-form-picker
-            v-model="scopeType"
-            label="范围类型"
-            label-width="200rpx"
-            prop="scopes"
-            :columns="scopeTypeColumns"
-            placeholder="请选择范围类型"
-            :disabled="!planEditable"
-            @confirm="handleScopeTypeChange"
-          />
-          <EmployeeFormPicker
-            v-if="scopeType === HrmPerformancePlanScopeType.EMPLOYEE_DEPT"
-            v-model="scopeEmployeeIds"
-            type="checkbox"
-            label="参评员工"
-            label-width="200rpx"
-            placeholder="请选择参评员工"
-            :disabled="!planEditable"
-          />
-          <template v-else>
-            <yd-form-picker
-              v-model="scopeEmployeeType"
-              label="聘用形式"
-              label-width="200rpx"
-              :dict-type="DICT_TYPE.HRM_EMPLOYEE_TYPE"
-              placeholder="请选择聘用形式"
-              :disabled="!planEditable"
-              @confirm="handleEmployTypeChange"
-            />
-            <yd-form-picker
-              v-model="scopeEmployeeStatuses"
-              label="员工状态"
-              label-width="200rpx"
-              type="checkbox"
-              :columns="employeeStatusColumns"
-              placeholder="请选择员工状态"
+          <wd-form-item prop="scopes" vertical>
+            <PlanScopeList
+              v-model="formData.scopes"
               :disabled="!planEditable"
             />
-          </template>
+          </wd-form-item>
           <wd-form-item title="考核说明" title-width="200rpx" prop="description" vertical>
             <wd-textarea
               v-model="formData.description"
@@ -252,6 +219,7 @@
           >
             <wd-input-number
               v-model="formData.appealTimeoutDays"
+              allow-null
               :min="1"
               :precision="0"
               :disabled="!planEditable"
@@ -375,10 +343,9 @@ import {
   updatePerformancePlan,
 } from '@/api/hrm/performance/plan'
 import { navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import {
-  HRM_EMPLOYEE_NON_FORMAL_STATUSES,
   HRM_PERFORMANCE_RATER_MAX_LEVEL,
   HrmEmployeeStatus,
   HrmEmployeeType,
@@ -403,6 +370,7 @@ import EmployeeFormPicker from '@/pages-hrm/employee/components/employee-form-pi
 import AssessmentConfigEditor from '@/pages-hrm/performance/config/assessment-template/components/assessment-config-editor.vue'
 import { validateAssessmentConfig } from '@/pages-hrm/utils/performance'
 import HandlerStageList from '../components/handler-stage-list.vue'
+import PlanScopeList from '../components/plan-scope-list.vue'
 import ReviewStageList from '../components/review-stage-list.vue'
 
 const props = defineProps<{
@@ -457,10 +425,6 @@ const quarterColumns = [
   { label: '第三季度', value: 3 },
   { label: '第四季度', value: 4 },
 ]
-const scopeTypeColumns = [
-  { label: '员工', value: HrmPerformancePlanScopeType.EMPLOYEE_DEPT },
-  { label: '聘用形式', value: HrmPerformancePlanScopeType.EMPLOYMENT },
-]
 const quotaSettingColumns = [
   { label: '系统制定', value: HrmPerformanceQuotaSettingType.SYSTEM },
   { label: '员工制定', value: HrmPerformanceQuotaSettingType.EMPLOYEE },
@@ -478,53 +442,6 @@ const assessmentTemplateColumns = computed(() =>
 const resultTemplateColumns = computed(() =>
   resultTemplates.value.map(item => ({ label: item.name, value: item.id! })),
 )
-const scopeType = computed({
-  get: () => formData.value.scopes?.[0]?.type ?? HrmPerformancePlanScopeType.EMPLOYMENT,
-  set: (value: number) => {
-    const scope = formData.value.scopes?.[0]
-    if (scope) {
-      scope.type = value
-    }
-  },
-})
-const scopeEmployeeIds = computed({
-  get: () => formData.value.scopes?.[0]?.employeeIds || [],
-  set: (value: number | number[] | undefined) => {
-    const scope = ensureScope()
-    scope.employeeIds = Array.isArray(value) ? value : (value != null ? [value] : [])
-  },
-})
-const scopeEmployeeType = computed({
-  get: () => formData.value.scopes?.[0]?.employeeType,
-  set: (value?: number) => {
-    ensureScope().employeeType = value
-  },
-})
-const scopeEmployeeStatuses = computed({
-  get: () => formData.value.scopes?.[0]?.employeeStatuses || [],
-  set: (value: number | number[] | undefined) => {
-    ensureScope().employeeStatuses = Array.isArray(value) ? value : (value != null ? [value] : [])
-  },
-})
-const employeeStatusColumns = computed(() => {
-  if (scopeEmployeeType.value === HrmEmployeeType.INFORMAL) {
-    return HRM_EMPLOYEE_NON_FORMAL_STATUSES.map(value => ({
-      label: ({
-        [HrmEmployeeStatus.INTERN]: '实习',
-        [HrmEmployeeStatus.PART_TIME]: '兼职',
-        [HrmEmployeeStatus.LABOR]: '劳务',
-        [HrmEmployeeStatus.CONSULTANT]: '顾问',
-        [HrmEmployeeStatus.REHIRE]: '返聘',
-        [HrmEmployeeStatus.OUTSOURCE]: '外包',
-      } as Record<number, string>)[value] || String(value),
-      value,
-    }))
-  }
-  return [
-    { label: '正式', value: HrmEmployeeStatus.REGULAR },
-    { label: '试用', value: HrmEmployeeStatus.PROBATION },
-  ]
-})
 const resultLevelText = computed(() => {
   return formData.value.resultConfig?.levels
     ?.map(level => `${level.name}（${level.minScore}-${level.maxScore}）`)
@@ -570,24 +487,18 @@ function handleBack() {
   navigateBackPlus('/pages-hrm/performance/plan/index')
 }
 
-/** 确保存在考评范围 */
-function ensureScope(): PerformanceScope {
-  if (!formData.value.scopes?.length) {
-    formData.value.scopes = [createDefaultPlanScope()]
-  }
-  return formData.value.scopes[0]
-}
-
 /** 校验考评范围 */
 function validateScopes() {
-  const scope = formData.value.scopes?.[0]
-  if (!scope) {
+  const scopes = formData.value.scopes || []
+  if (!scopes.length || scopes.length > 3) {
     return false
   }
-  if (scope.type === HrmPerformancePlanScopeType.EMPLOYEE_DEPT) {
-    return !!(scope.employeeIds?.length || scope.deptIds?.length)
-  }
-  return !!(scope.employeeType && scope.employeeStatuses?.length)
+  return scopes.every((scope) => {
+    if (scope.type === HrmPerformancePlanScopeType.EMPLOYEE_DEPT) {
+      return !!(scope.employeeIds?.length || scope.deptIds?.length)
+    }
+    return !!(scope.employeeType && scope.employeeStatuses?.length)
+  })
 }
 
 /** 切换周期类型 */
@@ -595,16 +506,6 @@ function handleCycleTypeChange() {
   formData.value.cycle = ''
   formData.value.quarter = formData.value.cycleType === HrmPerformanceCycleType.QUARTER ? 1 : undefined
   customDateRange.value = [undefined, undefined]
-}
-
-/** 切换范围类型 */
-function handleScopeTypeChange() {
-  formData.value.scopes = [createScope(scopeType.value)]
-}
-
-/** 切换聘用形式 */
-function handleEmployTypeChange() {
-  ensureScope().employeeStatuses = []
 }
 
 /** 是否层级型处理人 */

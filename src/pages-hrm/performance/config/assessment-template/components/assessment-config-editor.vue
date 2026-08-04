@@ -27,6 +27,7 @@
       >
         <wd-input-number
           v-model="model.upperLimitScore"
+          allow-null
           :min="0"
           :precision="2"
           :disabled="disabled"

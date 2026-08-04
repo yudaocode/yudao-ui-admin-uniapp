@@ -111,6 +111,9 @@ const formData = ref<EmployeeContract>({
   expireRemind: false,
   status: HrmEmployeeContractStatus.IN_PROGRESS,
   fileUrls: [],
+  startTime: '' as any,
+  endTime: '' as any,
+  signTime: '' as any,
 })
 const contractTypeColumns = [...HrmEmployeeContractTypeOptions]
 const termColumns = [...HrmEmployeeContractTermOptions]
@@ -131,6 +134,9 @@ function open(employeeId: number, row?: EmployeeContract) {
     status: HrmEmployeeContractStatus.IN_PROGRESS,
     employeeId,
     ...row,
+    startTime: (row?.startTime ?? '') as any,
+    endTime: (row?.endTime ?? '') as any,
+    signTime: (row?.signTime ?? '') as any,
     fileUrls: row?.fileUrls ? [...row.fileUrls] : [],
   }
 }
@@ -150,10 +156,16 @@ async function handleSubmit() {
   }
   formLoading.value = true
   try {
-    if (formData.value.id) {
-      await updateEmployeeContract(formData.value)
+    const data = {
+      ...formData.value,
+      startTime: formData.value.startTime || undefined,
+      endTime: formData.value.endTime || undefined,
+      signTime: formData.value.signTime || undefined,
+    }
+    if (data.id) {
+      await updateEmployeeContract(data)
     } else {
-      await createEmployeeContract(formData.value)
+      await createEmployeeContract(data)
     }
     toast.success('保存成功')
     visible.value = false

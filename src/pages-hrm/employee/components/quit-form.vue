@@ -15,7 +15,7 @@
           <wd-form-item title="计划离职时间" title-width="220rpx" prop="planQuitTime" center>
             <view class="w-full" @click="planQuitVisible = true">
               <wd-input
-                :model-value="formatDateTime(formData.planQuitTime) || ''"
+                :model-value="formatDateTime(planQuitPicker) || ''"
                 readonly
                 align-right
                 placeholder="请选择"
@@ -23,7 +23,7 @@
             </view>
           </wd-form-item>
           <wd-datetime-picker
-            v-model="formData.planQuitTime"
+            v-model="planQuitPicker"
             v-model:visible="planQuitVisible"
             type="datetime"
             title="计划离职时间"
@@ -31,7 +31,7 @@
           <wd-form-item title="申请离职日期" title-width="220rpx" prop="applyQuitTime" center>
             <view class="w-full" @click="applyQuitVisible = true">
               <wd-input
-                :model-value="formatDate(formData.applyQuitTime) || ''"
+                :model-value="formatDate(applyQuitPicker) || ''"
                 readonly
                 align-right
                 placeholder="请选择"
@@ -39,7 +39,7 @@
             </view>
           </wd-form-item>
           <wd-datetime-picker
-            v-model="formData.applyQuitTime"
+            v-model="applyQuitPicker"
             v-model:visible="applyQuitVisible"
             type="date"
             title="申请离职日期"
@@ -65,7 +65,7 @@
           <wd-form-item title="薪资结算日期" title-width="220rpx" prop="salarySettlementTime" center>
             <view class="w-full" @click="salarySettlementVisible = true">
               <wd-input
-                :model-value="formatDate(formData.salarySettlementTime) || ''"
+                :model-value="formatDate(salarySettlementPicker) || ''"
                 readonly
                 align-right
                 placeholder="请选择"
@@ -73,7 +73,7 @@
             </view>
           </wd-form-item>
           <wd-datetime-picker
-            v-model="formData.salarySettlementTime"
+            v-model="salarySettlementPicker"
             v-model:visible="salarySettlementVisible"
             type="date"
             title="薪资结算日期"
@@ -126,6 +126,9 @@ const employee = ref<Employee>() // 当前员工
 const planQuitVisible = ref(false) // 计划离职时间选择
 const applyQuitVisible = ref(false) // 申请离职日期选择
 const salarySettlementVisible = ref(false) // 薪资结算日期选择
+const planQuitPicker = ref<number | string>('') // 计划离职本地值
+const applyQuitPicker = ref<number | string>('') // 申请离职本地值
+const salarySettlementPicker = ref<number | string>('') // 薪资结算本地值
 const formRef = ref<any>() // 表单引用
 const formData = ref<EmployeeQuitReq>({}) // 表单数据
 
@@ -167,6 +170,9 @@ async function open(row: Employee) {
     reason: undefined,
     remark: '',
   }
+  planQuitPicker.value = ''
+  applyQuitPicker.value = ''
+  salarySettlementPicker.value = ''
   if (!row.id) {
     return
   }
@@ -185,6 +191,9 @@ async function open(row: Employee) {
         reason: quitInfo.reason,
         remark: quitInfo.remark || '',
       }
+      planQuitPicker.value = formData.value.planQuitTime || ''
+      applyQuitPicker.value = formData.value.applyQuitTime || ''
+      salarySettlementPicker.value = formData.value.salarySettlementTime || ''
     }
   } finally {
     formLoading.value = false
@@ -198,6 +207,11 @@ function handleQuitTypeChange() {
 
 /** 提交表单 */
 async function handleSubmit() {
+  formData.value.planQuitTime = planQuitPicker.value ? Number(planQuitPicker.value) : undefined
+  formData.value.applyQuitTime = applyQuitPicker.value ? Number(applyQuitPicker.value) : undefined
+  formData.value.salarySettlementTime = salarySettlementPicker.value
+    ? Number(salarySettlementPicker.value)
+    : undefined
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return

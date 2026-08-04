@@ -21,7 +21,7 @@
             />
           </wd-form-item>
           <wd-form-item title="显示顺序" title-width="180rpx" prop="sort">
-            <wd-input-number v-model="formData.sort" :min="0" :precision="0" />
+            <wd-input-number v-model="formData.sort" allow-null :min="0" :precision="0" />
           </wd-form-item>
           <wd-form-item title="备注" title-width="180rpx" prop="remark">
             <wd-textarea

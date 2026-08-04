@@ -101,7 +101,12 @@ const formLoading = ref(false)
 const admissionVisible = ref(false)
 const graduationVisible = ref(false)
 const formRef = ref<FormInstance>()
-const formData = ref<EmployeeEducationExperience>({ sort: 1, firstDegree: false })
+const formData = ref<EmployeeEducationExperience>({
+  sort: 1,
+  firstDegree: false,
+  admissionTime: '' as any,
+  graduationTime: '' as any,
+})
 const teachingMethodColumns = [...HrmEmployeeTeachingMethodOptions]
 const formSchema = createFormSchema({
   education: [{ required: true, message: '学历不能为空' }],
@@ -119,6 +124,8 @@ function open(employeeId: number, row?: EmployeeEducationExperience) {
     firstDegree: false,
     employeeId,
     ...row,
+    admissionTime: (row?.admissionTime ?? '') as any,
+    graduationTime: (row?.graduationTime ?? '') as any,
   }
 }
 
@@ -128,20 +135,27 @@ async function handleSubmit() {
   if (!valid) {
     return
   }
+  const admissionTime = formData.value.admissionTime || undefined
+  const graduationTime = formData.value.graduationTime || undefined
   if (
-    formData.value.admissionTime != null
-    && formData.value.graduationTime != null
-    && Number(formData.value.graduationTime) < Number(formData.value.admissionTime)
+    admissionTime != null
+    && graduationTime != null
+    && Number(graduationTime) < Number(admissionTime)
   ) {
     toast.warning('毕业日期不能早于入学日期')
     return
   }
   formLoading.value = true
   try {
-    if (formData.value.id) {
-      await updateEmployeeEducationExperience(formData.value)
+    const data = {
+      ...formData.value,
+      admissionTime,
+      graduationTime,
+    }
+    if (data.id) {
+      await updateEmployeeEducationExperience(data)
     } else {
-      await createEmployeeEducationExperience(formData.value)
+      await createEmployeeEducationExperience(data)
     }
     toast.success('保存成功')
     visible.value = false

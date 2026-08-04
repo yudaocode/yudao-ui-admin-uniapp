@@ -432,8 +432,16 @@ async function handlePrimaryAction(command: string, candidate: RecruitCandidate)
     await openInterviewChange(candidate)
     return
   }
-  if (command === 'confirm-entry' || command === 'convert-employee') {
-    toast.show('员工档案表单尚未迁移，请使用 PC 端完成')
+  if (command === 'confirm-entry' && candidate.employeeId) {
+    uni.navigateTo({
+      url: `/pages-hrm/employee/form/index?id=${candidate.employeeId}&mode=confirm`,
+    })
+    return
+  }
+  if (command === 'convert-employee' && candidate.id) {
+    uni.navigateTo({
+      url: `/pages-hrm/employee/form/index?mode=candidate&candidateId=${candidate.id}`,
+    })
     return
   }
   if (command === 'interview' && candidate.id) {

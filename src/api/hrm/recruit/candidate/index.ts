@@ -1,3 +1,4 @@
+import type { Employee } from '@/api/hrm/employee'
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
@@ -124,6 +125,16 @@ export function updateRecruitCandidateChannel(data: RecruitCandidateUpdateChanne
 /** 淘汰招聘候选人 */
 export function eliminateRecruitCandidate(data: RecruitCandidateUpdateEliminateReq) {
   return http.put<boolean>('/hrm/recruit/candidate/eliminate', data)
+}
+
+/** 候选人转员工请求 */
+export interface RecruitCandidateEntryReq extends Employee {
+  candidateId: number // 候选人编号
+}
+
+/** 候选人转为员工 */
+export function convertRecruitCandidateToEmployee(data: RecruitCandidateEntryReq) {
+  return http.post<number>('/hrm/recruit/candidate/convert-employee', data)
 }
 
 /** 删除招聘候选人 */

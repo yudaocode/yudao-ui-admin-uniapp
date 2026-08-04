@@ -75,7 +75,8 @@ import {
 } from '@/api/hrm/portal/performance/assessment'
 import { HrmPerformanceAssessmentStageStatus } from '@/pages-hrm/utils/constants'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
-import { createFormSchema, navigateBackPlus } from '@/utils'
+import { navigateBackPlus } from '@/utils'
+import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string

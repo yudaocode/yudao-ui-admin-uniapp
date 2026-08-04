@@ -25,6 +25,7 @@
             <wd-form-item title="计薪周期开始日" title-width="220rpx" prop="cycleStartDay">
               <wd-input-number
                 v-model="formData.cycleStartDay"
+                allow-null
                 :disabled="initialized"
                 :min="1"
                 :max="31"
