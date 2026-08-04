@@ -1,8 +1,6 @@
 import type { TransferReq } from '@/api/crm/permission'
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
-import { useTokenStore, useUserStore } from '@/store'
-import { getEnvBaseUrl } from '@/utils'
 import { downloadApiFile } from '@/utils/download'
 
 /** 客户 */
@@ -34,13 +32,6 @@ export interface Customer {
   creatorName?: string
   createTime?: Date | string
   updateTime?: Date | string
-}
-
-/** 客户导入结果 */
-export interface CustomerImportResp {
-  createCustomerNames?: string[]
-  updateCustomerNames?: string[]
-  failureCustomerNames?: Record<string, string>
 }
 
 /** 查询客户分页列表 */
@@ -96,43 +87,6 @@ export function deleteCustomer(id: number) {
 /** 导出客户 Excel */
 export function exportCustomer(params: Record<string, any>) {
   return downloadApiFile('/crm/customer/export-excel', params, '客户.xls')
-}
-
-/** 下载客户导入模板 */
-export function importCustomerTemplate() {
-  return downloadApiFile('/crm/customer/get-import-template', undefined, '客户导入模板.xls')
-}
-
-/** 导入客户 */
-export function importCustomer(filePath: string, updateSupport = false, ownerUserId?: number) {
-  return new Promise<CustomerImportResp>((resolve, reject) => {
-    const token = useTokenStore().updateNowTime().validToken
-    const tenantId = useUserStore().tenantId
-    uni.uploadFile({
-      url: `${getEnvBaseUrl()}/crm/customer/import`,
-      filePath,
-      name: 'file',
-      header: {
-        'Accept': '*/*',
-        'tenant-id': tenantId,
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-      formData: {
-        updateSupport: String(updateSupport),
-        ...(ownerUserId ? { ownerUserId: String(ownerUserId) } : {}),
-      },
-      success: (res) => {
-        const result = JSON.parse(res.data)
-        if (result.code === 0 || result.code === 200) {
-          resolve(result.data)
-          return
-        }
-        uni.showToast({ icon: 'none', title: result.msg || result.message || '导入失败' })
-        reject(result)
-      },
-      fail: reject,
-    })
-  })
 }
 
 /** 获得客户精简列表 */
