@@ -272,6 +272,7 @@ import {
   getMyAttendanceLeaveList,
 } from '@/api/hrm/portal/attendance/leave'
 import { useAccess } from '@/hooks/useAccess'
+import { getHrmAttendanceDayState } from '@/pages-hrm/utils/attendance'
 import { formatHrmDays, formatHrmMoney, formatHrmYearMonth, getAttendanceYearMonth } from '@/pages-hrm/utils/format'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
@@ -357,31 +358,16 @@ function isDailyDetailVisible(item: AttendanceDailyDetail) {
   }
 }
 
-/** 是否为异常考勤 */
-function isAbnormal(detail?: AttendanceDailyDetail) {
-  if (!detail) {
-    return false
-  }
-  return (
-    (detail.lateCount || 0) > 0
-    || (detail.earlyCount || 0) > 0
-    || (detail.misscardCount || 0) > 0
-    || detail.absenteeism === true
-  )
-}
-
 /** 获得每日明细边框样式 */
 function getDailyBorderClass(detail?: AttendanceDailyDetail) {
-  if (isAbnormal(detail)) {
-    return 'border-l-6rpx border-l-[#ff4d4f]'
-  }
-  if (detail?.scheduled === false) {
-    return 'border-l-6rpx border-l-[#d9d9d9]'
-  }
-  if (detail?.clockList?.length) {
+  const state = getHrmAttendanceDayState(detail)
+  if (state === 'normal') {
     return 'border-l-6rpx border-l-[#52c41a]'
   }
-  return ''
+  if (state === 'abnormal') {
+    return 'border-l-6rpx border-l-[#ff4d4f]'
+  }
+  return state === 'rest' ? 'border-l-6rpx border-l-[#d9d9d9]' : ''
 }
 
 /** 获得考勤结果样式 */

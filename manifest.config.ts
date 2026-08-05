@@ -55,7 +55,9 @@ export default defineManifestConfig({
       delay: 0,
     },
     /* 模块配置 */
-    modules: {},
+    modules: {
+      Geolocation: {},
+    },
     /* 应用发布信息 */
     distribute: {
       /* android打包配置 */
@@ -68,6 +70,8 @@ export default defineManifestConfig({
           '<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>',
           '<uses-permission android:name="android.permission.VIBRATE"/>',
           '<uses-permission android:name="android.permission.READ_LOGS"/>',
+          '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>',
+          '<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>',
           '<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>',
           '<uses-feature android:name="android.hardware.camera.autofocus"/>',
           '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
@@ -82,9 +86,22 @@ export default defineManifestConfig({
         ],
       },
       /* ios打包配置 */
-      ios: {},
+      ios: {
+        privacyDescription: {
+          NSLocationWhenInUseUsageDescription: '用于员工考勤定位及获取当前 WiFi 信息',
+        },
+        capabilities: {
+          entitlements: {
+            'com.apple.developer.networking.wifi-info': true,
+          },
+        },
+      },
       /* SDK配置 */
-      sdkConfigs: {},
+      sdkConfigs: {
+        geolocation: {
+          system: {},
+        },
+      },
       /* 图标配置 */
       icons: {
         android: {
@@ -125,6 +142,12 @@ export default defineManifestConfig({
   /* 小程序特有相关 */
   'mp-weixin': {
     appid: VITE_WX_APPID,
+    permission: {
+      'scope.userLocation': {
+        desc: '用于员工考勤定位打卡',
+      },
+    },
+    requiredPrivateInfos: ['getLocation'],
     setting: {
       urlCheck: false,
       // 是否启用 ES6 转 ES5
