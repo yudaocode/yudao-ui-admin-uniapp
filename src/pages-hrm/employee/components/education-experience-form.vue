@@ -87,7 +87,7 @@ import {
   updateEmployeeEducationExperience,
 } from '@/api/hrm/employee/education-experience'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDate } from '@/utils/date'
+import { formatDate, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import { HrmEmployeeTeachingMethodOptions } from '@/pages-hrm/utils/constants'
 
@@ -116,16 +116,6 @@ const formSchema = createFormSchema({
 })
 const title = computed(() => formData.value.id ? '修改教育经历' : '新增教育经历')
 
-/** 响应日期归一为时间戳或空串 */
-// TODO @AI：看看能不能全局复用；看看别的模块是怎么处理的。
-function toPickerValue(value?: Date | string | number) {
-  if (value == null || value === '') {
-    return ''
-  }
-  const num = Number(value)
-  return Number.isNaN(num) ? '' : num
-}
-
 /** 打开弹窗 */
 function open(employeeId: number, row?: EmployeeEducationExperience) {
   visible.value = true
@@ -135,14 +125,14 @@ function open(employeeId: number, row?: EmployeeEducationExperience) {
     employeeId,
     ...row,
   }
-  admissionPicker.value = toPickerValue(row?.admissionTime)
-  graduationPicker.value = toPickerValue(row?.graduationTime)
+  admissionPicker.value = toTimestamp(row?.admissionTime) || ''
+  graduationPicker.value = toTimestamp(row?.graduationTime) || ''
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  formData.value.admissionTime = admissionPicker.value ? Number(admissionPicker.value) : undefined
-  formData.value.graduationTime = graduationPicker.value ? Number(graduationPicker.value) : undefined
+  formData.value.admissionTime = admissionPicker.value || undefined
+  formData.value.graduationTime = graduationPicker.value || undefined
   const { valid } = await formRef.value!.validate()
   if (!valid) {
     return

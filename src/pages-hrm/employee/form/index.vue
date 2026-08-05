@@ -464,15 +464,8 @@ function handleTypeChange() {
   }
 }
 
-/** 同步本地日期到提交字段 */
-function syncPickerValues() {
-  formData.value.birthday = birthdayPicker.value || undefined
-  formData.value.entryTime = entryTimePicker.value || undefined
-}
-
 /** 按字段配置构造提交数据 */
 function buildSubmitData() {
-  syncPickerValues()
   if (formMode.value === 'update') {
     return formData.value
   }
@@ -565,7 +558,8 @@ async function getDetail() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  syncPickerValues()
+  formData.value.birthday = birthdayPicker.value || undefined
+  formData.value.entryTime = entryTimePicker.value || undefined
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return

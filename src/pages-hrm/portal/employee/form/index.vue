@@ -148,13 +148,6 @@ function handleBack() {
   navigateBackPlus()
 }
 
-/** 同步本地日期到提交字段 */
-function syncPickerValues() {
-  if (isEditable('birthday')) {
-    formData.value.birthday = birthdayPicker.value ? Number(birthdayPicker.value) : undefined
-  }
-}
-
 /** 加载可编辑字段与当前档案 */
 async function getDetail() {
   const [employee, fields] = await Promise.all([
@@ -188,7 +181,9 @@ async function getDetail() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  syncPickerValues()
+  if (isEditable('birthday')) {
+    formData.value.birthday = birthdayPicker.value ? Number(birthdayPicker.value) : undefined
+  }
   const { valid } = await formRef.value.validate()
   if (!valid) {
     return

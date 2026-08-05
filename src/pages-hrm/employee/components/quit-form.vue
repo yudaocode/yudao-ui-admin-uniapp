@@ -107,7 +107,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { quitEmployee } from '@/api/hrm/employee'
 import { getEmployeeQuitInfo } from '@/api/hrm/employee/quit-info'
 import { createFormSchema } from '@/utils/wot'
-import { formatDate, formatDateTime } from '@/utils/date'
+import { formatDate, formatDateTime, toTimestamp } from '@/utils/date'
 import {
   HrmEmployeeEntryStatus,
   HrmEmployeeQuitReasonOptions,
@@ -180,20 +180,21 @@ async function open(row: Employee) {
   try {
     const quitInfo = await getEmployeeQuitInfo(row.id)
     if (quitInfo?.id) {
+      const planQuitTime = toTimestamp(quitInfo.planQuitTime) || undefined
+      const applyQuitTime = toTimestamp(quitInfo.applyQuitTime) || undefined
+      const salarySettlementTime = toTimestamp(quitInfo.salarySettlementTime) || undefined
+      planQuitPicker.value = planQuitTime || ''
+      applyQuitPicker.value = applyQuitTime || ''
+      salarySettlementPicker.value = salarySettlementTime || ''
       formData.value = {
         employeeId: row.id,
-        planQuitTime: quitInfo.planQuitTime ? Number(quitInfo.planQuitTime) : undefined,
-        applyQuitTime: quitInfo.applyQuitTime ? Number(quitInfo.applyQuitTime) : undefined,
-        salarySettlementTime: quitInfo.salarySettlementTime
-          ? Number(quitInfo.salarySettlementTime)
-          : undefined,
+        planQuitTime,
+        applyQuitTime,
+        salarySettlementTime,
         type: quitInfo.type,
         reason: quitInfo.reason,
         remark: quitInfo.remark || '',
       }
-      planQuitPicker.value = formData.value.planQuitTime || ''
-      applyQuitPicker.value = formData.value.applyQuitTime || ''
-      salarySettlementPicker.value = formData.value.salarySettlementTime || ''
     }
   } finally {
     formLoading.value = false
@@ -207,10 +208,10 @@ function handleQuitTypeChange() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  formData.value.planQuitTime = planQuitPicker.value ? Number(planQuitPicker.value) : undefined
-  formData.value.applyQuitTime = applyQuitPicker.value ? Number(applyQuitPicker.value) : undefined
+  formData.value.planQuitTime = planQuitPicker.value ? toTimestamp(planQuitPicker.value) : undefined
+  formData.value.applyQuitTime = applyQuitPicker.value ? toTimestamp(applyQuitPicker.value) : undefined
   formData.value.salarySettlementTime = salarySettlementPicker.value
-    ? Number(salarySettlementPicker.value)
+    ? toTimestamp(salarySettlementPicker.value)
     : undefined
   const { valid } = await formRef.value.validate()
   if (!valid) {

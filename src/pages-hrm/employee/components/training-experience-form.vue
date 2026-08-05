@@ -59,7 +59,7 @@ import {
   createEmployeeTrainingExperience,
   updateEmployeeTrainingExperience,
 } from '@/api/hrm/employee/training-experience'
-import { formatDate } from '@/utils/date'
+import { formatDate, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const emit = defineEmits<{ success: [] }>()
@@ -77,16 +77,6 @@ const formSchema = createFormSchema({
 })
 const title = computed(() => formData.value.id ? '修改培训经历' : '新增培训经历')
 
-/** 响应日期归一为时间戳或空串 */
-// TODO @AI：看看能不能全局复用；看看别的模块是怎么处理的。
-function toPickerValue(value?: Date | string | number) {
-  if (value == null || value === '') {
-    return ''
-  }
-  const num = Number(value)
-  return Number.isNaN(num) ? '' : num
-}
-
 /** 打开弹窗 */
 function open(employeeId: number, row?: EmployeeTrainingExperience) {
   visible.value = true
@@ -95,14 +85,14 @@ function open(employeeId: number, row?: EmployeeTrainingExperience) {
     employeeId,
     ...row,
   }
-  startPicker.value = toPickerValue(row?.startTime)
-  endPicker.value = toPickerValue(row?.endTime)
+  startPicker.value = toTimestamp(row?.startTime) || ''
+  endPicker.value = toTimestamp(row?.endTime) || ''
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  formData.value.startTime = startPicker.value ? Number(startPicker.value) : undefined
-  formData.value.endTime = endPicker.value ? Number(endPicker.value) : undefined
+  formData.value.startTime = startPicker.value || undefined
+  formData.value.endTime = endPicker.value || undefined
   const { valid } = await formRef.value!.validate()
   if (!valid) {
     return

@@ -10,268 +10,22 @@
     <!-- 表单区域 -->
     <view class="pb-160rpx">
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
-        <wd-cell-group border title="基础设置">
-          <wd-form-item title="计划名称" title-width="200rpx" prop="name">
-            <wd-input
-              v-model="formData.name"
-              clearable
-              placeholder="请输入考核计划名称"
-              :maxlength="50"
-              :disabled="!planEditable"
-            />
-          </wd-form-item>
-          <yd-form-picker
-            v-model="formData.cycleType"
-            label="周期类型"
-            label-width="200rpx"
-            prop="cycleType"
-            :columns="cycleTypeColumns"
-            placeholder="请选择周期类型"
-            :disabled="!planEditable"
-            @confirm="handleCycleTypeChange"
-          />
-          <wd-form-item
-            v-if="formData.cycleType === HrmPerformanceCycleType.MONTH"
-            title="考核周期"
-            title-width="200rpx"
-            prop="cycle"
-          >
-            <view
-              class="min-h-72rpx flex items-center justify-end text-28rpx"
-              :class="formData.cycle ? 'text-[#333]' : 'text-[#999]'"
-              @click="planEditable && (monthVisible = true)"
-            >
-              {{ formData.cycle || '请选择月份' }}
-            </view>
-          </wd-form-item>
-          <template v-else-if="formData.cycleType === HrmPerformanceCycleType.QUARTER">
-            <wd-form-item title="考核年份" title-width="200rpx" prop="cycle">
-              <view
-                class="min-h-72rpx flex items-center justify-end text-28rpx"
-                :class="formData.cycle ? 'text-[#333]' : 'text-[#999]'"
-                @click="planEditable && (yearVisible = true)"
-              >
-                {{ formData.cycle || '请选择年份' }}
-              </view>
-            </wd-form-item>
-            <yd-form-picker
-              v-model="formData.quarter"
-              label="季度"
-              label-width="200rpx"
-              prop="quarter"
-              :columns="quarterColumns"
-              placeholder="请选择季度"
-              :disabled="!planEditable"
-            />
-          </template>
-          <wd-form-item
-            v-else-if="formData.cycleType !== HrmPerformanceCycleType.OTHER"
-            title="考核年份"
-            title-width="200rpx"
-            prop="cycle"
-          >
-            <view
-              class="min-h-72rpx flex items-center justify-end text-28rpx"
-              :class="formData.cycle ? 'text-[#333]' : 'text-[#999]'"
-              @click="planEditable && (yearVisible = true)"
-            >
-              {{ formData.cycle || '请选择年份' }}
-            </view>
-          </wd-form-item>
-          <template v-else>
-            <wd-form-item title="开始日期" title-width="200rpx" prop="cycle">
-              <view
-                class="min-h-72rpx flex items-center justify-end text-28rpx"
-                :class="customDateRange[0] ? 'text-[#333]' : 'text-[#999]'"
-                @click="planEditable && (startDateVisible = true)"
-              >
-                {{ customDateRange[0] || '请选择开始日期' }}
-              </view>
-            </wd-form-item>
-            <wd-form-item title="结束日期" title-width="200rpx" prop="cycle">
-              <view
-                class="min-h-72rpx flex items-center justify-end text-28rpx"
-                :class="customDateRange[1] ? 'text-[#333]' : 'text-[#999]'"
-                @click="planEditable && (endDateVisible = true)"
-              >
-                {{ customDateRange[1] || '请选择结束日期' }}
-              </view>
-            </wd-form-item>
-          </template>
-          <wd-form-item prop="scopes" vertical>
-            <PlanScopeList
-              v-model="formData.scopes"
-              :disabled="!planEditable"
-            />
-          </wd-form-item>
-          <wd-form-item title="考核说明" title-width="200rpx" prop="description" vertical>
-            <wd-textarea
-              v-model="formData.description"
-              clearable
-              placeholder="请输入考核说明"
-              :maxlength="200"
-              show-word-limit
-              :disabled="!planEditable"
-            />
-          </wd-form-item>
-        </wd-cell-group>
-
-        <wd-cell-group border title="指标设置">
-          <yd-form-picker
-            v-model="formData.assessmentTemplateId"
-            label="考核指标模板"
-            label-width="200rpx"
-            prop="assessmentTemplateId"
-            :columns="assessmentTemplateColumns"
-            placeholder="请选择考核指标模板"
-            :disabled="!planEditable"
-            @confirm="handleAssessmentTemplateChange"
-          />
-          <AssessmentConfigEditor
-            v-if="formData.assessmentTemplateId"
-            v-model="formData.assessmentConfig!"
-            prop-prefix="assessmentConfig."
-            :disabled="!planEditable"
-            :show-dimensions="true"
-          />
-          <view v-else class="px-24rpx py-32rpx text-center text-28rpx text-[#999]">
-            请先选择考核指标模板
-          </view>
-          <yd-form-picker
-            v-model="formData.quotaSettingType"
-            label="指标制定"
-            label-width="200rpx"
-            prop="quotaSettingType"
-            :columns="quotaSettingColumns"
-            placeholder="请选择指标制定方式"
-            :disabled="!planEditable"
-            @confirm="handleQuotaSettingChange"
-          />
-          <template v-if="formData.quotaSettingType === HrmPerformanceQuotaSettingType.EMPLOYEE">
-            <wd-form-item title="目标确认" title-width="200rpx" prop="targetConfirmation">
-              <wd-switch
-                v-model="formData.targetConfirmation"
-                :disabled="!planEditable"
-                @change="handleTargetConfirmationChange"
-              />
-            </wd-form-item>
-            <template v-if="formData.targetConfirmation">
-              <yd-form-picker
-                v-model="formData.targetConfirmationStage!.type"
-                label="确认人"
-                label-width="200rpx"
-                prop="targetConfirmationStage"
-                :columns="handlerTypeColumns"
-                placeholder="请选择确认人"
-                :disabled="!planEditable"
-                @confirm="handleTargetConfirmerTypeChange"
-              />
-              <yd-form-picker
-                v-if="isLevelType(formData.targetConfirmationStage?.type)"
-                v-model="formData.targetConfirmationStage!.level"
-                label="确认层级"
-                label-width="200rpx"
-                :columns="levelColumns(formData.targetConfirmationStage?.type)"
-                placeholder="请选择层级"
-                :disabled="!planEditable"
-              />
-              <EmployeeFormPicker
-                v-else-if="formData.targetConfirmationStage?.type === HrmPerformanceRaterType.SPECIFIED"
-                v-model="formData.targetConfirmationStage!.employeeId"
-                label="指定确认人"
-                label-width="200rpx"
-                placeholder="请选择确认员工"
-                :disabled="!planEditable"
-              />
-            </template>
-          </template>
-        </wd-cell-group>
-
-        <wd-cell-group border title="流程设置">
-          <view class="px-24rpx py-16rpx text-28rpx text-[#333] font-semibold">
-            考核评分流程
-          </view>
-          <ReviewStageList v-model="formData.reviewStages!" :disabled="!planEditable" />
-          <wd-form-item title="结果审核" title-width="200rpx" prop="resultAudit">
-            <wd-switch
-              v-model="formData.resultAudit"
-              :disabled="!planEditable"
-              @change="handleResultAuditChange"
-            />
-          </wd-form-item>
-          <HandlerStageList
-            v-if="formData.resultAudit"
-            v-model="formData.resultAuditStages!"
-            :disabled="!planEditable"
-          />
-          <wd-form-item title="结果确认" title-width="200rpx" prop="resultConfirmation">
-            <wd-switch
-              v-model="formData.resultConfirmation"
-              :disabled="!planEditable"
-              @change="handleResultConfirmationChange"
-            />
-          </wd-form-item>
-          <wd-form-item
-            v-if="formData.resultConfirmation"
-            title="申诉超期天数"
-            title-width="200rpx"
-            prop="appealTimeoutDays"
-          >
-            <wd-input-number
-              v-model="formData.appealTimeoutDays"
-              allow-null
-              :min="1"
-              :precision="0"
-              :disabled="!planEditable"
-            />
-          </wd-form-item>
-          <yd-form-picker
-            v-if="formData.resultConfirmation"
-            v-model="formData.appealTimeoutAction"
-            label="超期处理"
-            label-width="200rpx"
-            prop="appealTimeoutAction"
-            :columns="appealTimeoutColumns"
-            placeholder="请选择超期处理"
-            :disabled="!planEditable"
-          />
-          <HandlerStageList
-            v-if="formData.resultConfirmation"
-            v-model="formData.appealStages!"
-            :disabled="!planEditable"
-          />
-        </wd-cell-group>
-
-        <wd-cell-group border title="结果设置">
-          <yd-form-picker
-            v-model="formData.resultTemplateId"
-            label="结果模板"
-            label-width="200rpx"
-            prop="resultTemplateId"
-            :columns="resultTemplateColumns"
-            placeholder="请选择结果模板"
-            :disabled="!planEditable"
-            @confirm="handleResultTemplateChange"
-          />
-          <wd-cell title="结果等级" :value="resultLevelText" />
-          <wd-form-item title="同步薪资" title-width="200rpx" prop="syncToSalary">
-            <wd-switch v-model="formData.syncToSalary" :disabled="!planEditable" />
-          </wd-form-item>
-          <wd-form-item
-            v-if="formData.syncToSalary"
-            title="计薪月份"
-            title-width="200rpx"
-            prop="paidForMonth"
-          >
-            <view
-              class="min-h-72rpx flex items-center justify-end text-28rpx"
-              :class="formData.paidForMonth ? 'text-[#333]' : 'text-[#999]'"
-              @click="planEditable && (paidMonthVisible = true)"
-            >
-              {{ formData.paidForMonth || '请选择计薪月份' }}
-            </view>
-          </wd-form-item>
-        </wd-cell-group>
+        <PlanBasicSection
+          v-model="formData"
+          v-model:custom-date-range="customDateRange"
+          :disabled="!planEditable"
+        />
+        <PlanAssessmentSection
+          v-model="formData"
+          :disabled="!planEditable"
+          :assessment-templates="assessmentTemplates"
+        />
+        <PlanProcessSection v-model="formData" :disabled="!planEditable" />
+        <PlanResultSection
+          v-model="formData"
+          :disabled="!planEditable"
+          :result-templates="resultTemplates"
+        />
       </wd-form>
     </view>
 
@@ -283,42 +37,6 @@
         </wd-button>
       </view>
     </view>
-
-    <wd-datetime-picker
-      v-model="monthPickerValue"
-      v-model:visible="monthVisible"
-      type="year-month"
-      title="请选择月份"
-      @confirm="handleMonthConfirm"
-    />
-    <wd-datetime-picker
-      v-model="yearPickerValue"
-      v-model:visible="yearVisible"
-      type="year"
-      title="请选择年份"
-      @confirm="handleYearConfirm"
-    />
-    <wd-datetime-picker
-      v-model="paidMonthPickerValue"
-      v-model:visible="paidMonthVisible"
-      type="year-month"
-      title="请选择计薪月份"
-      @confirm="handlePaidMonthConfirm"
-    />
-    <wd-datetime-picker
-      v-model="startDatePickerValue"
-      v-model:visible="startDateVisible"
-      type="date"
-      title="请选择开始日期"
-      @confirm="handleStartDateConfirm"
-    />
-    <wd-datetime-picker
-      v-model="endDatePickerValue"
-      v-model:visible="endDateVisible"
-      type="date"
-      title="请选择结束日期"
-      @confirm="handleEndDateConfirm"
-    />
   </view>
 </template>
 
@@ -335,7 +53,7 @@ import type {
 import dayjs from 'dayjs'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
-import { getPerformanceAssessmentTemplate, getPerformanceAssessmentTemplateSimpleList } from '@/api/hrm/performance/config/assessment-template'
+import { getPerformanceAssessmentTemplateSimpleList } from '@/api/hrm/performance/config/assessment-template'
 import { getPerformanceResultTemplateSimpleList } from '@/api/hrm/performance/config/result-template'
 import {
   createPerformancePlan,
@@ -346,13 +64,10 @@ import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import {
-  HRM_PERFORMANCE_RATER_MAX_LEVEL,
   HrmEmployeeStatus,
   HrmEmployeeType,
   HrmPerformanceAppealTimeoutAction,
   HrmPerformanceCycleType,
-  HrmPerformanceCycleTypeOptions,
-  HrmPerformanceHandlerTypeOptions,
   HrmPerformancePlanScopeType,
   HrmPerformancePlanStatus,
   HrmPerformanceQuotaSettingType,
@@ -362,16 +77,12 @@ import {
   HrmPerformanceScoreCalculation,
   HrmPerformanceUpperLimitType,
 } from '@/pages-hrm/utils/constants'
-import {
-  formatHrmPerformanceRaterLevel,
-  formatHrmPerformanceReviewStageName,
-} from '@/pages-hrm/utils/format'
-import EmployeeFormPicker from '@/pages-hrm/employee/components/employee-form-picker.vue'
-import AssessmentConfigEditor from '@/pages-hrm/performance/config/assessment-template/components/assessment-config-editor.vue'
+import { formatHrmPerformanceReviewStageName } from '@/pages-hrm/utils/format'
 import { validateAssessmentConfig } from '@/pages-hrm/utils/performance'
-import HandlerStageList from '../components/handler-stage-list.vue'
-import PlanScopeList from '../components/plan-scope-list.vue'
-import ReviewStageList from '../components/review-stage-list.vue'
+import PlanAssessmentSection from '../components/plan-assessment-section.vue'
+import PlanBasicSection from '../components/plan-basic-section.vue'
+import PlanProcessSection from '../components/plan-process-section.vue'
+import PlanResultSection from '../components/plan-result-section.vue'
 
 const props = defineProps<{
   id?: number | string
@@ -392,16 +103,6 @@ const formData = ref<PerformancePlan>(createDefaultFormData()) // 表单数据
 const assessmentTemplates = ref<AssessmentTemplate[]>([]) // 考核模板
 const resultTemplates = ref<ResultTemplate[]>([]) // 结果模板
 const customDateRange = ref<[string | undefined, string | undefined]>([undefined, undefined]) // 自定义日期
-const monthVisible = ref(false)
-const yearVisible = ref(false)
-const paidMonthVisible = ref(false)
-const startDateVisible = ref(false)
-const endDateVisible = ref(false)
-const monthPickerValue = ref<number | string>(Date.now())
-const yearPickerValue = ref<number | string>(Date.now())
-const paidMonthPickerValue = ref<number | string>(Date.now())
-const startDatePickerValue = ref<number | string>(Date.now())
-const endDatePickerValue = ref<number | string>(Date.now())
 
 const viewMode = computed(() => props.type === 'view') // 查看模式
 const getTitle = computed(() => {
@@ -415,37 +116,6 @@ const planEditable = computed(() => { // 是否可编辑
     && (!formData.value.status
       || formData.value.status === HrmPerformancePlanStatus.DRAFT
       || formData.value.status === HrmPerformancePlanStatus.NOT_STARTED)
-})
-const cycleTypeColumns = computed(() =>
-  HrmPerformanceCycleTypeOptions.map(item => ({ label: item.label, value: item.value })),
-)
-const quarterColumns = [
-  { label: '第一季度', value: 1 },
-  { label: '第二季度', value: 2 },
-  { label: '第三季度', value: 3 },
-  { label: '第四季度', value: 4 },
-]
-const quotaSettingColumns = [
-  { label: '系统制定', value: HrmPerformanceQuotaSettingType.SYSTEM },
-  { label: '员工制定', value: HrmPerformanceQuotaSettingType.EMPLOYEE },
-]
-const appealTimeoutColumns = [
-  { label: '自动拒绝', value: HrmPerformanceAppealTimeoutAction.REJECT },
-  { label: '自动通过', value: HrmPerformanceAppealTimeoutAction.APPROVE },
-]
-const handlerTypeColumns = computed(() =>
-  HrmPerformanceHandlerTypeOptions.map(item => ({ label: item.label, value: item.value })),
-)
-const assessmentTemplateColumns = computed(() =>
-  assessmentTemplates.value.map(item => ({ label: item.name, value: item.id! })),
-)
-const resultTemplateColumns = computed(() =>
-  resultTemplates.value.map(item => ({ label: item.name, value: item.id! })),
-)
-const resultLevelText = computed(() => {
-  return formData.value.resultConfig?.levels
-    ?.map(level => `${level.name}（${level.minScore}-${level.maxScore}）`)
-    .join('；') || '-'
 })
 
 const formSchema = createFormSchema({
@@ -499,129 +169,6 @@ function validateScopes() {
     }
     return !!(scope.employeeType && scope.employeeStatuses?.length)
   })
-}
-
-/** 切换周期类型 */
-function handleCycleTypeChange() {
-  formData.value.cycle = ''
-  formData.value.quarter = formData.value.cycleType === HrmPerformanceCycleType.QUARTER ? 1 : undefined
-  customDateRange.value = [undefined, undefined]
-}
-
-/** 是否层级型处理人 */
-function isLevelType(type?: number) {
-  return type === HrmPerformanceRaterType.SUPERIOR || type === HrmPerformanceRaterType.DEPT_LEADER
-}
-
-/** 层级选项 */
-function levelColumns(type?: number) {
-  return Array.from({ length: HRM_PERFORMANCE_RATER_MAX_LEVEL }, (_, index) => {
-    const level = index + 1
-    return {
-      label: formatHrmPerformanceRaterLevel(type, level),
-      value: level,
-    }
-  })
-}
-
-/** 切换指标制定方式 */
-function handleQuotaSettingChange() {
-  if (formData.value.quotaSettingType === HrmPerformanceQuotaSettingType.EMPLOYEE) {
-    return
-  }
-  formData.value.targetConfirmation = false
-  formData.value.targetConfirmationStage = undefined
-}
-
-/** 切换目标确认 */
-function handleTargetConfirmationChange() {
-  const value = !!formData.value.targetConfirmation
-  formData.value.targetConfirmationStage = value
-    ? { type: HrmPerformanceRaterType.SUPERIOR, level: 1 }
-    : undefined
-}
-
-/** 切换目标确认人类型 */
-function handleTargetConfirmerTypeChange() {
-  const stage = formData.value.targetConfirmationStage
-  if (!stage) {
-    return
-  }
-  stage.level = isLevelType(stage.type) ? 1 : undefined
-  stage.employeeId = undefined
-}
-
-/** 切换结果审核 */
-function handleResultAuditChange() {
-  if (formData.value.resultAudit && !formData.value.resultAuditStages?.length) {
-    formData.value.resultAuditStages = [createDefaultHandlerStage()]
-  }
-}
-
-/** 切换结果确认 */
-function handleResultConfirmationChange() {
-  if (formData.value.resultConfirmation && !formData.value.appealStages?.length) {
-    formData.value.appealStages = [createDefaultHandlerStage()]
-  }
-}
-
-/** 选择月份 */
-function handleMonthConfirm({ value }: { value: number | string }) {
-  formData.value.cycle = dayjs(value).format('YYYY-MM')
-}
-
-/** 选择年份 */
-function handleYearConfirm({ value }: { value: number | string }) {
-  formData.value.cycle = dayjs(value).format('YYYY')
-}
-
-/** 选择计薪月份 */
-function handlePaidMonthConfirm({ value }: { value: number | string }) {
-  formData.value.paidForMonth = dayjs(value).format('YYYY-MM')
-}
-
-/** 选择开始日期 */
-function handleStartDateConfirm({ value }: { value: number | string }) {
-  customDateRange.value = [dayjs(value).format('YYYY-MM-DD'), customDateRange.value[1]]
-  syncCustomCycle()
-}
-
-/** 选择结束日期 */
-function handleEndDateConfirm({ value }: { value: number | string }) {
-  customDateRange.value = [customDateRange.value[0], dayjs(value).format('YYYY-MM-DD')]
-  syncCustomCycle()
-}
-
-/** 同步自定义周期文案 */
-function syncCustomCycle() {
-  const [start, end] = customDateRange.value
-  formData.value.cycle = start && end ? `${start} ~ ${end}` : ''
-}
-
-/** 切换考核模板 */
-async function handleAssessmentTemplateChange(value?: number) {
-  formData.value.assessmentConfig = createDefaultAssessmentConfig()
-  if (!value) {
-    return
-  }
-  const template = await getPerformanceAssessmentTemplate(value)
-  if (formData.value.assessmentTemplateId !== value) {
-    return
-  }
-  formData.value.assessmentConfig = cloneAssessmentConfig(template)
-}
-
-/** 切换结果模板 */
-function handleResultTemplateChange(value?: number) {
-  const template = resultTemplates.value.find(item => item.id === value)
-  if (!template) {
-    formData.value.resultConfig = { name: '', levels: [] }
-    return
-  }
-  formData.value.resultConfig = {
-    name: template.name,
-    levels: (template.levels || []).map(level => ({ ...level })),
-  }
 }
 
 /** 填充考核周期起止日期 */
@@ -742,20 +289,6 @@ function createDefaultAssessmentConfig(): AssessmentConfig {
     upperLimitType: HrmPerformanceUpperLimitType.UNIFIED,
     upperLimitScore: 100,
     dimensions: [],
-  }
-}
-
-/** 复制考核配置 */
-function cloneAssessmentConfig(config: AssessmentConfig): AssessmentConfig {
-  return {
-    name: config.name,
-    scoreCalculation: config.scoreCalculation,
-    upperLimitType: config.upperLimitType,
-    upperLimitScore: config.upperLimitScore,
-    dimensions: (config.dimensions || []).map(dimension => ({
-      ...dimension,
-      quotas: (dimension.quotas || []).map(quota => ({ ...quota })),
-    })),
   }
 }
 
