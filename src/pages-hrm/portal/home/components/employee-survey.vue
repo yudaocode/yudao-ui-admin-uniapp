@@ -71,6 +71,29 @@
       </view>
     </view>
 
+    <!-- 快捷入口：打卡 -->
+    <view v-if="employee" class="border-t border-t-[#f0f0f0] px-24rpx py-20rpx">
+      <view
+        class="flex items-center justify-between rounded-12rpx bg-[#f7f8fa] px-24rpx py-20rpx"
+        @click="goClock"
+      >
+        <view class="flex items-center gap-16rpx">
+          <view class="h-64rpx w-64rpx flex items-center justify-center rounded-12rpx bg-[#e8f3ff]">
+            <wd-icon name="location" size="36rpx" color="#1677ff" />
+          </view>
+          <view>
+            <view class="text-28rpx text-[#333] font-medium">
+              打卡
+            </view>
+            <view class="mt-4rpx text-22rpx text-[#999]">
+              考勤打卡与月度统计
+            </view>
+          </view>
+        </view>
+        <wd-icon name="arrow-right" size="28rpx" color="#999" />
+      </view>
+    </view>
+
     <view v-else class="py-64rpx text-center text-26rpx text-[#999]">
       当前账号未绑定员工档案
     </view>
@@ -97,5 +120,10 @@ const showRegularDate = computed(() => { // 未到转正日才展示预计转正
 /** 前往我的工资条 */
 function goSalarySlip() {
   uni.navigateTo({ url: '/pages-hrm/portal/salary/slip/index' })
+}
+
+/** 前往员工端打卡 */
+function goClock() {
+  uni.navigateTo({ url: '/pages-hrm/portal/attendance/clock/index' })
 }
 </script>

@@ -499,6 +499,15 @@ export const HrmAttendanceClockType = {
   OFF_DUTY: 2, // 下班打卡
 } as const
 
+/** 员工端打卡按钮状态（对齐后端 HrmAttendanceClockButtonStatusEnum） */
+export const HrmAttendanceClockButtonStatus = {
+  NOT_YET: 0, // 未到时间，不可打卡
+  NORMAL: 1, // 正常打卡
+  UPDATE: 2, // 更新打卡
+  LATE: 3, // 迟到打卡
+  EARLY: 4, // 早退打卡
+} as const
+
 /** 考勤节假日类型（对齐后端 HrmAttendanceHolidayTypeEnum） */
 export const HrmAttendanceHolidayType = {
   WORK: 1, // 上班
