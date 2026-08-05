@@ -2510,6 +2510,14 @@
               "permission": "hrm:portal:query"
             },
             {
+              "key": "hrmPortalAttendanceClock",
+              "name": "打卡",
+              "icon": "location",
+              "iconColor": "#1677ff",
+              "url": "/pages-hrm/portal/attendance/clock/index",
+              "permission": "hrm:portal:query"
+            },
+            {
               "key": "hrmPortalAttendanceReport",
               "name": "考勤报表",
               "icon": "calendar-line",
