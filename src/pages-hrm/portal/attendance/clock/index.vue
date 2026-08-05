@@ -400,6 +400,7 @@ const selectedDayDetail = computed(() => { // 选中日的考勤明细
     return formatDate(item.attendanceTime) === selectedDateKey.value
   })
 })
+// TODO @AI：按照项目的习惯，应该是 html 里直接 format，而不是通过这样的方式；
 const monthSummaryItems = computed(() => {
   const summary = monthDetail.value?.summary
   return [
@@ -411,6 +412,7 @@ const monthSummaryItems = computed(() => {
     { label: '请假(天)', value: formatHrmDays(summary?.leaveDays) },
   ]
 })
+// TODO @AI：按照项目的习惯，应该是 html 里直接 format，而不是通过这样的方式；
 const wifiTipTitle = computed(() => {
   if (!detail.value?.openWifiCard) {
     return '未启用 WiFi 打卡'
@@ -418,6 +420,7 @@ const wifiTipTitle = computed(() => {
   const ssid = detail.value.wifis?.[0]?.ssid
   return ssid ? `考勤 WiFi：${ssid}` : '已启用 WiFi 打卡'
 })
+// TODO @AI：按照项目的习惯，应该是 html 里直接 format，而不是通过这样的方式；
 const wifiTipDesc = computed(() => {
   if (!detail.value?.openWifiCard) {
     return '当前考勤组未要求连接指定 WiFi'
@@ -427,6 +430,7 @@ const wifiTipDesc = computed(() => {
   }
   return '请连接考勤组配置的 WiFi 后再打卡'
 })
+// TODO @AI：按照项目的习惯，应该是 html 里直接 format，而不是通过这样的方式；
 const locationTipTitle = computed(() => {
   if (!detail.value?.openPointCard) {
     return '未启用定位打卡'
@@ -470,6 +474,7 @@ const clockButtonClass = computed(() => {
   }
   return 'is-primary'
 })
+// TODO @AI：这种有必要抽方法么？全局有其他地方也有类似的逻辑么？？？
 const calendarDays = computed(() => { // 月历单元格（含上月末/下月初占位）
   const month = dayjs(selectedMonth.value)
   const start = month.startOf('month')
@@ -509,6 +514,7 @@ function handleBack() {
 
 /** 刷新当前时间文案 */
 function tickClock() {
+  // TODO @AI：使用 format 可以么？全局有合适的方法么？
   currentTimeText.value = dayjs().format('HH:mm:ss')
 }
 
@@ -549,6 +555,7 @@ async function refreshLocation() {
 }
 
 /** 执行打卡 */
+// TODO @AI：按照现在代码规范，代码块内，有没需要写的注释？
 async function handleClock() {
   if (clockLoading.value) {
     return
@@ -596,6 +603,7 @@ async function switchStatisticsTab() {
 
 /** 月份变更 */
 async function handleMonthChange() {
+  // TODO @AI：全局有合适的 format 方法哇？
   selectedDateKey.value = dayjs(selectedMonth.value).startOf('month').format('YYYY-MM-DD')
   await loadStatistics()
 }
@@ -615,6 +623,7 @@ async function loadStatistics() {
     const { year, month } = yearMonth.value
     monthDetail.value = await getPortalAttendanceMonthDetail({ year, month })
     // 默认选中当天；跨月时选月初
+    // TODO @AI：全局有合适的 format 方法哇？
     const todayKey = dayjs().format('YYYY-MM-DD')
     const hasToday = (monthDetail.value.dailyDetails || []).some(
       item => formatDate(item.attendanceTime) === todayKey,
@@ -622,6 +631,7 @@ async function loadStatistics() {
     if (hasToday && dayjs(todayKey).month() + 1 === month && dayjs(todayKey).year() === year) {
       selectedDateKey.value = todayKey
     } else if (!selectedDayDetail.value) {
+      // TODO @AI：全局有合适的 format 方法哇？
       selectedDateKey.value = dayjs(`${year}-${String(month).padStart(2, '0')}-01`).format('YYYY-MM-DD')
     }
   } finally {
@@ -630,6 +640,7 @@ async function loadStatistics() {
 }
 
 /** 月历圆点颜色：绿正常 / 红异常 / 灰休息 */
+// TODO @AI：这个全局有类似的方法，可以复用么？
 function getDayDotColor(dateKey: string) {
   const dayDetail = (monthDetail.value?.dailyDetails || []).find(
     item => formatDate(item.attendanceTime) === dateKey,
@@ -669,6 +680,7 @@ onUnmounted(() => {
     clearInterval(clockTimer)
   }
 })
+// TODO @AI：unocss？另外 tarbar 是不是可以用 wot 组件噢？
 </script>
 
 <style lang="scss" scoped>
