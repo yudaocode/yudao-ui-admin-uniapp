@@ -143,7 +143,7 @@ import {
   updateVoucherAttachments,
 } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set-guide.vue'
+import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FMS_VOUCHER_ATTACHMENT_FILE_TYPES, FmsVoucherStatus } from '@/pages-fms/utils/constants'
 import { formatFmsAmount } from '@/pages-fms/utils/format'

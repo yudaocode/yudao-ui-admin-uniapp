@@ -142,7 +142,7 @@ import type { Digest } from '@/api/fms/config/digest'
 import type { Subject } from '@/api/fms/config/subject'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { getDigestSimpleList } from '@/api/fms/config/digest'
-import SubjectFormPicker from '@/pages-fms/components/subject-form-picker.vue'
+import SubjectFormPicker from '@/pages-fms/config/subject/components/subject-form-picker.vue'
 import { FmsSubjectStatus } from '@/pages-fms/utils/constants'
 import AuxiliaryPicker from './auxiliary-picker.vue'
 

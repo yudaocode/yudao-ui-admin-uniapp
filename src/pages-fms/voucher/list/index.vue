@@ -9,18 +9,17 @@
 
     <template v-if="fmsStore.accountSet">
       <!-- 账套切换 -->
-      <!-- TODO @AI：在下面有搜搜框的情况下，界面有点丑。因为搜索框是占满 1 行的；而 AccountSetSwitch 和周边有间隙 -->
       <view class="p-24rpx pb-0">
         <AccountSetSwitch @change="handleAccountSetChange" />
       </view>
 
-      <!-- 搜索组件 -->
-      <SearchForm @search="handleQuery" @reset="handleReset" />
+      <!-- 搜索组件（加两侧边距，与账套切换卡片对齐） -->
+      <view class="px-24rpx">
+        <SearchForm @search="handleQuery" @reset="handleReset" />
+      </view>
 
       <!-- 整理/移动凭证 -->
-      <!-- TODO @AI：和上面的间隙不一致（貌似没生效） -->
-      <!-- TODO @AI：目前的这个按钮样式，和别的模块是对齐的么？ -->
-      <view v-if="canTidy || canMove" class="mx-24rpx mb-8rpx flex justify-end gap-24rpx">
+      <view v-if="canTidy || canMove" class="mx-24rpx my-16rpx flex justify-end gap-24rpx">
         <wd-button v-if="canTidy" size="small" variant="plain" @click="tidyFormRef?.open()">
           整理凭证
         </wd-button>
@@ -108,8 +107,8 @@ import type { Voucher } from '@/api/fms/voucher'
 import { onUnload } from '@dcloudio/uni-app'
 import { getVoucherPage } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set-guide.vue'
-import AccountSetSwitch from '@/pages-fms/components/account-set-switch.vue'
+import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
+import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsVoucherStatus } from '@/pages-fms/utils/constants'
 import { formatFmsAmount } from '@/pages-fms/utils/format'

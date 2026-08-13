@@ -14,6 +14,7 @@
           <AccountSetSwitch @change="init" />
         </view>
 
+        <!-- 筛选与结果 -->
         <!-- TODO @AI：这个搜索，要不要做成组件噢？ -->
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <view class="p-24rpx">
@@ -182,8 +183,8 @@ import dayjs from 'dayjs'
 import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
 import { getVoucherStatisticsList } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set-guide.vue'
-import AccountSetSwitch from '@/pages-fms/components/account-set-switch.vue'
+import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
+import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { formatFmsAmount, formatFmsMonth, formatFmsPeriodLabel, parseFmsMonth } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
