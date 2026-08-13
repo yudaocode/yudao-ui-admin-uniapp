@@ -25,11 +25,7 @@
         <view class="mb-16rpx text-28rpx text-[#666]">
           凭证字
         </view>
-        <wd-radio-group v-model="formData.voucherWordId" type="button">
-          <wd-radio v-for="item in voucherWords" :key="item.id" :value="item.id">
-            {{ item.name }}
-          </wd-radio>
-        </wd-radio-group>
+        <VoucherWordRadioGroup v-model="formData.voucherWordId" />
       </view>
 
       <view class="mb-32rpx">
@@ -54,10 +50,9 @@
 
 <script lang="ts" setup>
 import type { VoucherMoveReq } from '@/api/fms/voucher'
-import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
 import { moveVoucher } from '@/api/fms/voucher'
+import VoucherWordRadioGroup from '@/pages-fms/config/voucher-word/components/voucher-word-radio-group.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { formatFmsMonth, parseFmsMonth } from '@/pages-fms/utils/format'
 
@@ -71,7 +66,6 @@ const visible = ref(false) // 弹窗显隐
 const formLoading = ref(false) // 表单提交状态
 const monthVisible = ref(false) // 月份选择器显隐
 const monthPicker = ref<number | string>('') // 月份本地值
-const voucherWords = ref<VoucherWord[]>([]) // 凭证字列表
 const formData = ref<VoucherMoveReq>({ // 表单数据
   accountSetId: 0,
   month: '',
@@ -86,13 +80,12 @@ async function open() {
   if (!accountSetId) {
     return
   }
-  voucherWords.value = await getVoucherWordSimpleList(accountSetId)
   const month = fmsStore.currentMonth || ''
   monthPicker.value = parseFmsMonth(month)
-  formData.value = {
+  formData.value = { // 凭证字由单选组在值为空时自动选中默认项
     accountSetId,
     month,
-    voucherWordId: voucherWords.value.find(item => item.defaultStatus)?.id || voucherWords.value[0]?.id || 0,
+    voucherWordId: 0,
     sourceNumber: 0,
     targetNumber: 0,
   }
