@@ -1,4 +1,3 @@
-<!-- TODO @AI：应该放到对应的模块里呀 -->
 <template>
   <wd-popup
     v-model="visible"

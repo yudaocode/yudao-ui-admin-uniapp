@@ -1,4 +1,3 @@
-<!-- TODO @AI：如果对齐 vue3 + ep，是不是还要有个小目录哈 -->
 <template>
   <!-- 无可用账套引导：提示创建账套或完成初始化 -->
   <view class="flex flex-1 flex-col items-center justify-center px-48rpx py-96rpx">

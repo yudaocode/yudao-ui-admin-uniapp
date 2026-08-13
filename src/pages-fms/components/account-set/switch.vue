@@ -1,4 +1,3 @@
-<!-- TODO @AI：如果对齐 vue3 + ep，是不是还要有个小目录哈 -->
 <template>
   <!-- 账套切换条：展示当前账套与会计期间，点击弹窗切换 -->
   <view>
@@ -92,7 +91,6 @@ async function handleSelect({ item }: { item: { id?: number, name: string } }) {
   }
 }
 
-// TODO @AI：切换后，会报请求参数缺失；你看看是哪个环节的问题。（接口上报的）
 /** 初始化 */
 onMounted(async () => {
   if (!fmsStore.accountSetListLoaded) {
