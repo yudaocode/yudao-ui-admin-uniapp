@@ -44,5 +44,5 @@ export function closePeriod(data: ClosingPeriodReq) {
 
 /** 反结账 */
 export function cancelClosePeriod(params: ClosingPeriodReq) {
-  return http.delete<boolean>('/fms/closing/period/cancel', params)
+  return http.delete<boolean>('/fms/closing/period/cancel', undefined, params)
 }

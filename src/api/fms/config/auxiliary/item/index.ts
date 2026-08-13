@@ -39,7 +39,7 @@ export function updateAuxiliaryItem(data: AuxiliaryItem) {
 
 /** 删除辅助核算项目（后端为批量接口，单个删除传单个编号） */
 export function deleteAuxiliaryItem(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/auxiliary-item/delete-list', { accountSetId, ids: `${id}` })
+  return http.delete<boolean>('/fms/config/auxiliary-item/delete-list', undefined, { accountSetId, ids: `${id}` })
 }
 
 /** 修改辅助核算项目状态 */

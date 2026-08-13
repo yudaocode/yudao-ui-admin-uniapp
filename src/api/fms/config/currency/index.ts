@@ -33,5 +33,5 @@ export function updateCurrency(data: Currency) {
 
 /** 删除币别 */
 export function deleteCurrency(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/currency/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/currency/delete', undefined, { accountSetId, id })
 }

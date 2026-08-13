@@ -31,5 +31,5 @@ export function updateAuxiliaryType(data: AuxiliaryType) {
 
 /** 删除辅助核算类别 */
 export function deleteAuxiliaryType(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/auxiliary-type/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/auxiliary-type/delete', undefined, { accountSetId, id })
 }

@@ -2546,6 +2546,256 @@
       ]
     },
     {
+      "key": "fms",
+      "name": "FMS 财务管理",
+      "subGroups": [
+        {
+          "key": "overview",
+          "name": "工作台",
+          "menus": [
+            {
+              "key": "fmsHome",
+              "name": "首页",
+              "icon": "dashboard",
+              "iconColor": "#1677ff",
+              "url": "/pages-statistics/fms/home/index",
+              "permission": "fms:home:query"
+            }
+          ]
+        },
+        {
+          "key": "voucher",
+          "name": "凭证管理",
+          "menus": [
+            {
+              "key": "fmsVoucherCreate",
+              "name": "录凭证",
+              "icon": "edit",
+              "iconColor": "#52c41a",
+              "url": "/pages-fms/voucher/create/index",
+              "permission": "fms:voucher:create"
+            },
+            {
+              "key": "fmsVoucherList",
+              "name": "查凭证",
+              "icon": "file",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/voucher/list/index",
+              "permission": "fms:voucher:query"
+            },
+            {
+              "key": "fmsVoucherStatistics",
+              "name": "凭证汇总表",
+              "icon": "dashboard",
+              "iconColor": "#fa8c16",
+              "url": "/pages-fms/voucher/statistics/index",
+              "permission": "fms:voucher:statistics:query"
+            }
+          ]
+        },
+        {
+          "key": "ledger",
+          "name": "账簿管理",
+          "menus": [
+            {
+              "key": "fmsLedgerDetail",
+              "name": "明细账",
+              "icon": "list",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/ledger/detail/index",
+              "permission": "fms:ledger:detail:query"
+            },
+            {
+              "key": "fmsLedgerGeneral",
+              "name": "总账",
+              "icon": "list",
+              "iconColor": "#52c41a",
+              "url": "/pages-fms/ledger/general/index",
+              "permission": "fms:ledger:general:query"
+            },
+            {
+              "key": "fmsLedgerSubjectBalance",
+              "name": "科目余额表",
+              "icon": "dashboard",
+              "iconColor": "#fa8c16",
+              "url": "/pages-fms/ledger/subject-balance/index",
+              "permission": "fms:ledger:subject-balance:query"
+            },
+            {
+              "key": "fmsLedgerMultiColumn",
+              "name": "多栏账",
+              "icon": "layout",
+              "iconColor": "#722ed1",
+              "url": "/pages-fms/ledger/multi-column/index",
+              "permission": "fms:ledger:multi-column:query"
+            },
+            {
+              "key": "fmsLedgerAuxiliaryDetail",
+              "name": "核算项目明细账",
+              "icon": "apps",
+              "iconColor": "#13c2c2",
+              "url": "/pages-fms/ledger/auxiliary-detail/index",
+              "permission": "fms:ledger:detail:query"
+            },
+            {
+              "key": "fmsLedgerAuxiliaryBalance",
+              "name": "核算项目余额表",
+              "icon": "apps",
+              "iconColor": "#eb2f96",
+              "url": "/pages-fms/ledger/auxiliary-balance/index",
+              "permission": "fms:ledger:subject-balance:query"
+            },
+            {
+              "key": "fmsLedgerQuantityDetail",
+              "name": "数量金额明细账",
+              "icon": "ordered-list",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/ledger/quantity-detail/index",
+              "permission": "fms:ledger:detail:query"
+            },
+            {
+              "key": "fmsLedgerQuantityGeneral",
+              "name": "数量金额总账",
+              "icon": "ordered-list",
+              "iconColor": "#52c41a",
+              "url": "/pages-fms/ledger/quantity-general/index",
+              "permission": "fms:ledger:general:query"
+            }
+          ]
+        },
+        {
+          "key": "report",
+          "name": "报表管理",
+          "menus": [
+            {
+              "key": "fmsReportBalanceSheet",
+              "name": "资产负债表",
+              "icon": "book",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/report/balance-sheet/index",
+              "permission": "fms:report:balance-sheet:query"
+            },
+            {
+              "key": "fmsReportIncomeStatement",
+              "name": "利润表",
+              "icon": "book",
+              "iconColor": "#52c41a",
+              "url": "/pages-fms/report/income-statement/index",
+              "permission": "fms:report:income-statement:query"
+            },
+            {
+              "key": "fmsReportCashFlowStatement",
+              "name": "现金流量表",
+              "icon": "book",
+              "iconColor": "#fa8c16",
+              "url": "/pages-fms/report/cash-flow-statement/index",
+              "permission": "fms:report:cash-flow-statement:query"
+            }
+          ]
+        },
+        {
+          "key": "closing",
+          "name": "结账管理",
+          "menus": [
+            {
+              "key": "fmsClosing",
+              "name": "结账",
+              "icon": "check-circle",
+              "iconColor": "#722ed1",
+              "url": "/pages-fms/closing/index",
+              "permission": "fms:closing:query"
+            }
+          ]
+        },
+        {
+          "key": "config",
+          "name": "设置管理",
+          "menus": [
+            {
+              "key": "fmsSubject",
+              "name": "科目设置",
+              "icon": "book",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/config/subject/index",
+              "permission": "fms:config:subject:query"
+            },
+            {
+              "key": "fmsVoucherWord",
+              "name": "凭证字",
+              "icon": "file",
+              "iconColor": "#13c2c2",
+              "url": "/pages-fms/config/voucher-word/index",
+              "permission": "fms:config:voucher-word:query"
+            },
+            {
+              "key": "fmsDigest",
+              "name": "常用摘要",
+              "icon": "list",
+              "iconColor": "#eb2f96",
+              "url": "/pages-fms/config/digest/index",
+              "permission": "fms:config:digest:query"
+            },
+            {
+              "key": "fmsCurrency",
+              "name": "币别",
+              "icon": "swap",
+              "iconColor": "#52c41a",
+              "url": "/pages-fms/config/currency/index",
+              "permission": "fms:config:currency:query"
+            },
+            {
+              "key": "fmsInitialBalance",
+              "name": "财务初始余额",
+              "icon": "storage",
+              "iconColor": "#fa8c16",
+              "url": "/pages-fms/config/initial-balance/index",
+              "permission": "fms:config:initial-balance:query"
+            },
+            {
+              "key": "fmsFinanceParameter",
+              "name": "财务参数",
+              "icon": "settings",
+              "iconColor": "#722ed1",
+              "url": "/pages-fms/config/finance-parameter/index",
+              "permission": "fms:config:finance-parameter:query"
+            },
+            {
+              "key": "fmsAuxiliary",
+              "name": "辅助核算",
+              "icon": "apps",
+              "iconColor": "#13c2c2",
+              "url": "/pages-fms/config/auxiliary/index",
+              "permission": "fms:config:auxiliary:query"
+            },
+            {
+              "key": "fmsAccountSet",
+              "name": "账套管理",
+              "icon": "organization",
+              "iconColor": "#1677ff",
+              "url": "/pages-fms/config/account-set/index",
+              "permission": "fms:config:account-set:query"
+            },
+            {
+              "key": "fmsVoucherTemplate",
+              "name": "凭证模板",
+              "icon": "copy",
+              "iconColor": "#722ed1",
+              "url": "/pages-fms/config/voucher-template/index",
+              "permission": "fms:config:voucher-template:query"
+            },
+            {
+              "key": "fmsFinanceIndicator",
+              "name": "财务指标",
+              "icon": "dashboard",
+              "iconColor": "#fa8c16",
+              "url": "/pages-fms/config/finance-indicator/index",
+              "permission": "fms:config:finance-indicator:query"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "key": "ai",
       "name": "AI 大模型",
       "subGroups": [

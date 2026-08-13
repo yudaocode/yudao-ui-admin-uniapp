@@ -51,5 +51,5 @@ export function updateAccountUserList(data: AccountUserUpdateReq) {
 
 /** 设置默认账套 */
 export function updateAccountSetDefaultStatus(accountSetId: number) {
-  return http.put<boolean>('/fms/config/account-user/update-default-status', { accountSetId })
+  return http.put<boolean>('/fms/config/account-user/update-default-status', undefined, { accountSetId })
 }

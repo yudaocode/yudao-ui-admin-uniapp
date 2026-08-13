@@ -35,5 +35,5 @@ export function updateFinanceIndicator(data: FinanceIndicator) {
 
 /** 删除财务指标 */
 export function deleteFinanceIndicator(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/finance-indicator/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/finance-indicator/delete', undefined, { accountSetId, id })
 }

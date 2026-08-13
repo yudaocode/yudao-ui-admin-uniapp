@@ -146,7 +146,7 @@ export function cancelReviewVoucher(accountSetId: number, ids: number[]) {
 
 /** 删除凭证（后端为批量接口，ids 逗号拼接） */
 export function deleteVoucherList(accountSetId: number, ids: number[]) {
-  return http.delete<boolean>('/fms/voucher/delete-list', { accountSetId, ids: ids.join(',') })
+  return http.delete<boolean>('/fms/voucher/delete-list', undefined, { accountSetId, ids: ids.join(',') })
 }
 
 /** 删除单张凭证 */

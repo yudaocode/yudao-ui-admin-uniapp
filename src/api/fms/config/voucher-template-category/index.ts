@@ -29,5 +29,5 @@ export function updateVoucherTemplateCategory(data: VoucherTemplateCategory) {
 
 /** 删除凭证模板分类 */
 export function deleteVoucherTemplateCategory(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/voucher-template-category/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/voucher-template-category/delete', undefined, { accountSetId, id })
 }

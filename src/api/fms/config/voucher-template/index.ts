@@ -51,5 +51,5 @@ export function updateVoucherTemplate(data: VoucherTemplate) {
 
 /** 删除凭证模板 */
 export function deleteVoucherTemplate(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/voucher-template/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/voucher-template/delete', undefined, { accountSetId, id })
 }

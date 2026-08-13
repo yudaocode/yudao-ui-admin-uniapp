@@ -33,5 +33,5 @@ export function updateVoucherWord(data: VoucherWord) {
 
 /** 删除凭证字 */
 export function deleteVoucherWord(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/voucher-word/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/voucher-word/delete', undefined, { accountSetId, id })
 }

@@ -30,5 +30,5 @@ export function updateDigest(data: Digest) {
 
 /** 删除常用摘要 */
 export function deleteDigest(accountSetId: number, id: number) {
-  return http.delete<boolean>('/fms/config/digest/delete', { accountSetId, id })
+  return http.delete<boolean>('/fms/config/digest/delete', undefined, { accountSetId, id })
 }
