@@ -17,20 +17,13 @@
         v-model="formData.voucherTime"
         label="凭证日期"
       />
-      <yd-search-picker
+      <VoucherWordSearchPicker
         v-model="formData.voucherWordId"
-        label="凭证字"
-        :columns="voucherWordOptions"
-        all-option
+        @change="item => (voucherWordName = item?.name || '')"
       />
-      <yd-search-picker
+      <SubjectSearchPicker
         v-model="formData.subjectId"
-        label="科目"
-        :columns="subjectColumns"
-        all-option
-        all-label="全部科目"
-        placeholder="请选择科目"
-        filterable
+        @change="item => (subjectName = item ? `${item.code} ${item.name}` : '')"
       />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
@@ -91,15 +84,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { Subject } from '@/api/fms/config/subject'
-import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { getSubjectSimpleList } from '@/api/fms/config/subject'
-import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
+import SubjectSearchPicker from '@/pages-fms/config/subject/components/subject-search-picker.vue'
+import VoucherWordSearchPicker from '@/pages-fms/config/voucher-word/components/voucher-word-search-picker.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsVoucherStatusOptions } from '@/pages-fms/utils/constants'
-import { buildFmsSubjectOptions, buildFmsVoucherWordOptions } from '@/pages-fms/utils/format'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import dayjs from 'dayjs'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -111,8 +101,8 @@ const emit = defineEmits<{
 
 const fmsStore = useFmsStore()
 const visible = ref(false) // 搜索弹窗显示状态
-const voucherWords = ref<VoucherWord[]>([]) // 凭证字选项来源
-const subjects = ref<Subject[]>([]) // 科目选项来源
+const voucherWordName = ref('') // 已选凭证字名称，用于 placeholder 展示
+const subjectName = ref('') // 已选科目名称，用于 placeholder 展示
 const creatorUserName = ref('') // 已选制单人名称，用于 placeholder 展示
 const formData = reactive({
   voucherTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -126,20 +116,16 @@ const formData = reactive({
   status: undefined as number | undefined,
 }) // 搜索表单数据
 
-const voucherWordOptions = computed(() => buildFmsVoucherWordOptions(voucherWords.value)) // 凭证字选项
-
-const subjectColumns = computed(() => buildFmsSubjectOptions(subjects.value, true)) // 科目选项：编码 + 名称平铺，按编码排序
-
 const placeholder = computed(() => { // 搜索条件 placeholder 拼接
   const conditions: string[] = []
   if (formData.voucherTime[0] || formData.voucherTime[1]) {
     conditions.push(`凭证日期:${formatDate(formData.voucherTime[0]) || '?'}~${formatDate(formData.voucherTime[1]) || '?'}`)
   }
   if (formData.voucherWordId !== undefined) {
-    conditions.push(`凭证字:${voucherWords.value.find(item => item.id === formData.voucherWordId)?.name || ''}`)
+    conditions.push(`凭证字:${voucherWordName.value}`)
   }
   if (formData.subjectId !== undefined) {
-    conditions.push(`科目:${subjectColumns.value.find(item => item.value === formData.subjectId)?.label || ''}`)
+    conditions.push(`科目:${subjectName.value}`)
   }
   if (formData.voucherNumber !== undefined) {
     conditions.push(`凭证号:${formData.voucherNumber}`)
@@ -159,26 +145,6 @@ const placeholder = computed(() => { // 搜索条件 placeholder 拼接
   return conditions.length > 0 ? conditions.join(' | ') : '搜索凭证'
 })
 
-/** 加载凭证字选项 */
-async function loadVoucherWords() {
-  const accountSetId = fmsStore.accountSet?.id
-  if (!accountSetId) {
-    voucherWords.value = []
-    return
-  }
-  voucherWords.value = await getVoucherWordSimpleList(accountSetId)
-}
-
-/** 加载科目选项 */
-async function loadSubjects() {
-  const accountSetId = fmsStore.accountSet?.id
-  if (!accountSetId) {
-    subjects.value = []
-    return
-  }
-  subjects.value = await getSubjectSimpleList(accountSetId)
-}
-
 /** 当前会计期间的默认凭证日期范围（对齐 PC 默认查当前期间） */
 function getDefaultVoucherTime(): [number | undefined, number | undefined] {
   const month = fmsStore.currentMonth || dayjs().format('YYYY-MM')
@@ -197,6 +163,8 @@ function resetFormData() {
   formData.maxAmount = undefined
   formData.creatorUserId = undefined
   formData.status = undefined
+  voucherWordName.value = ''
+  subjectName.value = ''
   creatorUserName.value = ''
 }
 
@@ -234,7 +202,5 @@ watch(() => fmsStore.accountSet?.id, async () => {
     await fmsStore.loadCurrentMonth() // 切换账套后期间被清空，先取新账套当前期间再算默认日期
   }
   resetFormData()
-  loadVoucherWords()
-  loadSubjects()
 }, { immediate: true })
 </script>

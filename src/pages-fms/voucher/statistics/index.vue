@@ -56,12 +56,7 @@
                   @confirm="handleEndMonthConfirm"
                 />
               </view>
-              <yd-search-picker
-                v-model="queryParams.voucherWordId"
-                label="凭证字"
-                :columns="voucherWordOptions"
-                all-option
-              />
+              <VoucherWordSearchPicker v-model="queryParams.voucherWordId" />
               <view class="yd-search-form-item">
                 <view class="yd-search-form-label">
                   凭证号
@@ -177,16 +172,15 @@
 </template>
 
 <script lang="ts" setup>
-import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import type { VoucherStatistics, VoucherStatisticsReq } from '@/api/fms/voucher'
 import dayjs from 'dayjs'
-import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
 import { getVoucherStatisticsList } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
+import VoucherWordSearchPicker from '@/pages-fms/config/voucher-word/components/voucher-word-search-picker.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { buildFmsVoucherWordOptions, formatFmsAmount, formatFmsMonth, formatFmsPeriodLabel, parseFmsMonth } from '@/pages-fms/utils/format'
+import { formatFmsAmount, formatFmsMonth, formatFmsPeriodLabel, parseFmsMonth } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
 
 definePage({
@@ -200,7 +194,6 @@ const { hasAccessByCodes } = useAccess()
 const fmsStore = useFmsStore()
 const loading = ref(false) // 汇总加载状态
 const list = ref<VoucherStatistics[]>([]) // 汇总列表
-const voucherWords = ref<VoucherWord[]>([]) // 凭证字选项来源
 const queryParams = ref<VoucherStatisticsReq>({ // 查询参数，默认当前期间的一级科目
   accountSetId: 0,
   startMonth: '',
@@ -213,7 +206,6 @@ const endMonthVisible = ref(false) // 结束期间选择器显隐
 const startMonthPicker = ref<number | string>('') // 开始期间本地值
 const endMonthPicker = ref<number | string>('') // 结束期间本地值
 
-const voucherWordOptions = computed(() => buildFmsVoucherWordOptions(voucherWords.value)) // 凭证字选项
 const totalDebitAmount = computed(() => // 借方总计（按最小科目级次行汇总，与 PC 合计行口径一致）
   list.value
     .filter(item => item.level === queryParams.value.minLevel)
@@ -243,19 +235,14 @@ async function getList() {
 /** 初始化 */
 async function init() {
   list.value = []
-  voucherWords.value = []
   const accountSetId = fmsStore.accountSet?.id
   if (!accountSetId) {
     return
   }
-  const [wordList, month] = await Promise.all([
-    getVoucherWordSimpleList(accountSetId),
-    fmsStore.loadCurrentMonth(),
-  ])
+  const month = await fmsStore.loadCurrentMonth()
   if (fmsStore.accountSet?.id !== accountSetId) {
     return // 数据返回时账套已切换，丢弃过期结果
   }
-  voucherWords.value = wordList
   const currentMonth = month || dayjs().format('YYYY-MM')
   queryParams.value = {
     accountSetId,

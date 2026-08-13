@@ -14,13 +14,9 @@
                 {{ detail.status === FmsVoucherStatus.APPROVED ? '已审核' : '待审核' }}
               </wd-tag>
             </wd-cell>
-            <yd-form-picker
+            <VoucherWordFormPicker
               v-model="formData.voucherWordId"
-              label="凭证字"
-              label-width="220rpx"
               prop="voucherWordId"
-              :columns="voucherWordOptions"
-              placeholder="请选择凭证字"
               :disabled="readOnly"
               @confirm="refreshVoucherNumber"
             />
@@ -208,6 +204,7 @@ import { getSubjectList } from '@/api/fms/config/subject'
 import { createVoucherTemplate, getVoucherTemplateSimpleList } from '@/api/fms/config/voucher-template'
 import { getVoucherTemplateCategorySimpleList } from '@/api/fms/config/voucher-template-category'
 import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
+import VoucherWordFormPicker from '@/pages-fms/config/voucher-word/components/voucher-word-form-picker.vue'
 import {
   createVoucher,
   getNextVoucherNumber,
@@ -219,7 +216,7 @@ import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FMS_VOUCHER_ATTACHMENT_FILE_TYPES, FmsVoucherStatus } from '@/pages-fms/utils/constants'
-import { buildFmsVoucherWordOptions, formatFmsAmount, formatFmsUppercaseMoney } from '@/pages-fms/utils/format'
+import { formatFmsAmount, formatFmsUppercaseMoney } from '@/pages-fms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate, formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
@@ -284,7 +281,6 @@ const formSchema = createFormSchema({
 })
 
 const accountSetId = computed(() => fmsStore.accountSet?.id) // 当前账套编号
-const voucherWordOptions = computed(() => buildFmsVoucherWordOptions(voucherWordList.value)) // 凭证字选项
 const savePermission = computed(() => props.id ? 'fms:voucher:update' : 'fms:voucher:create') // 当前保存权限
 const readOnly = computed(() => // 已审核、结账生成、只读成员或无保存权限时不允许编辑
   detail.value?.status === FmsVoucherStatus.APPROVED
