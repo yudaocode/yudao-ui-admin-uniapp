@@ -22,7 +22,7 @@
         <wd-button v-if="canEdit" class="flex-1" type="primary" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -34,6 +34,7 @@
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { onUnload } from '@dcloudio/uni-app'
 import { deleteAuxiliaryType, getAuxiliaryTypeList } from '@/api/fms/config/auxiliary/type'
 import { useAccess } from '@/hooks/useAccess'
 import { useFmsStore } from '@/pages-fms/store/fms'
@@ -58,14 +59,12 @@ const fmsStore = useFmsStore()
 const formData = ref<AuxiliaryType>({} as AuxiliaryType) // 详情数据
 const deleting = ref(false) // 删除状态
 
-/** 仅自定义类别、账套可写且有权限时可编辑 */
-const canEdit = computed(() =>
+const canEdit = computed(() => // 仅自定义类别、账套可写且有权限时可编辑
   fmsStore.isAccountSetWritable
   && !formData.value.systemPreset
   && hasAccessByCodes(['fms:config:auxiliary:update']),
 )
-/** 仅自定义类别、账套可写且有权限时可删除 */
-const canDelete = computed(() =>
+const canDelete = computed(() => // 仅自定义类别、账套可写且有权限时可删除
   fmsStore.isAccountSetWritable
   && !formData.value.systemPreset
   && hasAccessByCodes(['fms:config:auxiliary:delete']),
@@ -134,5 +133,11 @@ async function handleDelete() {
 onMounted(async () => {
   await fmsStore.loadAccountSetList()
   await getDetail()
+  uni.$on('fms:config:auxiliary:reload', getDetail)
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('fms:config:auxiliary:reload', getDetail)
 })
 </script>

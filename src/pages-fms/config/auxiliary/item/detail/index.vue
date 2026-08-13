@@ -39,7 +39,7 @@
         >
           {{ formData.status === CommonStatus.ENABLE ? '停用' : '启用' }}
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -52,9 +52,10 @@ import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { onUnload } from '@dcloudio/uni-app'
 import {
   deleteAuxiliaryItem,
-  getAuxiliaryItemPage,
+  getAuxiliaryItem,
   updateAuxiliaryItemStatus,
 } from '@/api/fms/config/auxiliary/item'
 import { getAuxiliaryTypeList } from '@/api/fms/config/auxiliary/type'
@@ -68,7 +69,6 @@ import { formatDateTime } from '@/utils/date'
 const props = defineProps<{
   id?: number | any
   auxiliaryTypeId?: number | any
-  code?: string
 }>()
 
 definePage({
@@ -93,10 +93,8 @@ const deleting = ref(false) // 删除状态
 const statusUpdating = ref(false) // 状态修改状态
 
 const isInventory = computed(() => auxiliaryType.value?.type === FmsAuxiliaryType.INVENTORY) // 是否存货类别
-/** 仅账套可写且有更新权限时可编辑、修改状态 */
-const canUpdate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:auxiliary:update']))
-/** 仅账套可写且有删除权限时可删除 */
-const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:auxiliary:delete']))
+const canUpdate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:auxiliary:update'])) // 仅账套可写且有更新权限时可编辑、修改状态
+const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:auxiliary:delete'])) // 仅账套可写且有删除权限时可删除
 
 /** 返回上一页 */
 function handleBack() {
@@ -113,32 +111,22 @@ async function loadAuxiliaryType() {
   auxiliaryType.value = typeList.find(item => item.id === Number(props.auxiliaryTypeId))
 }
 
-/** 加载项目详情（项目无 /get 接口，通过类别分页 + 编码关键词定位，编码在类别内唯一） */
+/** 加载项目详情 */
 async function getDetail() {
-  if (!props.id || !props.code || deleting.value) {
+  if (!props.id || deleting.value) {
     return
   }
   const accountSetId = fmsStore.accountSet?.id
-  if (!accountSetId || !props.auxiliaryTypeId) {
+  if (!accountSetId) {
     return
   }
-  const data = await getAuxiliaryItemPage({
-    accountSetId,
-    auxiliaryTypeId: Number(props.auxiliaryTypeId),
-    search: props.code,
-    pageNo: 1,
-    pageSize: 200,
-  })
-  const auxiliaryItem = data.list.find(item => item.id === Number(props.id))
-  if (auxiliaryItem) {
-    formData.value = auxiliaryItem
-  }
+  formData.value = await getAuxiliaryItem(accountSetId, Number(props.id))
 }
 
 /** 编辑项目 */
 function handleEdit() {
   uni.navigateTo({
-    url: `/pages-fms/config/auxiliary/item/form/index?id=${props.id}&auxiliaryTypeId=${props.auxiliaryTypeId}&code=${encodeURIComponent(props.code || '')}`,
+    url: `/pages-fms/config/auxiliary/item/form/index?id=${props.id}&auxiliaryTypeId=${props.auxiliaryTypeId}`,
   })
 }
 
@@ -204,5 +192,11 @@ onMounted(async () => {
   await fmsStore.loadAccountSetList()
   await loadAuxiliaryType()
   await getDetail()
+  uni.$on('fms:config:auxiliary:reload', getDetail)
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('fms:config:auxiliary:reload', getDetail)
 })
 </script>

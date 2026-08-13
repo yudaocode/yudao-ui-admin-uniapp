@@ -60,13 +60,12 @@ const maxMonth = computed(() => fmsStore.currentMonth || dayjs().format('YYYY-MM
 const minDate = computed(() => parseFmsMonth(minMonth.value) || undefined) // 期间选择器最早日期
 const maxDate = computed(() => parseFmsMonth(maxMonth.value) || undefined) // 期间选择器最晚日期
 
-/** 当前期间展示文案，例如 2025年第01期 至 2025年第03期 */
-const periodLabel = computed(() => {
+const periodLabel = computed(() => { // 当前期间展示文案，例如 2025年第01期 至 2025年第03期
   const { startMonth, endMonth } = buildRange()
   return startMonth ? formatFmsPeriodLabel(startMonth, endMonth) : ''
 })
 
-/** 按报表周期计算期间范围：月报取当月，季报取所选月份所在季度 */
+/** 按报表周期计算期间范围：月报取当月，季报取所选月份所在季度并钳制到账套启用月与当前月 */
 function buildRange() {
   if (!reportMonth.value) {
     return { startMonth: '', endMonth: '' }
@@ -77,10 +76,16 @@ function buildRange() {
   }
   const quarter = Math.floor(month.month() / 3) + 1
   const quarterStartMonth = month.month((quarter - 1) * 3)
-  return {
-    startMonth: quarterStartMonth.format('YYYY-MM'),
-    endMonth: quarterStartMonth.add(2, 'month').format('YYYY-MM'),
+  let startMonth = quarterStartMonth.format('YYYY-MM')
+  let endMonth = quarterStartMonth.add(2, 'month').format('YYYY-MM')
+  // 季度起止分别钳制到账套启用月与当前月，避免查询未启用或未来期间
+  if (minMonth.value && startMonth < minMonth.value) {
+    startMonth = minMonth.value
   }
+  if (maxMonth.value && endMonth > maxMonth.value) {
+    endMonth = maxMonth.value
+  }
+  return { startMonth, endMonth }
 }
 
 /** 触发查询 */
@@ -116,7 +121,12 @@ async function initializePeriod() {
 }
 
 /** 账套切换后刷新期间并重新查询 */
-defineExpose({ refresh: initializePeriod })
+watch(() => fmsStore.accountSet?.id, (value, oldValue) => {
+  if (!value || value === oldValue) {
+    return
+  }
+  initializePeriod()
+})
 
 /** 初始化 */
 onMounted(() => {

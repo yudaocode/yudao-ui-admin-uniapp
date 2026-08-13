@@ -57,6 +57,15 @@
         >
           导入
         </wd-button>
+        <wd-button
+          v-if="hasAccessByCodes(['fms:config:initial-balance:export'])"
+          type="warning"
+          variant="plain"
+          size="small"
+          @click="handleExport"
+        >
+          导出
+        </wd-button>
       </view>
 
       <!-- 提示信息 -->
@@ -230,7 +239,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
 
     <!-- 添加明细和试算平衡弹窗 -->
     <AssistForm ref="assistFormRef" :account-set-id="fmsStore.accountSet?.id" @success="addAssist" />
@@ -315,21 +324,28 @@ const assistFormRef = ref<InstanceType<typeof AssistForm>>()
 const trialBalanceRef = ref<InstanceType<typeof TrialBalanceDialog>>()
 
 const isJanuary = computed(() => accountStartMonth.value.endsWith('-01')) // 账套是否从一月启用
-/** 是否可编辑：结账后初始余额不可修改 */
-const editable = computed(() =>
+const editable = computed(() => // 是否可编辑：结账后初始余额不可修改
   !!accountStartMonth.value
   && !!fmsStore.currentMonth
   && fmsStore.currentMonth === accountStartMonth.value,
 )
 const showProfitLoss = computed(() => !isJanuary.value && subjectType.value === FmsSubjectType.PROFIT_LOSS) // 是否展示实际损益发生额
 
-/** 启用期间可编辑、账套可写且有修改权限时才允许保存 */
-const canSave = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:update']))
-/** 启用期间可编辑、账套可写且有导入权限时才展示导入入口 */
-const canImport = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:import']))
+const canSave = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:update'])) // 启用期间可编辑、账套可写且有修改权限时才允许保存
+const canImport = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:import'])) // 启用期间可编辑、账套可写且有导入权限时才展示导入入口
 
-/** 返回上一页 */
-function handleBack() {
+/** 返回上一页（有未保存修改时先确认，与切换科目类别的守卫一致） */
+async function handleBack() {
+  if (edited.value) {
+    try {
+      await dialog.confirm({
+        title: '提示',
+        msg: '当前修改尚未保存，确定放弃修改并离开吗？',
+      })
+    } catch {
+      return
+    }
+  }
   navigateBackPlus()
 }
 
@@ -554,6 +570,14 @@ function handleImport() {
   })
 }
 
+/** 导出初始余额：Excel 导出需要在 PC 端管理后台操作 */
+function handleExport() {
+  dialog.alert({
+    title: '导出初始余额',
+    msg: 'Excel 导出请在 PC 端管理后台操作',
+  })
+}
+
 /** 保存初始余额 */
 async function handleSave() {
   const accountSetId = fmsStore.accountSet?.id
@@ -574,6 +598,7 @@ async function handleSave() {
         })),
     }))
   if (!balances.length) {
+    toast.warning('当前科目类别暂无可保存的末级科目')
     return
   }
   if (

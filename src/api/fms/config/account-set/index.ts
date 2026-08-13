@@ -22,20 +22,20 @@ export interface AccountSet {
   otherContact?: string // 其他联系方式
   address?: string // 详细地址
   currencyId?: number // 币种编号
-  startTime?: string // 启用期间
+  startTime?: number // 启用期间
   standard?: number // 会计制度
   initialized?: boolean // 是否已初始化
   defaultStatus?: boolean // 是否默认账套
   founder?: boolean // 是否账套创建人
   level?: number // 当前用户的成员权限级别
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** FMS 账套初始化参数 */
 export interface AccountSetInitializeReq {
   accountSetId: number // 账套编号
   currencyCode: string // 本位币编码
-  startTime: string // 启用期间
+  startTime: number // 启用期间
   standard: number // 会计制度
   level: number // 科目层级
   subjectCodeRule: string // 科目编码规则

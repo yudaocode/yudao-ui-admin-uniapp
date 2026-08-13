@@ -113,7 +113,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -150,8 +150,7 @@ const queryParams = reactive({ // 查询参数
   maxLevel: undefined as number | undefined,
 })
 
-/** 平铺展示的科目列表（对齐 PC 全量展开，按层级缩进） */
-const flatList = computed(() => {
+const flatList = computed(() => { // 平铺展示的科目列表（对齐 PC 全量展开，按层级缩进）
   const result: { node: LedgerQuantityGeneral, depth: number }[] = []
   const walk = (nodes: LedgerQuantityGeneral[], depth: number) => {
     for (const node of nodes) {

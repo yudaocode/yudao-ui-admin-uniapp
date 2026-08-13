@@ -172,7 +172,7 @@ import {
   getSubjectUsage,
   updateSubject,
 } from '@/api/fms/config/subject'
-import { getIntDictOptions } from '@/hooks/useDict'
+import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import {
   FMS_SUBJECT_PARENT_ID_ROOT,
@@ -240,39 +240,31 @@ const auxiliaryTypeList = ref<AuxiliaryType[]>([]) // 辅助核算类别列表
 const currencyList = ref<Currency[]>([]) // 可选币别列表（不含本位币）
 const subjectUsage = ref<SubjectUsage>(createEmptyUsage()) // 科目使用情况
 const originalAuxiliaryTypeIds = ref<number[]>([]) // 修改前的辅助核算类别编号数组
+const lastSuggestedCode = ref('') // 上次自动建议的科目编码，用于判断编码是否被用户手动修改
 
-/** 上级科目选项（含根节点） */
-const parentOptions = computed(() => [
+const parentOptions = computed(() => [ // 上级科目选项（含根节点）
   {
     id: FMS_SUBJECT_PARENT_ID_ROOT,
     name: '无上级科目',
     children: buildParentOptions(handleTree(subjectList.value)),
   },
 ])
-/** 当前科目类型的类别选项（字典值为 科目类型-类别） */
-const categoryOptions = computed(() => {
-  return getIntDictOptions(DICT_TYPE.FMS_SUBJECT_CATEGORY)
-    .filter(dict => String(dict.value).startsWith(`${formData.value.type}-`))
-    .map(dict => ({ label: dict.label, value: Number(String(dict.value).split('-')[1]) }))
+const categoryOptions = computed(() => { // 当前科目类型的类别选项（字典值为 科目类型-类别，复合字符串必须用 getStrDictOptions）
+  return getStrDictOptions(DICT_TYPE.FMS_SUBJECT_CATEGORY)
+    .filter(dict => dict.value.startsWith(`${formData.value.type}-`))
+    .map(dict => ({ label: dict.label, value: Number(dict.value.split('-')[1]) }))
 })
-/** 上级科目 */
-const parentSubject = computed(() =>
+const parentSubject = computed(() => // 上级科目
   formData.value.parentId && formData.value.parentId !== FMS_SUBJECT_PARENT_ID_ROOT
     ? subjectList.value.find(item => item.id === formData.value.parentId)
     : undefined,
 )
-/** 新建下级时，上级科目是否已有业务数据 */
-const parentSubjectUsed = computed(() => !props.id && Boolean(parentSubject.value) && subjectUsage.value.used)
-/** 上级科目存在业务数据和下级科目时不允许再次迁移 */
-const parentDataMigrationBlocked = computed(() => parentSubjectUsed.value && subjectUsage.value.childCount > 0)
-/** 存在下级科目时不允许修改编码 */
-const codeDisabled = computed(() => Boolean(props.id) && subjectUsage.value.childCount > 0)
-/** 继承上级或有下级时不允许修改科目类别 */
-const categoryDisabled = computed(() => Boolean(parentSubject.value) || subjectUsage.value.childCount > 0)
-/** 已使用或有下级时不允许修改辅助核算；移动端不支持历史辅助核算迁移，已使用科目同样禁止变更 */
-const auxiliaryDisabled = computed(() => parentSubjectUsed.value || subjectUsage.value.childCount > 0 || subjectUsage.value.used)
-/** 数量核算禁用条件 */
-const quantityAccountingDisabled = computed(() => parentSubjectUsed.value || subjectUsage.value.quantityDataCount > 0)
+const parentSubjectUsed = computed(() => !props.id && Boolean(parentSubject.value) && subjectUsage.value.used) // 新建下级时，上级科目是否已有业务数据
+const parentDataMigrationBlocked = computed(() => parentSubjectUsed.value && subjectUsage.value.childCount > 0) // 上级科目存在业务数据和下级科目时不允许再次迁移
+const codeDisabled = computed(() => Boolean(props.id) && subjectUsage.value.childCount > 0) // 存在下级科目时不允许修改编码
+const categoryDisabled = computed(() => Boolean(parentSubject.value) || subjectUsage.value.childCount > 0) // 继承上级或有下级时不允许修改科目类别
+const auxiliaryDisabled = computed(() => parentSubjectUsed.value || subjectUsage.value.childCount > 0 || subjectUsage.value.used) // 已使用或有下级时不允许修改辅助核算；移动端不支持历史辅助核算迁移，已使用科目同样禁止变更
+const quantityAccountingDisabled = computed(() => parentSubjectUsed.value || subjectUsage.value.quantityDataCount > 0) // 数量核算禁用条件
 
 /** 创建空的科目使用情况 */
 function createEmptyUsage(): SubjectUsage {
@@ -332,6 +324,38 @@ function inheritParentConfig(parent?: Subject) {
   formData.value.cash = parent.cash
 }
 
+/** 根据编码规则生成下级科目建议编码（对齐 PC suggestChildCode） */
+function suggestChildCode(parent: Subject): string {
+  const codeRules = subjectCodeRule.value.split('-').map(Number)
+  const segmentLength = codeRules[parent.level || 1] || 2
+  const prefix = parent.code
+  const usedCodes = new Set(
+    subjectList.value
+      .filter(item => item.parentId === parent.id)
+      .map(item => item.code.slice(prefix.length)),
+  )
+  const maxCode = 10 ** segmentLength - 1
+  for (let code = 1; code <= maxCode; code++) {
+    const suffix = String(code).padStart(segmentLength, '0')
+    if (!usedCodes.has(suffix)) {
+      return `${prefix}${suffix}`
+    }
+  }
+  return `${prefix}${String(maxCode).padStart(segmentLength, '0')}`
+}
+
+/** 带出下级科目建议编码：仅新增，且编码为空或仍等于上次自动值时覆盖 */
+function applySuggestedCode(parent?: Subject) {
+  if (props.id || !parent?.id || !subjectCodeRule.value) {
+    return
+  }
+  if (formData.value.code && formData.value.code !== lastSuggestedCode.value) {
+    return
+  }
+  lastSuggestedCode.value = suggestChildCode(parent)
+  formData.value.code = lastSuggestedCode.value
+}
+
 /** 加载上级科目的使用情况 */
 async function loadParentUsage() {
   const accountSetId = fmsStore.accountSet?.id
@@ -349,7 +373,9 @@ async function handleParentChange(value: number | string | (number | string)[] |
     return
   }
   const parentId = typeof value === 'number' ? value : FMS_SUBJECT_PARENT_ID_ROOT
-  inheritParentConfig(subjectList.value.find(item => item.id === parentId))
+  const parent = subjectList.value.find(item => item.id === parentId)
+  inheritParentConfig(parent)
+  applySuggestedCode(parent)
   await loadParentUsage()
 }
 
@@ -433,8 +459,9 @@ onMounted(async () => {
     await loadOptions()
   } else {
     await loadOptions()
-    // 新建下级时，继承上级科目的核算配置并加载使用情况
+    // 新建下级时，继承上级科目的核算配置、带出建议编码并加载使用情况
     inheritParentConfig(parentSubject.value)
+    applySuggestedCode(parentSubject.value)
     await loadParentUsage()
   }
 })

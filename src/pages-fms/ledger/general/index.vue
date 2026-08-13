@@ -87,7 +87,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -123,8 +123,7 @@ const queryParams = reactive({ // 查询参数
   maxLevel: undefined as number | undefined,
 })
 
-/** 按科目分组的总账列表（后端按科目连续返回，分组承接 PC 合并单元格语义） */
-const groups = computed(() => {
+const groups = computed(() => { // 按科目分组的总账列表（后端按科目连续返回，分组承接 PC 合并单元格语义）
   const result: { subjectId: number, subjectCode: string, subjectName: string, rows: LedgerGeneral[] }[] = []
   for (const row of list.value) {
     let group = result[result.length - 1]

@@ -10,7 +10,7 @@ export interface FinanceIndicator {
   formula: string // 指标公式
   sort: number // 展示顺序
   status: number // 状态
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询财务指标详情 */

@@ -12,7 +12,7 @@
       <wd-cell-group border>
         <wd-cell title="指标名称" :value="formData.name || '-'" />
         <wd-cell title="指标编码" :value="formData.code || '-'" />
-        <wd-cell title="取数报表" :value="formatFmsFinanceIndicatorType(formData.type)" />
+        <wd-cell title="取数报表" :value="getDictLabel(DICT_TYPE.FMS_FINANCE_INDICATOR_TYPE, formData.type) || '-'" />
         <wd-cell title="指标公式" :value="formData.formula || '-'" />
         <wd-cell title="展示顺序" :value="`${formData.sort ?? '-'}`" />
         <wd-cell title="状态">
@@ -29,7 +29,7 @@
         <wd-button v-if="canEdit" class="flex-1" type="primary" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -41,11 +41,12 @@
 import type { FinanceIndicator } from '@/api/fms/config/finance-indicator'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { onUnload } from '@dcloudio/uni-app'
 import { deleteFinanceIndicator, getFinanceIndicator } from '@/api/fms/config/finance-indicator'
 import { useAccess } from '@/hooks/useAccess'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsFinanceIndicatorType } from '@/pages-fms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
+import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
@@ -67,10 +68,8 @@ const fmsStore = useFmsStore()
 const formData = ref<FinanceIndicator>({} as FinanceIndicator) // 详情数据
 const deleting = ref(false) // 删除状态
 
-/** 仅账套可写且有权限时可编辑 */
-const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:update']))
-/** 仅账套可写且有权限时可删除 */
-const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:delete']))
+const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:update'])) // 仅账套可写且有权限时可编辑
+const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:delete'])) // 仅账套可写且有权限时可删除
 
 /** 返回上一页 */
 function handleBack() {
@@ -126,5 +125,11 @@ async function handleDelete() {
 onMounted(async () => {
   await fmsStore.loadAccountSetList()
   await getDetail()
+  uni.$on('fms:config:finance-indicator:reload', getDetail)
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('fms:config:finance-indicator:reload', getDetail)
 })
 </script>

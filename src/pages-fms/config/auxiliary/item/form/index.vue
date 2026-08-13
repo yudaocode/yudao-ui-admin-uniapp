@@ -73,7 +73,7 @@ import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
   createAuxiliaryItem,
-  getAuxiliaryItemPage,
+  getAuxiliaryItem,
   updateAuxiliaryItem,
 } from '@/api/fms/config/auxiliary/item'
 import { getAuxiliaryTypeList } from '@/api/fms/config/auxiliary/type'
@@ -85,7 +85,6 @@ import { createFormSchema } from '@/utils/wot'
 const props = defineProps<{
   id?: number | any
   auxiliaryTypeId?: number | any
-  code?: string
 }>()
 
 definePage({
@@ -129,26 +128,16 @@ async function loadAuxiliaryType() {
   auxiliaryType.value = typeList.find(item => item.id === Number(props.auxiliaryTypeId))
 }
 
-/** 加载项目详情（项目无 /get 接口，通过类别分页 + 编码关键词定位，编码在类别内唯一） */
+/** 加载项目详情 */
 async function getDetail() {
-  if (!props.id || !props.code) {
+  if (!props.id) {
     return
   }
   const accountSetId = fmsStore.accountSet?.id
-  if (!accountSetId || !props.auxiliaryTypeId) {
+  if (!accountSetId) {
     return
   }
-  const data = await getAuxiliaryItemPage({
-    accountSetId,
-    auxiliaryTypeId: Number(props.auxiliaryTypeId),
-    search: props.code,
-    pageNo: 1,
-    pageSize: 200,
-  })
-  const auxiliaryItem = data.list.find(item => item.id === Number(props.id))
-  if (auxiliaryItem) {
-    formData.value = auxiliaryItem
-  }
+  formData.value = await getAuxiliaryItem(accountSetId, Number(props.id))
 }
 
 /** 提交表单 */

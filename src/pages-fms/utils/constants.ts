@@ -198,12 +198,6 @@ export const FmsFinanceIndicatorType = {
   INCOME_STATEMENT: FmsReportType.INCOME_STATEMENT, // 利润表
 } as const
 
-/** 财务指标取数报表类型选项 */
-export const FmsFinanceIndicatorTypeOptions = [
-  { label: '资产负债表', value: FmsFinanceIndicatorType.BALANCE_SHEET },
-  { label: '利润表', value: FmsFinanceIndicatorType.INCOME_STATEMENT },
-] as const
-
 /** 资产负债表公式取数规则选项 */
 export const FmsBalanceFormulaRuleOptions = [
   { label: '余额', value: FmsFormulaRule.BALANCE },

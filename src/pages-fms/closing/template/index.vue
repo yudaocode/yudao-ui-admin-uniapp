@@ -7,72 +7,74 @@
       @click-left="handleBack"
     />
 
-    <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="getList" />
-      </view>
+    <template v-if="hasAccessByCodes(['fms:closing:query'])">
+      <template v-if="fmsStore.accountSet">
+        <!-- 账套切换 -->
+        <view class="p-24rpx pb-0">
+          <AccountSetSwitch @change="getList" />
+        </view>
 
-      <!-- 模板分类 -->
-      <view class="mb-24rpx bg-white">
-        <wd-tabs v-model="category">
-          <wd-tab
-            v-for="item in FmsClosingTemplateCategoryOptions"
-            :key="item.value"
-            :title="item.label"
-            :name="item.value"
-          />
-        </wd-tabs>
-      </view>
+        <!-- 模板分类 -->
+        <view class="mb-24rpx bg-white">
+          <wd-tabs v-model="category">
+            <wd-tab
+              v-for="item in FmsClosingTemplateCategoryOptions"
+              :key="item.value"
+              :title="item.label"
+              :name="item.value"
+            />
+          </wd-tabs>
+        </view>
 
-      <!-- 结账模板列表（只读） -->
-      <view class="px-24rpx pb-24rpx">
-        <view
-          v-for="item in filteredList"
-          :key="item.id"
-          class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
-        >
-          <view class="mb-16rpx flex items-start justify-between gap-16rpx">
-            <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
-              {{ item.name }}
-            </view>
-            <wd-tag v-if="item.periodEnd" type="warning" plain>
-              期末结转
-            </wd-tag>
-          </view>
-          <view class="mb-12rpx text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">来源科目：</text>{{ formatSubject(item.subjectId) || '使用模板时补充' }}
-          </view>
-          <view class="mb-12rpx text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">取数规则：</text>{{ formatFormulaRule(item.formulaRule) }}
-          </view>
-          <view class="mb-12rpx text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">时间类型：</text>{{ formatTimeType(item.timeType) }}
-          </view>
-          <!-- 分录规则 -->
-          <view class="mt-16rpx border-0 border-t border-[#f0f0f0] border-solid pt-16rpx">
-            <view
-              v-for="(rule, index) in item.subjects || []"
-              :key="index"
-              class="mb-8rpx flex items-center justify-between text-26rpx text-[#666]"
-            >
-              <view class="min-w-0 flex-1 truncate">
-                {{ rule.digest || '-' }}（{{ formatSubject(rule.subjectId, rule.subjectCode) || '-' }}）
+        <!-- 结账模板列表（只读） -->
+        <view class="px-24rpx pb-24rpx">
+          <view
+            v-for="item in filteredList"
+            :key="item.id"
+            class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+          >
+            <view class="mb-16rpx flex items-start justify-between gap-16rpx">
+              <view class="min-w-0 flex-1 truncate text-32rpx text-[#333] font-semibold">
+                {{ item.name }}
               </view>
-              <view class="flex-shrink-0 text-[#999]">
-                {{ rule.direction === FmsDebitCreditDirection.DEBIT ? '借' : '贷' }} {{ rule.amountRatio }}%
+              <wd-tag v-if="item.periodEnd" type="warning" plain>
+                期末结转
+              </wd-tag>
+            </view>
+            <view class="mb-12rpx text-26rpx text-[#666]">
+              <text class="mr-8rpx text-[#999]">来源科目：</text>{{ formatSubject(item.subjectId) || '使用模板时补充' }}
+            </view>
+            <view class="mb-12rpx text-26rpx text-[#666]">
+              <text class="mr-8rpx text-[#999]">取数规则：</text>{{ formatFormulaRule(item.formulaRule) }}
+            </view>
+            <view class="mb-12rpx text-26rpx text-[#666]">
+              <text class="mr-8rpx text-[#999]">时间类型：</text>{{ formatTimeType(item.timeType) }}
+            </view>
+            <!-- 分录规则 -->
+            <view class="mt-16rpx border-0 border-t border-[#f0f0f0] border-solid pt-16rpx">
+              <view
+                v-for="(rule, index) in item.subjects || []"
+                :key="index"
+                class="mb-8rpx flex items-center justify-between text-26rpx text-[#666]"
+              >
+                <view class="min-w-0 flex-1 truncate">
+                  {{ rule.digest || '-' }}（{{ formatSubject(rule.subjectId, rule.subjectCode) || '-' }}）
+                </view>
+                <view class="flex-shrink-0 text-[#999]">
+                  {{ rule.direction === FmsDebitCreditDirection.DEBIT ? '借' : '贷' }} {{ rule.amountRatio }}%
+                </view>
               </view>
             </view>
+          </view>
+          <view v-if="!filteredList.length" class="py-96rpx text-center text-28rpx text-[#999]">
+            暂无结账模板
           </view>
         </view>
-        <view v-if="!filteredList.length" class="py-96rpx text-center text-28rpx text-[#999]">
-          暂无结账模板
-        </view>
-      </view>
+      </template>
+
+      <!-- 无可用账套引导 -->
+      <AccountSetGuide />
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
   </view>
 </template>
 
@@ -81,6 +83,7 @@ import type { ClosingTemplate } from '@/api/fms/closing/template'
 import type { Subject } from '@/api/fms/config/subject'
 import { getClosingTemplateList } from '@/api/fms/closing/template'
 import { getSubjectList } from '@/api/fms/config/subject'
+import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
@@ -101,6 +104,7 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const fmsStore = useFmsStore()
 const list = ref<ClosingTemplate[]>([]) // 列表数据
 const subjects = ref<Subject[]>([]) // 科目列表，用于分录规则展示科目名称

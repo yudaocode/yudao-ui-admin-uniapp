@@ -35,6 +35,7 @@
 import type { FmsHome, FmsHomeMetricDetail } from '@/api/fms/home'
 import YdChart from '../../../components/yd-chart/yd-chart.vue'
 import { FMS_HOME_METRIC_COLORS } from '@/pages-fms/utils/constants'
+import { formatFmsAmount } from '@/pages-fms/utils/format'
 
 const props = defineProps<{
   home?: FmsHome
@@ -43,8 +44,7 @@ const props = defineProps<{
   loading: boolean
 }>()
 
-/** 当前会计期间的月份文案 */
-const currentMonthText = computed(() => {
+const currentMonthText = computed(() => { // 当前会计期间的月份文案
   const month = Number(props.home?.currentMonth?.slice(5, 7))
   return month ? `${month}月` : ''
 })
@@ -54,8 +54,8 @@ const trendChartOptions = computed(() => { // 趋势图配置
     color: FMS_HOME_METRIC_COLORS,
     grid: { left: 8, right: 16, top: 40, bottom: 8, containLabel: true },
     legend: { top: 0, type: 'scroll' },
-    tooltip: { trigger: 'axis', confine: true },
-    yAxis: { type: 'value', axisLabel: { color: '#999', fontSize: 10 } },
+    tooltip: { trigger: 'axis', confine: true, valueFormatter: (value: unknown) => formatFmsAmount(Number(value)) },
+    yAxis: { type: 'value', axisLabel: { color: '#999', fontSize: 10, formatter: (value: number) => formatCompactAmount(value) } },
   }
   if (props.metricDetail) {
     return {
@@ -98,8 +98,7 @@ const trendChartOptions = computed(() => { // 趋势图配置
   }
 })
 
-/** 是否存在趋势数据 */
-const hasTrendData = computed(() => {
+const hasTrendData = computed(() => { // 是否存在趋势数据
   if (props.metricDetail) {
     return props.metricDetail.trends.length > 0
   }
@@ -153,5 +152,14 @@ function buildStructureChartData() {
     })
   }
   return result
+}
+
+/** 格式化坐标轴金额（过万压缩为「x.x万」，与 PC 一致） */
+function formatCompactAmount(amount: number) {
+  const value = Number(amount || 0)
+  if (Math.abs(value) >= 10000) {
+    return `${(value / 10000).toFixed(1)}万`
+  }
+  return value.toFixed(0)
 }
 </script>

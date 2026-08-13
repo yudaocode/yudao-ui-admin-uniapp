@@ -14,18 +14,18 @@
                 {{ detail.status === FmsVoucherStatus.APPROVED ? '已审核' : '待审核' }}
               </wd-tag>
             </wd-cell>
-            <wd-form-item
-              title="凭证字"
-              title-width="220rpx"
+            <yd-form-picker
+              v-model="formData.voucherWordId"
+              label="凭证字"
+              label-width="220rpx"
               prop="voucherWordId"
-              :disabled="readOnly"
-              is-link
-              :value="voucherWordName"
+              :columns="voucherWordOptions"
               placeholder="请选择凭证字"
-              @click="handleOpenVoucherWord"
+              :disabled="readOnly"
+              @confirm="refreshVoucherNumber"
             />
             <wd-form-item title="凭证号" title-width="220rpx" prop="voucherNumber" center>
-              <wd-input-number v-model="formData.voucherNumber" :min="1" :precision="0" :disabled="readOnly" />
+              <wd-input-number v-model="formData.voucherNumber" allow-null :min="1" :precision="0" :update-on-init="false" :disabled="readOnly" />
             </wd-form-item>
             <wd-form-item
               title="凭证日期"
@@ -42,7 +42,7 @@
               v-model:visible="dateVisible"
               title="请选择凭证日期"
               type="date"
-              :min-date="props.id ? undefined : minVoucherDate"
+              :min-date="minVoucherDate"
               :disabled="readOnly"
               @confirm="refreshVoucherNumber"
             />
@@ -57,6 +57,19 @@
           <!-- 凭证分录 -->
           <view class="flex items-center justify-between px-24rpx py-16rpx">
             <text class="text-28rpx text-[#333] font-semibold">凭证分录</text>
+            <view v-if="!props.id && !readOnly" class="flex gap-16rpx">
+              <wd-button size="small" variant="plain" @click="handleOpenTemplateApply">
+                套用模板
+              </wd-button>
+              <wd-button
+                v-if="hasAccessByCodes(['fms:config:voucher-template:create'])"
+                size="small"
+                variant="plain"
+                @click="handleOpenTemplateSave"
+              >
+                保存为模板
+              </wd-button>
+            </view>
           </view>
           <view class="px-24rpx">
             <VoucherEntryForm
@@ -73,6 +86,7 @@
             <wd-cell-group border>
               <wd-cell title="借方合计" :value="formatFmsAmount(debitTotal)" />
               <wd-cell title="贷方合计" :value="formatFmsAmount(creditTotal)" />
+              <wd-cell title="合计大写" :value="balanced ? formatFmsUppercaseMoney(debitTotal) : '-'" />
               <wd-cell v-if="!balanced" title="平衡状态">
                 <text class="text-28rpx text-[#ee0a24]">借贷不平衡</text>
               </wd-cell>
@@ -88,7 +102,7 @@
                   v-model="formData.attachmentUrls"
                   directory="fms/voucher"
                   :file-type="FMS_VOUCHER_ATTACHMENT_FILE_TYPES"
-                  :limit="9"
+                  :limit="100"
                   :disabled="readOnly"
                 />
               </wd-form-item>
@@ -107,33 +121,92 @@
         </wd-button>
       </view>
 
-      <!-- 凭证字选择器 -->
-      <wd-select-picker
-        ref="voucherWordPickerRef"
-        v-model="formData.voucherWordId"
-        title="选择凭证字"
-        :columns="voucherWordList"
-        value-key="id"
-        label-key="name"
-        type="radio"
-        @confirm="refreshVoucherNumber"
-      />
+      <!-- 套用模板弹窗 -->
+      <wd-popup
+        v-model="templateSelectVisible"
+        position="bottom"
+        safe-area-inset-bottom
+        custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
+      >
+        <view class="h-full flex flex-col bg-[#f5f5f5]">
+          <view class="flex items-center justify-between bg-white px-24rpx py-20rpx">
+            <wd-button variant="plain" size="small" @click="templateSelectVisible = false">
+              取消
+            </wd-button>
+            <view class="text-32rpx text-[#333] font-semibold">
+              套用模板
+            </view>
+            <view class="w-96rpx" />
+          </view>
+          <scroll-view scroll-y class="min-h-0 flex-1">
+            <view class="p-24rpx">
+              <view
+                v-for="template in templateList"
+                :key="template.id"
+                class="mb-20rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+                @click="handleApplyTemplate(template)"
+              >
+                <view class="text-28rpx text-[#333]">
+                  {{ template.name }}
+                </view>
+                <view class="mt-8rpx text-24rpx text-[#999]">
+                  {{ template.categoryName || '未分类' }}
+                </view>
+              </view>
+              <view v-if="templateList.length === 0" class="py-100rpx text-center">
+                <wd-empty icon="content" tip="暂无凭证模板" />
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </wd-popup>
+
+      <!-- 保存为模板弹窗 -->
+      <wd-popup v-model="templateSaveVisible" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0;">
+        <view class="p-32rpx">
+          <view class="mb-24rpx text-center text-32rpx text-[#333] font-semibold">
+            保存为模板
+          </view>
+          <view class="mb-24rpx">
+            <view class="mb-16rpx text-28rpx text-[#666]">
+              模板名称
+            </view>
+            <wd-input v-model="templateForm.name" clearable placeholder="请输入模板名称" :maxlength="255" />
+          </view>
+          <view class="mb-32rpx">
+            <view class="mb-16rpx text-28rpx text-[#666]">
+              模板分类
+            </view>
+            <wd-radio-group v-model="templateForm.categoryId" type="button">
+              <wd-radio v-for="item in templateCategories" :key="item.id" :value="item.id">
+                {{ item.name }}
+              </wd-radio>
+            </wd-radio-group>
+          </view>
+          <wd-button type="primary" block :loading="templateSaveLoading" @click="handleSaveTemplate">
+            确 定
+          </wd-button>
+        </view>
+      </wd-popup>
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Voucher, VoucherSaveReq } from '@/api/fms/voucher'
 import type { Subject } from '@/api/fms/config/subject'
+import type { VoucherTemplate } from '@/api/fms/config/voucher-template'
+import type { VoucherTemplateCategory } from '@/api/fms/config/voucher-template-category'
 import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
 import { getSubjectList } from '@/api/fms/config/subject'
+import { createVoucherTemplate, getVoucherTemplateSimpleList } from '@/api/fms/config/voucher-template'
+import { getVoucherTemplateCategorySimpleList } from '@/api/fms/config/voucher-template-category'
 import { getVoucherWordSimpleList } from '@/api/fms/config/voucher-word'
 import {
   createVoucher,
@@ -146,7 +219,7 @@ import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FMS_VOUCHER_ATTACHMENT_FILE_TYPES, FmsVoucherStatus } from '@/pages-fms/utils/constants'
-import { formatFmsAmount } from '@/pages-fms/utils/format'
+import { buildFmsVoucherWordOptions, formatFmsAmount, formatFmsUppercaseMoney } from '@/pages-fms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate, formatDateTime } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
@@ -157,6 +230,8 @@ interface VoucherEntryFormState {
   id?: number // 分录编号
   digest: string // 摘要内容
   subjectId?: number // 科目编号
+  quantity?: number // 数量（无录入 UI，编辑时原样透传，避免覆盖已有数量核算数据）
+  unitPrice?: number // 单价（同数量，仅透传）
   debitAmount?: number // 借方金额
   creditAmount?: number // 贷方金额
   auxiliaries: { typeId: number, itemId?: number, name?: string }[] // 辅助核算项目
@@ -192,7 +267,12 @@ const voucherWordList = ref<VoucherWord[]>([]) // 凭证字列表
 const subjectList = ref<Subject[]>([]) // 平铺科目列表
 const detail = ref<Voucher>() // 凭证详情
 const originalAttachmentUrls = ref<string[]>([]) // 编辑前的附件地址，用于判断附件是否变更
-const voucherWordPickerRef = ref<SelectPickerInstance>() // 凭证字选择器
+const templateSelectVisible = ref(false) // 套用模板弹窗状态
+const templateList = ref<VoucherTemplate[]>([]) // 凭证模板列表
+const templateSaveVisible = ref(false) // 保存为模板弹窗状态
+const templateSaveLoading = ref(false) // 模板保存状态
+const templateCategories = ref<VoucherTemplateCategory[]>([]) // 模板分类列表
+const templateForm = ref({ name: '', categoryId: undefined as number | undefined }) // 模板保存表单
 const formSchema = createFormSchema({
   voucherWordId: [{ required: true, message: '凭证字不能为空' }],
   voucherNumber: [
@@ -204,9 +284,7 @@ const formSchema = createFormSchema({
 })
 
 const accountSetId = computed(() => fmsStore.accountSet?.id) // 当前账套编号
-const voucherWordName = computed(() => // 选中凭证字名称
-  voucherWordList.value.find(item => item.id === formData.value.voucherWordId)?.name || '',
-)
+const voucherWordOptions = computed(() => buildFmsVoucherWordOptions(voucherWordList.value)) // 凭证字选项
 const savePermission = computed(() => props.id ? 'fms:voucher:update' : 'fms:voucher:create') // 当前保存权限
 const readOnly = computed(() => // 已审核、结账生成、只读成员或无保存权限时不允许编辑
   detail.value?.status === FmsVoucherStatus.APPROVED
@@ -222,7 +300,7 @@ const filledEntries = computed(() => // 非空白的有效分录
 )
 const debitTotal = computed(() => sumAmount('debitAmount')) // 借方合计金额
 const creditTotal = computed(() => sumAmount('creditAmount')) // 贷方合计金额
-const balanced = computed(() => debitTotal.value === creditTotal.value && debitTotal.value > 0) // 借贷是否平衡
+const balanced = computed(() => debitTotal.value === creditTotal.value) // 借贷是否平衡，允许合计为负的红字凭证
 
 /** 返回上一页 */
 function handleBack() {
@@ -245,14 +323,6 @@ function sumAmount(field: 'debitAmount' | 'creditAmount') {
   return Number(
     formData.value.entries.reduce((total, entry) => total + Number(entry[field] || 0), 0).toFixed(2),
   )
-}
-
-/** 打开凭证字选择器 */
-function handleOpenVoucherWord() {
-  if (readOnly.value) {
-    return
-  }
-  voucherWordPickerRef.value?.open()
 }
 
 /** 创建空白分录 */
@@ -313,6 +383,8 @@ async function getDetail() {
         id: entry.id,
         digest: entry.digest,
         subjectId: entry.subjectId,
+        quantity: entry.quantity ?? undefined,
+        unitPrice: entry.unitPrice ?? undefined,
         debitAmount: entry.debitAmount ?? undefined,
         creditAmount: entry.creditAmount ?? undefined,
         auxiliaries: (entry.auxiliaries || []).map(item => ({
@@ -354,6 +426,8 @@ async function handleSubmit() {
       id: entry.id,
       digest: entry.digest.trim(),
       subjectId: entry.subjectId!,
+      quantity: entry.quantity,
+      unitPrice: entry.unitPrice,
       debitAmount: entry.debitAmount ?? undefined,
       creditAmount: entry.creditAmount ?? undefined,
       auxiliaries: entry.auxiliaries
@@ -376,19 +450,120 @@ async function handleSubmit() {
       toast.success('修改成功')
     } else {
       const voucherId = await createVoucher(data)
+      // 附件走独立的修改接口；上传失败时凭证已保存，提示后正常返回列表
+      let attachmentFailed = false
       if (formData.value.attachmentUrls.length > 0) {
-        await updateVoucherAttachments({
-          id: voucherId,
-          accountSetId: currentAccountSetId,
-          attachmentUrls: formData.value.attachmentUrls,
-        })
+        try {
+          await updateVoucherAttachments({
+            id: voucherId,
+            accountSetId: currentAccountSetId,
+            attachmentUrls: formData.value.attachmentUrls,
+          })
+        } catch {
+          attachmentFailed = true
+        }
       }
-      toast.success('新增成功')
+      if (attachmentFailed) {
+        toast.warning('凭证已保存，附件上传失败')
+      } else {
+        toast.success('新增成功')
+      }
     }
     uni.$emit('fms:voucher:reload')
     delay(handleBack)
   } finally {
     formLoading.value = false
+  }
+}
+
+/** 打开套用模板弹窗 */
+async function handleOpenTemplateApply() {
+  const currentAccountSetId = accountSetId.value
+  if (!currentAccountSetId) {
+    return
+  }
+  templateList.value = await getVoucherTemplateSimpleList(currentAccountSetId)
+  templateSelectVisible.value = true
+}
+
+/** 套用凭证模板：模板分录填入当前分录区 */
+function handleApplyTemplate(template: VoucherTemplate) {
+  const subjectIds = new Set(subjectList.value.map(item => item.id))
+  if (template.entries.some(entry => !subjectIds.has(entry.subjectId))) {
+    toast.warning('模板包含当前账套不可用的会计科目，暂不能套用')
+    return
+  }
+  formData.value.entries = template.entries.map(entry => ({
+    digest: entry.digest,
+    subjectId: entry.subjectId,
+    quantity: entry.quantity,
+    unitPrice: entry.unitPrice,
+    debitAmount: entry.debitAmount,
+    creditAmount: entry.creditAmount,
+    auxiliaries: (entry.auxiliaries || []).map(item => ({
+      typeId: item.typeId,
+      itemId: item.itemId,
+      name: item.name,
+    })),
+  }))
+  templateSelectVisible.value = false
+  toast.success(`已套用凭证模板“${template.name}”`)
+}
+
+/** 打开保存为模板弹窗：先复用分录校验与借贷平衡校验 */
+async function handleOpenTemplateSave() {
+  const currentAccountSetId = accountSetId.value
+  if (!currentAccountSetId || !entryEditorRef.value?.validate()) {
+    return
+  }
+  if (!balanced.value) {
+    toast.warning('凭证借贷金额不平衡')
+    return
+  }
+  if (templateCategories.value.length === 0) {
+    templateCategories.value = await getVoucherTemplateCategorySimpleList(currentAccountSetId)
+  }
+  templateForm.value = { name: '', categoryId: undefined }
+  templateSaveVisible.value = true
+}
+
+/** 保存当前分录为凭证模板 */
+async function handleSaveTemplate() {
+  const currentAccountSetId = accountSetId.value
+  if (!currentAccountSetId) {
+    return
+  }
+  if (!templateForm.value.name.trim()) {
+    toast.warning('请输入模板名称')
+    return
+  }
+  if (!templateForm.value.categoryId) {
+    toast.warning('请选择模板分类')
+    return
+  }
+  templateSaveLoading.value = true
+  try {
+    await createVoucherTemplate({
+      accountSetId: currentAccountSetId,
+      name: templateForm.value.name.trim(),
+      categoryId: templateForm.value.categoryId,
+      entries: filledEntries.value.map(entry => ({
+        digest: entry.digest.trim(),
+        subjectId: entry.subjectId!,
+        quantity: entry.quantity,
+        unitPrice: entry.unitPrice,
+        debitAmount: entry.debitAmount,
+        creditAmount: entry.creditAmount,
+        auxiliaries: entry.auxiliaries
+          .filter(item => item.itemId)
+          .map(item => ({ typeId: item.typeId, itemId: item.itemId! })),
+      })),
+    })
+    toast.success('模板保存成功')
+    templateSaveVisible.value = false
+    uni.$emit('fms:config:voucher-template:reload')
+  } finally {
+    templateSaveLoading.value = false
   }
 }
 

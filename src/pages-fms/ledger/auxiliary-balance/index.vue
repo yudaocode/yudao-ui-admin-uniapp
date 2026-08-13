@@ -101,7 +101,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>

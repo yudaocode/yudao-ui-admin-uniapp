@@ -62,7 +62,6 @@
         <wd-input-number
           v-model="entry.debitAmount"
           allow-null
-          :min="0"
           :precision="2"
           @change="handleAmountChange(entry, 'debit')"
         />
@@ -74,7 +73,6 @@
         <wd-input-number
           v-model="entry.creditAmount"
           allow-null
-          :min="0"
           :precision="2"
           @change="handleAmountChange(entry, 'credit')"
         />

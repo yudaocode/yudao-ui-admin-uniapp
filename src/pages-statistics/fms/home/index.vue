@@ -52,7 +52,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -84,6 +84,8 @@ const metricLoading = ref(false) // 指标明细加载状态
 const home = ref<FmsHome>() // 首页数据
 const metricDetail = ref<FmsHomeMetricDetail>() // 指标明细
 const selectedMetricKey = ref<string>() // 选中的指标标识
+// TODO @AI：不做连续的 metricRequestSequence 校验；
+let metricRequestSequence = 0 // 指标明细请求序号，连点指标卡或切换账套时丢弃旧响应
 
 /** 返回上一页 */
 function handleBack() {
@@ -96,6 +98,7 @@ async function getHome() {
   if (!accountSetId) {
     return
   }
+  metricRequestSequence++ // 账套切换，作废进行中的指标明细请求
   home.value = undefined
   metricDetail.value = undefined
   selectedMetricKey.value = undefined
@@ -119,13 +122,20 @@ async function selectMetric(metric: FmsHomeMetric) {
   if (!accountSetId) {
     return
   }
+  const sequence = ++metricRequestSequence
   selectedMetricKey.value = metric.key
   metricDetail.value = undefined
   metricLoading.value = true
   try {
-    metricDetail.value = await getFmsHomeMetricDetail(accountSetId, metric.key)
+    const data = await getFmsHomeMetricDetail(accountSetId, metric.key)
+    if (sequence !== metricRequestSequence) {
+      return // 已有更新的选择或账套已切换，丢弃旧响应
+    }
+    metricDetail.value = data
   } finally {
-    metricLoading.value = false
+    if (sequence === metricRequestSequence) {
+      metricLoading.value = false
+    }
   }
 }
 

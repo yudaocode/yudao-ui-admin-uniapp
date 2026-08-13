@@ -43,7 +43,7 @@
             :disabled="member.founder"
           >
             <wd-radio
-              v-for="option in AccountUserLevelOptions"
+              v-for="option in getIntDictOptions(DICT_TYPE.FMS_ACCOUNT_USER_LEVEL)"
               :key="option.value"
               :value="option.value"
             >
@@ -52,7 +52,7 @@
           </wd-radio-group>
           <wd-button
             size="small"
-            type="error"
+            type="danger"
             variant="plain"
             :disabled="member.founder"
             @click="removeMember(index)"
@@ -92,13 +92,13 @@ import type { User } from '@/api/system/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
   AccountUserLevel,
-  AccountUserLevelOptions,
   getAccountUserList,
   updateAccountUserList,
 } from '@/api/fms/config/account-user'
 import UserPicker from '@/components/system-select/user-picker.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { delay, navigateBackPlus } from '@/utils'
+import { getIntDictOptions } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 
 const props = defineProps<{

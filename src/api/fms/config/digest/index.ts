@@ -5,7 +5,7 @@ export interface Digest {
   id?: number
   accountSetId: number // 账套编号
   content: string // 摘要内容
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询常用摘要列表 */

@@ -22,7 +22,7 @@ export interface ClosingTemplate {
   timeType?: number // 取数时间类型
   subjects: ClosingTemplateSubjectRule[] // 结转科目规则数组
   sort: number // 显示顺序
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询结账模板列表 */

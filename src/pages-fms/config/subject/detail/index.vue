@@ -43,12 +43,30 @@
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="canEdit || canDelete" class="yd-detail-footer">
+    <view v-if="canEdit || canDelete || (fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:create']))" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button v-if="canEdit" class="flex-1" type="primary" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button
+          v-if="canEdit"
+          class="flex-1"
+          type="warning"
+          :loading="statusUpdating"
+          @click="handleStatusChange"
+        >
+          {{ formData.status === FmsSubjectStatus.ENABLED ? '停用' : '启用' }}
+        </wd-button>
+        <wd-button
+          v-if="fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:create'])"
+          class="flex-1"
+          type="primary"
+          variant="plain"
+          @click="handleAddChild"
+        >
+          新建下级
+        </wd-button>
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -67,6 +85,7 @@ import {
   deleteSubjectList,
   getSubject,
   getSubjectList,
+  updateSubjectStatus,
 } from '@/api/fms/config/subject'
 import { useAccess } from '@/hooks/useAccess'
 import { useFmsStore } from '@/pages-fms/store/fms'
@@ -92,13 +111,12 @@ const dialog = useDialog()
 const fmsStore = useFmsStore()
 const formData = ref<Subject>({} as Subject) // 详情数据
 const deleting = ref(false) // 删除状态
+const statusUpdating = ref(false) // 状态修改状态
 const subjectList = ref<Subject[]>([]) // 同类科目列表，用于上级科目名称
 const currencyList = ref<Currency[]>([]) // 币别列表，用于外币核算名称
 
-/** 仅账套可写且有权限时可编辑 */
-const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:update']))
-/** 仅账套可写且有权限时可删除；有下级或已被业务使用时由后端校验拦截 */
-const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:delete']))
+const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:update'])) // 仅账套可写且有权限时可编辑
+const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:subject:delete'])) // 仅账套可写且有权限时可删除；有下级或已被业务使用时由后端校验拦截
 
 /** 返回上一页 */
 function handleBack() {
@@ -141,6 +159,44 @@ async function getDetail() {
 /** 编辑科目 */
 function handleEdit() {
   uni.navigateTo({ url: `/pages-fms/config/subject/form/index?id=${props.id}` })
+}
+
+/** 新建下级科目 */
+function handleAddChild() {
+  uni.navigateTo({
+    url: `/pages-fms/config/subject/form/index?parentId=${formData.value.id}&type=${formData.value.type}`,
+  })
+}
+
+/** 启用 / 停用科目 */
+async function handleStatusChange() {
+  if (!props.id || !formData.value.id) {
+    return
+  }
+  const accountSetId = fmsStore.accountSet?.id
+  if (!accountSetId) {
+    return
+  }
+  const status = formData.value.status === FmsSubjectStatus.ENABLED
+    ? FmsSubjectStatus.DISABLED
+    : FmsSubjectStatus.ENABLED
+  try {
+    await dialog.confirm({
+      title: '提示',
+      msg: `确认${status === FmsSubjectStatus.ENABLED ? '启用' : '停用'}科目“${formData.value.code} ${formData.value.name}”吗？`,
+    })
+  } catch {
+    return
+  }
+  statusUpdating.value = true
+  try {
+    await updateSubjectStatus(accountSetId, [Number(props.id)], status)
+    toast.success(status === FmsSubjectStatus.ENABLED ? '启用成功' : '停用成功')
+    uni.$emit('fms:config:subject:reload')
+    await getDetail()
+  } finally {
+    statusUpdating.value = false
+  }
 }
 
 /** 删除科目 */

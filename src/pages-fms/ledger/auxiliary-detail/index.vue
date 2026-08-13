@@ -94,7 +94,7 @@
 
       <!-- 无可用账套引导 -->
       <!-- TODO @AI：这种有办法融合到 AccountSetSwitch 里么？类似 pc 端也是这样的。别的 vue 也是； -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>

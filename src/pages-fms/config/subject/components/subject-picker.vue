@@ -44,7 +44,7 @@
         @click="handleBackParent"
       >
         <wd-icon name="arrow-left" size="14px" color="#1890ff" />
-        <text class="ml-8rpx text-26rpx text-[#1890ff]">返回上级（{{ parentStack[parentStack.length - 1].name }}）</text>
+        <text class="ml-8rpx text-26rpx text-[#1890ff]">返回上级（{{ backTargetName }}）</text>
       </view>
 
       <!-- 科目列表 -->
@@ -95,7 +95,7 @@
 <script lang="ts" setup>
 import type { Subject } from '@/api/fms/config/subject'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getSubjectList } from '@/api/fms/config/subject'
+import { getSubjectSimpleList } from '@/api/fms/config/subject'
 import {
   FMS_SUBJECT_PARENT_ID_ROOT,
   FmsSubjectStatus,
@@ -123,15 +123,13 @@ const parentStack = ref<{ id: number, name: string }[]>([]) // 下钻层级栈
 const typeTreeCache = reactive(new Map<number, Subject[]>()) // 各类型科目树缓存（未传入 subjects 时使用）
 
 const isSearching = computed(() => Boolean(keyword.value.trim())) // 是否处于搜索态
-/** 当前类型的科目树 */
-const currentTree = computed(() => {
+const currentTree = computed(() => { // 当前类型的科目树
   if (props.subjects) {
     return handleTree(props.subjects.filter(item => item.type === type.value))
   }
   return typeTreeCache.get(type.value) || []
 })
-/** 搜索范围：外部传入全量科目时跨类型搜索，否则在当前类型树内搜索 */
-const searchSource = computed(() => props.subjects || flattenTree(currentTree.value))
+const searchSource = computed(() => props.subjects || flattenTree(currentTree.value)) // 搜索范围：外部传入全量科目时跨类型搜索，否则在当前类型树内搜索
 const parentIdSet = computed(() => new Set(searchSource.value.map(item => item.parentId))) // 存在子级的科目编号集合
 const displayList = computed(() => { // 当前展示的科目列表
   if (isSearching.value) {
@@ -164,14 +162,14 @@ function getChildCount(item: Subject) {
   return findChildren(currentTree.value, item.id!).length
 }
 
-/** 加载当前类型科目树 */
+/** 加载当前类型科目树（simple-list 无权限注解，无科目管理权限的记账角色也可用） */
 async function loadTypeTree() {
   if (props.subjects || typeTreeCache.has(type.value) || !props.accountSetId) {
     return
   }
   loading.value = true
   try {
-    typeTreeCache.set(type.value, handleTree(await getSubjectList(props.accountSetId, type.value)))
+    typeTreeCache.set(type.value, handleTree(await getSubjectSimpleList(props.accountSetId, type.value)))
   } finally {
     loading.value = false
   }
@@ -193,16 +191,22 @@ function handleTypeChange() {
   loadTypeTree()
 }
 
-/** 进入子科目层级 */
+const backTargetName = computed(() => // 返回目标层级名称（上一层级的节点名，根层为全部科目）
+  parentStack.value.length > 1
+    ? parentStack.value[parentStack.value.length - 2].name
+    : '全部科目',
+)
+
+/** 进入子科目层级（栈内保存当前节点路径） */
 function handleEnterChildren(item: Subject) {
-  parentStack.value.push({ id: currentParentId.value, name: `${item.code} ${item.name}` })
+  parentStack.value.push({ id: item.id!, name: `${item.code} ${item.name}` })
   currentParentId.value = item.id!
 }
 
 /** 返回上一层级 */
 function handleBackParent() {
-  const parent = parentStack.value.pop()
-  currentParentId.value = parent?.id ?? FMS_SUBJECT_PARENT_ID_ROOT
+  parentStack.value.pop()
+  currentParentId.value = parentStack.value[parentStack.value.length - 1]?.id ?? FMS_SUBJECT_PARENT_ID_ROOT
 }
 
 /** 选择科目 */

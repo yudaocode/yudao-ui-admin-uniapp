@@ -94,7 +94,7 @@ import {
   FmsLedgerBalanceModeOptions,
 } from '@/pages-fms/utils/constants'
 import { delay, navigateBackPlus } from '@/utils'
-import { formatDate, formatDateTime } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -117,7 +117,7 @@ const startTimePicker = ref<number | string>(dayjs().startOf('month').valueOf())
 const formData = ref<AccountSetInitializeReq>({ // 表单数据
   accountSetId: 0,
   currencyCode: FmsCurrencyCode.RMB,
-  startTime: formatDateTime(dayjs().startOf('month').valueOf()),
+  startTime: dayjs().startOf('month').valueOf(),
   standard: FmsAccountingStandardOptions[0].value,
   level: FMS_DEFAULT_SUBJECT_LEVEL,
   subjectCodeRule: FMS_DEFAULT_SUBJECT_CODE_RULE,
@@ -148,8 +148,8 @@ function handleBack() {
 /** 启用期间选择确认 */
 function handleStartTimeConfirm() {
   formData.value.startTime = startTimePicker.value
-    ? formatDateTime(dayjs(Number(startTimePicker.value)).startOf('month').valueOf())
-    : ''
+    ? dayjs(Number(startTimePicker.value)).startOf('month').valueOf()
+    : 0
 }
 
 /** 提交初始化 */

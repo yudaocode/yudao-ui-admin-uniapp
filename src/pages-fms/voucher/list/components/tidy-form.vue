@@ -117,6 +117,10 @@ async function handleSubmit() {
     toast.warning('请选择整理范围')
     return
   }
+  if (!formData.value.voucherWordId) {
+    toast.warning('请选择凭证字')
+    return
+  }
   formLoading.value = true
   try {
     await tidyVoucher(formData.value)

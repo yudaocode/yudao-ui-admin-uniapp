@@ -31,7 +31,7 @@
           <wd-form-item title="取数报表" title-width="180rpx" prop="type" center>
             <wd-radio-group v-model="formData.type" type="button">
               <wd-radio
-                v-for="option in FmsFinanceIndicatorTypeOptions"
+                v-for="option in getIntDictOptions(DICT_TYPE.FMS_FINANCE_INDICATOR_TYPE)"
                 :key="option.value"
                 :value="option.value"
               >
@@ -94,7 +94,7 @@ import {
 } from '@/api/fms/config/finance-indicator'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { FmsFinanceIndicatorType, FmsFinanceIndicatorTypeOptions } from '@/pages-fms/utils/constants'
+import { FmsFinanceIndicatorType } from '@/pages-fms/utils/constants'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'

@@ -70,8 +70,7 @@ const selections = ref<Record<number, InitialBalanceAuxiliaryItem>>({}) // 各�
 const currentConfig = ref<InitialBalanceAuxiliaryConfig>() // 当前编辑的辅助核算类别
 const auxiliaryPickerRef = ref<InstanceType<typeof AuxiliaryPicker>>() // 辅助核算项目选择器
 
-/** 所有辅助核算类别都已选择项目时才可确定 */
-const canConfirm = computed(() =>
+const canConfirm = computed(() => // 所有辅助核算类别都已选择项目时才可确定
   !!subject.value?.auxiliaryConfigs.length
   && subject.value.auxiliaryConfigs.every(config => selections.value[config.auxiliaryTypeId]?.itemId),
 )

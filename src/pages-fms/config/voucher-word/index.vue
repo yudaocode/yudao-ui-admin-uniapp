@@ -59,7 +59,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
   </view>
 </template>
 
@@ -86,8 +86,7 @@ const fmsStore = useFmsStore()
 const list = ref<VoucherWord[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 
-/** 当前账套可写且有新增权限时才允许新增 */
-const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-word:create']))
+const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-word:create'])) // 当前账套可写且有新增权限时才允许新增
 
 /** 返回上一页 */
 function handleBack() {

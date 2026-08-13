@@ -8,7 +8,7 @@ export interface VoucherWord {
   printTitle?: string // 打印标题
   defaultStatus: boolean // 是否默认凭证字
   sort?: number // 显示顺序
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询凭证字列表 */

@@ -158,7 +158,7 @@ import { getAuxiliaryItemSimpleList } from '@/api/fms/config/auxiliary/item'
 import { getAuxiliaryTypeSimpleList } from '@/api/fms/config/auxiliary/type'
 import { getSubjectList } from '@/api/fms/config/subject'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsMonth, formatFmsPeriodLabel, formatFmsStartTime, parseFmsMonth } from '@/pages-fms/utils/format'
+import { buildFmsSubjectOptions, formatFmsMonth, formatFmsPeriodLabel, formatFmsStartTime, parseFmsMonth } from '@/pages-fms/utils/format'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
 /** 科目选项 */
@@ -229,19 +229,14 @@ const maxMonth = computed(() => fmsStore.currentMonth || '') // 账套当前月�
 const minDate = computed(() => parseFmsMonth(minMonth.value) || undefined) // 期间选择器最早日期
 const maxDate = computed(() => parseFmsMonth(maxMonth.value) || undefined) // 期间选择器最晚日期
 
-const parentIdSet = computed(() => new Set(subjects.value.map(item => item.parentId))) // 存在子级的科目编号集合
-const subjectColumns = computed(() => { // 单科目选项：优先外部候选，否则取自行加载的末级科目
+const subjectColumns = computed(() => { // 单科目选项：优先外部候选，否则取自行加载的全部科目（辅助核算账簿支持选父级汇总）
   if (props.subjectOptions) {
     return props.subjectOptions
   }
-  return subjects.value
-    .filter(item => !parentIdSet.value.has(item.id!))
-    .map(item => ({ label: `${item.code} ${item.name}`, value: item.id! }))
+  return buildFmsSubjectOptions(subjects.value, true)
 })
 const rangeSubjectColumns = computed(() => // 起止科目选项：不限级次，按编码排序
-  [...subjects.value]
-    .sort((a, b) => a.code.localeCompare(b.code))
-    .map(item => ({ label: `${item.code} ${item.name}`, value: item.id! })),
+  buildFmsSubjectOptions(subjects.value, true),
 )
 const auxiliaryTypeColumns = computed(() =>
   auxiliaryTypes.value.map(item => ({ label: item.name, value: item.id! })),
@@ -371,7 +366,7 @@ async function handleReset() {
   emit('reset', buildData())
 }
 
-/** 初始化：加载选项并恢复默认期间，随后触发首次查询 */
+/** 初始化：加载选项并恢复默认期间；自管理候选的账簿在此触发首次查询 */
 async function initialize() {
   const initializingAccountSetId = accountSetId.value
   if (!initializingAccountSetId) {
@@ -392,7 +387,10 @@ async function initialize() {
   if (accountSetId.value !== initializingAccountSetId) {
     return // 初始化期间账套已切换，丢弃本次结果，由账套监听重新初始化
   }
-  emit('search', buildData())
+  // 外部传入候选科目的页面由父页面触发首查，组件只在上报条件时 emit
+  if (!props.subjectOptions) {
+    emit('search', buildData())
+  }
 }
 
 /** 辅助类别变化后重新加载项目 */

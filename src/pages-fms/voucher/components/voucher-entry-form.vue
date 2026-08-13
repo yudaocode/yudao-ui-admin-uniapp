@@ -68,7 +68,6 @@
         <wd-input-number
           v-model="entry.debitAmount"
           allow-null
-          :min="0"
           :precision="2"
           :disabled="disabled"
           @change="handleAmountChange(entry, 'debit')"
@@ -81,7 +80,6 @@
         <wd-input-number
           v-model="entry.creditAmount"
           allow-null
-          :min="0"
           :precision="2"
           :disabled="disabled"
           @change="handleAmountChange(entry, 'credit')"
@@ -151,6 +149,8 @@ interface EntryFormItem {
   id?: number // 分录编号
   digest: string // 摘要内容
   subjectId?: number // 科目编号
+  quantity?: number // 数量（无录入 UI，编辑时原样透传，避免覆盖已有数量核算数据）
+  unitPrice?: number // 单价（同数量，仅透传）
   debitAmount?: number // 借方金额
   creditAmount?: number // 贷方金额
   auxiliaries: { typeId: number, itemId?: number, name?: string }[] // 辅助核算项目

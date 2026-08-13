@@ -45,13 +45,11 @@ const fmsStore = useFmsStore()
 const sheetVisible = ref(false) // 账套选择弹窗是否可见
 const switching = ref(false) // 是否正在切换账套
 
-/** 当前会计期间展示文案 */
-const currentMonthText = computed(() => {
+const currentMonthText = computed(() => { // 当前会计期间展示文案
   const match = fmsStore.currentMonth?.match(/^(\d{4})-(\d{2})$/)
   return match ? `${match[1]} 年第 ${match[2]} 期` : fmsStore.currentMonth || ''
 })
-/** 账套选项（未初始化账套不可选） */
-const sheetActions = computed(() =>
+const sheetActions = computed(() => // 账套选项（未初始化账套不可选）
   fmsStore.accountSetList.map(item => ({
     name: `${item.companyName}${item.defaultStatus ? '（默认）' : ''}${item.initialized ? '' : '（未初始化）'}`,
     id: item.id,

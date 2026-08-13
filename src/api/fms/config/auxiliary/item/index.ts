@@ -12,7 +12,7 @@ export interface AuxiliaryItem {
   specification?: string // 规格（存货类别）
   unit?: string // 单位（存货类别）
   status?: number // 状态（0 启用、1 停用）
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询辅助核算项目分页 */
@@ -20,6 +20,11 @@ export function getAuxiliaryItemPage(
   params: PageParam & { accountSetId: number, auxiliaryTypeId: number, search?: string },
 ) {
   return http.get<PageResult<AuxiliaryItem>>('/fms/config/auxiliary-item/page', params)
+}
+
+/** 查询辅助核算项目详情 */
+export function getAuxiliaryItem(accountSetId: number, id: number) {
+  return http.get<AuxiliaryItem>('/fms/config/auxiliary-item/get', { accountSetId, id })
 }
 
 /** 查询辅助核算项目精简列表（作为凭证分录辅助核算选项） */

@@ -8,7 +8,7 @@ export interface Currency {
   name: string // 币别名称
   exchangeRate: number // 汇率
   standard?: boolean // 是否本位币
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** 查询币别列表 */

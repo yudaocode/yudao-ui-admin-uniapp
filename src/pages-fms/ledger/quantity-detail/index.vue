@@ -102,13 +102,18 @@
                     <text>贷 {{ formatFmsQuantity(row.creditQuantity) }}</text>
                     <text>结存 {{ formatFmsQuantity(row.balanceQuantity) }}</text>
                   </view>
+                  <view class="flex flex-wrap items-center gap-x-24rpx gap-y-4rpx text-24rpx text-[#666] font-normal">
+                    <text>单价：借 {{ formatFmsMoney(getDebitUnitPrice(row)) }}</text>
+                    <text>贷 {{ formatFmsMoney(getCreditUnitPrice(row)) }}</text>
+                    <text>结存 {{ formatFmsMoney(getBalanceUnitPrice(row)) }}</text>
+                  </view>
                 </view>
               </view>
             </view>
 
             <!-- 空状态 -->
             <view v-else class="rounded-12rpx bg-white py-96rpx shadow-sm">
-              <wd-empty icon="content" :tip="subjectOptions.length ? '暂无数量金额明细账数据' : '暂无启用数量核算的末级科目'" />
+              <wd-empty icon="content" :tip="subjectOptions.length ? '暂无数量金额明细账数据' : '暂无启用数量核算的科目'" />
             </view>
           </view>
           <view class="h-40rpx" />
@@ -116,7 +121,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -131,7 +136,7 @@ import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import SearchForm from '@/pages-fms/ledger/components/search-form.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsMoney, formatFmsQuantity, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
+import { buildFmsSubjectOptions, formatFmsMoney, formatFmsQuantity, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
 
 definePage({
@@ -154,11 +159,8 @@ const queryParams = reactive({ // 查询参数
   subjectId: undefined as number | undefined,
 })
 
-const parentIdSet = computed(() => new Set(subjects.value.map(item => item.parentId))) // 存在子级的科目编号集合
-const subjectOptions = computed(() => // 候选科目选项：启用数量核算的末级科目
-  subjects.value
-    .filter(item => item.quantityAccounting && !parentIdSet.value.has(item.id!))
-    .map(item => ({ label: `${item.code} ${item.name}`, value: item.id! })),
+const subjectOptions = computed(() => // 候选科目选项：启用数量核算的科目，支持选父级按子树汇总
+  buildFmsSubjectOptions(subjects.value.filter(item => item.quantityAccounting)),
 )
 
 /** 返回上一页 */
@@ -209,7 +211,7 @@ function handleQuery(data: Record<string, any>) {
   getList()
 }
 
-/** 初始化：加载候选科目并渲染搜索组件，首次查询由搜索组件触发 */
+/** 初始化：加载候选科目并渲染搜索组件，随后触发首次查询 */
 async function initialize() {
   searchReady.value = false
   subjects.value = []
@@ -232,6 +234,7 @@ async function initialize() {
   queryParams.endMonth = initials.endMonth || ''
   queryParams.subjectId = initials.subjectId
   searchReady.value = true
+  getList()
 }
 
 /** 账套切换后重新初始化 */

@@ -37,6 +37,11 @@
         <wd-cell title="结转日期" :value="formData.closingDay ? `每月 ${formData.closingDay} 日` : '-'" />
       </wd-cell-group>
 
+      <!-- 专用结转设置（结转未交增值税 / 计提地方税金 / 计提所得税） -->
+      <wd-cell-group v-if="isSpecialClosing" title="结转设置" border>
+        <wd-cell title="凭证字" :value="formatVoucherWord(formData.voucherWordId) || '-'" />
+      </wd-cell-group>
+
       <!-- 凭证分录规则 -->
       <view class="mt-24rpx">
         <view class="mb-16rpx px-8rpx text-30rpx text-[#333] font-semibold">
@@ -104,6 +109,10 @@ const fmsStore = useFmsStore()
 const formData = ref<ClosingScheme>({} as ClosingScheme) // 详情数据
 const subjects = ref<Subject[]>([]) // 科目列表，用于分录规则展示科目名称
 const voucherWords = ref<VoucherWord[]>([]) // 凭证字列表
+
+const isSpecialClosing = computed(() => // 是否专用结转方案（未交增值税 / 地方税金 / 所得税）
+  ([FmsClosingType.UNPAID_VAT, FmsClosingType.LOCAL_TAX, FmsClosingType.INCOME_TAX] as number[]).includes(formData.value.type),
+)
 
 /** 返回上一页 */
 function handleBack() {

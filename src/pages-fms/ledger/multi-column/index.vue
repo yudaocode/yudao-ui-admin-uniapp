@@ -86,12 +86,27 @@
                 <!-- 汇总行（期初、本期合计、本年累计、期末余额） -->
                 <view
                   v-else
-                  class="flex flex-wrap items-center gap-x-24rpx gap-y-4rpx border-0 border-b border-[#f5f5f5] border-b-solid bg-[#fafafa] px-24rpx py-16rpx text-26rpx text-[#333] font-semibold"
+                  class="border-0 border-b border-[#f5f5f5] border-b-solid bg-[#fafafa] px-24rpx py-16rpx text-26rpx text-[#333] font-semibold"
                 >
-                  <text class="min-w-140rpx">{{ row.digest }}</text>
-                  <text>借 {{ formatFmsMoney(row.debitAmount) }}</text>
-                  <text>贷 {{ formatFmsMoney(row.creditAmount) }}</text>
-                  <text>余 {{ formatFmsSubjectBalance(row.balance, row.balanceDirection) }}</text>
+                  <view class="flex flex-wrap items-center gap-x-24rpx gap-y-4rpx">
+                    <text class="min-w-140rpx">{{ row.digest }}</text>
+                    <text>借 {{ formatFmsMoney(row.debitAmount) }}</text>
+                    <text>贷 {{ formatFmsMoney(row.creditAmount) }}</text>
+                    <text>余 {{ formatFmsSubjectBalance(row.balance, row.balanceDirection) }}</text>
+                  </view>
+                  <!-- 汇总行专栏金额 -->
+                  <view v-if="getRowColumnAmounts(row).length" class="mt-8rpx border-0 border-t border-[#f5f5f5] border-t-solid pt-8rpx font-normal">
+                    <view
+                      v-for="pair in getRowColumnAmounts(row)"
+                      :key="pair.column.subjectId"
+                      class="flex items-center justify-between py-4rpx text-24rpx text-[#666]"
+                    >
+                      <text class="min-w-0 flex-1 truncate">
+                        {{ pair.column.subjectCode }} {{ pair.column.subjectName }}（{{ pair.column.balanceDirection === FmsDebitCreditDirection.DEBIT ? '借' : '贷' }}）
+                      </text>
+                      <text class="flex-shrink-0">{{ formatFmsMoney(pair.amount) }}</text>
+                    </view>
+                  </view>
                 </view>
               </view>
             </view>
@@ -106,7 +121,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -122,7 +137,7 @@ import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import SearchForm from '@/pages-fms/ledger/components/search-form.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsDebitCreditDirection } from '@/pages-fms/utils/constants'
-import { formatFmsMoney, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
+import { buildFmsSubjectOptions, formatFmsMoney, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
 
 definePage({
@@ -147,9 +162,7 @@ const queryParams = reactive({ // 查询参数
 
 const parentIdSet = computed(() => new Set(subjects.value.map(item => item.parentId))) // 存在子级的科目编号集合
 const subjectOptions = computed(() => // 候选科目选项：多栏账按非末级科目的下级专栏展开
-  subjects.value
-    .filter(item => parentIdSet.value.has(item.id!))
-    .map(item => ({ label: `${item.code} ${item.name}`, value: item.id! })),
+  buildFmsSubjectOptions(subjects.value.filter(item => parentIdSet.value.has(item.id!))),
 )
 
 /** 返回上一页 */
@@ -157,10 +170,10 @@ function handleBack() {
   navigateBackPlus()
 }
 
-/** 获得当前行有金额的专栏 */
+/** 获得当前行有金额的专栏（后端对无发生额的专栏补 0，零值专栏不展示） */
 function getRowColumnAmounts(row: LedgerDetail) {
   return result.value.columns
-    .filter(column => row.columnAmounts?.[column.subjectId] != null)
+    .filter(column => Number(row.columnAmounts?.[column.subjectId] || 0) !== 0)
     .map(column => ({ column, amount: row.columnAmounts![column.subjectId] }))
 }
 
@@ -192,7 +205,7 @@ function handleQuery(data: Record<string, any>) {
   getList()
 }
 
-/** 初始化：加载候选科目并渲染搜索组件，首次查询由搜索组件触发 */
+/** 初始化：加载候选科目并渲染搜索组件，随后触发首次查询 */
 async function initialize() {
   searchReady.value = false
   subjects.value = []
@@ -215,6 +228,7 @@ async function initialize() {
   queryParams.endMonth = initials.endMonth || ''
   queryParams.subjectId = initials.subjectId
   searchReady.value = true
+  getList()
 }
 
 /** 账套切换后重新初始化 */

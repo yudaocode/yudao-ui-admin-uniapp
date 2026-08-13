@@ -1,12 +1,13 @@
 <template>
+  <!-- wd-form-item 不接收 disabled prop：禁用态降低不透明度并取消 is-link，只读展示 -->
   <wd-form-item
     :title="label"
     :title-width="labelWidth"
     :prop="prop || undefined"
-    :disabled="disabled"
-    is-link
+    :is-link="!disabled"
     :value="selectedLabel"
     :placeholder="placeholder"
+    :class="disabled ? 'opacity-50' : ''"
     @click="handleOpen"
   />
 
@@ -20,7 +21,7 @@
 
 <script lang="ts" setup>
 import type { Subject } from '@/api/fms/config/subject'
-import { getSubjectList } from '@/api/fms/config/subject'
+import { getSubjectSimpleList } from '@/api/fms/config/subject'
 import SubjectPicker from './subject-picker.vue'
 
 const props = withDefaults(defineProps<{
@@ -74,7 +75,7 @@ async function loadSubjects() {
   if (props.subjects || !props.accountSetId) {
     return
   }
-  loadedSubjects.value = await getSubjectList(props.accountSetId)
+  loadedSubjects.value = await getSubjectSimpleList(props.accountSetId)
 }
 
 watch(

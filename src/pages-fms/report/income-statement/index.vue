@@ -11,12 +11,12 @@
       <template v-if="fmsStore.accountSet">
         <!-- 账套切换 -->
         <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="handleAccountSetChange" />
+          <AccountSetSwitch />
         </view>
 
         <!-- 期间筛选 -->
         <view class="p-24rpx pb-0">
-          <ReportPeriodBar ref="periodBarRef" @query="handleQuery" />
+          <ReportPeriodBar @query="handleQuery" />
         </view>
 
         <!-- 报表内容 -->
@@ -34,14 +34,14 @@
             </view>
 
             <!-- 利润表行 -->
-            <ReportRowList v-else :rows="rows" primary-label="本期金额" secondary-label="本年累计金额" />
+            <ReportRowList v-else :rows="rows" primary-label="本年累计金额" secondary-label="本期金额" />
           </view>
           <view class="h-40rpx" />
         </scroll-view>
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -74,7 +74,6 @@ const queryParams = reactive({ // 查询参数
   startMonth: '',
   endMonth: '',
 })
-const periodBarRef = ref<InstanceType<typeof ReportPeriodBar>>() // 期间筛选组件引用
 
 /** 展示行：小计 / 合计行（不可编辑公式）加粗 */
 const rows = computed<ReportDisplayRow[]>(() =>
@@ -84,8 +83,8 @@ const rows = computed<ReportDisplayRow[]>(() =>
     rowNo: item.rowNo,
     level: item.level,
     bold: !item.editable,
-    primaryAmount: item.currentAmount,
-    secondaryAmount: item.yearAmount,
+    primaryAmount: item.yearAmount,
+    secondaryAmount: item.currentAmount,
   })),
 )
 
@@ -98,11 +97,6 @@ function handleBack() {
 function handleQuery(value: { startMonth: string, endMonth: string }) {
   Object.assign(queryParams, value)
   getList()
-}
-
-/** 账套切换后刷新期间并重新查询 */
-function handleAccountSetChange() {
-  periodBarRef.value?.refresh()
 }
 
 /** 查询利润表 */

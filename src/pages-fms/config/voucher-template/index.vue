@@ -77,7 +77,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
 
     <!-- 分类管理弹窗 -->
     <CategoryManage ref="categoryManageRef" :account-set-id="fmsStore.accountSet?.id" @change="getList" />
@@ -116,8 +116,7 @@ const currentTemplates = computed(() =>
   templates.value.filter(item => item.categoryId === currentCategory.value?.id),
 ) // 当前分类的凭证模板列表
 
-/** 账套可写且有分类维护权限时才允许管理分类 */
-const canManageCategory = computed(() =>
+const canManageCategory = computed(() => // 账套可写且有分类维护权限时才允许管理分类
   fmsStore.isAccountSetWritable
   && hasAccessByCodes([
     'fms:config:voucher-template-category:create',
@@ -125,8 +124,7 @@ const canManageCategory = computed(() =>
     'fms:config:voucher-template-category:delete',
   ]),
 )
-/** 当前账套可写且有新增权限时才允许新增模板 */
-const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:create']))
+const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:create'])) // 当前账套可写且有新增权限时才允许新增模板
 
 /** 返回上一页 */
 function handleBack() {

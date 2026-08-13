@@ -23,7 +23,7 @@
         <wd-button v-if="canEdit" class="flex-1" type="primary" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -35,6 +35,7 @@
 import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
+import { onUnload } from '@dcloudio/uni-app'
 import { deleteVoucherWord, getVoucherWordList } from '@/api/fms/config/voucher-word'
 import { useAccess } from '@/hooks/useAccess'
 import { useFmsStore } from '@/pages-fms/store/fms'
@@ -59,10 +60,8 @@ const fmsStore = useFmsStore()
 const formData = ref<VoucherWord>({} as VoucherWord) // 详情数据
 const deleting = ref(false) // 删除状态
 
-/** 仅账套可写且有权限时可编辑 */
-const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-word:update']))
-/** 默认凭证字不允许删除 */
-const canDelete = computed(() =>
+const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-word:update'])) // 仅账套可写且有权限时可编辑
+const canDelete = computed(() => // 默认凭证字不允许删除
   fmsStore.isAccountSetWritable
   && !formData.value.defaultStatus
   && hasAccessByCodes(['fms:config:voucher-word:delete']),
@@ -126,5 +125,11 @@ async function handleDelete() {
 onMounted(async () => {
   await fmsStore.loadAccountSetList()
   await getDetail()
+  uni.$on('fms:config:voucher-word:reload', getDetail)
+})
+
+/** 卸载 */
+onUnload(() => {
+  uni.$off('fms:config:voucher-word:reload', getDetail)
 })
 </script>

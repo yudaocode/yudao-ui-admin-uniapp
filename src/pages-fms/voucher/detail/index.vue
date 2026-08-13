@@ -75,7 +75,7 @@
               <text class="mr-8rpx text-[#999]">科目：</text>
               {{ formatFmsSubjectDisplay(entry.subjectCode, entry.subjectName, (entry.auxiliaries || []).map(item => item.name)) || '-' }}
             </view>
-            <view v-if="entry.quantity != null" class="mb-12rpx text-26rpx text-[#666]">
+            <view v-if="entry.quantity || entry.unitPrice" class="mb-12rpx text-26rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">数量：</text>{{ formatFmsQuantity(entry.quantity) }}
               <text class="mx-16rpx text-[#999]">单价：</text>{{ formatFmsAmount(entry.unitPrice) }}
             </view>
@@ -138,7 +138,7 @@
         <wd-button v-if="canCancelReview" class="flex-1" type="warning" :loading="reviewing" @click="handleReview(false)">
           反审核
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -184,32 +184,28 @@ const formData = ref<Voucher>({} as Voucher) // 详情数据
 const reviewing = ref(false) // 审核状态
 const deleting = ref(false) // 删除状态
 
-/** 图片附件（后端仅允许图片类型，兜底拆分非图片文件） */
-const imageAttachments = computed(() => (formData.value.attachmentUrls || []).filter(url => isImageFile(url)))
+const imageAttachments = computed(() => (formData.value.attachmentUrls || []).filter(url => isImageFile(url))) // 图片附件（后端仅允许图片类型，兜底拆分非图片文件）
 const fileAttachments = computed(() => (formData.value.attachmentUrls || []).filter(url => !isImageFile(url)))
 
-/** 结账生成凭证不允许编辑 */
-const canEdit = computed(() =>
+const canEdit = computed(() => // 已审核和结账生成凭证不允许编辑
   fmsStore.isAccountSetWritable
   && !formData.value.closingGenerated
+  && formData.value.status !== FmsVoucherStatus.APPROVED
   && hasAccessByCodes(['fms:voucher:update']),
 )
-/** 仅待审核凭证可审核 */
-const canReview = computed(() =>
+const canReview = computed(() => // 仅待审核凭证可审核
   fmsStore.isAccountSetWritable
   && !formData.value.closingGenerated
   && formData.value.status === FmsVoucherStatus.PENDING_REVIEW
   && hasAccessByCodes(['fms:voucher:review']),
 )
-/** 仅已审核凭证可反审核 */
-const canCancelReview = computed(() =>
+const canCancelReview = computed(() => // 仅已审核凭证可反审核
   fmsStore.isAccountSetWritable
   && !formData.value.closingGenerated
   && formData.value.status === FmsVoucherStatus.APPROVED
   && hasAccessByCodes(['fms:voucher:review']),
 )
-/** 已审核和结账生成凭证不允许删除 */
-const canDelete = computed(() =>
+const canDelete = computed(() => // 已审核和结账生成凭证不允许删除
   fmsStore.isAccountSetWritable
   && !formData.value.closingGenerated
   && formData.value.status !== FmsVoucherStatus.APPROVED

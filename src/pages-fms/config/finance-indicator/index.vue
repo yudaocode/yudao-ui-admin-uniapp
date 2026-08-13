@@ -40,7 +40,7 @@
               <text class="mr-8rpx text-[#999]">指标编码：</text>{{ item.code }}
             </view>
             <view class="mb-12rpx text-28rpx text-[#666]">
-              <text class="mr-8rpx text-[#999]">取数报表：</text>{{ formatFmsFinanceIndicatorType(item.type) }}
+              <text class="mr-8rpx text-[#999]">取数报表：</text>{{ getDictLabel(DICT_TYPE.FMS_FINANCE_INDICATOR_TYPE, item.type) || '-' }}
             </view>
             <view class="mb-12rpx truncate text-28rpx text-[#666]">
               <text class="mr-8rpx text-[#999]">指标公式：</text>{{ item.formula }}
@@ -63,7 +63,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
   </view>
 </template>
 
@@ -75,8 +75,8 @@ import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsFinanceIndicatorType } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
+import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 
 definePage({
@@ -91,8 +91,7 @@ const fmsStore = useFmsStore()
 const list = ref<FinanceIndicator[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 
-/** 当前账套可写且有新增权限时才允许新增 */
-const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:create']))
+const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-indicator:create'])) // 当前账套可写且有新增权限时才允许新增
 
 /** 返回上一页 */
 function handleBack() {

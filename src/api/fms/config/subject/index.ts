@@ -20,7 +20,7 @@ export interface Subject {
   status?: number // 状态
   level?: number // 层级
   children?: Subject[] // 子级科目数组，由前端按需生成
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** FMS 科目使用情况 */
@@ -36,6 +36,11 @@ export interface SubjectUsage {
 /** 查询科目列表 */
 export function getSubjectList(accountSetId: number, type?: number) {
   return http.get<Subject[]>('/fms/config/subject/list', { accountSetId, type })
+}
+
+/** 查询科目精简列表 */
+export function getSubjectSimpleList(accountSetId: number, type?: number) {
+  return http.get<Subject[]>('/fms/config/subject/simple-list', { accountSetId, type })
 }
 
 /** 查询科目详情 */
@@ -56,6 +61,11 @@ export function createSubject(data: Subject) {
 /** 修改科目 */
 export function updateSubject(data: Subject) {
   return http.put<boolean>('/fms/config/subject/update', data)
+}
+
+/** 修改科目状态 */
+export function updateSubjectStatus(accountSetId: number, ids: number[], status: number) {
+  return http.put<boolean>('/fms/config/subject/update-status', { accountSetId, ids, status })
 }
 
 /** 删除科目（后端为批量删除接口，单个删除传入单个编号） */

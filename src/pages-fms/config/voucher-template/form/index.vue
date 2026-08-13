@@ -11,13 +11,10 @@
     <view>
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
-          <yd-form-picker
+          <CategoryPicker
             v-model="formData.categoryId"
-            label="模板分类"
-            label-width="180rpx"
             prop="categoryId"
-            :columns="categoryOptions"
-            placeholder="请选择模板分类"
+            :categories="categories"
           />
           <wd-form-item title="模板名称" title-width="180rpx" prop="name">
             <wd-input
@@ -69,6 +66,7 @@ import { getVoucherTemplateCategorySimpleList } from '@/api/fms/config/voucher-t
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { delay, navigateBackPlus } from '@/utils'
 import { createFormSchema } from '@/utils/wot'
+import CategoryPicker from '../components/category-picker.vue'
 import TemplateEntryForm from '../components/template-entry-form.vue'
 
 const props = defineProps<{
@@ -101,7 +99,6 @@ const formRef = ref<FormInstance>() // 表单组件引用
 const entryFormRef = ref<InstanceType<typeof TemplateEntryForm>>() // 分录编辑组件引用
 const categories = ref<VoucherTemplateCategory[]>([]) // 模板分类列表
 const subjects = ref<Subject[]>([]) // 平铺科目列表，用于分录科目选择与校验
-const categoryOptions = computed(() => categories.value.map(item => ({ label: item.name, value: item.id! }))) // 模板分类选项
 
 /** 返回上一页 */
 function handleBack() {

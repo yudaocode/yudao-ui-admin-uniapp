@@ -84,18 +84,15 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const formData = ref<AccountSet>({} as AccountSet) // 详情数据
 
-/** 主管才可编辑账套 */
-const canEdit = computed(() =>
+const canEdit = computed(() => // 主管才可编辑账套
   formData.value.level === AccountUserLevel.OWNER
   && hasAccessByCodes(['fms:config:account-set:update']),
 )
-/** 主管才可授权成员 */
-const canAuthorize = computed(() =>
+const canAuthorize = computed(() => // 主管才可授权成员
   formData.value.level === AccountUserLevel.OWNER
   && hasAccessByCodes(['fms:config:account-set:authorize']),
 )
-/** 未初始化且非查看者才可开始记账 */
-const canInitialize = computed(() =>
+const canInitialize = computed(() => // 未初始化且非查看者才可开始记账
   !!formData.value.id
   && !formData.value.initialized
   && formData.value.level !== AccountUserLevel.READ

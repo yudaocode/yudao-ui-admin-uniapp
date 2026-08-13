@@ -71,7 +71,7 @@
         <wd-button v-if="canEdit" class="flex-1" type="primary" @click="handleEdit">
           编辑
         </wd-button>
-        <wd-button v-if="canDelete" class="flex-1" type="error" :loading="deleting" @click="handleDelete">
+        <wd-button v-if="canDelete" class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
           删除
         </wd-button>
       </view>
@@ -110,10 +110,8 @@ const formData = ref<VoucherTemplate>({} as VoucherTemplate) // 详情数据
 const subjects = ref<Subject[]>([]) // 平铺科目列表，用于拼接分录科目名称
 const deleting = ref(false) // 删除状态
 
-/** 仅账套可写且有权限时可编辑 */
-const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:update']))
-/** 仅账套可写且有权限时可删除 */
-const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:delete']))
+const canEdit = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:update'])) // 仅账套可写且有权限时可编辑
+const canDelete = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template:delete'])) // 仅账套可写且有权限时可删除
 
 /** 返回上一页 */
 function handleBack() {

@@ -44,7 +44,7 @@ export interface Voucher {
   creatorUserName?: string // 制单人名称
   reviewerUserId?: number // 审核人后台用户编号
   reviewerUserName?: string // 审核人名称
-  createTime?: string // 创建时间
+  createTime?: number // 创建时间
 }
 
 /** FMS 凭证保存参数 */

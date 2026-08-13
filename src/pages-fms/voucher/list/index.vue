@@ -34,6 +34,7 @@
       <z-paging
         ref="pagingRef"
         v-model="list"
+        :auto="false"
         :fixed="false"
         class="min-h-0 flex-1"
         :refresher-enabled="true"
@@ -98,7 +99,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
   </view>
 </template>
 
@@ -113,6 +114,7 @@ import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsVoucherStatus } from '@/pages-fms/utils/constants'
 import { formatFmsAmount } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
+import dayjs from 'dayjs'
 import { formatDate } from '@/utils/date'
 import MoveForm from './components/move-form.vue'
 import SearchForm from './components/search-form.vue'
@@ -131,12 +133,9 @@ const list = ref<Voucher[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 
-/** 当前账套可写且有新增权限时才允许新增 */
-const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:create']))
-/** 可写且有整理权限时显示整理凭证 */
-const canTidy = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:tidy']))
-/** 可写且有移动权限时显示移动凭证 */
-const canMove = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:move']))
+const canCreate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:create'])) // 当前账套可写且有新增权限时才允许新增
+const canTidy = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:tidy'])) // 可写且有整理权限时显示整理凭证
+const canMove = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:voucher:move'])) // 可写且有移动权限时显示移动凭证
 const tidyFormRef = ref<InstanceType<typeof TidyForm>>() // 整理凭证弹窗
 const moveFormRef = ref<InstanceType<typeof MoveForm>>() // 移动凭证弹窗
 
@@ -173,12 +172,24 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery()
+  handleQuery(getDefaultQueryParams())
+}
+
+/** 默认查询参数：凭证日期限定当前会计期间（对齐 PC） */
+function getDefaultQueryParams(): Record<string, any> {
+  const month = fmsStore.currentMonth || dayjs().format('YYYY-MM')
+  const date = dayjs(`${month}-01`)
+  return {
+    voucherTime: [
+      date.startOf('month').format('YYYY-MM-DD HH:mm:ss'),
+      date.endOf('month').format('YYYY-MM-DD HH:mm:ss'),
+    ],
+  }
 }
 
 /** 切换账套：凭证字等筛选条件随账套失效，清空后重新加载 */
 function handleAccountSetChange() {
-  queryParams.value = {}
+  queryParams.value = getDefaultQueryParams()
   reload()
 }
 
@@ -200,6 +211,11 @@ function handleDetail(item: Voucher) {
 /** 初始化 */
 onMounted(async () => {
   await fmsStore.loadAccountSetList()
+  if (fmsStore.accountSet && !fmsStore.currentMonth) {
+    await fmsStore.loadCurrentMonth()
+  }
+  queryParams.value = getDefaultQueryParams()
+  reload()
   uni.$on('fms:voucher:reload', reload)
 })
 

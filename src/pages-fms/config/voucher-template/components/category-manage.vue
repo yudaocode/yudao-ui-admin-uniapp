@@ -35,6 +35,15 @@
         >
           {{ formData.id ? '保存' : '新增' }}
         </wd-button>
+        <wd-button
+          v-if="formData.id && canDelete"
+          type="danger"
+          size="small"
+          variant="plain"
+          @click="handleDelete"
+        >
+          删除
+        </wd-button>
         <wd-button v-if="formData.id" size="small" variant="plain" @click="resetForm">
           取消
         </wd-button>
@@ -47,28 +56,10 @@
             v-for="item in list"
             :key="item.id"
             class="mb-20rpx flex items-center justify-between gap-16rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+            @click="handleEdit(item)"
           >
             <text class="min-w-0 flex-1 truncate text-28rpx text-[#333]">{{ item.name }}</text>
-            <view class="flex flex-shrink-0 gap-16rpx">
-              <wd-button
-                v-if="fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template-category:update'])"
-                size="small"
-                type="primary"
-                variant="plain"
-                @click="handleEdit(item)"
-              >
-                编辑
-              </wd-button>
-              <wd-button
-                v-if="fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template-category:delete'])"
-                size="small"
-                type="danger"
-                variant="plain"
-                @click="handleDelete(item)"
-              >
-                删除
-              </wd-button>
-            </view>
+            <wd-icon name="arrow-right" size="28rpx" color="#999" />
           </view>
 
           <!-- 空状态 -->
@@ -114,10 +105,12 @@ const formData = reactive({ // 分类表单数据
   name: '',
 })
 
-/** 账套可写且有对应权限时才允许新增或保存分类 */
-const canSave = computed(() =>
+const canSave = computed(() => // 账套可写且有对应权限时才允许新增或保存分类
   fmsStore.isAccountSetWritable
   && hasAccessByCodes([formData.id ? 'fms:config:voucher-template-category:update' : 'fms:config:voucher-template-category:create']),
+)
+const canDelete = computed(() => // 账套可写且有删除权限时才允许删除分类
+  fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:voucher-template-category:delete']),
 )
 
 /** 打开弹窗 */
@@ -176,25 +169,24 @@ async function handleSave() {
   }
 }
 
-/** 删除分类 */
-async function handleDelete(item: VoucherTemplateCategory) {
+/** 删除当前编辑的分类 */
+async function handleDelete() {
   const accountSetId = props.accountSetId
-  if (!accountSetId || !item.id) {
+  const id = formData.id
+  if (!accountSetId || !id) {
     return
   }
   try {
     await dialog.confirm({
       title: '提示',
-      msg: `是否确认删除凭证模板分类“${item.name}”？`,
+      msg: `是否确认删除凭证模板分类“${formData.name}”？`,
     })
   } catch {
     return
   }
-  await deleteVoucherTemplateCategory(accountSetId, item.id)
+  await deleteVoucherTemplateCategory(accountSetId, id)
   toast.success('删除成功')
-  if (formData.id === item.id) {
-    resetForm()
-  }
+  resetForm()
   await getList()
   emit('change')
 }

@@ -33,13 +33,24 @@
           <view class="p-24rpx">
             <!-- 加载状态 -->
             <view
-              v-if="loading || !searchReady"
+              v-if="!subjectsLoadFailed && (loading || !searchReady)"
               class="rounded-12rpx bg-white py-64rpx text-center text-26rpx text-[#999] shadow-sm"
             >
               <wd-loading size="32rpx" />
               <view class="mt-12rpx">
                 正在加载账簿数据
               </view>
+            </view>
+
+            <!-- 候选科目加载失败 -->
+            <view
+              v-else-if="subjectsLoadFailed"
+              class="rounded-12rpx bg-white py-64rpx text-center text-26rpx text-[#999] shadow-sm"
+            >
+              <view>候选科目加载失败</view>
+              <wd-button class="mt-16rpx" size="small" type="primary" plain @click="handleRetrySubjects">
+                重新加载
+              </wd-button>
             </view>
 
             <view v-else-if="list.length" class="overflow-hidden rounded-12rpx bg-white shadow-sm">
@@ -93,7 +104,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -106,11 +117,11 @@ import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import SearchForm from '@/pages-fms/ledger/components/search-form.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsMoney, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
+import { buildFmsSubjectOptions, formatFmsMoney, formatFmsSubjectBalance } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
 
 const props = defineProps<{
-  subjectId?: number | any // 下钻传入的科目编号
+  subjectId?: number // 下钻传入的科目编号
   startMonth?: string // 下钻传入的开始期间
   endMonth?: string // 下钻传入的结束期间
 }>()
@@ -127,6 +138,7 @@ const fmsStore = useFmsStore()
 const loading = ref(false) // 账簿加载状态
 const list = ref<LedgerDetail[]>([]) // 明细账行列表
 const subjects = ref<LedgerDetailSubject[]>([]) // 期间有发生额的候选科目（含父级节点）
+const subjectsLoadFailed = ref(false) // 候选科目是否加载失败，失败时展示重试入口而非空态
 const searchReady = ref(false) // 搜索组件是否就绪，候选科目加载完成后渲染
 const initials = reactive<{ subjectId?: number, startMonth?: string, endMonth?: string }>({}) // 搜索组件初始值
 const queryParams = reactive({ // 查询参数
@@ -135,9 +147,7 @@ const queryParams = reactive({ // 查询参数
   subjectId: undefined as number | undefined,
 })
 
-const subjectOptions = computed(() =>
-  subjects.value.map(item => ({ label: `${item.code} ${item.name}`, value: item.id! })),
-) // 候选科目选项
+const subjectOptions = computed(() => buildFmsSubjectOptions(subjects.value)) // 候选科目选项
 
 /** 返回上一页 */
 function handleBack() {
@@ -185,7 +195,8 @@ async function handleQuery(data: Record<string, any>) {
         })
       : []
   } catch {
-    subjects.value = [] // 候选科目接口不可用时降级为空，列表区域仍展示空态而非卡在加载中
+    subjectsLoadFailed.value = true // 候选科目接口失败时展示重试入口，不伪装成空数据
+    return
   }
   if (queryParams.subjectId && !subjects.value.some(item => item.id === queryParams.subjectId)) {
     queryParams.subjectId = subjectOptions.value[0]?.value
@@ -195,14 +206,14 @@ async function handleQuery(data: Record<string, any>) {
     searchReady.value = false
     await nextTick()
     searchReady.value = true
-    return // 重建的搜索组件会携带新条件再次触发查询
   }
   getList()
 }
 
-/** 初始化：加载候选科目并渲染搜索组件，首次查询由搜索组件触发 */
+/** 初始化：加载候选科目并渲染搜索组件，随后触发首次查询 */
 async function initialize() {
   searchReady.value = false
+  subjectsLoadFailed.value = false
   subjects.value = []
   list.value = []
   const accountSetId = fmsStore.accountSet?.id
@@ -222,7 +233,8 @@ async function initialize() {
         endMonth: initials.endMonth,
       })
     } catch {
-      subjects.value = [] // 候选科目接口不可用时降级为空，搜索组件仍可渲染
+      subjectsLoadFailed.value = true // 候选科目接口失败时展示重试入口，不伪装成空数据
+      return
     }
   }
   if (accountSetId !== fmsStore.accountSet?.id) {
@@ -236,6 +248,12 @@ async function initialize() {
   queryParams.endMonth = initials.endMonth || ''
   queryParams.subjectId = initials.subjectId
   searchReady.value = true
+  getList()
+}
+
+/** 候选科目加载失败后重试 */
+function handleRetrySubjects() {
+  initialize()
 }
 
 /** 账套切换后重新初始化 */

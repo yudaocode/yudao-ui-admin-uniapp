@@ -33,7 +33,7 @@
               <wd-cell title="公司名称" :value="accountSetInfo?.companyName || '-'" />
               <wd-cell title="本位币" :value="currencyText" />
               <wd-cell title="启用期间" :value="formatFmsStartTime(accountSetInfo?.startTime) || '-'" />
-              <wd-form-item title="会计制度" title-width="180rpx" prop="standard" vertical>
+              <wd-form-item title="会计制度" title-width="180rpx" prop="standard" layout="vertical">
                 <wd-radio-group
                   v-model="formData.standard"
                   type="button"
@@ -53,7 +53,7 @@
             <template v-if="financeParameter">
               <!-- 科目参数 -->
               <wd-cell-group title="科目参数" border class="mt-24rpx">
-                <wd-form-item title="科目级次" title-width="180rpx" prop="level" vertical>
+                <wd-form-item title="科目级次" title-width="180rpx" prop="level" layout="vertical">
                   <wd-radio-group
                     v-model="formData.level"
                     type="button"
@@ -68,7 +68,7 @@
                     科目级次和编码长度调大后不能再调小，请谨慎操作
                   </view>
                 </wd-form-item>
-                <wd-form-item title="编码长度" title-width="180rpx" prop="subjectCodeRules" vertical>
+                <wd-form-item title="编码长度" title-width="180rpx" prop="subjectCodeRules" layout="vertical">
                   <view class="flex flex-wrap items-center gap-12rpx">
                     <template v-for="(_, index) in formData.subjectCodeRules" :key="index">
                       <wd-input-number
@@ -88,7 +88,7 @@
 
               <!-- 账簿 -->
               <wd-cell-group title="账簿" border class="mt-24rpx">
-                <wd-form-item title="账簿余额方向" title-width="200rpx" vertical>
+                <wd-form-item title="账簿余额方向" title-width="200rpx" layout="vertical">
                   <wd-radio-group
                     v-model="formData.ledgerBalanceMode"
                     type="button"
@@ -123,7 +123,7 @@
     </template>
 
     <!-- 无可用账套引导 -->
-    <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+    <AccountSetGuide />
   </view>
 </template>
 
@@ -182,8 +182,7 @@ const originalRules = ref<number[]>(parseSubjectCodeRules(FMS_DEFAULT_SUBJECT_CO
 const formData = ref<FinanceParameterFormData>(createDefaultFormData()) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 
-/** 仅账套可写且有更新权限时可编辑保存 */
-const canUpdate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-parameter:update']))
+const canUpdate = computed(() => fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:finance-parameter:update'])) // 仅账套可写且有更新权限时可编辑保存
 
 const currencyText = computed(() => (currency.value ? `${currency.value.code} ${currency.value.name}` : '-')) // 本位币展示文案
 

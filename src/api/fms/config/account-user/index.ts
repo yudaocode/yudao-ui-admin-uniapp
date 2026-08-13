@@ -20,13 +20,6 @@ export const AccountUserLevel = {
   WRITE: 3, // 会计
 } as const
 
-/** FMS 账套成员权限级别选项 */
-export const AccountUserLevelOptions = [
-  { label: '主管', value: AccountUserLevel.OWNER },
-  { label: '查看者', value: AccountUserLevel.READ },
-  { label: '会计', value: AccountUserLevel.WRITE },
-] as const
-
 /** FMS 账套成员修改参数 */
 export interface AccountUserUpdateMemberReq {
   userId: number // 后台用户编号

@@ -171,7 +171,7 @@
       </template>
 
       <!-- 无可用账套引导 -->
-      <AccountSetGuide v-else-if="fmsStore.accountSetListLoaded" />
+      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -186,7 +186,7 @@ import { useAccess } from '@/hooks/useAccess'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { formatFmsAmount, formatFmsMonth, formatFmsPeriodLabel, parseFmsMonth } from '@/pages-fms/utils/format'
+import { buildFmsVoucherWordOptions, formatFmsAmount, formatFmsMonth, formatFmsPeriodLabel, parseFmsMonth } from '@/pages-fms/utils/format'
 import { navigateBackPlus } from '@/utils'
 
 definePage({
@@ -213,18 +213,13 @@ const endMonthVisible = ref(false) // 结束期间选择器显隐
 const startMonthPicker = ref<number | string>('') // 开始期间本地值
 const endMonthPicker = ref<number | string>('') // 结束期间本地值
 
-/** 凭证字选项 */
-const voucherWordOptions = computed(() =>
-  voucherWords.value.map(item => ({ label: item.name, value: item.id! })),
-)
-/** 借方总计（按最小科目级次行汇总，与 PC 合计行口径一致） */
-const totalDebitAmount = computed(() =>
+const voucherWordOptions = computed(() => buildFmsVoucherWordOptions(voucherWords.value)) // 凭证字选项
+const totalDebitAmount = computed(() => // 借方总计（按最小科目级次行汇总，与 PC 合计行口径一致）
   list.value
     .filter(item => item.level === queryParams.value.minLevel)
     .reduce((sum, item) => sum + Number(item.debitAmount || 0), 0),
 )
-/** 贷方总计（按最小科目级次行汇总，与 PC 合计行口径一致） */
-const totalCreditAmount = computed(() =>
+const totalCreditAmount = computed(() => // 贷方总计（按最小科目级次行汇总，与 PC 合计行口径一致）
   list.value
     .filter(item => item.level === queryParams.value.minLevel)
     .reduce((sum, item) => sum + Number(item.creditAmount || 0), 0),
@@ -279,7 +274,28 @@ function handleQuery() {
   if (!queryParams.value.startMonth || !queryParams.value.endMonth) {
     return
   }
+  // 级次与凭证号范围约束对齐 PC：级次 1~10，凭证号不小于 1；清空最小级次时回退默认 1，避免合计行归零
+  const params = queryParams.value
+  params.minLevel = clampRange(params.minLevel, 1, 10) ?? 1
+  params.maxLevel = clampRange(params.maxLevel, 1, 10) ?? params.minLevel
+  if (params.minLevel > params.maxLevel) {
+    [params.minLevel, params.maxLevel] = [params.maxLevel, params.minLevel]
+  }
+  params.minVoucherNumber = clampRange(params.minVoucherNumber, 1)
+  params.maxVoucherNumber = clampRange(params.maxVoucherNumber, 1)
+  if (params.minVoucherNumber && params.maxVoucherNumber && params.minVoucherNumber > params.maxVoucherNumber) {
+    [params.minVoucherNumber, params.maxVoucherNumber] = [params.maxVoucherNumber, params.minVoucherNumber]
+  }
   getList()
+}
+
+/** 将输入收敛到 [min, max] 区间，空值或非数字返回 undefined */
+function clampRange(value: number | undefined, min: number, max?: number) {
+  const num = Math.trunc(Number(value))
+  if (!value || Number.isNaN(num)) {
+    return undefined
+  }
+  return Math.min(Math.max(num, min), max ?? num)
 }
 
 /** 重置按钮操作 */
