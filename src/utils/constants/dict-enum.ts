@@ -114,6 +114,12 @@ const CRM_DICT = {
   CRM_FOLLOW_UP_TYPE: 'crm_follow_up_type', // CRM 跟进方式
 } as const
 
+/** ========== FMS - 财务会计模块 ========== */
+const FMS_DICT = {
+  FMS_SUBJECT_CATEGORY: 'fms_subject_category', // FMS 科目类别
+  FMS_DEBIT_CREDIT_DIRECTION: 'fms_debit_credit_direction', // FMS 借贷方向
+} as const
+
 /** ========== ERP - 企业资源计划模块 ========== */
 const ERP_DICT = {
   ERP_AUDIT_STATUS: 'erp_audit_status', // ERP 审批状态
@@ -325,6 +331,7 @@ export const DICT_TYPE = {
   ...MALL_DICT,
   ...CRM_DICT,
   ...HRM_DICT,
+  ...FMS_DICT,
   ...ERP_DICT,
   ...MES_DICT,
   ...PAY_DICT,
