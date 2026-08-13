@@ -118,6 +118,8 @@ const CRM_DICT = {
 const FMS_DICT = {
   FMS_SUBJECT_CATEGORY: 'fms_subject_category', // FMS 科目类别
   FMS_DEBIT_CREDIT_DIRECTION: 'fms_debit_credit_direction', // FMS 借贷方向
+  FMS_ACCOUNT_USER_LEVEL: 'fms_account_user_level', // FMS 账套用户权限级别
+  FMS_FINANCE_INDICATOR_TYPE: 'fms_finance_indicator_type', // FMS 财务指标取数报表类型
 } as const
 
 /** ========== ERP - 企业资源计划模块 ========== */
