@@ -18,7 +18,7 @@
         <scroll-view scroll-x class="whitespace-nowrap">
           <wd-radio-group v-model="type" type="button" class="px-24rpx py-16rpx" @change="handleTypeChange">
             <wd-radio
-              v-for="option in FmsSubjectTypeOptions"
+              v-for="option in subjectTypeOptions"
               :key="option.value"
               :value="option.value"
             >
@@ -122,7 +122,7 @@ import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { getSubjectList } from '@/api/fms/config/subject'
 import { useAccess } from '@/hooks/useAccess'
-import { getDictLabel } from '@/hooks/useDict'
+import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
@@ -130,12 +130,13 @@ import {
   FMS_SUBJECT_PARENT_ID_ROOT,
   FmsSubjectStatus,
   FmsSubjectType,
-  FmsSubjectTypeOptions,
 } from '@/pages-fms/utils/constants'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { findChildren, handleTree } from '@/utils/tree'
 import Breadcrumb from './components/breadcrumb.vue'
+
+const subjectTypeOptions = getIntDictOptions(DICT_TYPE.FMS_SUBJECT_TYPE)
 
 definePage({
   style: {
