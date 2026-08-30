@@ -3,7 +3,7 @@
   "type": "module",
   "version": "4.1.0",
   "unibest-version": "4.1.0",
-  "yudao-version": "2026.07.0-snapshot",
+  "yudao-version": "2026.08.0-snapshot",
   "unibest-update-time": "2025-11-07",
   "packageManager": "pnpm@10.10.0",
   "description": "unibest - 最好的 uniapp 开发模板",
