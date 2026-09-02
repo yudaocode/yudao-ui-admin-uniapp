@@ -2796,6 +2796,128 @@
       ]
     },
     {
+      "key": "pms",
+      "name": "PMS 项目管理",
+      "subGroups": [
+        {
+          "key": "pm",
+          "name": "项目中心",
+          "menus": [
+            {
+              "key": "pmsWorkbench",
+              "name": "工作台",
+              "icon": "dashboard",
+              "iconColor": "#1677ff",
+              "url": "/pages-pms/pm/workbench/index",
+              "permission": "pms:pm:work-item:query"
+            },
+            {
+              "key": "pmsProjectList",
+              "name": "我的项目",
+              "icon": "apps",
+              "iconColor": "#52c41a",
+              "url": "/pages-pms/pm/project/list/index",
+              "permission": "pms:pm:project:query"
+            },
+            {
+              "key": "pmsProjectGroup",
+              "name": "项目分组",
+              "icon": "folder",
+              "iconColor": "#13c2c2",
+              "url": "/pages-pms/pm/project/group/index",
+              "permission": "pms:pm:project-group:query"
+            },
+            {
+              "key": "pmsProjectArchive",
+              "name": "归档项目",
+              "icon": "archive",
+              "iconColor": "#fa8c16",
+              "url": "/pages-pms/pm/project/archive/index",
+              "permission": "pms:pm:project:query"
+            },
+            {
+              "key": "pmsProjectRecycle",
+              "name": "项目回收站",
+              "icon": "undo",
+              "iconColor": "#f5222d",
+              "url": "/pages-pms/pm/project/recycle/index",
+              "permission": "pms:pm:project:query"
+            },
+            {
+              "key": "pmsProjectTemplate",
+              "name": "项目模板",
+              "icon": "layout",
+              "iconColor": "#722ed1",
+              "url": "/pages-pms/pm/project/template/index",
+              "permission": "pms:pm:project-template:query"
+            }
+          ]
+        },
+        {
+          "key": "kb",
+          "name": "知识中心",
+          "menus": [
+            {
+              "key": "pmsKbLibrary",
+              "name": "知识库",
+              "icon": "book",
+              "iconColor": "#1677ff",
+              "url": "/pages-pms/kb/library/index",
+              "permission": "pms:kb:library:query"
+            },
+            {
+              "key": "pmsKbSearch",
+              "name": "文档搜索",
+              "icon": "scan",
+              "iconColor": "#52c41a",
+              "url": "/pages-pms/kb/search/index",
+              "permission": "pms:kb:library:query"
+            },
+            {
+              "key": "pmsKbLabel",
+              "name": "文档标签",
+              "icon": "tags",
+              "iconColor": "#13c2c2",
+              "url": "/pages-pms/kb/label/index",
+              "permission": "pms:kb:library:query"
+            },
+            {
+              "key": "pmsKbCollection",
+              "name": "我的关注",
+              "icon": "star",
+              "iconColor": "#fa8c16",
+              "url": "/pages-pms/kb/collection/index",
+              "permission": "pms:kb:library:query"
+            },
+            {
+              "key": "pmsKbRecent",
+              "name": "最近使用",
+              "icon": "history",
+              "iconColor": "#722ed1",
+              "url": "/pages-pms/kb/recent/index",
+              "permission": "pms:kb:library:query"
+            },
+            {
+              "key": "pmsKbRecycle",
+              "name": "回收站",
+              "icon": "undo",
+              "iconColor": "#f5222d",
+              "url": "/pages-pms/kb/recycle/index",
+              "permission": "pms:kb:library:delete"
+            },
+            {
+              "key": "pmsKbLibraryTemplate",
+              "name": "知识库模板",
+              "icon": "copy",
+              "iconColor": "#eb2f96",
+              "url": "/pages-pms/kb/library-template/index",
+              "permission": "pms:kb:library-template:query"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "key": "ai",
       "name": "AI 大模型",
       "subGroups": [
