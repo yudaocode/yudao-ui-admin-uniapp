@@ -54,7 +54,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | string[]]
-  'uploaded': [value: string, name?: string]
+  'uploaded': [value: string, name?: string, size?: number]
   'success': [value: any]
   'fail': [value: any]
   'remove': [value: any]
@@ -93,8 +93,8 @@ function handleUpdate(urls: string[]) {
 }
 
 /** 转发上传结果 */
-function handleUploaded(url: string, name?: string) {
-  emit('uploaded', url, name)
+function handleUploaded(url: string, name?: string, size?: number) {
+  emit('uploaded', url, name, size)
 }
 </script>
 

@@ -54,7 +54,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string[]]
-  'uploaded': [value: string, name?: string]
+  'uploaded': [value: string, name?: string, size?: number]
   'success': [value: any]
   'fail': [value: any]
   'remove': [value: any]
@@ -165,11 +165,11 @@ function handleChange({ fileList }: { fileList: UploadFileItem[] }) {
   emit('update:modelValue', successUrls(fileList))
 }
 
-/** 单个文件上传成功：抛出便捷的 url（uploaded）并透传原始事件（success） */
+/** 单个文件上传成功：抛出便捷的 url、文件名和大小（uploaded）并透传原始事件（success） */
 function handleSuccess(event: { file: UploadFileItem }) {
   const url = resolveUrl(event.file)
   if (url) {
-    emit('uploaded', url, event.file.name)
+    emit('uploaded', url, event.file.name, (event.file as { size?: number }).size)
   }
   emit('success', event)
 }
