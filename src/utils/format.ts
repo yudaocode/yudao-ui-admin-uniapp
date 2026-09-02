@@ -181,3 +181,33 @@ export function formatDisplayMoney(value: any) {
   }
   return `￥${(amount / 100).toFixed(2)}`
 }
+
+/** 移除 HTML 标签并合并空白字符 */
+export function stripHtmlTags(content: string) {
+  return content
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** 判断内容是否包含 HTML 标签（区分富文本与纯文本） */
+export function isHtmlContent(content?: string) {
+  return /<[a-z][\s\S]*>/i.test(content || '')
+}
+
+/**
+ * 富文本渲染前的轻量消毒：剥离 on* 事件属性与 javascript: 协议链接。
+ * uniapp rich-text 已剥 script/style 标签，这里补齐 H5 端对事件属性的过滤。
+ */
+export function sanitizeRichText(content: string) {
+  return content
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/\s(href|src)\s*=\s*(["'])\s*javascript:[^"']*\2/gi, '')
+}
+
+/** 生成彩色标签的 custom-style 字符串（wd-tag 的 customStyle 只接受字符串，传对象会拼成 [object Object]） */
+export function getColorTagStyle(color?: string) {
+  return `background-color: ${color || '#909399'}; color: #fff;`
+}
