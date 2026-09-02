@@ -8,12 +8,11 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:home:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch @change="getHome" />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="getHome" />
-        </view>
-
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <view class="p-24rpx space-y-24rpx">
             <!-- 常用功能 -->
@@ -50,9 +49,6 @@
           <view class="h-40rpx" />
         </scroll-view>
       </template>
-
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -61,7 +57,6 @@
 import type { FmsHome, FmsHomeMetric, FmsHomeMetricDetail } from '@/api/fms/home'
 import { getFmsHome, getFmsHomeMetricDetail } from '@/api/fms/home'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { navigateBackPlus } from '@/utils'
