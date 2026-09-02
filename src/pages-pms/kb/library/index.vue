@@ -1,37 +1,18 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      title="知识库"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon
-            v-if="hasAccessByCodes(['pms:kb:library:update'])"
-            name="menu-fold" size="40rpx" color="#666"
-            @click="handleGroupManage"
-          />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar title="知识库" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
           <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
           <wd-icon
             v-if="hasAccessByCodes(['pms:kb:library:update'])"
-            name="menu-fold" size="40rpx" color="#333"
+            name="menu-fold" size="38rpx" color="#333"
             @click="handleGroupManage"
           />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 分组页签 -->
     <view v-if="groupList.length > 0" class="bg-white">

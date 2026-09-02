@@ -54,10 +54,9 @@
             >
               编辑
             </wd-button>
-            <!-- TODO @AI：删除按钮的颜色？貌似 error 不对；另外，你检查下别的会不会有这个问题； -->
             <wd-button
               v-if="hasAccessByCodes(['pms:pm:project-template:delete'])"
-              size="small" type="error" variant="plain"
+              size="small" type="danger" variant="plain"
               @click.stop="handleDelete(item)"
             >
               删除

@@ -79,13 +79,22 @@
         </view>
       </view>
 
-      <!-- 通用项目工作项趋势（折线图，对齐 PC） -->
+      <!-- 通用项目工作项趋势 -->
       <view v-else class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
         <view class="mb-16rpx flex items-center justify-between">
           <text class="text-30rpx text-[#333] font-semibold">工作项趋势</text>
-          <text class="text-24rpx text-[#999]">近 14 日已完成</text>
+          <text class="text-24rpx text-[#999]">近 14 日已完成 {{ trendTotal }} 项</text>
         </view>
-        <YdChart :option="trendChartOptions" :empty="!overview.completedTrends.length" height="360rpx" />
+        <template v-if="overview.completedTrends.length">
+          <TrendBars :values="trendValues" height="240rpx" />
+          <view class="mt-8rpx flex justify-between text-22rpx text-[#999]">
+            <text>{{ trendDateRange[0] }}</text>
+            <text>{{ trendDateRange[1] }}</text>
+          </view>
+        </template>
+        <view v-else class="py-40rpx text-center text-28rpx text-[#999]">
+          暂无数据
+        </view>
       </view>
 
       <!-- 项目基本信息 -->
@@ -145,7 +154,7 @@ import {
   getIterationStatusName,
   getWorkItemTypeName,
 } from '@/pages-pms/pm/utils/format'
-import YdChart from '@/pages-statistics/components/yd-chart/yd-chart.vue'
+import TrendBars from '@/pages-pms/pm/components/trend-bars.vue'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/store/user'
 import { getAllPageItems } from '@/utils/page'
@@ -178,23 +187,15 @@ const cards = computed(() => [ // 核心指标卡片
   { label: '进行中', value: overview.value.processingCount },
   { label: '已完成', value: overview.value.completedCount },
 ])
-const trendChartOptions = computed(() => ({ // 近 14 日完成工作项折线图
-  tooltip: { trigger: 'axis' },
-  legend: { top: 0, data: ['工作项数量'] },
-  grid: { top: 50, right: 18, bottom: 14, left: 12, containLabel: true },
-  xAxis: { type: 'category', boundaryGap: false, data: overview.value.completedTrends.map(point => point.date.slice(5)), axisTick: { show: false } },
-  yAxis: { type: 'value', minInterval: 1, axisTick: { show: false } },
-  series: [{
-    name: '工作项数量',
-    type: 'line',
-    smooth: true,
-    symbol: 'circle',
-    symbolSize: 6,
-    data: overview.value.completedTrends.map(point => point.count),
-    lineStyle: { width: 2, color: '#1677ff' },
-    itemStyle: { color: '#1677ff' },
-  }],
-}))
+const trendValues = computed(() => overview.value.completedTrends.map(point => point.count)) // 近 14 日完成数量
+const trendTotal = computed(() => trendValues.value.reduce((total, count) => total + count, 0)) // 近 14 日完成总数
+const trendDateRange = computed(() => { // 趋势起止日期（MM-DD）
+  const trends = overview.value.completedTrends
+  if (!trends.length) {
+    return []
+  }
+  return [trends[0].date.slice(5), trends[trends.length - 1].date.slice(5)]
+})
 
 /** 查询项目概况 */
 async function getOverview() {

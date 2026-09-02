@@ -1,45 +1,22 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="library?.name || '知识库'"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon name="search-line" size="40rpx" color="#666" @click="handleSearch" />
-          <wd-icon
-            v-if="library"
-            :name="library.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
-            :color="library.favoriteStatus ? '#fa8c16' : '#666'"
-            @click="handleCollect"
-          />
-          <wd-icon name="more-vertical" size="40rpx" color="#666" @click="moreVisible = true" />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="library?.name || '知识库'" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
           <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
-          <wd-icon name="search-line" size="40rpx" color="#333" @click="handleSearch" />
+          <wd-icon name="search-line" size="38rpx" color="#333" @click="handleSearch" />
           <wd-icon
             v-if="library"
             :name="library.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
+            size="38rpx"
             :color="library.favoriteStatus ? '#fa8c16' : '#333'"
             @click="handleCollect"
           />
-          <wd-icon name="more-vertical" size="40rpx" color="#333" @click="moreVisible = true" />
+          <wd-icon name="more-vertical" size="38rpx" color="#333" @click="moreVisible = true" />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 知识库简介 -->
     <view v-if="library" class="bg-white p-24rpx">

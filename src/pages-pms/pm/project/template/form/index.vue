@@ -125,7 +125,7 @@
                 <wd-button size="small" variant="plain" :disabled="isLastStatus(status)" @click="handleMoveStatus(status, 1)">
                   下移
                 </wd-button>
-                <wd-button size="small" type="error" variant="plain" @click="handleRemoveStatus(status)">
+                <wd-button size="small" type="danger" variant="plain" @click="handleRemoveStatus(status)">
                   删除
                 </wd-button>
               </view>
@@ -171,7 +171,7 @@
               <wd-button size="small" variant="plain" :disabled="index === formData.boards.length - 1" @click="handleMoveBoard(index, 1)">
                 下移
               </wd-button>
-              <wd-button size="small" type="error" variant="plain" @click="handleRemoveBoard(index)">
+              <wd-button size="small" type="danger" variant="plain" @click="handleRemoveBoard(index)">
                 删除
               </wd-button>
             </view>

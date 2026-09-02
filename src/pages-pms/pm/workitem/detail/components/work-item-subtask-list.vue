@@ -1,18 +1,29 @@
 <template>
   <view>
     <!-- 快速创建 -->
-    <view v-if="editable" class="mb-24rpx flex items-center gap-16rpx">
-      <!-- TODO @AI：添加工作项，你感觉要这么平铺么？？？ -->
-      <wd-input
-        v-model="newSubtaskName"
-        class="flex-1"
-        placeholder="输入子工作项标题"
-        :maxlength="100"
-        clearable
-      />
-      <wd-button size="small" type="primary" :loading="creating" @click="handleCreate">
-        添加
-      </wd-button>
+    <view
+      v-if="editable && !composing"
+      class="mb-24rpx rounded-12rpx bg-white p-24rpx text-26rpx text-[#999] shadow-sm"
+      @click="composing = true"
+    >
+      添加子工作项…
+    </view>
+    <view v-else-if="editable" class="mb-24rpx">
+      <view class="flex items-center gap-16rpx">
+        <wd-input
+          v-model="newSubtaskName"
+          class="flex-1"
+          placeholder="输入子工作项标题"
+          :maxlength="100"
+          clearable
+        />
+        <wd-button size="small" type="primary" :loading="creating" @click="handleCreate">
+          添加
+        </wd-button>
+      </view>
+      <view class="mt-12rpx text-right">
+        <text class="text-26rpx text-[#999]" @click="composing = false">取消</text>
+      </view>
     </view>
 
     <!-- 子工作项列表 -->
@@ -75,6 +86,7 @@ const emit = defineEmits<{ changed: [] }>() // 子工作项变化事件
 const toast = useToast()
 const dialog = useDialog()
 const creating = ref(false) // 子工作项创建中
+const composing = ref(false) // 是否展开快速创建输入区
 const statusSavingId = ref<number>() // 正在更新状态的子工作项编号
 const subtaskList = ref<WorkItem[]>([]) // 子工作项列表
 const statusList = ref<WorkItemStatus[]>([]) // 工作项状态列表
@@ -124,6 +136,7 @@ async function handleCreate() {
       labelIds: [],
     })
     newSubtaskName.value = ''
+    composing.value = false
     toast.success('子工作项创建成功')
     await getList()
     emit('changed')

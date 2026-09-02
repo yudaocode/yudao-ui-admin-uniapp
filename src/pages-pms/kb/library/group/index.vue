@@ -51,7 +51,7 @@
                 </wd-button>
                 <wd-button
                   v-if="hasAccessByCodes(['pms:kb:library:delete'])"
-                  size="small" type="error" variant="plain"
+                  size="small" type="danger" variant="plain"
                   @click="handleDelete(item)"
                 >
                   删除

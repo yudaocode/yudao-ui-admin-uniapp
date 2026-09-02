@@ -53,7 +53,7 @@
                 <wd-button size="small" variant="plain" :disabled="index === statusList.length - 1" @click="handleMoveStatus(index, 1)">
                   下移
                 </wd-button>
-                <wd-button size="small" type="error" variant="plain" :disabled="status.id === defaultStatusId" @click="handleDeleteStatus(status)">
+                <wd-button size="small" type="danger" variant="plain" :disabled="status.id === defaultStatusId" @click="handleDeleteStatus(status)">
                   删除
                 </wd-button>
               </view>
@@ -108,7 +108,7 @@
                 <wd-button size="small" variant="plain" :disabled="index === boardList.length - 1" @click="handleMoveBoard(index, 1)">
                   下移
                 </wd-button>
-                <wd-button size="small" type="error" variant="plain" @click="handleDeleteBoard(index)">
+                <wd-button size="small" type="danger" variant="plain" @click="handleDeleteBoard(index)">
                   删除列
                 </wd-button>
               </view>

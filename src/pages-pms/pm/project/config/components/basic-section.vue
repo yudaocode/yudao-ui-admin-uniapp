@@ -46,7 +46,7 @@
                 项目进入回收站后不可访问；只有项目拥有者可以在回收站彻底删除。
               </view>
             </view>
-            <wd-button size="small" type="error" variant="plain" @click="handleRecycle">
+            <wd-button size="small" type="danger" variant="plain" @click="handleRecycle">
               移入回收站
             </wd-button>
           </view>

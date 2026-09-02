@@ -118,15 +118,15 @@
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="templateSelecting">
-          <wd-button block type="primary" @click="handleTemplateNext">
+          <wd-button class="flex-1" type="primary" @click="handleTemplateNext">
             下一步
           </wd-button>
         </template>
         <template v-else>
-          <wd-button v-if="!props.id" variant="plain" @click="templateSelecting = true">
+          <wd-button v-if="!props.id" variant="plain" class="flex-1" @click="templateSelecting = true">
             上一步
           </wd-button>
-          <wd-button type="primary" :loading="formLoading" @click="handleSubmit">
+          <wd-button type="primary" class="flex-1" :loading="formLoading" @click="handleSubmit">
             保存
           </wd-button>
         </template>

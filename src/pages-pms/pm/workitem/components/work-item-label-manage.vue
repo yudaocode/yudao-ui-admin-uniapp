@@ -22,7 +22,7 @@
             <wd-button size="small" variant="plain" @click="handleEdit(item)">
               编辑
             </wd-button>
-            <wd-button size="small" type="error" variant="plain" @click="handleDelete(item)">
+            <wd-button size="small" type="danger" variant="plain" @click="handleDelete(item)">
               删除
             </wd-button>
           </view>

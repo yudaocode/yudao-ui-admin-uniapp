@@ -54,6 +54,8 @@ border-t-1
   bottom: 0;
   left: 0;
   right: 0;
+  // 高于图表遮罩（lime-echart__mask 是 z-index:1），避免内容区图表盖住底部按钮
+  z-index: 10;
   background-color: #fff;
   padding: 24rpx;
 

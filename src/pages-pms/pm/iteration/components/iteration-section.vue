@@ -103,34 +103,13 @@
     />
 
     <!-- 开始迭代弹窗 -->
-    <wd-popup v-model="startVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
-      <view class="p-32rpx">
-        <view class="mb-24rpx text-center text-32rpx text-[#333] font-semibold">
-          开始迭代
-        </view>
-        <wd-cell-group border>
-          <wd-cell title="开始时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.startTime" type="datetime" placeholder="请选择开始时间" />
-          </wd-cell>
-          <wd-cell title="结束时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.endTime" type="datetime" placeholder="请选择结束时间" />
-          </wd-cell>
-        </wd-cell-group>
-        <view class="mt-32rpx flex gap-24rpx">
-          <wd-button class="flex-1" variant="plain" @click="startVisible = false">
-            取消
-          </wd-button>
-          <wd-button class="flex-1" type="primary" :loading="starting" @click="handleStartConfirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
-    </wd-popup>
+    <IterationStartPopup ref="startPopupRef" @success="handleStartSuccess" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { Iteration } from '@/api/pms/pm/iteration'
+import IterationStartPopup from '@/pages-pms/pm/iteration/components/iteration-start-popup.vue'
 import { computed, reactive, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -138,13 +117,12 @@ import {
   completeIteration,
   deleteIteration,
   getIterationPage,
-  startIteration,
 } from '@/api/pms/pm/iteration'
 import { useAccess } from '@/hooks/useAccess'
 import { PmsIterationStatus } from '@/pages-pms/pm/utils/constants'
 import { getIterationStatusName } from '@/pages-pms/pm/utils/format'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
-import { formatDate, toTimestamp } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 
 const props = defineProps<{
   projectId: number
@@ -158,17 +136,12 @@ const list = ref<Iteration[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const searchVisible = ref(false) // 搜索弹窗显示状态
 const actionVisible = ref(false) // 更多操作弹窗显示状态
-const startVisible = ref(false) // 开始迭代弹窗显示状态
-const starting = ref(false) // 开始迭代提交中
+const startPopupRef = ref<InstanceType<typeof IterationStartPopup>>() // 开始迭代弹窗引用
 const currentItem = ref<Iteration>() // 当前操作的迭代
 const searchData = reactive({
   name: undefined as string | undefined,
   status: undefined as number | undefined,
 }) // 搜索表单数据
-const startForm = reactive({
-  startTime: '' as number | '',
-  endTime: '' as number | '',
-}) // 开始迭代表单
 
 const statusOptions = [ // 迭代状态选项
   { label: '未开始', value: PmsIterationStatus.PLANNED },
@@ -259,9 +232,7 @@ async function handleActionSelect({ item: action }: { item: { name: string } }) 
     return
   }
   if (action.name === '开始迭代') {
-    startForm.startTime = item.startTime ? toTimestamp(item.startTime) : ''
-    startForm.endTime = item.endTime ? toTimestamp(item.endTime) : ''
-    startVisible.value = true
+    startPopupRef.value?.open(item)
     return
   }
   if (action.name === '编辑迭代') {
@@ -282,29 +253,9 @@ async function handleActionSelect({ item: action }: { item: { name: string } }) 
   } catch {}
 }
 
-/** 确认开始迭代 */
-async function handleStartConfirm() {
-  const item = currentItem.value
-  if (!item?.id) {
-    return
-  }
-  if (!startForm.startTime || !startForm.endTime) {
-    toast.warning('迭代周期不能为空')
-    return
-  }
-  starting.value = true
-  try {
-    await startIteration({
-      id: item.id,
-      startTime: Number(startForm.startTime),
-      endTime: Number(startForm.endTime),
-    })
-    toast.success('迭代已开始')
-    startVisible.value = false
-    pagingRef.value?.reload()
-  } finally {
-    starting.value = false
-  }
+/** 开始迭代成功 */
+function handleStartSuccess() {
+  pagingRef.value?.reload()
 }
 
 defineExpose({ reload: () => pagingRef.value?.reload() })

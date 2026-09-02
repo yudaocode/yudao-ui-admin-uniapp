@@ -47,7 +47,7 @@
             </wd-button>
             <wd-button
               v-if="item.ownerStatus && hasAccessByCodes(['pms:pm:project:delete'])"
-              size="small" type="error" variant="plain"
+              size="small" type="danger" variant="plain"
               @click="handleDelete(item)"
             >
               彻底删除

@@ -1,27 +1,6 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="folder?.title || '文件夹'"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon
-            v-if="folder"
-            :name="folder.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
-            :color="folder.favoriteStatus ? '#fa8c16' : '#666'"
-            @click="handleCollect"
-          />
-          <wd-icon v-if="folder" name="more-vertical" size="40rpx" color="#666" @click="moreVisible = true" />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="folder?.title || '文件夹'" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
@@ -29,15 +8,14 @@
           <wd-icon
             v-if="folder"
             :name="folder.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
+            size="38rpx"
             :color="folder.favoriteStatus ? '#fa8c16' : '#333'"
             @click="handleCollect"
           />
-          <wd-icon v-if="folder" name="more-vertical" size="40rpx" color="#333" @click="moreVisible = true" />
+          <wd-icon v-if="folder" name="more-vertical" size="38rpx" color="#333" @click="moreVisible = true" />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 文件夹信息 -->
     <view v-if="folder" class="bg-white p-24rpx">

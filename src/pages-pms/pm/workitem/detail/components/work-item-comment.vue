@@ -1,26 +1,42 @@
 <template>
   <view>
     <!-- 发表评论 -->
-    <!-- TODO @AI：发表评论，默认平铺有点怪？是不是要操作下，才开始有哈？ -->
     <view v-if="editable" class="mb-24rpx">
-      <view class="mb-12rpx flex items-center gap-12rpx">
+      <view
+        v-if="!composing"
+        class="flex items-center gap-16rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+        @click="composing = true"
+      >
         <view class="h-48rpx w-48rpx flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1677ff] text-24rpx text-white">
           <wd-img v-if="loginAvatar" :src="loginAvatar" width="48rpx" height="48rpx" radius="50%" />
           <text v-else>{{ loginNickname.slice(0, 1) || '-' }}</text>
         </view>
-        <text class="text-26rpx text-[#666]">{{ loginNickname }}</text>
+        <text class="text-26rpx text-[#999]">写下你的评论…</text>
       </view>
-      <wd-textarea
-        v-model="newContent"
-        placeholder="请输入评论内容"
-        :maxlength="2000"
-        show-word-limit
-      />
-      <view class="mt-16rpx flex justify-end">
-        <wd-button size="small" type="primary" :loading="submitting" @click="submitRootComment">
-          发表评论
-        </wd-button>
-      </view>
+      <template v-else>
+        <view class="mb-12rpx flex items-center gap-12rpx">
+          <view class="h-48rpx w-48rpx flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1677ff] text-24rpx text-white">
+            <wd-img v-if="loginAvatar" :src="loginAvatar" width="48rpx" height="48rpx" radius="50%" />
+            <text v-else>{{ loginNickname.slice(0, 1) || '-' }}</text>
+          </view>
+          <text class="text-26rpx text-[#666]">{{ loginNickname }}</text>
+        </view>
+        <wd-textarea
+          v-model="newContent"
+          placeholder="请输入评论内容"
+          :maxlength="2000"
+          show-word-limit
+          :focus="true"
+        />
+        <view class="mt-16rpx flex justify-end gap-16rpx">
+          <wd-button size="small" variant="plain" @click="composing = false">
+            取消
+          </wd-button>
+          <wd-button size="small" type="primary" :loading="submitting" @click="submitRootComment">
+            发表评论
+          </wd-button>
+        </view>
+      </template>
     </view>
 
     <!-- 评论列表 -->
@@ -138,6 +154,7 @@ const loginUserId = computed(() => useUserStore().userInfo.userId) // 当前登�
 const loginAvatar = computed(() => useUserStore().userInfo.avatar) // 当前登录用户头像
 const loginNickname = computed(() => useUserStore().userInfo.nickname || '') // 当前登录用户昵称
 const submitting = ref(false) // 评论提交中
+const composing = ref(false) // 是否展开评论输入区
 const commentList = ref<WorkItemComment[]>([]) // 评论列表
 const newContent = ref('') // 新评论内容
 const replyMainId = ref<number>() // 当前回复的主评论编号
@@ -163,6 +180,7 @@ async function submitRootComment() {
     await createWorkItemComment({ workItemId: props.workItemId, content: newContent.value })
     toast.success('评论成功')
     newContent.value = ''
+    composing.value = false
     await getList()
     emit('changed')
   } finally {

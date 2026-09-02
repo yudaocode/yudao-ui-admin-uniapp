@@ -1,37 +1,18 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      title="我的项目"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon
-            v-if="hasAccessByCodes(['pms:pm:project-group:query'])"
-            name="menu-fold" size="40rpx" color="#666"
-            @click="handleGroupManage"
-          />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar title="我的项目" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
           <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
           <wd-icon
             v-if="hasAccessByCodes(['pms:pm:project-group:query'])"
-            name="menu-fold" size="40rpx" color="#333"
+            name="menu-fold" size="38rpx" color="#333"
             @click="handleGroupManage"
           />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 星标项目 -->
     <view v-if="favoriteList.length > 0" class="bg-white pb-16rpx">
@@ -53,7 +34,12 @@
             {{ formatProjectTypeShort(item.type) }} · {{ item.description || '暂无项目描述' }}
           </view>
           <wd-progress :percentage="formatProjectCompletionRate(item)" hide-text />
-          <YdChart v-if="item.completedTrends?.length" :option="getFavoriteTrendChartOptions(item)" height="90rpx" />
+          <TrendBars
+            v-if="item.completedTrends?.length"
+            :values="item.completedTrends.map(point => point.count)"
+            height="60rpx"
+            class="mt-8rpx"
+          />
         </view>
       </scroll-view>
     </view>
@@ -177,7 +163,7 @@ import {
 } from '@/pages-pms/pm/utils/constants'
 import { formatProjectCompletionRate, formatProjectTypeShort } from '@/pages-pms/pm/utils/format'
 import { navigateBackPlus } from '@/utils'
-import YdChart from '@/pages-statistics/components/yd-chart/yd-chart.vue'
+import TrendBars from '@/pages-pms/pm/components/trend-bars.vue'
 import { formatDate } from '@/utils/date'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -253,25 +239,6 @@ async function queryList(pageNo: number, pageSize: number) {
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
-  }
-}
-
-/** 生成星标项目近 14 日完成趋势图配置（对齐 PC 迷你折线） */
-function getFavoriteTrendChartOptions(project: Project) {
-  const trends = project.completedTrends || []
-  return {
-    animation: false,
-    grid: { top: 8, right: 8, bottom: 8, left: 8 },
-    xAxis: { type: 'category', show: false, data: trends.map(point => point.date.slice(5)) },
-    yAxis: { type: 'value', show: false, minInterval: 1 },
-    series: [{
-      type: 'line',
-      smooth: true,
-      symbol: 'none',
-      data: trends.map(point => point.count),
-      lineStyle: { width: 2, color: '#1677ff' },
-      areaStyle: { color: 'rgba(22, 119, 255, 0.12)' },
-    }],
   }
 }
 

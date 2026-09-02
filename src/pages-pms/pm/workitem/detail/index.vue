@@ -127,18 +127,19 @@
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="canUpdate"
-          type="primary"
+          type="primary" class="flex-1"
           @click="handleOpenStatusSheet"
         >
           变更状态
         </wd-button>
         <wd-button
           v-if="hasAccessByCodes(['pms:pm:work-item:update'])"
+          class="flex-1"
           @click="handleEdit"
         >
           编辑
         </wd-button>
-        <wd-button v-if="moreActions.length" variant="plain" @click="moreVisible = true">
+        <wd-button v-if="moreActions.length" variant="plain" class="flex-1" @click="moreVisible = true">
           更多
         </wd-button>
       </view>

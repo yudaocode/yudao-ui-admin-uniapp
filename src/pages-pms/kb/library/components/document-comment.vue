@@ -2,17 +2,30 @@
   <view>
     <!-- 发表评论 -->
     <view class="mb-24rpx">
-      <wd-textarea
-        v-model="newContent"
-        placeholder="请输入评论内容"
-        :maxlength="2000"
-        show-word-limit
-      />
-      <view class="mt-16rpx flex justify-end">
-        <wd-button size="small" type="primary" :loading="submitting" @click="submitRootComment">
-          发表评论
-        </wd-button>
+      <view
+        v-if="!composing"
+        class="rounded-12rpx bg-white p-24rpx text-26rpx text-[#999] shadow-sm"
+        @click="composing = true"
+      >
+        写下你的评论…
       </view>
+      <template v-else>
+        <wd-textarea
+          v-model="newContent"
+          placeholder="请输入评论内容"
+          :maxlength="2000"
+          show-word-limit
+          :focus="true"
+        />
+        <view class="mt-16rpx flex justify-end gap-16rpx">
+          <wd-button size="small" variant="plain" @click="composing = false">
+            取消
+          </wd-button>
+          <wd-button size="small" type="primary" :loading="submitting" @click="submitRootComment">
+            发表评论
+          </wd-button>
+        </view>
+      </template>
     </view>
 
     <!-- 评论列表 -->
@@ -101,6 +114,7 @@ const toast = useToast()
 const dialog = useDialog()
 const loginUserId = computed(() => useUserStore().userInfo.userId) // 当前登录用户编号
 const submitting = ref(false) // 评论提交中
+const composing = ref(false) // 是否展开评论输入区
 const comments = ref<KnowledgeDocumentComment[]>([]) // 评论列表
 const newContent = ref('') // 新评论内容
 const replyMainId = ref<number>() // 当前回复的主评论编号
@@ -124,6 +138,7 @@ async function submitRootComment() {
     await createKnowledgeDocumentComment({ documentId: props.documentId, content: newContent.value })
     toast.success('评论成功')
     newContent.value = ''
+    composing.value = false
     await getList()
   } finally {
     submitting.value = false

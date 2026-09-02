@@ -2,8 +2,7 @@
   <scroll-view scroll-y class="min-h-0 flex-1">
     <view class="p-24rpx pb-200rpx">
       <!-- 事项搜索 -->
-      <!-- TODO @AI：这个宽度貌似不对？看看别的模块，有没类似的问题； -->
-      <view class="mb-24rpx flex items-center gap-16rpx">
+      <view class="mb-24rpx">
         <wd-search
           v-model="searchKeyword"
           placeholder="搜索事项"
@@ -47,23 +46,34 @@
         </view>
 
         <!-- 快速创建待规划事项 -->
-        <!-- TODO @AI：貌似目前的快速创建，都是平铺的会不会有点怪？？？ -->
-        <view v-if="editable && hasAccessByCodes(['pms:pm:work-item:create'])" class="mt-8rpx flex items-center gap-12rpx">
-          <view class="w-140rpx shrink-0" @click="backlogTypeVisible = true">
-            <view class="flex items-center justify-center rounded-8rpx bg-[#f7f8fa] p-12rpx text-26rpx text-[#333]">
-              {{ getWorkItemTypeName(backlogDraft.type) }}
-              <wd-icon name="arrow-down" size="24rpx" />
+        <view
+          v-if="editable && hasAccessByCodes(['pms:pm:work-item:create']) && !backlogComposing"
+          class="mt-8rpx rounded-8rpx bg-[#f7f8fa] p-20rpx text-26rpx text-[#999]"
+          @click="backlogComposing = true"
+        >
+          快速创建事项…
+        </view>
+        <view v-else-if="editable && hasAccessByCodes(['pms:pm:work-item:create'])" class="mt-8rpx">
+          <view class="flex items-center gap-12rpx">
+            <view class="w-140rpx shrink-0" @click="backlogTypeVisible = true">
+              <view class="flex items-center justify-center rounded-8rpx bg-[#f7f8fa] p-12rpx text-26rpx text-[#333]">
+                {{ getWorkItemTypeName(backlogDraft.type) }}
+                <wd-icon name="arrow-down" size="24rpx" />
+              </view>
             </view>
+            <wd-input
+              v-model="backlogDraft.name"
+              class="flex-1"
+              placeholder="快速创建待规划事项"
+              :maxlength="100"
+            />
+            <wd-button size="small" type="primary" :loading="creatingKey === 'backlog'" @click="createQuickWorkItem(backlogDraft)">
+              创建
+            </wd-button>
           </view>
-          <wd-input
-            v-model="backlogDraft.name"
-            class="flex-1"
-            placeholder="快速创建待规划事项"
-            :maxlength="100"
-          />
-          <wd-button size="small" type="primary" :loading="creatingKey === 'backlog'" @click="createQuickWorkItem(backlogDraft)">
-            创建
-          </wd-button>
+          <view class="mt-12rpx text-right">
+            <text class="text-26rpx text-[#999]" @click="backlogComposing = false">取消</text>
+          </view>
         </view>
       </view>
 
@@ -127,42 +137,66 @@
           </view>
 
           <!-- 快速创建迭代事项 -->
-          <view v-if="editable && hasAccessByCodes(['pms:pm:work-item:create'])" class="mt-8rpx flex items-center gap-12rpx">
-            <view class="w-140rpx shrink-0" @click="openIterationTypeSheet(iteration.id)">
-              <view class="flex items-center justify-center rounded-8rpx bg-[#f7f8fa] p-12rpx text-26rpx text-[#333]">
-                {{ getWorkItemTypeName(iterationDrafts[iteration.id]?.type || PmsWorkItemType.TASK) }}
-                <wd-icon name="arrow-down" size="24rpx" />
+          <view
+            v-if="editable && hasAccessByCodes(['pms:pm:work-item:create']) && !iterationComposing[iteration.id]"
+            class="mt-8rpx rounded-8rpx bg-[#f7f8fa] p-20rpx text-26rpx text-[#999]"
+            @click="iterationComposing[iteration.id] = true"
+          >
+            快速创建事项…
+          </view>
+          <view v-else-if="editable && hasAccessByCodes(['pms:pm:work-item:create'])" class="mt-8rpx">
+            <view class="flex items-center gap-12rpx">
+              <view class="w-140rpx shrink-0" @click="openIterationTypeSheet(iteration.id)">
+                <view class="flex items-center justify-center rounded-8rpx bg-[#f7f8fa] p-12rpx text-26rpx text-[#333]">
+                  {{ getWorkItemTypeName(iterationDrafts[iteration.id]?.type || PmsWorkItemType.TASK) }}
+                  <wd-icon name="arrow-down" size="24rpx" />
+                </view>
               </view>
+              <wd-input
+                v-model="iterationDrafts[iteration.id].name"
+                class="flex-1"
+                :placeholder="`在“${iteration.name}”中快速创建事项`"
+                :maxlength="100"
+              />
+              <wd-button
+                size="small" type="primary"
+                :loading="creatingKey === `iteration-${iteration.id}`"
+                @click="createQuickWorkItem(iterationDrafts[iteration.id], iteration.id)"
+              >
+                创建
+              </wd-button>
             </view>
-            <wd-input
-              v-model="iterationDrafts[iteration.id].name"
-              class="flex-1"
-              :placeholder="`在“${iteration.name}”中快速创建事项`"
-              :maxlength="100"
-            />
-            <wd-button
-              size="small" type="primary"
-              :loading="creatingKey === `iteration-${iteration.id}`"
-              @click="createQuickWorkItem(iterationDrafts[iteration.id], iteration.id)"
-            >
-              创建
-            </wd-button>
+            <view class="mt-12rpx text-right">
+              <text class="text-26rpx text-[#999]" @click="iterationComposing[iteration.id] = false">取消</text>
+            </view>
           </view>
         </template>
       </view>
 
-      <!-- 快速创建迭代 -->
-      <!-- TODO @AI：貌似目前的快速创建，都是平铺的会不会有点怪？？？ -->
-      <view v-if="editable && hasAccessByCodes(['pms:pm:iteration:create'])" class="flex items-center gap-12rpx">
-        <wd-input
-          v-model="quickIterationName"
-          class="flex-1"
-          placeholder="快速创建迭代"
-          :maxlength="100"
-        />
-        <wd-button size="small" type="primary" :loading="creatingKey === 'iteration'" @click="createQuickIteration">
-          创建迭代
-        </wd-button>
+      <!-- 快速创建迭代：默认折叠为入口，点击后展开输入区 -->
+      <!-- TODO DONE @AI：平铺改折叠入口（点「快速创建迭代…」展开，创建后收起） -->
+      <view
+        v-if="editable && hasAccessByCodes(['pms:pm:iteration:create']) && !iterationComposingKey"
+        class="rounded-12rpx bg-white p-24rpx text-26rpx text-[#999] shadow-sm"
+        @click="iterationComposingKey = true"
+      >
+        快速创建迭代…
+      </view>
+      <view v-else-if="editable && hasAccessByCodes(['pms:pm:iteration:create'])">
+        <view class="flex items-center gap-12rpx">
+          <wd-input
+            v-model="quickIterationName"
+            class="flex-1"
+            placeholder="快速创建迭代"
+            :maxlength="100"
+          />
+          <wd-button size="small" type="primary" :loading="creatingKey === 'iteration'" @click="createQuickIteration">
+            创建迭代
+          </wd-button>
+        </view>
+        <view class="mt-12rpx text-right">
+          <text class="text-26rpx text-[#999]" @click="iterationComposingKey = false">取消</text>
+        </view>
       </view>
     </view>
 
@@ -200,29 +234,7 @@
     />
 
     <!-- 开始迭代弹窗 -->
-    <wd-popup v-model="startVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
-      <view class="p-32rpx">
-        <view class="mb-24rpx text-center text-32rpx text-[#333] font-semibold">
-          开始迭代
-        </view>
-        <wd-cell-group border>
-          <wd-cell title="开始时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.startTime" type="datetime" placeholder="请选择开始时间" />
-          </wd-cell>
-          <wd-cell title="结束时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.endTime" type="datetime" placeholder="请选择结束时间" />
-          </wd-cell>
-        </wd-cell-group>
-        <view class="mt-32rpx flex gap-24rpx">
-          <wd-button class="flex-1" variant="plain" @click="startVisible = false">
-            取消
-          </wd-button>
-          <wd-button class="flex-1" type="primary" :loading="starting" @click="handleStartConfirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
-    </wd-popup>
+    <IterationStartPopup ref="startPopupRef" @success="getPlanningData" />
   </scroll-view>
 </template>
 
@@ -232,7 +244,7 @@ import type { WorkItem } from '@/api/pms/pm/workitem'
 import { computed, reactive, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { completeIteration, createIteration, deleteIteration, getIterationPage, startIteration } from '@/api/pms/pm/iteration'
+import { completeIteration, createIteration, deleteIteration, getIterationPage } from '@/api/pms/pm/iteration'
 import {
   createWorkItem,
   getWorkItemPage,
@@ -257,6 +269,7 @@ import {
 } from '@/pages-pms/pm/utils/format'
 import { formatDate } from '@/utils/date'
 import { getAllPageItems } from '@/utils/page'
+import IterationStartPopup from '@/pages-pms/pm/iteration/components/iteration-start-popup.vue'
 
 interface PlanningIteration extends Iteration {
   expanded: boolean // 是否展开
@@ -277,14 +290,16 @@ const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
 const creatingKey = ref('') // 快速创建中的区域标识
+const backlogComposing = ref(false) // Backlog 快速创建输入区展开状态
+const iterationComposing = reactive<Record<number, boolean>>({}) // 各迭代快速创建输入区展开状态
+const iterationComposingKey = ref(false) // 快速创建迭代输入区展开状态
 const searchKeyword = ref('') // 事项搜索关键字
 const workItemActionVisible = ref(false) // 工作项更多操作弹窗显示状态
 const iterationActionVisible = ref(false) // 迭代更多操作弹窗显示状态
 const moveVisible = ref(false) // 规划到迭代弹窗显示状态
 const backlogTypeVisible = ref(false) // Backlog 事项类型弹窗显示状态
 const iterationTypeVisible = ref(false) // 迭代事项类型弹窗显示状态
-const startVisible = ref(false) // 开始迭代弹窗显示状态
-const starting = ref(false) // 开始迭代提交中
+const startPopupRef = ref<InstanceType<typeof IterationStartPopup>>() // 开始迭代弹窗引用
 const typeDraftIterationId = ref(0) // 正在选择事项类型的迭代编号
 const currentWorkItem = ref<WorkItem>() // 当前操作的工作项
 const currentIteration = ref<PlanningIteration>() // 当前操作的迭代
@@ -293,10 +308,6 @@ const unplannedWorkItems = ref<WorkItem[]>([]) // 待规划工作项列表
 const backlogDraft = reactive<QuickWorkItemDraft>({ name: '', type: PmsWorkItemType.TASK }) // Backlog 快速创建草稿
 const iterationDrafts = reactive<Record<number, QuickWorkItemDraft>>({}) // 各迭代快速创建草稿
 const quickIterationName = ref('') // 快速创建迭代名称
-const startForm = reactive({
-  startTime: '' as number | '',
-  endTime: '' as number | '',
-}) // 开始迭代表单
 
 const planningSaving = ref(false) // 拖拽规划保存中
 let planningSortables: Array<{ destroy: () => void }> = [] // 规划拖拽实例
@@ -526,9 +537,7 @@ async function handleIterationActionSelect({ item: action }: { item: { name: str
     return
   }
   if (action.name === '开始迭代') {
-    startForm.startTime = iteration.startTime ? Number(iteration.startTime) : ''
-    startForm.endTime = iteration.endTime ? Number(iteration.endTime) : ''
-    startVisible.value = true
+    startPopupRef.value?.open(iteration)
     return
   }
   if (action.name === '编辑迭代') {
@@ -547,31 +556,6 @@ async function handleIterationActionSelect({ item: action }: { item: { name: str
     }
     await getPlanningData()
   } catch {}
-}
-
-/** 确认开始迭代 */
-async function handleStartConfirm() {
-  const iteration = currentIteration.value
-  if (!iteration?.id) {
-    return
-  }
-  if (!startForm.startTime || !startForm.endTime) {
-    toast.warning('迭代周期不能为空')
-    return
-  }
-  starting.value = true
-  try {
-    await startIteration({
-      id: iteration.id,
-      startTime: Number(startForm.startTime),
-      endTime: Number(startForm.endTime),
-    })
-    toast.success('迭代已开始')
-    startVisible.value = false
-    await getPlanningData()
-  } finally {
-    starting.value = false
-  }
 }
 
 /** 打开迭代事项类型选择 */
@@ -619,6 +603,10 @@ async function createQuickWorkItem(draft: QuickWorkItemDraft, iterationId?: numb
       labelIds: [],
     })
     draft.name = ''
+    backlogComposing.value = false
+    if (iterationId) {
+      iterationComposing[iterationId] = false
+    }
     toast.success('事项创建成功')
     await getPlanningData()
   } finally {
@@ -637,6 +625,7 @@ async function createQuickIteration() {
   try {
     await createIteration({ projectId: props.projectId, name })
     quickIterationName.value = ''
+    iterationComposingKey.value = false
     toast.success('迭代创建成功')
     await getPlanningData()
   } finally {

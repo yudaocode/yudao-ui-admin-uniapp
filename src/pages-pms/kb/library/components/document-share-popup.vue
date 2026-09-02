@@ -45,7 +45,7 @@
       </view>
 
       <view class="flex gap-24rpx">
-        <wd-button v-if="share" type="error" variant="plain" :loading="loading" @click="handleCloseShare">
+        <wd-button v-if="share" type="danger" variant="plain" :loading="loading" @click="handleCloseShare">
           关闭分享
         </wd-button>
         <wd-button class="flex-1" variant="plain" @click="visible = false">

@@ -1,26 +1,6 @@
 <template>
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="document?.title || '文档详情'"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon
-            v-if="document"
-            :name="document.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
-            :color="document.favoriteStatus ? '#fa8c16' : '#666'"
-            @click="handleCollect"
-          />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="document?.title || '文档详情'" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
@@ -28,14 +8,13 @@
           <wd-icon
             v-if="document"
             :name="document.favoriteStatus ? 'star-fill' : 'star'"
-            size="40rpx"
+            size="38rpx"
             :color="document.favoriteStatus ? '#fa8c16' : '#333'"
             @click="handleCollect"
           />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <scroll-view v-if="document" scroll-y class="min-h-0 flex-1">
       <view class="p-24rpx pb-200rpx">
@@ -139,18 +118,19 @@
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="canEdit && hasAccessByCodes(['pms:kb:library:update'])"
-          type="primary"
+          type="primary" class="flex-1"
           @click="handleEdit"
         >
           编辑
         </wd-button>
         <wd-button
           v-if="canEdit && hasAccessByCodes(['pms:kb:library:update'])"
+          class="flex-1"
           @click="sharePopupRef?.open(document.id)"
         >
           分享
         </wd-button>
-        <wd-button v-if="moreActions.length" variant="plain" @click="moreVisible = true">
+        <wd-button v-if="moreActions.length" variant="plain" class="flex-1" @click="moreVisible = true">
           更多
         </wd-button>
       </view>

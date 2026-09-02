@@ -140,7 +140,7 @@
                     placeholder="请输入子工作项标题"
                     :maxlength="100"
                   />
-                  <wd-button size="small" type="error" variant="plain" @click="formData.childWorkItemNames?.splice(index, 1)">
+                  <wd-button size="small" type="danger" variant="plain" @click="formData.childWorkItemNames?.splice(index, 1)">
                     删除
                   </wd-button>
                 </view>

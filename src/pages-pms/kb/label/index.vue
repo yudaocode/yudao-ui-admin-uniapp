@@ -1,37 +1,18 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      title="文档标签"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-24rpx">
-          <wd-icon
-            v-if="hasAccessByCodes(['pms:kb:library:update'])"
-            name="settings" size="40rpx" color="#666"
-            @click="manageVisible = true"
-          />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar title="文档标签" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
           <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
           <wd-icon
             v-if="hasAccessByCodes(['pms:kb:library:update'])"
-            name="settings" size="40rpx" color="#333"
+            name="settings" size="38rpx" color="#333"
             @click="manageVisible = true"
           />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 标签列表 -->
     <view class="bg-white py-16rpx">
@@ -115,7 +96,7 @@
               </wd-button>
               <wd-button
                 v-if="hasAccessByCodes(['pms:kb:library:delete'])"
-                size="small" type="error" variant="plain"
+                size="small" type="danger" variant="plain"
                 @click="handleDelete(item)"
               >
                 删除

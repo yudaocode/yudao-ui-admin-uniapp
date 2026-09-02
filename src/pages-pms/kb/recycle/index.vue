@@ -59,7 +59,7 @@
             <wd-button size="small" variant="plain" @click="handleRestore(item)">
               恢复
             </wd-button>
-            <wd-button size="small" type="error" variant="plain" @click="handlePermanentDelete(item)">
+            <wd-button size="small" type="danger" variant="plain" @click="handlePermanentDelete(item)">
               彻底删除
             </wd-button>
           </view>
@@ -112,7 +112,7 @@
           <wd-button class="flex-1" type="primary" variant="plain" @click="handleRestore(detail.root)">
             恢复
           </wd-button>
-          <wd-button class="flex-1" type="error" @click="handlePermanentDelete(detail.root)">
+          <wd-button class="flex-1" type="danger" @click="handlePermanentDelete(detail.root)">
             彻底删除
           </wd-button>
         </view>

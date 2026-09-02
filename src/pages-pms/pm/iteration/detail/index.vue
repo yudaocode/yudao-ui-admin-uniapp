@@ -70,29 +70,64 @@
             </view>
           </view>
 
-          <!-- 事项分布（类型 × 状态堆叠柱状图，对齐 PC） -->
-          <!-- TODO @AI：YdChart 不能跨模块，因为这样就导致分包了；可能这种交互，都得简化了。。。其他类似的问题，也要修复下； -->
+          <!-- 事项分布 -->
           <view class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
             <view class="mb-16rpx text-30rpx text-[#333] font-semibold">
               事项分布
             </view>
-            <YdChart :option="distributionChartOptions" :empty="!overview.totalCount" height="420rpx" />
+            <view v-if="!overview.totalCount" class="py-40rpx text-center text-28rpx text-[#999]">
+              暂无事项
+            </view>
+            <template v-else>
+              <view v-for="row in typeStatusRows" :key="row.type" class="mb-20rpx last:mb-0">
+                <view class="mb-8rpx flex items-center justify-between text-26rpx">
+                  <text class="text-[#666]">{{ row.name }}</text>
+                  <text class="text-[#333] font-semibold">{{ row.total }}</text>
+                </view>
+                <view class="h-16rpx flex overflow-hidden rounded-8rpx bg-[#f0f0f0]">
+                  <view
+                    v-for="segment in row.segments"
+                    :key="segment.name"
+                    :style="{ width: `${segment.percent}%`, backgroundColor: segment.color }"
+                  />
+                </view>
+                <view class="mt-4rpx text-22rpx text-[#999]">
+                  已完成 {{ row.completed }} · 进行中 {{ row.processing }} · 未开始 {{ row.pending }}
+                </view>
+              </view>
+            </template>
           </view>
 
-          <!-- 事项状态趋势（折线图，对齐 PC） -->
+          <!-- 事项状态趋势 -->
           <view v-if="overview.statusTrends.length" class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-            <view class="mb-16rpx text-30rpx text-[#333] font-semibold">
-              事项状态趋势
+            <view class="mb-16rpx flex items-center justify-between">
+              <text class="text-30rpx text-[#333] font-semibold">事项状态趋势</text>
+              <text class="text-24rpx text-[#999]">柱形为每日已完成事项数</text>
             </view>
-            <YdChart :option="statusTrendChartOptions" height="420rpx" />
+            <TrendBars :values="statusTrendCompletedValues" height="240rpx" color="#36b37e" />
+            <view class="mt-8rpx flex justify-between text-22rpx text-[#999]">
+              <text>{{ statusTrendDateRange[0] }}</text>
+              <text>{{ statusTrendDateRange[1] }}</text>
+            </view>
+            <view v-if="latestStatusTrend" class="mt-8rpx text-24rpx text-[#666]">
+              最新（{{ latestStatusTrend.date.slice(5) }}）：已完成 {{ latestStatusTrend.completedCount }} · 进行中 {{ latestStatusTrend.processingCount }} · 未开始 {{ latestStatusTrend.pendingCount }}
+            </view>
           </view>
 
-          <!-- 燃尽数据（理想/实际剩余工时折线图） -->
+          <!-- 燃尽数据 -->
           <view v-if="overview.burnDowns.length" class="mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
-            <view class="mb-16rpx text-30rpx text-[#333] font-semibold">
-              燃尽数据（单位：小时）
+            <view class="mb-16rpx flex items-center justify-between">
+              <text class="text-30rpx text-[#333] font-semibold">燃尽数据（单位：小时）</text>
+              <text class="text-24rpx text-[#999]">柱形为每日实际剩余工时</text>
             </view>
-            <YdChart :option="burnDownChartOptions" height="420rpx" />
+            <TrendBars :values="burnDownActualValues" height="240rpx" />
+            <view class="mt-8rpx flex justify-between text-22rpx text-[#999]">
+              <text>{{ burnDownDateRange[0] }}</text>
+              <text>{{ burnDownDateRange[1] }}</text>
+            </view>
+            <view v-if="latestBurnDown" class="mt-8rpx text-24rpx text-[#666]">
+              最新（{{ latestBurnDown.date.slice(5) }}）：实际剩余 {{ latestBurnDown.actualRemaining }} · 理想剩余 {{ latestBurnDown.idealRemaining }}
+            </view>
           </view>
 
           <!-- 最近活动 -->
@@ -145,19 +180,19 @@
         <view class="yd-detail-footer-actions">
           <wd-button
             v-if="iteration.status === PmsIterationStatus.PLANNED && hasAccessByCodes(['pms:pm:iteration:update'])"
-            type="primary"
-            @click="startVisible = true"
+            type="primary" class="flex-1"
+            @click="startPopupRef?.open(iteration)"
           >
             开始迭代
           </wd-button>
           <wd-button
             v-if="iteration.status === PmsIterationStatus.ACTIVE && hasAccessByCodes(['pms:pm:iteration:update'])"
-            type="primary"
+            type="primary" class="flex-1"
             @click="handleComplete"
           >
             完成迭代
           </wd-button>
-          <wd-button variant="plain" @click="moreVisible = true">
+          <wd-button variant="plain" class="flex-1" @click="moreVisible = true">
             更多
           </wd-button>
         </view>
@@ -165,7 +200,6 @@
     </template>
 
     <!-- 更多操作 -->
-    <!-- TODO @AI：底部的按钮宽度貌似不对？你看看别的模块？？？ -->
     <wd-action-sheet
       v-model="moreVisible"
       :actions="moreActions"
@@ -173,30 +207,7 @@
     />
 
     <!-- 开始迭代弹窗 -->
-    <!-- TODO @AI：是不是类似这样的组件？需要抽出来？例如说：/Users/yunai/Java/yudao-ui-admin-uniapp-next-v4/src/pages-pms/pm/iteration/components/iteration-section.vue 也有类似的？ -->
-    <wd-popup v-model="startVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
-      <view class="p-32rpx">
-        <view class="mb-24rpx text-center text-32rpx text-[#333] font-semibold">
-          开始迭代
-        </view>
-        <wd-cell-group border>
-          <wd-cell title="开始时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.startTime" type="datetime" placeholder="请选择开始时间" />
-          </wd-cell>
-          <wd-cell title="结束时间" title-width="200rpx">
-            <wd-datetime-picker v-model="startForm.endTime" type="datetime" placeholder="请选择结束时间" />
-          </wd-cell>
-        </wd-cell-group>
-        <view class="mt-32rpx flex gap-24rpx">
-          <wd-button class="flex-1" variant="plain" @click="startVisible = false">
-            取消
-          </wd-button>
-          <wd-button class="flex-1" type="primary" :loading="starting" @click="handleStartConfirm">
-            确定
-          </wd-button>
-        </view>
-      </view>
-    </wd-popup>
+    <IterationStartPopup ref="startPopupRef" @success="refreshIteration" />
   </view>
 </template>
 
@@ -204,6 +215,7 @@
 import type { Iteration, IterationOverview } from '@/api/pms/pm/iteration'
 import type { WorkItem } from '@/api/pms/pm/workitem'
 import type { Project } from '@/api/pms/pm/project'
+import IterationStartPopup from '@/pages-pms/pm/iteration/components/iteration-start-popup.vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
@@ -211,12 +223,11 @@ import {
   deleteIteration,
   getIteration,
   getIterationOverview,
-  startIteration,
 } from '@/api/pms/pm/iteration'
 import { getProject } from '@/api/pms/pm/project'
 import { getWorkItemPage } from '@/api/pms/pm/workitem'
 import { useAccess } from '@/hooks/useAccess'
-import YdChart from '@/pages-statistics/components/yd-chart/yd-chart.vue'
+import TrendBars from '@/pages-pms/pm/components/trend-bars.vue'
 import WorkItemSection from '@/pages-pms/pm/workitem/components/work-item-section.vue'
 import {
   PmsIterationStatus,
@@ -229,7 +240,7 @@ import {
 } from '@/pages-pms/pm/utils/constants'
 import { getIterationStatusName } from '@/pages-pms/pm/utils/format'
 import { navigateBackPlus } from '@/utils'
-import { formatDate, formatDateTime, toTimestamp } from '@/utils/date'
+import { formatDate, formatDateTime } from '@/utils/date'
 import { getAllPageItems } from '@/utils/page'
 
 const props = defineProps<{
@@ -251,13 +262,8 @@ const project = ref<Project>() // 所属项目
 const tabIndex = ref(0) // 当前详情页签下标
 const workItemTabIndex = ref(0) // 当前事项类型页签下标
 const moreVisible = ref(false) // 更多操作弹窗显示状态
-const startVisible = ref(false) // 开始迭代弹窗显示状态
-const starting = ref(false) // 开始迭代提交中
+const startPopupRef = ref<InstanceType<typeof IterationStartPopup>>() // 开始迭代弹窗引用
 const workItems = ref<WorkItem[]>([]) // 迭代内工作项（用于聚合参与成员）
-const startForm = reactive({
-  startTime: '' as number | '',
-  endTime: '' as number | '',
-}) // 开始迭代表单
 const overview = ref<IterationOverview>({
   totalCount: 0,
   pendingCount: 0,
@@ -320,59 +326,63 @@ const teamNames = computed(() => { // 迭代参与成员：聚合迭代内工作
   })
   return Array.from(names)
 })
-const distributionChartOptions = computed(() => ({ // 事项类型和状态交叉分布堆叠柱状图
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  legend: { bottom: 0, data: ['已完成', '进行中', '未开始'] },
-  grid: { top: 10, right: 16, bottom: 50, left: 12, containLabel: true },
-  xAxis: { type: 'value', minInterval: 1 },
-  yAxis: { type: 'category', data: typeDistribution.value.map(item => item.name) },
-  series: [
-    {
-      name: '已完成',
-      type: 'bar',
-      stack: 'total',
-      data: typeDistribution.value.map(item => overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.COMPLETED] || 0),
-      itemStyle: { color: '#36b37e' },
-    },
-    {
-      name: '进行中',
-      type: 'bar',
-      stack: 'total',
-      data: typeDistribution.value.map(item => overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.PROCESSING] || 0),
-      itemStyle: { color: '#ffab00' },
-    },
-    {
-      name: '未开始',
-      type: 'bar',
-      stack: 'total',
-      data: typeDistribution.value.map(item => overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.PENDING] || 0),
-      itemStyle: { color: '#0065ff' },
-    },
-  ],
-}))
-const statusTrendChartOptions = computed(() => ({ // 事项状态趋势折线图
-  tooltip: { trigger: 'axis' },
-  legend: { top: 0, data: ['已完成', '进行中', '未开始'] },
-  grid: { top: 50, right: 16, bottom: 12, left: 12, containLabel: true },
-  xAxis: { type: 'category', boundaryGap: false, data: overview.value.statusTrends.map(item => item.date.slice(5)) },
-  yAxis: { type: 'value', minInterval: 1 },
-  series: [
-    { name: '已完成', type: 'line', data: overview.value.statusTrends.map(item => item.completedCount), itemStyle: { color: '#36b37e' } },
-    { name: '进行中', type: 'line', data: overview.value.statusTrends.map(item => item.processingCount), itemStyle: { color: '#ffab00' } },
-    { name: '未开始', type: 'line', data: overview.value.statusTrends.map(item => item.pendingCount), itemStyle: { color: '#0065ff' } },
-  ],
-}))
-const burnDownChartOptions = computed(() => ({ // 燃尽数据折线图（理想/实际剩余工时）
-  tooltip: { trigger: 'axis' },
-  legend: { top: 0, data: ['理想剩余', '实际剩余'] },
-  grid: { top: 50, right: 16, bottom: 12, left: 12, containLabel: true },
-  xAxis: { type: 'category', boundaryGap: false, data: overview.value.burnDowns.map(item => item.date.slice(5)) },
-  yAxis: { type: 'value', minInterval: 1 },
-  series: [
-    { name: '理想剩余', type: 'line', data: overview.value.burnDowns.map(item => item.idealRemaining), itemStyle: { color: '#8c8c8c' }, lineStyle: { type: 'dashed' } },
-    { name: '实际剩余', type: 'line', data: overview.value.burnDowns.map(item => item.actualRemaining), itemStyle: { color: '#1677ff' } },
-  ],
-}))
+const TYPE_STATUS_COLORS = [ // 事项分布状态配色（已完成/进行中/未开始，对齐原图表）
+  { name: '已完成', key: PmsWorkItemStatusType.COMPLETED, color: '#36b37e' },
+  { name: '进行中', key: PmsWorkItemStatusType.PROCESSING, color: '#ffab00' },
+  { name: '未开始', key: PmsWorkItemStatusType.PENDING, color: '#0065ff' },
+] as const
+const typeStatusRows = computed(() => // 事项类型 × 状态分布行
+  typeDistribution.value.map((item) => {
+    const completed = overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.COMPLETED] || 0
+    const processing = overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.PROCESSING] || 0
+    const pending = overview.value.typeStatusCountMap[item.type]?.[PmsWorkItemStatusType.PENDING] || 0
+    const total = completed + processing + pending
+    const countMap: Record<number, number> = { // 按状态类型聚合计数，供配色段取数
+      [PmsWorkItemStatusType.COMPLETED]: completed,
+      [PmsWorkItemStatusType.PROCESSING]: processing,
+      [PmsWorkItemStatusType.PENDING]: pending,
+    }
+    return {
+      type: item.type,
+      name: item.name,
+      total,
+      completed,
+      processing,
+      pending,
+      segments: TYPE_STATUS_COLORS.map(segment => ({
+        name: segment.name,
+        color: segment.color,
+        percent: total > 0 ? Math.round((countMap[segment.key] / total) * 100) : 0,
+      })),
+    }
+  }),
+)
+const statusTrendCompletedValues = computed(() =>
+  overview.value.statusTrends.map(item => item.completedCount),
+) // 事项状态趋势：每日已完成数量
+const statusTrendDateRange = computed(() => { // 趋势起止日期（MM-DD）
+  const trends = overview.value.statusTrends
+  if (!trends.length) {
+    return []
+  }
+  return [trends[0].date.slice(5), trends[trends.length - 1].date.slice(5)]
+})
+const latestStatusTrend = computed(() =>
+  overview.value.statusTrends[overview.value.statusTrends.length - 1],
+) // 最新一天状态计数
+const burnDownActualValues = computed(() =>
+  overview.value.burnDowns.map(item => item.actualRemaining),
+) // 燃尽数据：每日实际剩余工时
+const burnDownDateRange = computed(() => { // 燃尽起止日期（MM-DD）
+  const burnDowns = overview.value.burnDowns
+  if (!burnDowns.length) {
+    return []
+  }
+  return [burnDowns[0].date.slice(5), burnDowns[burnDowns.length - 1].date.slice(5)]
+})
+const latestBurnDown = computed(() =>
+  overview.value.burnDowns[overview.value.burnDowns.length - 1],
+) // 最新一天燃尽数据
 const moreActions = computed(() => { // 更多操作项
   const actions: Array<{ name: string }> = []
   if (hasAccessByCodes(['pms:pm:iteration:update'])) {
@@ -449,30 +459,6 @@ async function handleComplete() {
   } catch {}
 }
 
-/** 确认开始迭代 */
-async function handleStartConfirm() {
-  if (!iteration.value?.id) {
-    return
-  }
-  if (!startForm.startTime || !startForm.endTime) {
-    toast.warning('迭代周期不能为空')
-    return
-  }
-  starting.value = true
-  try {
-    await startIteration({
-      id: iteration.value.id,
-      startTime: Number(startForm.startTime),
-      endTime: Number(startForm.endTime),
-    })
-    toast.success('迭代已开始')
-    startVisible.value = false
-    await refreshIteration()
-  } finally {
-    starting.value = false
-  }
-}
-
 /** 刷新迭代详情和概览 */
 async function refreshIteration() {
   if (!iteration.value?.id) {
@@ -490,8 +476,6 @@ onMounted(async () => {
   }
   iteration.value = await getIteration(Number(props.id))
   project.value = await getProject(iteration.value.projectId)
-  startForm.startTime = iteration.value.startTime ? toTimestamp(iteration.value.startTime) : ''
-  startForm.endTime = iteration.value.endTime ? toTimestamp(iteration.value.endTime) : ''
   await getOverview()
   uni.$on('pms:pm:iteration:reload', handleIterationReload)
 })
