@@ -99,6 +99,15 @@ const HRM_DICT = {
   HRM_PERFORMANCE_YES_NO: 'hrm_performance_yes_no', // HRM 绩效是否
 } as const
 
+/** ========== PMS - 项目管理模块 ========== */
+const PMS_DICT = {
+  PMS_PROJECT_TYPE: 'pms_project_type', // PMS 项目类型
+  PMS_KNOWLEDGE_OBJECT_TYPE: 'pms_knowledge_object_type', // PMS 知识对象类型
+  PMS_KNOWLEDGE_DOCUMENT_TYPE: 'pms_knowledge_document_type', // PMS 知识文档类型
+  PMS_WORK_ITEM_PRIORITY: 'pms_work_item_priority', // PMS 工作项优先级
+  PMS_WORK_ITEM_DEFECT_TYPE: 'pms_work_item_defect_type', // PMS 工作项缺陷类型
+} as const
+
 /** ========== CRM - 客户管理模块 ========== */
 const CRM_DICT = {
   CRM_AUDIT_STATUS: 'crm_audit_status', // CRM 审批状态
@@ -347,6 +356,7 @@ export const DICT_TYPE = {
   ...CRM_DICT,
   ...HRM_DICT,
   ...FMS_DICT,
+  ...PMS_DICT,
   ...ERP_DICT,
   ...MES_DICT,
   ...PAY_DICT,
