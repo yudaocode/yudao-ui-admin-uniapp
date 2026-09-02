@@ -27,6 +27,9 @@
       cancel-text="取消"
       @select="handleSelect"
     />
+
+    <!-- 无可用账套引导：账套列表已加载且无可用账套时自动弹出（对齐 PC account-set-guide 独立组件） -->
+    <AccountSetGuide :visible="guideVisible" :reason="guideReason" />
   </view>
 </template>
 
@@ -34,6 +37,7 @@
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { updateAccountSetDefaultStatus } from '@/api/fms/config/account-user'
 import { useFmsStore } from '@/pages-fms/store/fms'
+import AccountSetGuide from './guide.vue'
 
 const emit = defineEmits<{
   (e: 'change'): void
@@ -41,6 +45,9 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const fmsStore = useFmsStore()
+
+const guideVisible = computed(() => fmsStore.accountSetListLoaded && !fmsStore.accountSet) // 引导弹窗可见：账套列表已加载且无可用账套
+const guideReason = computed<'empty' | 'uninitialized'>(() => (fmsStore.accountSetList.length === 0 ? 'empty' : 'uninitialized')) // 引导原因：无账套 / 账套未初始化
 
 const sheetVisible = ref(false) // 账套选择弹窗是否可见
 const switching = ref(false) // 是否正在切换账套

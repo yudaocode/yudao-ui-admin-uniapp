@@ -2,7 +2,11 @@
   <view class="yd-page-container">
     <!-- 顶部导航栏 -->
     <wd-navbar :title="getTitle" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
-    <!-- TODO @AI：是不是少了【套账的选择？】 -->
+
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="handleAccountSetChange" />
+    </view>
 
     <template v-if="fmsStore.accountSet">
       <!-- 表单区域 -->
@@ -88,22 +92,6 @@
               </wd-cell>
             </wd-cell-group>
           </view>
-
-          <!-- TODO @AI：录制凭证的时候，是否需要上传附件？对齐下 vue3 + ep 噢； -->
-          <!-- 凭证附件 -->
-          <view class="mt-24rpx">
-            <wd-cell-group border>
-              <wd-form-item title="附件" title-width="220rpx">
-                <yd-upload-imgs
-                  v-model="formData.attachmentUrls"
-                  directory="fms/voucher"
-                  :file-type="FMS_VOUCHER_ATTACHMENT_FILE_TYPES"
-                  :limit="100"
-                  :disabled="readOnly"
-                />
-              </wd-form-item>
-            </wd-cell-group>
-          </view>
         </wd-form>
 
         <!-- 底部安全区域 -->
@@ -185,9 +173,6 @@
         </view>
       </wd-popup>
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -210,12 +195,11 @@ import {
   getNextVoucherNumber,
   getVoucher,
   updateVoucher,
-  updateVoucherAttachments,
 } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
+import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
-import { FMS_VOUCHER_ATTACHMENT_FILE_TYPES, FmsVoucherStatus } from '@/pages-fms/utils/constants'
+import { FmsVoucherStatus } from '@/pages-fms/utils/constants'
 import { formatFmsAmount, formatFmsUppercaseMoney } from '@/pages-fms/utils/format'
 import { delay, navigateBackPlus } from '@/utils'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -254,7 +238,6 @@ const formData = ref({
   voucherNumber: undefined as number | undefined,
   voucherTime: '' as number | '',
   attachmentCount: 0,
-  attachmentUrls: [] as string[],
   entries: [] as VoucherEntryFormState[],
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
@@ -263,7 +246,6 @@ const dateVisible = ref(false) // 凭证日期选择器状态
 const voucherWordList = ref<VoucherWord[]>([]) // 凭证字列表
 const subjectList = ref<Subject[]>([]) // 平铺科目列表
 const detail = ref<Voucher>() // 凭证详情
-const originalAttachmentUrls = ref<string[]>([]) // 编辑前的附件地址，用于判断附件是否变更
 const templateSelectVisible = ref(false) // 套用模板弹窗状态
 const templateList = ref<VoucherTemplate[]>([]) // 凭证模板列表
 const templateSaveVisible = ref(false) // 保存为模板弹窗状态
@@ -374,7 +356,6 @@ async function getDetail() {
       voucherNumber: data.voucherNumber,
       voucherTime: dayjs(data.voucherTime).startOf('day').valueOf(),
       attachmentCount: data.attachmentCount,
-      attachmentUrls: data.attachmentUrls || [],
       entries: (data.entries || []).map(entry => ({
         id: entry.id,
         digest: entry.digest,
@@ -390,7 +371,6 @@ async function getDetail() {
         })),
       })),
     }
-    originalAttachmentUrls.value = [...(data.attachmentUrls || [])]
   } finally {
     toast.close()
   }
@@ -435,35 +415,10 @@ async function handleSubmit() {
   try {
     if (props.id) {
       await updateVoucher(data)
-      // 附件走独立的修改接口，仅在变更时提交
-      if (JSON.stringify(formData.value.attachmentUrls) !== JSON.stringify(originalAttachmentUrls.value)) {
-        await updateVoucherAttachments({
-          id: formData.value.id!,
-          accountSetId: currentAccountSetId,
-          attachmentUrls: formData.value.attachmentUrls,
-        })
-      }
       toast.success('修改成功')
     } else {
-      const voucherId = await createVoucher(data)
-      // 附件走独立的修改接口；上传失败时凭证已保存，提示后正常返回列表
-      let attachmentFailed = false
-      if (formData.value.attachmentUrls.length > 0) {
-        try {
-          await updateVoucherAttachments({
-            id: voucherId,
-            accountSetId: currentAccountSetId,
-            attachmentUrls: formData.value.attachmentUrls,
-          })
-        } catch {
-          attachmentFailed = true
-        }
-      }
-      if (attachmentFailed) {
-        toast.warning('凭证已保存，附件上传失败')
-      } else {
-        toast.success('新增成功')
-      }
+      await createVoucher(data)
+      toast.success('新增成功')
     }
     uni.$emit('fms:voucher:reload')
     delay(handleBack)
@@ -564,13 +519,12 @@ async function handleSaveTemplate() {
 }
 
 /** 初始化 */
-onMounted(async () => {
-  await fmsStore.loadAccountSetList()
+/** 加载凭证录入依赖的基础数据 */
+async function loadBaseData() {
   const currentAccountSetId = accountSetId.value
   if (!currentAccountSetId) {
     return
   }
-  // 加载凭证录入依赖的基础数据
   const [wordList, subjects] = await Promise.all([
     getVoucherWordSimpleList(currentAccountSetId),
     getSubjectList(currentAccountSetId),
@@ -578,6 +532,21 @@ onMounted(async () => {
   ])
   voucherWordList.value = wordList
   subjectList.value = subjects
+}
+
+/** 账套变化后重载基础数据并重建表单 */
+async function handleAccountSetChange() {
+  await loadBaseData()
+  if (props.id) {
+    await getDetail()
+  } else {
+    await initCreate()
+  }
+}
+
+onMounted(async () => {
+  await fmsStore.loadAccountSetList()
+  await loadBaseData()
   if (props.id) {
     await getDetail()
   } else {

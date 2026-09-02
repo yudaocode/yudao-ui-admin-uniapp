@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="reload" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="reload" />
-      </view>
-
       <!-- 币别列表 -->
       <z-paging
         ref="pagingRef"
@@ -60,9 +59,6 @@
         @click="handleAdd"
       />
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -71,7 +67,6 @@ import type { Currency } from '@/api/fms/config/currency'
 import { onUnload } from '@dcloudio/uni-app'
 import { getCurrencyList } from '@/api/fms/config/currency'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { formatFmsExchangeRate } from '@/pages-fms/utils/format'

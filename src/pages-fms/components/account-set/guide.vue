@@ -1,5 +1,5 @@
 <template>
-  <!-- 无可用账套引导：进入 FMS 页面时自动弹出，对齐 PC 弹窗形态 -->
+  <!-- 无可用账套引导弹窗：账套列表已加载但无可用账套时由账套切换组件弹出（对齐 PC account-set-guide） -->
   <wd-popup
     :model-value="visible"
     custom-style="border-radius: 24rpx;"
@@ -26,23 +26,23 @@
 
 <script lang="ts" setup>
 import { useAccess } from '@/hooks/useAccess'
-import { useFmsStore } from '@/pages-fms/store/fms'
 import { navigateBackPlus } from '@/utils'
 
-const { hasAccessByCodes } = useAccess()
-const fmsStore = useFmsStore()
+const props = defineProps<{
+  visible: boolean // 弹窗是否可见
+  reason: 'empty' | 'uninitialized' // 引导原因：无账套 / 账套未初始化
+}>()
 
-/** 弹窗可见：账套列表已加载且无可用账套 */
-const visible = computed(() => fmsStore.accountSetListLoaded && !fmsStore.accountSet)
-const reason = computed(() => (fmsStore.accountSetList.length === 0 ? 'empty' : 'uninitialized')) // 引导原因：无账套 / 账套未初始化
+const { hasAccessByCodes } = useAccess()
+
 const canHandle = computed(() => // 当前用户是否可以自行处理账套问题
-  reason.value === 'empty'
+  props.reason === 'empty'
     ? hasAccessByCodes(['fms:config:account-set:create'])
     : hasAccessByCodes(['fms:config:account-set:initialize']),
 )
-const title = computed(() => (reason.value === 'empty' ? '当前账号暂无账套' : '当前账套尚未初始化')) // 引导标题
+const title = computed(() => (props.reason === 'empty' ? '当前账号暂无账套' : '当前账套尚未初始化')) // 引导标题
 const description = computed(() => { // 引导说明
-  if (reason.value === 'empty') {
+  if (props.reason === 'empty') {
     return canHandle.value
       ? '请先创建账套并完成初始化，再进入财务管理。'
       : '请联系管理员创建账套，或将当前账号加入已有账套。'

@@ -8,22 +8,22 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:ledger:general:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch @change="handleAccountSetChange" />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="handleAccountSetChange" />
-        </view>
-
         <!-- 搜索组件 -->
-        <!-- TODO @AI：间隙；看看别的模块，有没类似的情况 -->
-        <SearchForm
-          show-subject-range
-          :default-min-level="1"
-          :default-max-level="1"
-          search-placeholder="搜索总账"
-          @search="handleQuery"
-          @reset="handleQuery"
-        />
+        <view class="px-24rpx">
+          <SearchForm
+            show-subject-range
+            :default-min-level="1"
+            :default-max-level="1"
+            search-placeholder="搜索总账"
+            @search="handleQuery"
+            @reset="handleQuery"
+          />
+        </view>
 
         <!-- 总账列表 -->
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
@@ -85,9 +85,6 @@
           <view class="h-40rpx" />
         </scroll-view>
       </template>
-
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -96,7 +93,6 @@
 import type { LedgerGeneral } from '@/api/fms/ledger'
 import { getLedgerGeneralList } from '@/api/fms/ledger'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import SearchForm from '@/pages-fms/ledger/components/search-form.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'

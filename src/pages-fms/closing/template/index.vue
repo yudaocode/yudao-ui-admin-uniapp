@@ -8,12 +8,11 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:closing:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch @change="getList" />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="getList" />
-        </view>
-
         <!-- 模板分类 -->
         <view class="mb-24rpx bg-white">
           <wd-tabs v-model="category">
@@ -71,9 +70,6 @@
           </view>
         </view>
       </template>
-
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -84,7 +80,6 @@ import type { Subject } from '@/api/fms/config/subject'
 import { getClosingTemplateList } from '@/api/fms/closing/template'
 import { getSubjectList } from '@/api/fms/config/subject'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import {

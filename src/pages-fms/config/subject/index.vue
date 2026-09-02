@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="handleAccountSetChange" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="handleAccountSetChange" />
-      </view>
-
       <!-- 科目类型 -->
       <view class="mt-24rpx bg-white">
         <scroll-view scroll-x class="whitespace-nowrap">
@@ -110,9 +109,6 @@
         @click="handleAdd"
       />
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -123,7 +119,6 @@ import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { getSubjectList } from '@/api/fms/config/subject'
 import { useAccess } from '@/hooks/useAccess'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import {

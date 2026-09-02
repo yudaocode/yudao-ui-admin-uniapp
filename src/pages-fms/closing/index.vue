@@ -8,15 +8,13 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:closing:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch @change="reload" />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="reload" />
-        </view>
-
         <!-- 当前会计期间 -->
-        <!-- TODO @AI：貌似和顶部的间隙，没生效？？？ -->
-        <view class="mx-24rpx mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
+        <view class="mx-24rpx mb-24rpx mt-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
           <view class="flex items-center justify-between">
             <view class="text-34rpx text-[#333] font-semibold">
               {{ monthLabel }}
@@ -165,9 +163,6 @@
         </view>
       </template>
 
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
-
       <!-- 底部操作按钮 -->
       <view v-if="canClosePeriod || canCancelClose" class="yd-detail-footer">
         <view class="yd-detail-footer-actions">
@@ -209,7 +204,6 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import dayjs from 'dayjs'
 import { cancelClosePeriod, closePeriod, getClosingOverview } from '@/api/fms/closing/period'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { formatFmsAmount, formatFmsPeriodLabel, formatFmsStartTime } from '@/pages-fms/utils/format'

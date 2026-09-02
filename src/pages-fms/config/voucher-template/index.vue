@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="getList" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="getList" />
-      </view>
-
       <!-- 模板分类 -->
       <view class="mt-24rpx flex items-center bg-white">
         <scroll-view scroll-x class="min-w-0 flex-1 whitespace-nowrap">
@@ -76,9 +75,6 @@
       />
     </template>
 
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
-
     <!-- 分类管理弹窗 -->
     <CategoryManage ref="categoryManageRef" :account-set-id="fmsStore.accountSet?.id" @change="getList" />
   </view>
@@ -91,7 +87,6 @@ import { onUnload } from '@dcloudio/uni-app'
 import { getVoucherTemplateList } from '@/api/fms/config/voucher-template'
 import { getVoucherTemplateCategoryList } from '@/api/fms/config/voucher-template-category'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { navigateBackPlus } from '@/utils'

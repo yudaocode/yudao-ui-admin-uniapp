@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="reload" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="reload" />
-      </view>
-
       <!-- 表单区域 -->
       <view class="p-24rpx pb-160rpx">
         <view v-if="loading" class="py-80rpx text-center text-28rpx text-[#999]">
@@ -121,9 +120,6 @@
         </wd-button>
       </view>
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -137,7 +133,6 @@ import { getAccountSet } from '@/api/fms/config/account-set'
 import { getCurrencySimpleList } from '@/api/fms/config/currency'
 import { getFinanceParameter, updateFinanceParameter } from '@/api/fms/config/finance-parameter'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import {

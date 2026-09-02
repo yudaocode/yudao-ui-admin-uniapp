@@ -8,14 +8,12 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:voucher:statistics:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch @change="init" />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch @change="init" />
-        </view>
-
         <!-- 筛选与结果 -->
-        <!-- TODO @AI：这个搜索，要不要做成组件噢？ -->
         <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
           <view class="p-24rpx">
             <!-- 筛选区域 -->
@@ -164,9 +162,6 @@
           <view class="h-40rpx" />
         </scroll-view>
       </template>
-
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -176,7 +171,6 @@ import type { VoucherStatistics, VoucherStatisticsReq } from '@/api/fms/voucher'
 import dayjs from 'dayjs'
 import { getVoucherStatisticsList } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import VoucherWordSearchPicker from '@/pages-fms/config/voucher-word/components/voucher-word-search-picker.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'

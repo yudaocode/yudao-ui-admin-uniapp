@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="reload" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="reload" />
-      </view>
-
       <!-- 类别列表 -->
       <z-paging
         ref="pagingRef"
@@ -58,9 +57,6 @@
         @click="handleAdd"
       />
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -69,7 +65,6 @@ import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { onUnload } from '@dcloudio/uni-app'
 import { getAuxiliaryTypeList } from '@/api/fms/config/auxiliary/type'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { navigateBackPlus } from '@/utils'

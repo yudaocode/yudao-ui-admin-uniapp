@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="loadPage" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="loadPage" />
-      </view>
-
       <!-- 科目类别 -->
       <view class="mt-24rpx bg-white">
         <scroll-view scroll-x class="whitespace-nowrap">
@@ -238,9 +237,6 @@
       </view>
     </template>
 
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
-
     <!-- 添加明细和试算平衡弹窗 -->
     <AssistForm ref="assistFormRef" :account-set-id="fmsStore.accountSet?.id" @success="addAssist" />
     <TrialBalanceDialog ref="trialBalanceRef" />
@@ -261,7 +257,6 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { getAccountSet } from '@/api/fms/config/account-set'
 import { getInitialBalanceList, saveInitialBalance } from '@/api/fms/config/initial-balance'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsDebitCreditDirection, FmsSubjectType, FmsSubjectTypeOptions } from '@/pages-fms/utils/constants'

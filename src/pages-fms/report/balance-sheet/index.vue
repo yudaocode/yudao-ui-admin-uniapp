@@ -8,12 +8,11 @@
     />
 
     <template v-if="hasAccessByCodes(['fms:report:balance-sheet:query'])">
+      <!-- 账套切换 -->
+      <view class="p-24rpx pb-0">
+        <AccountSetSwitch />
+      </view>
       <template v-if="fmsStore.accountSet">
-        <!-- 账套切换 -->
-        <view class="p-24rpx pb-0">
-          <AccountSetSwitch />
-        </view>
-
         <!-- 期间筛选 -->
         <view class="p-24rpx pb-0">
           <ReportPeriodBar @query="handleQuery" />
@@ -54,9 +53,6 @@
           <view class="h-40rpx" />
         </scroll-view>
       </template>
-
-      <!-- 无可用账套引导 -->
-      <AccountSetGuide />
     </template>
   </view>
 </template>
@@ -66,7 +62,6 @@ import type { BalanceSheetRow } from '@/api/fms/report'
 import type { ReportDisplayRow } from '@/pages-fms/report/components/report-row-list.vue'
 import { getBalanceSheet } from '@/api/fms/report'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import ReportPeriodBar from '@/pages-fms/report/components/report-period-bar.vue'
 import ReportRowList from '@/pages-fms/report/components/report-row-list.vue'

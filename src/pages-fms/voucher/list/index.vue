@@ -7,12 +7,11 @@
       @click-left="handleBack"
     />
 
+    <!-- 账套切换 -->
+    <view class="p-24rpx pb-0">
+      <AccountSetSwitch @change="handleAccountSetChange" />
+    </view>
     <template v-if="fmsStore.accountSet">
-      <!-- 账套切换 -->
-      <view class="p-24rpx pb-0">
-        <AccountSetSwitch @change="handleAccountSetChange" />
-      </view>
-
       <!-- 搜索组件（加两侧边距，与账套切换卡片对齐） -->
       <view class="px-24rpx">
         <SearchForm @search="handleQuery" @reset="handleReset" />
@@ -97,9 +96,6 @@
         @click="handleAdd"
       />
     </template>
-
-    <!-- 无可用账套引导 -->
-    <AccountSetGuide />
   </view>
 </template>
 
@@ -108,7 +104,6 @@ import type { Voucher } from '@/api/fms/voucher'
 import { onUnload } from '@dcloudio/uni-app'
 import { getVoucherPage } from '@/api/fms/voucher'
 import { useAccess } from '@/hooks/useAccess'
-import AccountSetGuide from '@/pages-fms/components/account-set/guide.vue'
 import AccountSetSwitch from '@/pages-fms/components/account-set/switch.vue'
 import { useFmsStore } from '@/pages-fms/store/fms'
 import { FmsVoucherStatus } from '@/pages-fms/utils/constants'
