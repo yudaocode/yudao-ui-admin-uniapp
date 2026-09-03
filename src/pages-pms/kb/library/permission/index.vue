@@ -30,7 +30,7 @@
             <yd-form-picker
               v-model="formData.openLevel"
               label="公开权限"
-              :columns="[...PmsKnowledgeContentLevelOptions]"
+              :columns="getIntDictOptions(DICT_TYPE.PMS_KNOWLEDGE_CONTENT_LEVEL)"
               placeholder="请选择公开权限"
             />
           </view>
@@ -105,7 +105,7 @@
               v-model="item.level"
               label="权限"
               label-width="160rpx"
-              :columns="[...PmsKnowledgeContentLevelOptions]"
+              :columns="getIntDictOptions(DICT_TYPE.PMS_KNOWLEDGE_CONTENT_LEVEL)"
               placeholder="请选择权限"
             />
           </template>
@@ -133,8 +133,8 @@ import DeptFormPicker from '@/components/system-select/dept-form-picker.vue'
 import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import {
   PmsKnowledgeContentLevel,
-  PmsKnowledgeContentLevelOptions,
 } from '@/pages-pms/kb/utils/constants'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/constants'
 import { navigateBackPlus } from '@/utils'
 
 interface EditableMember extends KnowledgeContentPermissionMember {

@@ -51,15 +51,6 @@ export const PmsKnowledgeContentLevel = {
   UPLOAD_DOWNLOAD: 5,
 } as const
 
-/** PMS 知识内容协作等级选项 */
-export const PmsKnowledgeContentLevelOptions = [
-  { label: '管理员', value: PmsKnowledgeContentLevel.MANAGE },
-  { label: '可编辑', value: PmsKnowledgeContentLevel.EDIT },
-  { label: '可上传下载', value: PmsKnowledgeContentLevel.UPLOAD_DOWNLOAD },
-  { label: '可下载', value: PmsKnowledgeContentLevel.DOWNLOAD },
-  { label: '仅预览', value: PmsKnowledgeContentLevel.PREVIEW },
-] as const
-
 /** PMS 知识内容协作者身份类型 */
 export const PmsKnowledgeContentIdentityType = {
   USER: 'user',

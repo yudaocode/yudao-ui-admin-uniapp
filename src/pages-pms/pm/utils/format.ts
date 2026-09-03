@@ -5,9 +5,7 @@ import dayjs from 'dayjs'
 import {
   PmsIterationStatus,
   PmsProjectGroupType,
-  PmsProjectMemberLevelOptions,
   PmsProjectType,
-  PmsWorkItemDefectTypeOptions,
   PmsWorkItemPriority,
   PmsWorkItemStatusType,
   PmsWorkItemType,
@@ -15,13 +13,7 @@ import {
 
 /** 获得工作项类型名称 */
 export function getWorkItemTypeName(type: number) {
-  return (
-    {
-      [PmsWorkItemType.REQUIREMENT]: '需求',
-      [PmsWorkItemType.TASK]: '任务',
-      [PmsWorkItemType.DEFECT]: '缺陷',
-    }[type] || '-'
-  )
+  return getDictLabel(DICT_TYPE.PMS_WORK_ITEM_TYPE, type) || '-'
 }
 
 /** 获得工作项类型编码 */
@@ -37,19 +29,12 @@ export function getWorkItemTypeCode(type: number) {
 
 /** 获得工作项优先级名称 */
 export function getPriorityName(priority?: number) {
-  return (
-    {
-      [PmsWorkItemPriority.NONE]: '无',
-      [PmsWorkItemPriority.LOW]: '低',
-      [PmsWorkItemPriority.MEDIUM]: '中',
-      [PmsWorkItemPriority.HIGH]: '高',
-    }[priority ?? -1] || '-'
-  )
+  return getDictLabel(DICT_TYPE.PMS_WORK_ITEM_PRIORITY, priority) || '-'
 }
 
 /** 获得工作项缺陷类型名称 */
 export function getWorkItemDefectTypeName(defectType?: number) {
-  return PmsWorkItemDefectTypeOptions.find(item => item.value === defectType)?.label || '-'
+  return getDictLabel(DICT_TYPE.PMS_WORK_ITEM_DEFECT_TYPE, defectType) || '-'
 }
 
 /** 获得工作项优先级颜色 */
@@ -66,13 +51,7 @@ export function getPriorityColor(priority?: number) {
 
 /** 获得工作项状态名称 */
 export function getWorkItemStatusTypeName(status?: number) {
-  return (
-    {
-      [PmsWorkItemStatusType.PENDING]: '未开始',
-      [PmsWorkItemStatusType.PROCESSING]: '进行中',
-      [PmsWorkItemStatusType.COMPLETED]: '已完成',
-    }[status ?? -1] || '-'
-  )
+  return getDictLabel(DICT_TYPE.PMS_WORK_ITEM_STATUS_TYPE, status) || '-'
 }
 
 /** 获得迭代状态名称 */
@@ -80,13 +59,7 @@ export function getIterationStatusName(status?: number) {
   if (status === undefined) {
     return '-'
   }
-  return (
-    {
-      [PmsIterationStatus.PLANNED]: '未开始',
-      [PmsIterationStatus.ACTIVE]: '进行中',
-      [PmsIterationStatus.COMPLETED]: '已完成',
-    }[status] || '-'
-  )
+  return getDictLabel(DICT_TYPE.PMS_ITERATION_STATUS, status) || '-'
 }
 
 /** 获得项目分组类型名称 */
@@ -101,10 +74,7 @@ export function formatDateWithWeekday(date: string) {
 
 /** 格式化项目类型 */
 export function formatProjectType(type: number) {
-  return (
-    getDictLabel(DICT_TYPE.PMS_PROJECT_TYPE, type)
-    || (type === PmsProjectType.AGILE ? '敏捷开发项目' : '通用项目')
-  )
+  return getDictLabel(DICT_TYPE.PMS_PROJECT_TYPE, type) || '-'
 }
 
 /** 格式化项目类型简称 */
@@ -119,7 +89,7 @@ export function formatProjectOpenStatus(openStatus: boolean) {
 
 /** 格式化项目成员级别 */
 export function formatProjectMemberLevel(level: number) {
-  return PmsProjectMemberLevelOptions.find(item => item.value === level)?.label || '-'
+  return getDictLabel(DICT_TYPE.PMS_PROJECT_MEMBER_LEVEL, level) || '-'
 }
 
 /** 计算项目工作项完成率 */
