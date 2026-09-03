@@ -2882,11 +2882,11 @@
               "permission": "pms:kb:library:query"
             },
             {
-              "key": "pmsKbCollection",
+              "key": "pmsKbFavorite",
               "name": "我的关注",
               "icon": "star",
               "iconColor": "#fa8c16",
-              "url": "/pages-pms/kb/collection/index",
+              "url": "/pages-pms/kb/favorite/index",
               "permission": "pms:kb:library:query"
             },
             {
