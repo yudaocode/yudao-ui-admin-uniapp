@@ -18,8 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   success: []
-}>() // 定义 success 事件，用于上传成功后的回调
-
+}>()
 const toast = useToast()
 const uploadLoading = ref(false) // 文件上传中
 

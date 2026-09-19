@@ -132,10 +132,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SupplyItem } from '@/api/oa/supply-item'
+import type { SupplyItem } from '@/api/oa/supply/item'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createSupplyItem, getSupplyItem, updateSupplyItem } from '@/api/oa/supply-item'
+import { createSupplyItem, getSupplyItem, updateSupplyItem } from '@/api/oa/supply/item'
 import { DeptFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -172,7 +172,7 @@ const formData = ref<Partial<SupplyItem>>({
   sort: 0,
   remark: '',
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   deptId: [{ required: true, message: '所属部门不能为空' }],
   name: [{ required: true, message: '物品名称不能为空' }, { max: 128 }],
   no: [{ max: 64 }],
@@ -183,7 +183,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   status: [{ required: true, message: '状态不能为空' }],
   sort: [{ required: true, message: '排序不能为空' }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

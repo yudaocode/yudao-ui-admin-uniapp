@@ -101,7 +101,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑笔记' : '新增笔记')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Partial<Note>>({ // 表单数据；笔记内容为纯文本编辑
+const formData = ref<Partial<Note>>({
   id: undefined,
   type: OA_NOTE_TYPE.PRIVATE,
   priority: OA_PRIORITY.NORMAL,
@@ -109,8 +109,8 @@ const formData = ref<Partial<Note>>({ // 表单数据；笔记内容为纯文本
   title: '',
   content: '',
   fileUrls: [],
-})
-const formSchema = createFormSchema({ // 表单校验规则
+}) // 表单数据；笔记内容为纯文本编辑
+const formSchema = createFormSchema({
   type: [{ required: true, message: '笔记类型不能为空' }],
   priority: [{ required: true, message: '优先级不能为空' }],
   title: [{ required: true, message: '笔记标题不能为空' }],
@@ -118,7 +118,7 @@ const formSchema = createFormSchema({ // 表单校验规则
     { required: true, message: '笔记内容不能为空' },
     { validator: value => String(value ?? '').trim().length >= 10 || '笔记内容不能少于 10 个字' },
   ],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 const categoryList = ref<NoteCategory[]>([]) // 目录选项
 const categoryOptions = computed(() => // 目录选择器选项

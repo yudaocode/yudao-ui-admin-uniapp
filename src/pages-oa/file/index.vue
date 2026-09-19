@@ -8,52 +8,7 @@
     />
 
     <!-- 云盘概览 -->
-    <view v-if="storage" class="m-24rpx rounded-12rpx bg-white p-24rpx">
-      <view class="mb-16rpx text-30rpx text-[#333] font-semibold">
-        云盘概览
-      </view>
-      <view class="flex text-center">
-        <view class="flex-1">
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ storage.fileCount }}
-          </view>
-          <view class="mt-4rpx text-24rpx text-[#999]">
-            我的文件
-          </view>
-        </view>
-        <view class="flex-1">
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ storage.sharedCount }}
-          </view>
-          <view class="mt-4rpx text-24rpx text-[#999]">
-            我共享的
-          </view>
-        </view>
-        <view class="flex-1">
-          <view class="text-32rpx text-[#333] font-semibold">
-            {{ storage.receivedCount }}
-          </view>
-          <view class="mt-4rpx text-24rpx text-[#999]">
-            共享给我的
-          </view>
-        </view>
-        <view class="flex-1">
-          <view class="text-24rpx text-[#333] font-semibold">
-            {{ formatFileSize(storage.usedSize) }} / {{ formatFileSize(storage.totalSize) }}
-          </view>
-          <view class="mt-4rpx text-24rpx text-[#999]">
-            存储空间
-          </view>
-          <!-- 容量占比条 -->
-          <view class="mx-16rpx mt-8rpx h-8rpx overflow-hidden rounded-full bg-[#f5f5f5]">
-            <view
-              class="h-full rounded-full bg-[#1677ff]"
-              :style="{ width: `${Math.min(100, (storage.usedSize / (storage.totalSize || 1)) * 100)}%` }"
-            />
-          </view>
-        </view>
-      </view>
-    </view>
+    <Storage :storage="storage" />
 
     <!-- 范围页签 -->
     <wd-tabs v-model="tabIndex" @change="handleTabChange">
@@ -196,6 +151,7 @@ import FileUpload from './components/file-upload.vue'
 import NodeForm from './components/node-form.vue'
 import PermissionList from './components/permission-list.vue'
 import SearchForm from './components/search-form.vue'
+import Storage from './components/storage.vue'
 
 definePage({
   style: {
@@ -352,7 +308,7 @@ async function handlePreview(row: FileNode) {
   openAttachment(data.url)
 }
 
-/** 下载文件：获得授权地址后按云盘节点名保存，对齐 PC downloadByData */
+/** 下载文件：获得授权地址后按云盘节点名保存 */
 async function handleDownload(row: FileNode) {
   if ((row.level || 0) < OA_FILE_PERMISSION_LEVEL.DOWNLOAD) {
     toast.warning('当前仅具有查看文件信息的权限')

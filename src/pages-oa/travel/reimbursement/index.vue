@@ -74,10 +74,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TravelReimbursement } from '@/api/oa/travel-reimbursement'
+import type { TravelReimbursement } from '@/api/oa/travel/reimbursement'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getTravelReimbursementPage } from '@/api/oa/travel-reimbursement'
+import { getTravelReimbursementPage } from '@/api/oa/travel/reimbursement'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

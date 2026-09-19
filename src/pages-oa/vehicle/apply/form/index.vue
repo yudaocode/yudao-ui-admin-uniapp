@@ -91,56 +91,7 @@
     </view>
 
     <!-- 车辆选择弹窗 -->
-    <wd-popup
-      v-model="vehiclePickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择车辆</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="vehiclePickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-12rpx">
-          <wd-search
-            v-model="vehicleKeyword"
-            placeholder="请输入车牌号搜索"
-            hide-cancel
-            @search="handleVehicleSearch"
-            @clear="handleVehicleSearch"
-          />
-        </view>
-        <z-paging
-          ref="vehiclePagingRef"
-          v-model="vehicleList"
-          :fixed="false"
-          class="min-h-0 flex-1"
-          :default-page-size="10"
-          empty-view-text="暂无可申请车辆"
-          @query="queryVehicleList"
-        >
-          <view class="p-24rpx">
-            <view
-              v-for="item in vehicleList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleVehicleSelect(item)"
-            >
-              <view>
-                <view class="text-30rpx text-[#333] font-semibold">
-                  {{ item.no }}
-                </view>
-                <view v-if="item.name" class="mt-4rpx text-24rpx text-[#999]">
-                  {{ item.name }}
-                </view>
-              </view>
-              <wd-icon v-if="item.id === formData.vehicleId" name="check" size="32rpx" color="#1677ff" />
-            </view>
-          </view>
-        </z-paging>
-      </view>
-    </wd-popup>
+    <VehiclePicker v-model="vehiclePickerVisible" :selected-id="formData.vehicleId" @select="handleVehicleSelect" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -158,11 +109,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { VehicleApply } from '@/api/oa/vehicle-apply'
+import type { VehicleApply } from '@/api/oa/vehicle/apply'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createVehicleApply, getAvailableVehiclePage, getVehicleApply, updateVehicleApply } from '@/api/oa/vehicle-apply'
+import { createVehicleApply, getVehicleApply, updateVehicleApply } from '@/api/oa/vehicle/apply'
 import { delay, navigateBackPlus } from '@/utils'
+import VehiclePicker from '@/pages-oa/vehicle/list/components/vehicle-picker.vue'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
@@ -194,42 +146,21 @@ const startTime = ref<number | ''>('') // 预计出车时间选择器值，空�
 const endTime = ref<number | ''>('') // 预计回车时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 预计出车时间选择器显示状态
 const endTimeVisible = ref(false) // 预计回车时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   vehicleId: [{ required: true, message: '车辆不能为空' }],
   startLocation: [{ required: true, message: '出车地点不能为空' }, { max: 255 }],
   endLocation: [{ required: true, message: '预计回车地点不能为空' }, { max: 255 }],
   reason: [{ required: true, message: '用车事由不能为空' }, { max: 500 }],
   passenger: [{ max: 500 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 车辆选择 ====================
 const vehiclePickerVisible = ref(false) // 车辆选择弹窗显示状态
-const vehicleList = ref<{ id: number, no: string, name?: string }[]>([]) // 可申请车辆列表
-const vehiclePagingRef = ref<any>() // 车辆分页组件引用
 const selectedVehicleNo = ref('') // 已选车辆车牌号回显
-const vehicleKeyword = ref('') // 车辆选择弹窗车牌号搜索
 
 /** 打开车辆选择弹窗 */
 function openVehiclePicker() {
   vehiclePickerVisible.value = true
-  vehiclePagingRef.value?.reload()
-}
-
-/** 搜索车辆 */
-function handleVehicleSearch() {
-  vehiclePagingRef.value?.reload()
-}
-
-/** 查询可申请车辆列表 */
-async function queryVehicleList(pageNo: number, pageSize: number) {
-  try {
-    const data = await getAvailableVehiclePage({ pageNo, pageSize, no: vehicleKeyword.value || undefined })
-    vehiclePagingRef.value?.completeByTotal(data.list, data.total)
-  } catch {
-    vehiclePagingRef.value?.complete(false)
-  }
 }
 
 /** 选择车辆 */

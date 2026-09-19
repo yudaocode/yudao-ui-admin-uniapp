@@ -149,14 +149,14 @@ const startTime = ref<number | ''>('') // 开始时间选择器值，空字符�
 const endTime = ref<number | ''>('') // 结束时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   type: [{ required: true, message: '计划类型不能为空' }],
   status: [{ required: true, message: '计划状态不能为空' }],
   title: [{ required: true, message: '标题不能为空' }, { max: 50 }],
   label: [{ max: 255 }],
   content: [{ required: true, message: '计划内容不能为空' }, { min: 20, message: '计划内容不能少于 20 个字符' }],
   summary: [{ min: 20, message: '计划总结不能少于 20 个字符' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 let syncingPeriod = false // 编辑加载数据期间不触发计划周期初始化
 
@@ -176,7 +176,7 @@ function initPlanPeriod(type?: number) {
   endTime.value = end.getTime()
 }
 
-// 切换计划类型时，按日、周、月初始化计划周期
+/** 切换计划类型时，按日、周、月初始化计划周期 */
 watch(() => formData.value.type, (type) => {
   if (!syncingPeriod) {
     initPlanPeriod(type)

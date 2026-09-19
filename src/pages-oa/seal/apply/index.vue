@@ -65,10 +65,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SealApply } from '@/api/oa/seal-apply'
+import type { SealApply } from '@/api/oa/seal/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getSealApplyPage } from '@/api/oa/seal-apply'
+import { getSealApplyPage } from '@/api/oa/seal/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

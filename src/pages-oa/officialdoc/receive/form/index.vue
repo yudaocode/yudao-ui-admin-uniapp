@@ -144,10 +144,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { OfficialDocReceive } from '@/api/oa/officialdoc-receive'
+import type { OfficialDocReceive } from '@/api/oa/officialdoc/receive'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createOfficialDocReceive, getOfficialDocReceive, updateOfficialDocReceive } from '@/api/oa/officialdoc-receive'
+import { createOfficialDocReceive, getOfficialDocReceive, updateOfficialDocReceive } from '@/api/oa/officialdoc/receive'
 import { DeptFormPicker, UserFormPicker } from '@/components/system-select'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
@@ -174,9 +174,9 @@ const formData = ref<Partial<OfficialDocReceive>>({
   id: undefined,
   title: '',
   documentNo: '',
-  secrecyLevel: 0, // 默认无密级，对齐 PC 新建默认值
-  urgencyLevel: 0, // 默认一般紧急，对齐 PC 新建默认值
-  receiveType: OA_OFFICIAL_DOC_RECEIVE_TYPE.MAIN, // 收文类型固定主送，后端创建强制主送（对齐 PC 禁用选择）
+  secrecyLevel: 0, // 默认无密级
+  urgencyLevel: 0, // 默认一般紧急
+  receiveType: OA_OFFICIAL_DOC_RECEIVE_TYPE.MAIN, // 收文类型固定主送，后端创建强制主送，页面禁用选择
   receiveDeptId: undefined,
   handlerUserId: undefined,
   instruction: '',
@@ -190,7 +190,7 @@ const receiveTime = ref<number | ''>('') // 收文时间选择器值，空字符
 const deadlineTime = ref<number | ''>('') // 办理期限选择器值，空字符串承接未选择
 const receiveTimeVisible = ref(false) // 收文时间选择器显示状态
 const deadlineTimeVisible = ref(false) // 办理期限选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   title: [{ required: true, message: '公文标题不能为空' }, { max: 255 }],
   documentNo: [{ max: 64 }],
   secrecyLevel: [{ required: true, message: '密级不能为空' }],
@@ -200,7 +200,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   instruction: [{ max: 2000 }],
   result: [{ max: 2000 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */
@@ -254,10 +254,10 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  // 手工收文的收文部门固定为本人部门（对齐 PC，关联发文时由发文带入）
+  // 手工收文的收文部门固定为本人部门，关联发文时由发文带入
   if (!props.id) {
     formData.value.receiveDeptId = useUserStore().userInfo?.deptId
-    receiveTime.value = Date.now() // 收文时间默认当前时间，对齐 PC 新建默认值
+    receiveTime.value = Date.now() // 收文时间默认当前时间
   }
   getDetail()
 })

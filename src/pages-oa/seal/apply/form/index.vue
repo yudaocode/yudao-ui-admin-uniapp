@@ -145,56 +145,7 @@
     </view>
 
     <!-- 印章选择弹窗 -->
-    <wd-popup
-      v-model="sealPickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择印章</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="sealPickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-16rpx">
-          <wd-search
-            v-model="sealQueryParams.name"
-            placeholder="搜索印章名称"
-            hide-cancel
-            @search="handleSealQuery"
-            @clear="handleSealQuery"
-          />
-        </view>
-        <z-paging
-          ref="sealPagingRef"
-          v-model="sealList"
-          :fixed="false"
-          class="min-h-0 flex-1"
-          :default-page-size="10"
-          empty-view-text="暂无可申请印章"
-          @query="querySealList"
-        >
-          <view class="p-24rpx pt-0">
-            <view
-              v-for="item in sealList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleSealSelect(item)"
-            >
-              <view class="min-w-0 flex-1">
-                <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">
-                  {{ item.name }}
-                </view>
-                <view class="mt-4rpx text-24rpx text-[#999]">
-                  {{ item.no || '-' }} · {{ item.deptName || '-' }}
-                </view>
-              </view>
-              <wd-icon v-if="item.id === formData.sealId" name="check" size="32rpx" color="#1677ff" />
-            </view>
-          </view>
-        </z-paging>
-      </view>
-    </wd-popup>
+    <SealPicker v-model="sealPickerVisible" :selected-id="formData.sealId" @select="handleSealSelect" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -212,12 +163,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { Seal } from '@/api/oa/seal'
-import type { SealApply } from '@/api/oa/seal-apply'
+import type { SealApply } from '@/api/oa/seal/apply'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createSealApply, getAvailableSealPage, getSealApply, updateSealApply } from '@/api/oa/seal-apply'
+import { createSealApply, getSealApply, updateSealApply } from '@/api/oa/seal/apply'
 import { delay, navigateBackPlus } from '@/utils'
+import SealPicker from '@/pages-oa/seal/info/components/seal-picker.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { OA_SEAL_APPLY_TYPE, OA_SEAL_USE_MODE } from '../../../utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
@@ -258,7 +209,7 @@ const actualReturnTime = ref<number | ''>('') // 实际归还时间选择器值�
 const expectedUseVisible = ref(false) // 预计用印时间选择器显示状态
 const expectedReturnVisible = ref(false) // 预计归还时间选择器显示状态
 const actualReturnVisible = ref(false) // 实际归还时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   sealId: [{ required: true, message: '印章不能为空' }],
   reason: [{ required: true, message: '用印事由不能为空' }, { max: 500 }],
   type: [{ required: true, message: '用印类型不能为空' }],
@@ -268,43 +219,18 @@ const formSchema = createFormSchema({ // 表单校验规则
   documentCount: [{ required: true, message: '文件份数不能为空' }],
   contractParty: [{ max: 255 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 印章选择 ====================
 const sealPickerVisible = ref(false) // 印章选择弹窗显示状态
-const sealList = ref<Seal[]>([]) // 可申请印章列表
-const sealPagingRef = ref<any>() // 印章分页组件引用
-const sealQueryParams = ref<Record<string, any>>({}) // 印章查询参数
 const selectedSealName = ref('') // 已选印章名称回显
 
 /** 打开印章选择弹窗 */
 function openSealPicker() {
   sealPickerVisible.value = true
-  sealPagingRef.value?.reload()
-}
-
-/** 查询可申请印章列表 */
-async function querySealList(pageNo: number, pageSize: number) {
-  try {
-    const data = await getAvailableSealPage({
-      ...sealQueryParams.value,
-      pageNo,
-      pageSize,
-    })
-    sealPagingRef.value?.completeByTotal(data.list, data.total)
-  } catch {
-    sealPagingRef.value?.complete(false)
-  }
-}
-
-/** 搜索印章 */
-function handleSealQuery() {
-  sealPagingRef.value?.reload()
 }
 
 /** 选择印章 */
-function handleSealSelect(item: Seal) {
+function handleSealSelect(item: { id?: number, name?: string }) {
   formData.value.sealId = item.id
   selectedSealName.value = item.name || ''
   sealPickerVisible.value = false

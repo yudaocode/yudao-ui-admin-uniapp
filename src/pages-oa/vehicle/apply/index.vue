@@ -74,10 +74,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { VehicleApply } from '@/api/oa/vehicle-apply'
+import type { VehicleApply } from '@/api/oa/vehicle/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getVehicleApplyPage } from '@/api/oa/vehicle-apply'
+import { getVehicleApplyPage } from '@/api/oa/vehicle/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

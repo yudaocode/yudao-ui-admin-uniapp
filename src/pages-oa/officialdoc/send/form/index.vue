@@ -154,12 +154,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { OfficialDocSend } from '@/api/oa/officialdoc-send'
-import type { OfficialDocTemplate } from '@/api/oa/officialdoc-template'
+import type { OfficialDocSend } from '@/api/oa/officialdoc/send'
+import type { OfficialDocTemplate } from '@/api/oa/officialdoc/template'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createOfficialDocSend, getOfficialDocSend, updateOfficialDocSend } from '@/api/oa/officialdoc-send'
-import { getOfficialDocTemplate, getSimpleOfficialDocTemplateList } from '@/api/oa/officialdoc-template'
+import { createOfficialDocSend, getOfficialDocSend, updateOfficialDocSend } from '@/api/oa/officialdoc/send'
+import { getOfficialDocTemplate, getSimpleOfficialDocTemplateList } from '@/api/oa/officialdoc/template'
 import { getSimpleDeptList } from '@/api/system/dept'
 import { DeptFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
@@ -204,7 +204,7 @@ const issueTime = ref<number | ''>('') // 发文日期选择器值，空字符�
 const issueTimeVisible = ref(false) // 发文日期选择器显示状态
 const templateOptions = ref<{ label: string, value: number }[]>([]) // 套红模板选项
 const deptTree = ref<any[]>([]) // 部门树数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   templateId: [{ required: true, message: '套红模板不能为空' }],
   title: [{ required: true, message: '公文标题不能为空' }, { max: 255 }],
   noPrefix: [{ max: 64 }],
@@ -213,7 +213,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   disclosureType: [{ required: true, message: '公开类别不能为空' }],
   sendDeptId: [{ required: true, message: '发文部门不能为空' }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

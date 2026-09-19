@@ -168,10 +168,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { TravelApply } from '@/api/oa/travel-apply'
+import type { TravelApply } from '@/api/oa/travel/apply'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createTravelApply, getTravelApply, updateTravelApply } from '@/api/oa/travel-apply'
+import { createTravelApply, getTravelApply, updateTravelApply } from '@/api/oa/travel/apply'
 import { getAreaTree } from '@/api/system/area'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -220,14 +220,12 @@ const dayCount = computed(() => // 出差天数预览，与后端 getDaysBetween
     : 0)
 const items = ref<TravelItemRow[]>([]) // 行程明细
 const areaTree = ref<any[]>([]) // 地区树数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   reason: [{ required: true, message: '出差事由不能为空' }, { max: 500 }],
   companion: [{ max: 128 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 行程日期选择 ====================
 const itemDateVisible = ref(false) // 行程日期选择器显示状态
 const editingItemDate = ref({ index: 0, key: 'startTime' as 'startTime' | 'endTime', value: '' as number | '' }) // 当前编辑的行程日期
 

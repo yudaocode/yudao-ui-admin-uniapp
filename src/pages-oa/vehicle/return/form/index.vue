@@ -90,57 +90,8 @@
       <wd-datetime-picker v-model="actualReturnTime" v-model:visible="returnTimeVisible" type="datetime" title="实际回车时间" />
     </view>
 
-    <!-- 用车申请选择弹窗：仅本人审批通过且待还车的申请 -->
-    <wd-popup
-      v-model="applyPickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择用车申请</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="applyPickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-12rpx">
-          <wd-search
-            v-model="applyKeyword"
-            placeholder="请输入车牌号搜索"
-            hide-cancel
-            @search="handleApplySearch"
-            @clear="handleApplySearch"
-          />
-        </view>
-        <z-paging
-          ref="applyPagingRef"
-          v-model="applyList"
-          :fixed="false"
-          class="min-h-0 flex-1"
-          :default-page-size="10"
-          empty-view-text="暂无待还车的用车申请"
-          @query="queryApplyList"
-        >
-          <view class="p-24rpx">
-            <view
-              v-for="item in applyList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleApplySelect(item)"
-            >
-              <view>
-                <view class="text-30rpx text-[#333] font-semibold">
-                  {{ item.no || `用车申请 #${item.id}` }}
-                </view>
-                <view class="mt-4rpx text-24rpx text-[#999]">
-                  {{ item.vehicleNo }} · {{ formatDateTime(item.startTime) || '-' }}
-                </view>
-              </view>
-              <wd-icon v-if="item.id === formData.applyId" name="check" size="32rpx" color="#1677ff" />
-            </view>
-          </view>
-        </z-paging>
-      </view>
-    </wd-popup>
+    <!-- 用车申请选择弹窗 -->
+    <ApplyPicker v-model="applyPickerVisible" :selected-id="formData.applyId" @select="handleApplySelect" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -158,16 +109,16 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { VehicleApply } from '@/api/oa/vehicle-apply'
-import type { VehicleReturn } from '@/api/oa/vehicle-return'
+import type { VehicleApply } from '@/api/oa/vehicle/apply'
+import type { VehicleReturn } from '@/api/oa/vehicle/return'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getVehicleApply, getVehicleApplyPage } from '@/api/oa/vehicle-apply'
-import { createVehicleReturn, getVehicleReturn, updateVehicleReturn } from '@/api/oa/vehicle-return'
+import { getVehicleApply } from '@/api/oa/vehicle/apply'
+import { createVehicleReturn, getVehicleReturn, updateVehicleReturn } from '@/api/oa/vehicle/return'
 import { delay, navigateBackPlus } from '@/utils'
+import ApplyPicker from '@/pages-oa/vehicle/apply/components/apply-picker.vue'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
-import { OA_VEHICLE_RETURN_STATUS } from '../../../utils/constants'
 
 const props = defineProps<{
   id?: string
@@ -198,48 +149,21 @@ const actualStartTime = ref<number | ''>('') // 实际出车时间选择器值�
 const startTimeVisible = ref(false) // 实际出车时间选择器显示状态
 const actualReturnTime = ref<number | ''>('') // 实际回车时间选择器值，空字符串承接未选择
 const returnTimeVisible = ref(false) // 实际回车时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   applyId: [{ required: true, message: '用车申请不能为空' }],
   startLocation: [{ required: true, message: '实际出车地点不能为空' }, { max: 255 }],
   reason: [{ required: true, message: '用车事由不能为空' }, { max: 500 }],
   passenger: [{ max: 500 }],
   returnLocation: [{ required: true, message: '实际回车地点不能为空' }, { max: 255 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 用车申请选择 ====================
 const applyPickerVisible = ref(false) // 用车申请选择弹窗显示状态
-const applyList = ref<VehicleApply[]>([]) // 待还车的用车申请列表
-const applyPagingRef = ref<any>() // 用车申请分页组件引用
 const selectedApplyLabel = ref('') // 已选用车申请回显
-const applyKeyword = ref('') // 用车申请选择弹窗车牌号搜索
 
 /** 打开用车申请选择弹窗 */
 function openApplyPicker() {
   applyPickerVisible.value = true
-  applyPagingRef.value?.reload()
-}
-
-/** 搜索用车申请 */
-function handleApplySearch() {
-  applyPagingRef.value?.reload()
-}
-
-/** 查询待还车的用车申请：审批通过且还车状态为待还车 */
-async function queryApplyList(pageNo: number, pageSize: number) {
-  try {
-    const data = await getVehicleApplyPage({
-      status: 2,
-      returnStatus: OA_VEHICLE_RETURN_STATUS.PENDING_RETURN,
-      vehicleNo: applyKeyword.value || undefined,
-      pageNo,
-      pageSize,
-    })
-    applyPagingRef.value?.completeByTotal(data.list, data.total)
-  } catch {
-    applyPagingRef.value?.complete(false)
-  }
 }
 
 /** 选择用车申请：带入计划出车信息，还车人可按实际行程修改 */

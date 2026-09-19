@@ -146,49 +146,7 @@
     </view>
 
     <!-- 出差申请选择弹窗 -->
-    <wd-popup
-      v-model="applyPickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择出差申请</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="applyPickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-12rpx">
-          <wd-search
-            v-model="applyKeyword"
-            placeholder="请输入单号 / 事由搜索"
-            hide-cancel
-          />
-        </view>
-        <scroll-view scroll-y class="min-h-0 flex-1">
-          <view class="p-24rpx pt-0">
-            <view v-if="filteredApplyList.length === 0" class="py-64rpx text-center text-26rpx text-[#999]">
-              暂无可关联的出差申请
-            </view>
-            <view
-              v-for="item in filteredApplyList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleApplySelect(item)"
-            >
-              <view class="min-w-0 flex-1">
-                <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">
-                  {{ item.no }}
-                </view>
-                <view class="line-clamp-1 mt-4rpx text-24rpx text-[#999]">
-                  {{ item.reason || '-' }} · {{ formatDate(item.startTime) }} 至 {{ formatDate(item.endTime) }}
-                </view>
-              </view>
-              <wd-icon v-if="item.id === formData.travelApplyId" name="check" size="32rpx" color="#1677ff" />
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </wd-popup>
+    <ApplyPicker v-model="applyPickerVisible" :selected-id="formData.travelApplyId" @select="handleApplySelect" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -206,12 +164,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { TravelApply } from '@/api/oa/travel-apply'
-import type { TravelReimbursement } from '@/api/oa/travel-reimbursement'
+import type { TravelApply } from '@/api/oa/travel/apply'
+import type { TravelReimbursement } from '@/api/oa/travel/reimbursement'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getApprovedTravelApplyList } from '@/api/oa/travel-apply'
-import { createTravelReimbursement, getTravelReimbursement, updateTravelReimbursement } from '@/api/oa/travel-reimbursement'
+import ApplyPicker from '@/pages-oa/travel/apply/components/apply-picker.vue'
+import { createTravelReimbursement, getTravelReimbursement, updateTravelReimbursement } from '@/api/oa/travel/reimbursement'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime, toTimestamp } from '@/utils/date'
@@ -259,12 +217,10 @@ const endTimeVisible = ref(false) // 结束日期选择器显示状态
 const items = ref<ExpenseItemRow[]>([]) // 费用明细
 const totalPrice = computed(() => // 报销总金额：按费用明细金额汇总
   items.value.reduce((sum, row) => sum + (Number(row.price) || 0), 0).toFixed(2))
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   reason: [{ required: true, message: '出差事由不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 费用发生日期选择 ====================
 const itemDateVisible = ref(false) // 费用发生日期选择器显示状态
 const editingItemIndex = ref(0) // 当前编辑的费用明细行号
 const editingItemDate = ref<number | ''>('') // 费用发生日期选择器值，空字符串承接未选择
@@ -290,24 +246,11 @@ function handleAddItem() {
 function handleRemoveItem(index: number) {
   items.value.splice(index, 1)
 }
-
-// ==================== 关联出差申请选择 ====================
 const applyPickerVisible = ref(false) // 出差申请选择弹窗显示状态
-const applyList = ref<TravelApply[]>([]) // 可关联的已通过出差申请列表
 const selectedApplyNo = ref('') // 已选出差申请单号回显
-const applyKeyword = ref('') // 出差申请弹窗搜索关键词
-const filteredApplyList = computed(() => { // 本地过滤：接口返回本人全量已通过申请
-  const keyword = applyKeyword.value.trim()
-  if (!keyword) {
-    return applyList.value
-  }
-  return applyList.value.filter(item => item.no?.includes(keyword) || item.reason?.includes(keyword))
-})
-
 /** 打开出差申请选择弹窗 */
-async function openApplyPicker() {
+function openApplyPicker() {
   applyPickerVisible.value = true
-  applyList.value = await getApprovedTravelApplyList()
 }
 
 /** 选择出差申请：带出事由和日期，换选时覆盖回填 */

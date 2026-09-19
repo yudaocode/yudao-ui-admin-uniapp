@@ -220,14 +220,14 @@ const endTime = ref<number | ''>('') // 结束日期选择器值，空字符串�
 const periodPickerVisible = ref(false) // 汇报日期选择器显示状态
 const startDateVisible = ref(false) // 开始日期选择器显示状态
 const endDateVisible = ref(false) // 结束日期选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   type: [{ required: true, message: '汇报类型不能为空' }],
   title: [{ max: 255 }],
   summary: [{ max: 5000 }],
   plan: [{ max: 5000 }],
   problem: [{ max: 5000 }],
   remark: [{ max: 1000 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

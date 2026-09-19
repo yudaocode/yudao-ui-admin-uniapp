@@ -50,10 +50,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SupplyIssue } from '@/api/oa/supply-issue'
+import type { SupplyIssue } from '@/api/oa/supply/issue'
 import { ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { issueSupplyItem } from '@/api/oa/supply-issue'
+import { issueSupplyItem } from '@/api/oa/supply/issue'
 import { createFormSchema } from '@/utils/wot'
 
 const emit = defineEmits<{
@@ -65,10 +65,10 @@ const visible = ref(false) // 弹窗显示状态
 const formLoading = ref(false) // 表单提交状态
 const item = ref<SupplyIssue>() // 当前发放明细
 const formData = ref({ issuedQuantity: undefined as number | undefined, issueRemark: '' }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   issuedQuantity: [{ required: true, message: '实发数量不能为空' }],
   issueRemark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 打开弹窗，默认按申请数量发放 */

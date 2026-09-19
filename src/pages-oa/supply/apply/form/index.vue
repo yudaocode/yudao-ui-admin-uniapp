@@ -100,56 +100,7 @@
     </view>
 
     <!-- 用品选择弹窗 -->
-    <wd-popup
-      v-model="itemPickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择办公用品</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="itemPickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-16rpx">
-          <wd-search
-            v-model="itemQueryParams.name"
-            placeholder="搜索物品名称"
-            hide-cancel
-            @search="handleItemQuery"
-            @clear="handleItemQuery"
-          />
-        </view>
-        <z-paging
-          ref="itemPagingRef"
-          v-model="itemList"
-          :fixed="false"
-          class="min-h-0 flex-1"
-          :default-page-size="10"
-          empty-view-text="暂无可领用用品"
-          @query="queryItemList"
-        >
-          <view class="p-24rpx pt-0">
-            <view
-              v-for="item in itemList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleItemSelect(item)"
-            >
-              <view class="min-w-0 flex-1">
-                <view class="line-clamp-1 text-30rpx text-[#333] font-semibold">
-                  {{ item.name }}
-                </view>
-                <view class="mt-4rpx text-24rpx text-[#999]">
-                  {{ item.model || '-' }} · 库存 {{ item.stockQuantity ?? 0 }}{{ item.unit || '' }}
-                </view>
-              </view>
-              <wd-icon v-if="items.some(row => row.itemId === item.id)" name="check" size="32rpx" color="#1677ff" />
-            </view>
-          </view>
-        </z-paging>
-      </view>
-    </wd-popup>
+    <ItemPicker v-model="itemPickerVisible" :selected-ids="items.map(row => row.itemId)" @select="handleItemSelect" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -167,12 +118,12 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SupplyApply } from '@/api/oa/supply-apply'
-import type { SupplyItem } from '@/api/oa/supply-item'
+import type { SupplyApply } from '@/api/oa/supply/apply'
+import type { SupplyItem } from '@/api/oa/supply/item'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createSupplyApply, getSupplyApply, updateSupplyApply } from '@/api/oa/supply-apply'
-import { getSupplyItemSelectPage } from '@/api/oa/supply-item'
+import { createSupplyApply, getSupplyApply, updateSupplyApply } from '@/api/oa/supply/apply'
+import ItemPicker from '@/pages-oa/supply/item/components/item-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, toTimestamp } from '@/utils/date'
@@ -213,43 +164,18 @@ const formData = ref<Partial<SupplyApply>>({
 const applyTime = ref<number | ''>(new Date().setHours(0, 0, 0, 0)) // 领用日期选择器值，默认当天零点
 const applyTimeVisible = ref(false) // 领用日期选择器显示状态
 const items = ref<ApplyItemRow[]>([]) // 领用明细
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   useType: [{ required: true, message: '使用类型不能为空' }],
   pickupMethod: [{ required: true, message: '领取方式不能为空' }],
   reason: [{ required: true, message: '申请事由不能为空' }, { max: 500 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 用品选择 ====================
 const itemPickerVisible = ref(false) // 用品选择弹窗显示状态
-const itemList = ref<SupplyItem[]>([]) // 可领用用品列表
-const itemPagingRef = ref<any>() // 用品分页组件引用
-const itemQueryParams = ref<Record<string, any>>({}) // 用品查询参数
 
 /** 打开用品选择弹窗 */
 function openItemPicker() {
   itemPickerVisible.value = true
-  itemPagingRef.value?.reload()
-}
-
-/** 查询可领用用品列表 */
-async function queryItemList(pageNo: number, pageSize: number) {
-  try {
-    const data = await getSupplyItemSelectPage({
-      ...itemQueryParams.value,
-      pageNo,
-      pageSize,
-    })
-    itemPagingRef.value?.completeByTotal(data.list, data.total)
-  } catch {
-    itemPagingRef.value?.complete(false)
-  }
-}
-
-/** 搜索用品 */
-function handleItemQuery() {
-  itemPagingRef.value?.reload()
 }
 
 /** 选择用品：已添加过的用品不重复添加 */

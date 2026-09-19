@@ -53,12 +53,12 @@ export function createTravelApply(data: Partial<TravelApply>) {
   return http.post<number>('/oa/travel-apply/create', data)
 }
 
-/** 更新出差申请草稿 */
+/** 更新出差申请 */
 export function updateTravelApply(data: Partial<TravelApply>) {
   return http.put<boolean>('/oa/travel-apply/update', data)
 }
 
-/** 删除出差申请草稿 */
+/** 删除出差申请 */
 export function deleteTravelApply(id: number) {
   return http.delete<boolean>(`/oa/travel-apply/delete?id=${id}`)
 }

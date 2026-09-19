@@ -244,8 +244,8 @@ onMounted(() => {
   getDetail(true)
 })
 
-// 从编辑页返回时刷新详情（首次 onShow 在 onMounted 前触发，跳过避免重复请求）
-let firstShow = true
+let firstShow = true // 首次展示沿用 onMounted 请求，避免重复加载
+/** 从编辑页返回时刷新详情 */
 onShow(() => {
   if (firstShow) {
     firstShow = false

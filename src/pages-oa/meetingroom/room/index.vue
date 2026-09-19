@@ -95,12 +95,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { MeetingRoom } from '@/api/oa/meeting-room'
+import type { MeetingRoom } from '@/api/oa/meetingroom/room'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { deleteMeetingRoom, getMeetingRoomPage } from '@/api/oa/meeting-room'
+import { deleteMeetingRoom, getMeetingRoomPage } from '@/api/oa/meetingroom/room'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

@@ -104,7 +104,7 @@ const voteStatus = computed(() => {
     return 'notStarted'
   }
   return now > endTime ? 'ended' : 'ongoing'
-}) // 投票状态
+})
 const voteStatusText = computed(() =>
   voteStatus.value === 'notStarted' ? '未开始' : voteStatus.value === 'ended' ? '已结束' : '进行中') // 投票状态文本
 const voteStatusTagType = computed(() =>

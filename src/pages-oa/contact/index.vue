@@ -245,8 +245,8 @@ onMounted(() => {
   uni.$on('oa:contact-category:reload', loadCategories)
 })
 
-/** 返回时刷新分类（分类管理页返回后不触发 reload 事件）；首次显示跳过，避免与 onMounted 双发 */
-let firstShow = true
+let firstShow = true // 首次展示沿用 onMounted 请求，避免重复加载
+/** 返回时刷新分类，分类管理页返回后不触发 reload 事件 */
 onShow(() => {
   if (firstShow) {
     firstShow = false

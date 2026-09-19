@@ -90,12 +90,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { VehicleReturn } from '@/api/oa/vehicle-return'
+import type { VehicleReturn } from '@/api/oa/vehicle/return'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelVehicleReturn, deleteVehicleReturn, getVehicleReturn, submitVehicleReturn } from '@/api/oa/vehicle-return'
+import { cancelVehicleReturn, deleteVehicleReturn, getVehicleReturn, submitVehicleReturn } from '@/api/oa/vehicle/return'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

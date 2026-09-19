@@ -129,36 +129,15 @@
       </view>
     </view>
 
-    <!-- 反馈弹窗 -->
-    <wd-popup
-      v-model="feedbackVisible"
-      position="bottom"
-      root-portal
-      custom-style="border-radius: 24rpx 24rpx 0 0;"
-      @close="feedbackVisible = false"
-    >
-      <view class="p-24rpx">
-        <view class="mb-16rpx text-32rpx text-[#333] font-semibold">
-          任务反馈
-        </view>
-        <yd-form-picker v-model="feedbackStatus" label="反馈状态" :columns="feedbackStatusOptions" />
-        <wd-textarea
-          v-model="feedbackContent"
-          :maxlength="1000"
-          show-word-limit
-          placeholder="请输入反馈内容"
-        />
-        <wd-button
-          class="mt-24rpx"
-          type="primary"
-          block
-          :loading="feedbacking"
-          @click="handleSubmitFeedback"
-        >
-          提交反馈
-        </wd-button>
-      </view>
-    </wd-popup>
+    <FeedbackForm
+      ref="feedbackFormRef"
+      v-model:visible="feedbackVisible"
+      v-model:status="feedbackStatus"
+      :task-id="Number(props.id)"
+      :publisher="isPublisher"
+      :options="feedbackStatusOptions"
+      @success="handleFeedbackSuccess"
+    />
   </view>
 </template>
 
@@ -168,11 +147,12 @@ import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { deleteReceivedTask, deleteTask, feedbackTask, getTask } from '@/api/oa/task'
+import { deleteReceivedTask, deleteTask, getTask } from '@/api/oa/task'
 import { useAccess } from '@/hooks/useAccess'
 import { getDictLabel } from '@/hooks/useDict'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
+import FeedbackForm from '../components/feedback-form.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { OA_TASK_STATUS } from '../../utils/constants'
@@ -198,8 +178,7 @@ const formData = ref<Task>() // 详情数据
 const deleting = ref(false) // 删除状态
 const feedbackVisible = ref(false) // 反馈弹窗显示状态
 const feedbackStatus = ref<number>() // 反馈状态
-const feedbackContent = ref('') // 反馈内容
-const feedbacking = ref(false) // 反馈提交状态
+const feedbackFormRef = ref<InstanceType<typeof FeedbackForm>>() // 反馈表单引用
 const isPublisher = computed(() => { // 发布人视角：优先按入口场景判断，未传场景时回退到发布人身份
   if (props.scene) {
     return props.scene === 'published'
@@ -275,35 +254,14 @@ async function handleDelete() {
 
 /** 打开反馈弹窗 */
 function handleOpenFeedback() {
-  // 预填当前状态：接收人用自己的接收状态，发布人用任务总体状态
   feedbackStatus.value = isPublisher.value ? formData.value?.status : formData.value?.receiverStatus
-  feedbackContent.value = ''
+  feedbackFormRef.value?.resetContent()
   feedbackVisible.value = true
 }
 
-/** 提交任务反馈 */
-async function handleSubmitFeedback() {
-  if (!props.id) {
-    return
-  }
-  if (feedbackStatus.value === undefined) {
-    toast.warning('请选择反馈状态')
-    return
-  }
-  feedbacking.value = true
-  try {
-    await feedbackTask({
-      taskId: Number(props.id),
-      publisher: isPublisher.value,
-      status: feedbackStatus.value,
-      content: feedbackContent.value.trim() || undefined,
-    })
-    toast.success('反馈成功')
-    feedbackVisible.value = false
-    uni.$emit('oa:task:reload')
-  } finally {
-    feedbacking.value = false
-  }
+/** 反馈成功后刷新详情 */
+function handleFeedbackSuccess() {
+  uni.$emit('oa:task:reload')
 }
 
 /** 初始化 */

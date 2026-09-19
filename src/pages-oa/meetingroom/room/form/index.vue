@@ -137,11 +137,11 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MeetingRoom } from '@/api/oa/meeting-room'
+import type { MeetingRoom } from '@/api/oa/meetingroom/room'
 import type { User } from '@/api/system/user'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createMeetingRoom, getMeetingRoom, updateMeetingRoom } from '@/api/oa/meeting-room'
+import { createMeetingRoom, getMeetingRoom, updateMeetingRoom } from '@/api/oa/meetingroom/room'
 import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
@@ -164,7 +164,7 @@ const toast = useToast()
 const getTitle = computed(() => props.id ? '修改会议室' : '新增会议室')
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<Partial<MeetingRoom>>(createDefaultFormData()) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   name: [{ required: true, message: '名称不能为空' }, { max: 100 }],
   type: [{ required: true, message: '类型不能为空' }],
   location: [{ required: true, message: '位置不能为空' }],
@@ -173,7 +173,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   bookingScope: [{ required: true, message: '预定范围不能为空' }],
   bookingUserIds: [{ required: () => formData.value.bookingScope === OA_MEETING_ROOM_BOOKING_SCOPE.SPECIFIED, message: '请选择可预定成员' }],
   sort: [{ required: true, message: '排序不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

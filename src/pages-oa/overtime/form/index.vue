@@ -123,14 +123,14 @@ const startTime = ref<number | ''>('') // 开始时间选择器值，空字符�
 const endTime = ref<number | ''>('') // 结束时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }, { max: 255 }],
   urgency: [{ required: true, message: '紧急程度不能为空' }],
   type: [{ required: true, message: '加班类型不能为空' }],
   reason: [{ required: true, message: '申请原因不能为空' }, { max: 5000 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-const dayCount = computed(() => { // 加班天数预览，保留一位小数，公式对齐 PC 端
+const dayCount = computed(() => { // 加班天数预览，保留一位小数
   if (startTime.value === '' || endTime.value === '' || endTime.value <= startTime.value) {
     return 0
   }

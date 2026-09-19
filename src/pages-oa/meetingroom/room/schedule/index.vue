@@ -105,11 +105,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { MeetingRoomBooking } from '@/api/oa/meeting-room-booking'
+import type { MeetingRoomBooking } from '@/api/oa/meetingroom/booking'
 import dayjs from 'dayjs'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getMeetingRoomBookingSchedule } from '@/api/oa/meeting-room-booking'
+import { getMeetingRoomBookingSchedule } from '@/api/oa/meetingroom/booking'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 

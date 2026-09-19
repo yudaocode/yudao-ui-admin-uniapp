@@ -64,10 +64,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SupplyApply } from '@/api/oa/supply-apply'
+import type { SupplyApply } from '@/api/oa/supply/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getSupplyApplyPage } from '@/api/oa/supply-apply'
+import { getSupplyApplyPage } from '@/api/oa/supply/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

@@ -154,14 +154,14 @@ const taskStatusOptions = Object.values(OA_TASK_STATUS).map(value => ({ // 任�
   label: getDictLabel(DICT_TYPE.OA_TASK_STATUS, value),
   value,
 }))
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   type: [{ required: true, message: '任务类型不能为空' }],
   status: [{ required: true, message: '任务状态不能为空' }],
   title: [{ required: true, message: '任务标题不能为空' }, { max: 255 }],
   description: [{ required: true, message: '任务描述不能为空' }, { max: 2000 }],
   comment: [{ max: 1000 }],
   receiverUserIds: [{ required: true, message: '任务接收人不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

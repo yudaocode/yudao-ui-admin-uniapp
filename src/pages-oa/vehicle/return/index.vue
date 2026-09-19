@@ -60,10 +60,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { VehicleReturn } from '@/api/oa/vehicle-return'
+import type { VehicleReturn } from '@/api/oa/vehicle/return'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getVehicleReturnPage } from '@/api/oa/vehicle-return'
+import { getVehicleReturnPage } from '@/api/oa/vehicle/return'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

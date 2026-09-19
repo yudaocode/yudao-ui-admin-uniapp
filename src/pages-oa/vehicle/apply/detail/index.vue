@@ -107,12 +107,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { VehicleApply } from '@/api/oa/vehicle-apply'
+import type { VehicleApply } from '@/api/oa/vehicle/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelVehicleApply, deleteVehicleApply, getVehicleApply, submitVehicleApply } from '@/api/oa/vehicle-apply'
+import { cancelVehicleApply, deleteVehicleApply, getVehicleApply, submitVehicleApply } from '@/api/oa/vehicle/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

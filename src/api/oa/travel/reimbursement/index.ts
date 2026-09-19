@@ -49,12 +49,12 @@ export function createTravelReimbursement(data: Partial<TravelReimbursement>) {
   return http.post<number>('/oa/travel-reimbursement/create', data)
 }
 
-/** 更新出差报销草稿 */
+/** 更新出差报销 */
 export function updateTravelReimbursement(data: Partial<TravelReimbursement>) {
   return http.put<boolean>('/oa/travel-reimbursement/update', data)
 }
 
-/** 删除出差报销草稿 */
+/** 删除出差报销 */
 export function deleteTravelReimbursement(id: number) {
   return http.delete<boolean>(`/oa/travel-reimbursement/delete?id=${id}`)
 }

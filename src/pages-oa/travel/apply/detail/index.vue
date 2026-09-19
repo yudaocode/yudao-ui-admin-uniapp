@@ -127,12 +127,12 @@
 
 <script lang="ts" setup>
 import type { Area } from '@/api/system/area'
-import type { TravelApply } from '@/api/oa/travel-apply'
+import type { TravelApply } from '@/api/oa/travel/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelTravelApply, deleteTravelApply, getTravelApply, submitTravelApply } from '@/api/oa/travel-apply'
+import { cancelTravelApply, deleteTravelApply, getTravelApply, submitTravelApply } from '@/api/oa/travel/apply'
 import { getAreaTree } from '@/api/system/area'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'

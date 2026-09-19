@@ -71,10 +71,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { SupplyItem } from '@/api/oa/supply-item'
+import type { SupplyItem } from '@/api/oa/supply/item'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getSupplyItemPage } from '@/api/oa/supply-item'
+import { getSupplyItemPage } from '@/api/oa/supply/item'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

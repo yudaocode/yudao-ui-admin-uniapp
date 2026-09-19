@@ -119,7 +119,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { MeetingRoomBooking } from '@/api/oa/meeting-room-booking'
+import type { MeetingRoomBooking } from '@/api/oa/meetingroom/booking'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -131,7 +131,7 @@ import {
   getMeetingRoomBooking,
   startMeetingRoomBooking,
   submitMeetingRoomBooking,
-} from '@/api/oa/meeting-room-booking'
+} from '@/api/oa/meetingroom/booking'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

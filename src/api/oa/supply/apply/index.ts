@@ -1,6 +1,6 @@
 import { http } from '@/http/http'
 import type { PageResult } from '@/http/types'
-import type { SupplyIssue } from '@/api/oa/supply-issue'
+import type { SupplyIssue } from '@/api/oa/supply/issue'
 
 /** OA 用品领用申请 */
 export interface SupplyApply {
@@ -36,12 +36,12 @@ export function createSupplyApply(data: Partial<SupplyApply>) {
   return http.post<number>('/oa/supply-apply/create', data)
 }
 
-/** 更新用品领用申请草稿 */
+/** 更新用品领用申请 */
 export function updateSupplyApply(data: Partial<SupplyApply>) {
   return http.put<boolean>('/oa/supply-apply/update', data)
 }
 
-/** 删除用品领用申请草稿 */
+/** 删除用品领用申请 */
 export function deleteSupplyApply(id: number) {
   return http.delete<boolean>(`/oa/supply-apply/delete?id=${id}`)
 }

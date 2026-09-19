@@ -51,22 +51,7 @@
       </view>
 
       <!-- 文件夹页签 -->
-      <scroll-view v-if="folders.length" scroll-x :show-scrollbar="false" class="shrink-0 whitespace-nowrap bg-white pb-12rpx">
-        <view class="w-max inline-flex gap-12rpx px-24rpx">
-          <view
-            v-for="folder in folders"
-            :key="folder.key"
-            class="inline-flex shrink-0 items-center gap-10rpx whitespace-nowrap rounded-12rpx px-24rpx py-16rpx text-26rpx"
-            :class="folderKey === folder.key ? 'bg-[#edf4ff] text-[#1677ff] font-medium' : 'text-[#64748b]'"
-            @click="handleFolderChange(folder.key)"
-          >
-            <text>{{ folder.name }}</text>
-            <text v-if="folder.unreadCount" class="rounded-full bg-[#e8edf5] px-10rpx text-20rpx text-[#64748b]">
-              {{ folder.unreadCount }}
-            </text>
-          </view>
-        </view>
-      </scroll-view>
+      <FolderList :folders="folders" :active-key="folderKey" @select="handleFolderChange" />
 
       <!-- 搜索组件 -->
       <SearchForm :key="`${currentAccount?.id}-${folderKey}`" @search="handleQuery" @reset="handleReset" />
@@ -84,40 +69,7 @@
         :empty-view-text="emptyText"
         @query="queryList"
       >
-        <view v-if="list.length" class="mx-24rpx my-20rpx overflow-hidden rounded-20rpx bg-white">
-          <view
-            v-for="item in list"
-            :key="item.id"
-            class="flex gap-20rpx border-b border-[#f0f2f5] border-b-solid p-24rpx last:border-b-0"
-            @click="handleOpen(item)"
-          >
-            <view
-              class="relative mt-2rpx h-68rpx w-68rpx flex shrink-0 items-center justify-center rounded-full text-28rpx font-medium"
-              :class="item.readStatus ? 'bg-[#f1f3f6] text-[#94a3b8]' : 'bg-[#edf4ff] text-[#4380d9]'"
-            >
-              {{ getCorrespondent(item).charAt(0) }}
-              <view v-if="!item.readStatus" class="absolute right-0 top-0 h-14rpx w-14rpx rounded-full bg-[#1677ff]" />
-            </view>
-            <view class="min-w-0 flex-1">
-              <view class="mb-10rpx flex items-center justify-between gap-12rpx">
-                <text
-                  class="min-w-0 flex-1 truncate text-28rpx"
-                  :class="item.readStatus ? 'text-[#64748b]' : 'text-[#1f2937] font-semibold'"
-                >
-                  {{ getCorrespondent(item) }}
-                </text>
-                <text class="shrink-0 text-22rpx text-[#94a3b8]">{{ formatDate(item.receiveTime, 'MM-DD HH:mm') }}</text>
-              </view>
-              <view class="line-clamp-2 break-words text-26rpx text-[#475569] leading-40rpx">
-                {{ item.subject || '（无主题）' }}
-              </view>
-              <view v-if="item.hasAttach" class="mt-10rpx flex items-center gap-6rpx text-22rpx text-[#94a3b8]">
-                <wd-icon name="attach" size="24rpx" />
-                <text>含附件</text>
-              </view>
-            </view>
-          </view>
-        </view>
+        <MessageList :list="list" :folder-key="folderKey" @open="handleOpen" />
       </z-paging>
 
       <!-- 写信按钮 -->
@@ -154,9 +106,10 @@ import {
   syncMailMessageList,
 } from '@/api/oa/mail'
 import { navigateBackPlus } from '@/utils'
-import { formatDate } from '@/utils/date'
 import { CommonStatusEnum } from '@/utils/constants'
 import { OA_MAIL_COMPOSE_MODE, OA_MAIL_FOLDER_KEY } from '../utils/constants'
+import FolderList from './components/folder-list.vue'
+import MessageList from './components/message-list.vue'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -185,15 +138,6 @@ const emptyText = computed(() => // 空态文案：区分未同步和正常空�
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
-}
-
-/** 收件显示发件人，已发送和草稿显示收件人 */
-function getCorrespondent(item: MailMessage) {
-  if (folderKey.value === OA_MAIL_FOLDER_KEY.SENT || folderKey.value === OA_MAIL_FOLDER_KEY.DRAFTS) {
-    return item.recipients?.join('、') || '（无收件人）'
-  }
-  const sender = item.sender || '-'
-  return sender.replace(/<[^>]*>/g, '').replace(/^"|"$/g, '').trim() || sender
 }
 
 /** 查询邮件列表 */

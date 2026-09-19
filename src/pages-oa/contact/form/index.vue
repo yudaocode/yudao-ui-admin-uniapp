@@ -149,14 +149,14 @@ const formData = ref<Partial<Contact>>({
   avatar: '',
   remark: '',
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   name: [{ required: true, message: '姓名不能为空' }],
   mobile: [{ required: true, message: '手机号码不能为空' }],
   email: [
     { required: true, message: '邮箱不能为空' },
     { type: 'email', message: '邮箱格式不正确' },
   ],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 const categoryList = ref<ContactCategory[]>([]) // 分类选项
 const categoryOptions = computed(() => // 分类选择器选项

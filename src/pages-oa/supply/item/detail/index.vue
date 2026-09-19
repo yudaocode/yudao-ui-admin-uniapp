@@ -43,44 +43,15 @@
       </view>
     </view>
 
-    <!-- 入库弹窗 -->
-    <wd-popup
+    <StockForm
+      :id="Number(props.id)"
+      ref="stockFormRef"
       v-model="stockInVisible"
-      position="bottom"
-      root-portal
-      custom-style="border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="p-24rpx">
-        <view class="mb-24rpx flex items-center justify-between">
-          <text class="text-32rpx text-[#333] font-semibold">入库 - {{ formData?.name || '' }}</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="stockInVisible = false" />
-        </view>
-        <view class="mb-16rpx text-26rpx text-[#999]">
-          当前库存：{{ formData?.stockQuantity ?? 0 }}{{ formData?.unit || '' }}
-        </view>
-        <wd-form ref="stockFormRef" :model="stockFormData" :schema="stockFormSchema">
-          <wd-cell-group border>
-            <wd-form-item title="入库数量" title-width="180rpx" prop="quantity">
-              <wd-input-number
-                v-model="stockFormData.quantity"
-                :min="1"
-                :precision="0"
-                placeholder="请输入入库数量"
-              />
-            </wd-form-item>
-          </wd-cell-group>
-        </wd-form>
-        <wd-button
-          class="mt-24rpx"
-          type="primary"
-          block
-          :loading="stockInLoading"
-          @click="handleStockInSubmit"
-        >
-          确认入库
-        </wd-button>
-      </view>
-    </wd-popup>
+      :item-name="formData?.name"
+      :stock-quantity="formData?.stockQuantity"
+      :unit="formData?.unit"
+      @success="handleStockInSuccess"
+    />
 
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
@@ -109,18 +80,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SupplyItem } from '@/api/oa/supply-item'
+import type { SupplyItem } from '@/api/oa/supply/item'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { deleteSupplyItem, getSupplyItem, stockInSupplyItem } from '@/api/oa/supply-item'
+import { deleteSupplyItem, getSupplyItem } from '@/api/oa/supply/item'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
+import StockForm from '../components/stock-form.vue'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: string
@@ -139,12 +109,7 @@ const toast = useToast()
 const formData = ref<SupplyItem>() // 详情数据
 const deleting = ref(false) // 删除状态
 const stockInVisible = ref(false) // 入库弹窗显示状态
-const stockInLoading = ref(false) // 入库提交状态
-const stockFormData = ref({ quantity: undefined as number | undefined }) // 入库表单数据
-const stockFormSchema = createFormSchema({ // 入库表单校验规则
-  quantity: [{ required: true, message: '入库数量不能为空' }],
-})
-const stockFormRef = ref<FormInstance>() // 入库表单组件引用
+const stockFormRef = ref<InstanceType<typeof StockForm>>() // 入库表单引用
 
 /** 返回上一页 */
 function handleBack() {
@@ -173,32 +138,14 @@ function handleEdit() {
 
 /** 打开入库弹窗 */
 function handleStockIn() {
-  stockFormData.value = { quantity: undefined }
+  stockFormRef.value?.reset()
   stockInVisible.value = true
 }
 
-/** 提交入库 */
-async function handleStockInSubmit() {
-  if (!props.id) {
-    return
-  }
-  const { valid } = await stockFormRef.value.validate()
-  if (!valid) {
-    return
-  }
-  stockInLoading.value = true
-  try {
-    await stockInSupplyItem({
-      id: Number(props.id),
-      quantity: Number(stockFormData.value.quantity),
-    })
-    toast.success('入库成功')
-    stockInVisible.value = false
-    uni.$emit('oa:supply-item:reload')
-    getDetail()
-  } finally {
-    stockInLoading.value = false
-  }
+/** 入库成功后刷新详情 */
+function handleStockInSuccess() {
+  uni.$emit('oa:supply-item:reload')
+  getDetail()
 }
 
 /** 删除用品 */

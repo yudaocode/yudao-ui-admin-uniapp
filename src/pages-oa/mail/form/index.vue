@@ -10,62 +10,8 @@
     <view class="min-h-0 flex-1 overflow-auto p-24rpx">
       <!-- 表单区域 -->
       <wd-cell-group border>
-        <!-- 收件人 -->
-        <view class="px-24rpx py-16rpx">
-          <view class="mb-8rpx text-26rpx text-[#666]">
-            收件人 <text class="text-[#f56c6c]">*</text>
-          </view>
-          <view v-if="formData.recipients?.length" class="mb-12rpx flex flex-wrap gap-12rpx">
-            <view
-              v-for="(address, index) in formData.recipients"
-              :key="address"
-              class="flex items-center gap-8rpx rounded-8rpx bg-[#f0f5ff] px-16rpx py-6rpx text-24rpx text-[#1677ff]"
-            >
-              <text>{{ address }}</text>
-              <wd-icon name="close" size="22rpx" @click="formData.recipients!.splice(index, 1)" />
-            </view>
-          </view>
-          <view class="flex items-center gap-16rpx">
-            <wd-input
-              v-model="recipientInput"
-              class="flex-1"
-              placeholder="输入邮箱地址后添加"
-              clearable
-              @confirm="handleAddRecipient"
-            />
-            <wd-button size="small" variant="plain" @click="handleAddRecipient">
-              添加
-            </wd-button>
-          </view>
-        </view>
-        <!-- 抄送人 -->
-        <view class="px-24rpx py-16rpx">
-          <view class="mb-8rpx text-26rpx text-[#666]">
-            抄送人
-          </view>
-          <view v-if="formData.ccs?.length" class="mb-12rpx flex flex-wrap gap-12rpx">
-            <view
-              v-for="(address, index) in formData.ccs"
-              :key="address"
-              class="flex items-center gap-8rpx rounded-8rpx bg-[#f0f5ff] px-16rpx py-6rpx text-24rpx text-[#1677ff]"
-            >
-              <text>{{ address }}</text>
-              <wd-icon name="close" size="22rpx" @click="formData.ccs!.splice(index, 1)" />
-            </view>
-          </view>
-          <view class="flex items-center gap-16rpx">
-            <wd-input
-              v-model="ccInput"
-              class="flex-1"
-              placeholder="输入邮箱地址后添加"
-              clearable
-              @confirm="handleAddCc"
-            />
-            <wd-button size="small" variant="plain" @click="handleAddCc">
-              添加
-            </wd-button>
-          </view>
-        </view>
+        <AddressInput v-model="formData.recipients" label="收件人" required />
+        <AddressInput v-model="formData.ccs" label="抄送人" />
         <wd-input
           v-model="formData.subject"
           label="主题"
@@ -188,6 +134,7 @@ import {
   sendMailMessageWithFiles,
 } from '@/api/oa/mail'
 import { navigateBackPlus } from '@/utils'
+import AddressInput from '../account/components/address-input.vue'
 import { sanitizeRichText } from '@/utils/format'
 import { OA_MAIL_COMPOSE_MODE } from '../../utils/constants'
 
@@ -210,8 +157,6 @@ const formLoading = ref(false) // 发送中
 const savingDraft = ref(false) // 存草稿中
 const draftNeedsRefresh = ref(false) // 保存成功后，附件部件路径尚未刷新
 const refreshingDraft = ref(false) // 附件回显加载中
-const recipientInput = ref('') // 收件人输入
-const ccInput = ref('') // 抄送人输入
 const contentText = ref('') // 本次输入的正文纯文本
 const quoteContent = ref('') // 回复或转发引用的原文 HTML
 const newFiles = ref<File[]>([]) // 本次新增附件，仅 H5 支持
@@ -227,34 +172,6 @@ const getTitle = computed(() => formData.value.draftId || props.mode === OA_MAIL
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-oa/mail/index')
-}
-
-/** 校验并添加邮箱地址 */
-function addAddress(list: string[], input: typeof recipientInput) {
-  const address = input.value.trim()
-  if (!address) {
-    return
-  }
-  if (!address.includes('@')) {
-    toast.warning('请输入正确的邮箱地址')
-    return
-  }
-  if (list.includes(address)) {
-    toast.warning('该地址已添加')
-    return
-  }
-  list.push(address)
-  input.value = ''
-}
-
-/** 添加收件人 */
-function handleAddRecipient() {
-  addAddress(formData.value.recipients!, recipientInput)
-}
-
-/** 添加抄送人 */
-function handleAddCc() {
-  addAddress(formData.value.ccs!, ccInput)
 }
 
 /** 移除不再保留的原附件 */

@@ -165,10 +165,10 @@ const voteEndTime = ref<number | ''>('') // 投票结束时间选择器值，空
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
 const colorPalette = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#9B59B6'] // 投票选项预设颜色
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   type: [{ required: true, message: '讨论类型不能为空' }],
   title: [{ required: true, message: '标题不能为空' }, { max: 255 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

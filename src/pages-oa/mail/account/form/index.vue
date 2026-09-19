@@ -112,7 +112,7 @@ const isUpdate = computed(() => !!props.id) // 是否修改
 const getTitle = computed(() => props.id ? '编辑邮箱账号' : '绑定邮箱账号')
 const formLoading = ref(false) // 表单提交状态
 const providerColumns = ref<{ label: string, value: number }[]>([]) // 邮箱服务选项
-const formData = ref<MailAccount>({
+const formData = ref<Partial<MailAccount>>({
   providerId: undefined,
   mail: '',
   username: '',
@@ -120,12 +120,12 @@ const formData = ref<MailAccount>({
   defaultStatus: false,
   status: CommonStatusEnum.ENABLE,
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   mail: [{ required: true, message: '邮箱地址不能为空' }, { type: 'email', message: '请输入正确邮箱地址' }],
   providerId: [{ required: true, message: '邮箱服务不能为空' }],
   username: [{ required: true, message: '登录名不能为空' }],
   password: [{ required: () => !props.id, message: '授权码或密码不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

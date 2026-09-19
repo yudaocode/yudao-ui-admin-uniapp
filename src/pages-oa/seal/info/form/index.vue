@@ -161,7 +161,7 @@ const disableTime = ref<number | ''>('') // 停用时间选择器值，空字符
 const purchaseVisible = ref(false) // 购买时间选择器显示状态
 const enableVisible = ref(false) // 启用时间选择器显示状态
 const disableVisible = ref(false) // 停用时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   deptId: [{ required: true, message: '所属部门不能为空' }],
   name: [{ required: true, message: '印章名称不能为空' }, { max: 128 }],
   type: [{ required: true, message: '印章类型不能为空' }],
@@ -170,7 +170,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   status: [{ required: true, message: '印章状态不能为空' }],
   sort: [{ required: true, message: '显示顺序不能为空' }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

@@ -164,7 +164,7 @@ const startTime = ref<number | ''>('') // 开始时间选择器值，空字符�
 const endTime = ref<number | ''>('') // 结束时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }, { max: 255 }],
   urgency: [{ required: true, message: '紧急程度不能为空' }],
   experience: [{ required: true, message: '试用期心得不能为空' }, { max: 255 }],
@@ -173,9 +173,9 @@ const formSchema = createFormSchema({ // 表单校验规则
   deficiency: [{ required: true, message: '目前不足不能为空' }, { max: 255 }],
   improvement: [{ required: true, message: '工作改进不能为空' }, { max: 255 }],
   suggestion: [{ required: true, message: '产品意见建议不能为空' }, { max: 255 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-const dayCount = computed(() => // 试用天数预览，公式对齐 PC 端按毫秒向上取整
+const dayCount = computed(() => // 试用天数预览，按毫秒差向上取整
   startTime.value !== '' && endTime.value !== '' && endTime.value > startTime.value
     ? Math.ceil((endTime.value - startTime.value) / 86400000)
     : 0)

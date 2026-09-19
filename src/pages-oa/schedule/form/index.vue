@@ -135,11 +135,11 @@ const startTime = ref<number | ''>('') // 开始时间选择器值，空字符�
 const endTime = ref<number | ''>('') // 结束时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   type: [{ required: true, message: '日程类型不能为空' }],
   priority: [{ required: true, message: '优先级不能为空' }],
   title: [{ required: true, message: '日程标题不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

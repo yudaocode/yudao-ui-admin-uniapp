@@ -101,10 +101,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { OfficialDocTemplate } from '@/api/oa/officialdoc-template'
+import type { OfficialDocTemplate } from '@/api/oa/officialdoc/template'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { createOfficialDocTemplate, getOfficialDocTemplate, updateOfficialDocTemplate } from '@/api/oa/officialdoc-template'
+import { createOfficialDocTemplate, getOfficialDocTemplate, updateOfficialDocTemplate } from '@/api/oa/officialdoc/template'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -135,7 +135,7 @@ const formData = ref<Partial<OfficialDocTemplate>>({
   sort: 0,
   remark: '',
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   name: [{ required: true, message: '模板名称不能为空' }, { max: 128 }],
   authorityName: [{ required: true, message: '红头名称不能为空' }, { max: 255 }],
   fontSize: [{ required: true, message: '红头字号不能为空' }],
@@ -144,7 +144,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   status: [{ required: true, message: '状态不能为空' }],
   sort: [{ required: true, message: '显示顺序不能为空' }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

@@ -82,23 +82,22 @@ import { OA_FILE_NODE_TYPE, OA_FILE_PARENT_ID_ROOT } from '../../utils/constants
 
 const emit = defineEmits<{
   success: []
-}>() // 定义 success 事件，用于操作成功后的回调
-
+}>()
 const toast = useToast()
 const visible = ref(false) // 弹窗显示状态
 const treeVisible = ref(false) // 目录树弹窗显示状态
 const dialogTitle = ref('') // 弹窗标题
 const formLoading = ref(false) // 表单加载中：1）目录加载；2）提交禁用
 const formType = ref('') // 表单类型：create 新建文件夹；rename 重命名；move 移动；copy 复制
-const formData = ref<FileNode>({
+const formData = ref<Partial<FileNode>>({
   id: undefined,
   name: '',
   parentId: OA_FILE_PARENT_ID_ROOT,
   type: OA_FILE_NODE_TYPE.FOLDER,
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   name: [{ required: true, message: '名称不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 const directoryList = ref<FileNode[]>([]) // 可移动的目录列表
 const flatDirectoryList = computed(() => { // 平铺的目录树，携带层级缩进
@@ -158,8 +157,7 @@ async function open(type: string, parentId: number, row?: FileNode) {
     formLoading.value = false
   }
 }
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
-
+defineExpose({ open })
 /** 选择目标目录 */
 function handleSelectDirectory(item: FileNode) {
   formData.value.parentId = item.id!

@@ -195,7 +195,7 @@ const inspectionTime = ref<number | ''>('') // 年检到期时间选择器值，
 const compulsoryVisible = ref(false) // 交强险到期时间选择器显示状态
 const commercialVisible = ref(false) // 商业险到期时间选择器显示状态
 const inspectionVisible = ref(false) // 年检到期时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   no: [{ required: true, message: '车牌号不能为空' }, { max: 32 }],
   name: [{ required: true, message: '车辆名称不能为空' }, { max: 128 }],
   type: [{ required: true, message: '车型不能为空' }, { max: 64 }],
@@ -205,7 +205,7 @@ const formSchema = createFormSchema({ // 表单校验规则
   sort: [{ required: true, message: '显示顺序不能为空' }],
   status: [{ required: true, message: '状态不能为空' }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

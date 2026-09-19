@@ -86,59 +86,7 @@
     </view>
 
     <!-- 会议室选择弹窗 -->
-    <wd-popup
-      v-model="roomPickerVisible"
-      position="bottom"
-      root-portal
-      custom-style="height: 70vh; border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="h-full flex flex-col">
-        <view class="flex items-center justify-between px-24rpx py-20rpx">
-          <text class="text-32rpx text-[#333] font-semibold">选择会议室</text>
-          <wd-icon name="close" size="32rpx" color="#999" @click="roomPickerVisible = false" />
-        </view>
-        <view class="px-24rpx pb-16rpx">
-          <wd-search
-            v-model="roomKeyword"
-            placeholder="搜索会议室名称"
-            hide-cancel
-            @search="handleRoomSearch"
-            @clear="handleRoomSearch"
-          />
-        </view>
-        <z-paging
-          ref="roomPagingRef"
-          v-model="roomList"
-          :fixed="false"
-          class="min-h-0 flex-1"
-          :default-page-size="10"
-          empty-view-text="暂无可预定会议室"
-          @query="queryRoomList"
-        >
-          <view class="p-24rpx">
-            <view
-              v-for="item in roomList"
-              :key="item.id"
-              class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f7f8fa] p-24rpx"
-              @click="handleRoomSelect(item)"
-            >
-              <view class="min-w-0 flex-1">
-                <view class="text-30rpx text-[#333] font-semibold">
-                  {{ item.name }}
-                </view>
-                <view class="mt-4rpx text-24rpx text-[#999]">
-                  {{ item.location || '-' }}<text v-if="item.seatCount != null"> · {{ item.seatCount }} 座</text>
-                </view>
-              </view>
-              <view class="flex shrink-0 items-center gap-16rpx">
-                <text class="text-24rpx text-[#1677ff]" @click.stop="handleRoomSchedule(item)">占用</text>
-                <wd-icon v-if="item.id === formData.roomId" name="check" size="32rpx" color="#1677ff" />
-              </view>
-            </view>
-          </view>
-        </z-paging>
-      </view>
-    </wd-popup>
+    <RoomPicker v-model="roomPickerVisible" :selected-id="formData.roomId" @select="handleRoomSelect" @schedule="handleRoomSchedule" />
 
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
@@ -156,12 +104,11 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { MeetingRoom } from '@/api/oa/meeting-room'
-import type { MeetingRoomBooking } from '@/api/oa/meeting-room-booking'
+import type { MeetingRoomBooking } from '@/api/oa/meetingroom/booking'
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { getBookableMeetingRoomPage } from '@/api/oa/meeting-room'
-import { createMeetingRoomBooking, getMeetingRoomBooking, updateMeetingRoomBooking } from '@/api/oa/meeting-room-booking'
+import { createMeetingRoomBooking, getMeetingRoomBooking, updateMeetingRoomBooking } from '@/api/oa/meetingroom/booking'
+import RoomPicker from '@/pages-oa/meetingroom/room/components/room-picker.vue'
 import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -197,7 +144,7 @@ const startTime = ref<number | ''>('') // 开始时间选择器值，空字符�
 const endTime = ref<number | ''>('') // 结束时间选择器值，空字符串承接未选择
 const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   roomId: [{ required: true, message: '会议室不能为空' }],
   title: [{ required: true, message: '会议主题不能为空' }, { max: 200 }],
   moderatorUserId: [{ required: true, message: '主持人不能为空' }],
@@ -205,40 +152,19 @@ const formSchema = createFormSchema({ // 表单校验规则
   reminderType: [{ required: true, message: '会议提醒不能为空' }],
   description: [{ max: 500 }],
   remark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
-
-// ==================== 会议室选择 ====================
 const roomPickerVisible = ref(false) // 会议室选择弹窗显示状态
-const roomList = ref<MeetingRoom[]>([]) // 可预定会议室列表
-const roomPagingRef = ref<any>() // 会议室分页组件引用
 const selectedRoomName = ref('') // 已选会议室名称回显
 const selectedRoomLocation = ref('') // 已选会议室位置回显
-const roomKeyword = ref('') // 会议室弹窗搜索关键词
 
 /** 打开会议室选择弹窗 */
 function openRoomPicker() {
   roomPickerVisible.value = true
-  roomPagingRef.value?.reload()
-}
-
-/** 查询可预定会议室列表 */
-async function queryRoomList(pageNo: number, pageSize: number) {
-  try {
-    const data = await getBookableMeetingRoomPage({ name: roomKeyword.value.trim() || undefined, pageNo, pageSize })
-    roomPagingRef.value?.completeByTotal(data.list, data.total)
-  } catch {
-    roomPagingRef.value?.complete(false)
-  }
-}
-
-/** 搜索会议室 */
-function handleRoomSearch() {
-  roomPagingRef.value?.reload()
 }
 
 /** 选择会议室 */
-function handleRoomSelect(item: MeetingRoom) {
+function handleRoomSelect(item: { id: number, name: string, location?: string }) {
   formData.value.roomId = item.id
   selectedRoomName.value = item.name
   selectedRoomLocation.value = item.location || ''
@@ -246,7 +172,7 @@ function handleRoomSelect(item: MeetingRoom) {
 }
 
 /** 查看会议室占用日程 */
-function handleRoomSchedule(item: MeetingRoom) {
+function handleRoomSchedule(item: { id: number, name: string }) {
   uni.navigateTo({
     url: `/pages-oa/meetingroom/room/schedule/index?roomId=${item.id}&roomName=${encodeURIComponent(item.name)}`,
   })

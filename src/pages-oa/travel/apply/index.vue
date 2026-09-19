@@ -75,10 +75,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { TravelApply } from '@/api/oa/travel-apply'
+import type { TravelApply } from '@/api/oa/travel/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getTravelApplyPage } from '@/api/oa/travel-apply'
+import { getTravelApplyPage } from '@/api/oa/travel/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

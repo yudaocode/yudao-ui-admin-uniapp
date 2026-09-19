@@ -169,12 +169,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { OfficialDocReceive } from '@/api/oa/officialdoc-receive'
+import type { OfficialDocReceive } from '@/api/oa/officialdoc/receive'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelOfficialDocReceive, claimOfficialDocReceive, deleteOfficialDocReceive, getOfficialDocReceive, submitOfficialDocReceive } from '@/api/oa/officialdoc-receive'
+import { cancelOfficialDocReceive, claimOfficialDocReceive, deleteOfficialDocReceive, getOfficialDocReceive, submitOfficialDocReceive } from '@/api/oa/officialdoc/receive'
 import { useAccess } from '@/hooks/useAccess'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
@@ -209,8 +209,8 @@ const deleting = ref(false) // 删除状态
 const cancelling = ref(false) // 撤销状态
 const claiming = ref(false) // 签收状态
 const isCreator = computed(() => formData.value?.creator === String(userStore.userInfo?.userId)) // 是否本人创建的手工收文
-// 编辑/提交/删除/撤销条件对齐后端：编辑、提交仅未提交草稿；提交还需主送；删除允许未提交、驳回、已取消；撤销限审批中且本人
-const canEdit = computed(() => formData.value?.status === OA_APPLY_STATUS.NOT_START && isCreator.value)
+
+const canEdit = computed(() => formData.value?.status === OA_APPLY_STATUS.NOT_START && isCreator.value) // 编辑/提交/删除/撤销条件对齐后端：编辑、提交仅未提交草稿；提交还需主送；删除允许未提交、驳回、已取消；撤销限审批中且本人
 const canSubmit = computed(() => canEdit.value && formData.value?.receiveType === OA_OFFICIAL_DOC_RECEIVE_TYPE.MAIN)
 const canDelete = computed(() =>
   ([OA_APPLY_STATUS.NOT_START, OA_APPLY_STATUS.REJECT, OA_APPLY_STATUS.CANCEL] as number[]).includes(formData.value?.status ?? 0)

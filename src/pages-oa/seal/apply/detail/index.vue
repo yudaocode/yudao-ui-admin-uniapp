@@ -32,7 +32,7 @@
         <wd-cell title="文件标题" :value="formData?.documentTitle || '-'" />
         <wd-cell title="文件类型" :value="formData?.documentType || '-'" />
         <wd-cell title="文件份数" :value="formData?.documentCount != null ? String(formData.documentCount) : '-'" />
-        <!-- 合同字段仅合同类用印展示，归还时间仅借用方式展示（对齐 PC） -->
+        <!-- 合同字段仅合同类用印展示，归还时间仅借用方式展示 -->
         <wd-cell v-if="formData?.type === OA_SEAL_APPLY_TYPE.CONTRACT" title="合同金额（元）" :value="formData?.contractPrice != null ? String(formData.contractPrice) : '-'" />
         <wd-cell v-if="formData?.type === OA_SEAL_APPLY_TYPE.CONTRACT" title="合同对方" :value="formData?.contractParty || '-'" />
         <wd-cell title="预计用印时间" :value="formatDateTime(formData?.expectedUseTime) || '-'" />
@@ -119,12 +119,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { SealApply } from '@/api/oa/seal-apply'
+import type { SealApply } from '@/api/oa/seal/apply'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelSealApply, deleteSealApply, getSealApply, submitSealApply } from '@/api/oa/seal-apply'
+import { cancelSealApply, deleteSealApply, getSealApply, submitSealApply } from '@/api/oa/seal/apply'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

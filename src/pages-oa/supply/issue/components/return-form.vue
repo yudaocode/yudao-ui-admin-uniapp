@@ -51,10 +51,10 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { SupplyIssue } from '@/api/oa/supply-issue'
+import type { SupplyIssue } from '@/api/oa/supply/issue'
 import { computed, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { returnSupplyItem } from '@/api/oa/supply-issue'
+import { returnSupplyItem } from '@/api/oa/supply/issue'
 import { createFormSchema } from '@/utils/wot'
 
 const emit = defineEmits<{
@@ -67,10 +67,10 @@ const formLoading = ref(false) // 表单提交状态
 const item = ref<SupplyIssue>() // 当前归还明细
 const formData = ref({ quantity: undefined as number | undefined, returnRemark: '' }) // 表单数据
 const maxReturnQuantity = computed(() => (item.value?.issuedQuantity ?? 0) - (item.value?.returnedQuantity ?? 0)) // 最多可归还数量
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   quantity: [{ required: true, message: '归还数量不能为空' }],
   returnRemark: [{ max: 500 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 打开弹窗，默认归还剩余数量 */

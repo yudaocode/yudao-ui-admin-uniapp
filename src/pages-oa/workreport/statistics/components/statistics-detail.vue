@@ -96,8 +96,7 @@ const tabIndex = ref(0) // 当前明细页签下标
 const user = ref<WorkReportUserStatistics>() // 当前查看的成员
 const params = ref<StatisticsParams>() // 当前统计条件
 
-// 未填明细，逾期从统计范围内的周期起始日期计算
-const missingRows = computed(() =>
+const missingRows = computed(() => // 未填明细，逾期从统计范围内的周期起始日期计算
   (user.value?.missingPeriodKeys || []).map((periodKey) => {
     const periodStartTime = getPeriodStart(periodKey)
     const startTime = params.value && periodStartTime.isBefore(dayjs(params.value.startTime), 'day')
@@ -128,8 +127,7 @@ function open(data: WorkReportUserStatistics, tab: number, statisticsParams: Sta
   params.value = { ...statisticsParams }
   visible.value = true
 }
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
-
+defineExpose({ open })
 /** 查看汇报详情 */
 function handleReportDetail(report: WorkReport) {
   uni.navigateTo({

@@ -196,14 +196,14 @@ const items = ref<ReimbursementItemRow[]>([]) // 报销明细
 const itemDateVisible = ref(false) // 明细费用时间选择器显示状态
 const editingItemIndex = ref(0) // 当前编辑费用时间的明细行
 const editingItemDate = ref<number | ''>('') // 明细费用时间选择器值
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }, { max: 255 }],
   urgency: [{ required: true, message: '紧急程度不能为空' }],
   paymentMethod: [{ required: true, message: '报销方式不能为空' }],
   witnessUserId: [{ required: true, message: '证明人不能为空' }],
   customerName: [{ required: true, message: '相关客户不能为空' }, { max: 255 }],
   reason: [{ required: true, message: '申请原因不能为空' }, { max: 5000 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 const totalInvoiceCount = computed(() => items.value.reduce((sum, row) => sum + (row.invoiceCount || 0), 0)) // 票据总数
 const totalPrice = computed(() => items.value.reduce((sum, row) => sum + (row.price || 0), 0).toFixed(2)) // 报销总金额

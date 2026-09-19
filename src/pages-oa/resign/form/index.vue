@@ -106,13 +106,13 @@ const formData = ref<Partial<ResignApply>>({
   reason: '',
   hasPendingReimbursement: false,
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   title: [{ required: true, message: '标题不能为空' }, { max: 255 }],
   urgency: [{ required: true, message: '紧急程度不能为空' }],
   handoverUserId: [{ required: true, message: '工作交接人不能为空' }],
   unfinishedWork: [{ required: true, message: '未完成事宜不能为空' }],
   reason: [{ required: true, message: '申请原因不能为空' }, { max: 5000 }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

@@ -65,10 +65,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { OfficialDocSend } from '@/api/oa/officialdoc-send'
+import type { OfficialDocSend } from '@/api/oa/officialdoc/send'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getOfficialDocSendPage } from '@/api/oa/officialdoc-send'
+import { getOfficialDocSendPage } from '@/api/oa/officialdoc/send'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

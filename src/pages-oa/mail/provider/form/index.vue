@@ -117,27 +117,27 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑服务配置' : '新增服务配置')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<MailProvider>({
+const formData = ref<Partial<MailProvider>>({
   name: '',
   imap: { host: '', port: 993, sslEnable: true, starttlsEnable: false },
   smtp: { host: '', port: 465, sslEnable: true, starttlsEnable: false },
   status: CommonStatusEnum.ENABLE,
 }) // 表单数据
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   'name': [{ required: true, message: '名称不能为空' }],
   'imap.host': [{ required: true, message: '收信服务器域名不能为空' }],
   'smtp.host': [{ required: true, message: '发信服务器域名不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** SSL 与 STARTTLS 互斥：后端要求两者只能开启一个 */
 function handleSslChange(protocol: 'imap' | 'smtp') {
-  formData.value[protocol].starttlsEnable = !formData.value[protocol].sslEnable
+  formData.value[protocol]!.starttlsEnable = !formData.value[protocol]!.sslEnable
 }
 
 /** STARTTLS 与 SSL 互斥 */
 function handleStarttlsChange(protocol: 'imap' | 'smtp') {
-  formData.value[protocol].sslEnable = !formData.value[protocol].starttlsEnable
+  formData.value[protocol]!.sslEnable = !formData.value[protocol]!.starttlsEnable
 }
 
 /** 返回上一页 */

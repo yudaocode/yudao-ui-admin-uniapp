@@ -96,7 +96,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑公告' : '新增公告')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Partial<Announcement>>({ // 表单数据；公告内容为纯文本编辑
+const formData = ref<Partial<Announcement>>({
   id: undefined,
   type: OA_ANNOUNCEMENT_TYPE.ANNOUNCEMENT,
   priority: OA_PRIORITY.NORMAL,
@@ -104,12 +104,12 @@ const formData = ref<Partial<Announcement>>({ // 表单数据；公告内容为�
   content: '',
   url: '',
   top: false,
-})
-const formSchema = createFormSchema({ // 表单校验规则
+}) // 表单数据；公告内容为纯文本编辑
+const formSchema = createFormSchema({
   type: [{ required: true, message: '公告类型不能为空' }],
   priority: [{ required: true, message: '优先级不能为空' }],
   title: [{ required: true, message: '公告标题不能为空' }],
-})
+}) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 返回上一页 */

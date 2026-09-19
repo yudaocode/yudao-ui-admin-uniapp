@@ -51,83 +51,19 @@
     </view>
 
     <!-- 新增、修改共享权限 -->
-    <wd-popup
+    <PermissionForm
+      ref="permissionFormRef"
       v-model="formVisible"
-      position="bottom"
-      safe-area-inset-bottom
-      custom-style="border-radius: 24rpx 24rpx 0 0;"
-    >
-      <view class="bg-white p-24rpx">
-        <view class="mb-24rpx text-center text-32rpx text-[#333] font-semibold">
-          {{ formData.id ? '修改共享' : '新增共享' }}
-        </view>
-        <wd-form ref="formRef" :model="formData" :schema="formSchema">
-          <wd-cell-group border>
-            <yd-form-picker
-              v-model="formData.subjectType"
-              label="共享类型"
-              label-width="180rpx"
-              prop="subjectType"
-              :dict-type="DICT_TYPE.OA_FILE_SUBJECT_TYPE"
-              placeholder="请选择共享类型"
-              :disabled="!!formData.id"
-              @confirm="formData.subjectId = undefined"
-            />
-            <UserFormPicker
-              v-if="formData.subjectType === OA_FILE_SUBJECT_TYPE.USER"
-              v-model="formData.subjectId"
-              label="共享对象"
-              label-width="180rpx"
-              prop="subjectId"
-              :disabled="!!formData.id"
-            />
-            <DeptFormPicker
-              v-else
-              v-model="formData.subjectId"
-              label="共享对象"
-              label-width="180rpx"
-              prop="subjectId"
-              :disabled="!!formData.id"
-            />
-            <yd-form-picker
-              v-model="formData.level"
-              label="权限"
-              label-width="180rpx"
-              prop="level"
-              :dict-type="DICT_TYPE.OA_FILE_PERMISSION_LEVEL"
-              placeholder="请选择权限"
-            />
-            <wd-form-item title="继承权限" title-width="180rpx" prop="inherit" center>
-              <wd-switch v-model="formData.inherit" />
-            </wd-form-item>
-            <wd-form-item title="到期时间" title-width="180rpx" prop="expireTime">
-              <view class="flex items-center justify-end gap-12rpx" @click="expireTimeVisible = true">
-                <text class="text-28rpx" :class="expireTime === '' ? 'text-[#999]' : 'text-[#333]'">
-                  {{ expireTime === '' ? '不填则长期有效' : formatDateTime(expireTime) }}
-                </text>
-                <text v-if="expireTime !== ''" class="shrink-0 text-26rpx text-[#1677ff]" @click.stop="expireTime = ''">
-                  清除
-                </text>
-              </view>
-            </wd-form-item>
-          </wd-cell-group>
-        </wd-form>
-        <view class="mt-24rpx flex gap-16rpx">
-          <wd-button class="flex-1" variant="plain" :disabled="formLoading" @click="formVisible = false">
-            取消
-          </wd-button>
-          <wd-button class="flex-1" type="primary" :loading="formLoading" @click="handleSubmit">
-            确定
-          </wd-button>
-        </view>
-      </view>
-      <wd-datetime-picker v-model="expireTime" v-model:visible="expireTimeVisible" type="datetime" title="到期时间" />
-    </wd-popup>
+      v-model:expire-time="expireTime"
+      v-model:form-data="formData"
+      :form-schema="formSchema"
+      :loading="formLoading"
+      @submit="handleSubmit"
+    />
   </wd-popup>
 </template>
 
 <script lang="ts" setup>
-import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { FilePermission } from '@/api/oa/file'
 import type { Dept } from '@/api/system/dept'
 import type { User } from '@/api/system/user'
@@ -137,17 +73,16 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { deleteFilePermission, getFilePermissionList, saveFilePermission } from '@/api/oa/file'
 import { getSimpleDeptList } from '@/api/system/dept'
 import { getSimpleUserList } from '@/api/system/user'
-import { DeptFormPicker, UserFormPicker } from '@/components/system-select'
 import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 import { OA_FILE_PERMISSION_LEVEL, OA_FILE_SUBJECT_TYPE } from '../../utils/constants'
+import PermissionForm from './permission-form.vue'
 
 const emit = defineEmits<{
   success: []
-}>() // 定义 success 事件，用于操作成功后的回调
-
+}>()
 const dialog = useDialog()
 const toast = useToast()
 const visible = ref(false) // 弹窗显示状态
@@ -160,13 +95,12 @@ const formVisible = ref(false) // 共享表单显示状态
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<Partial<FilePermission>>({}) // 共享表单数据
 const expireTime = ref<number | ''>('') // 到期时间选择器值，空字符串承接长期有效
-const expireTimeVisible = ref(false) // 到期时间选择器显示状态
-const formSchema = createFormSchema({ // 表单校验规则
+const formSchema = createFormSchema({
   subjectType: [{ required: true, message: '共享类型不能为空' }],
   subjectId: [{ required: true, message: '共享对象不能为空' }],
   level: [{ required: true, message: '权限不能为空' }],
-})
-const formRef = ref<FormInstance>() // 表单组件引用
+}) // 表单校验规则
+const permissionFormRef = ref<InstanceType<typeof PermissionForm>>() // 共享表单引用
 
 /** 打开弹窗 */
 async function open(id: number) {
@@ -187,8 +121,7 @@ async function open(id: number) {
     loading.value = false
   }
 }
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
-
+defineExpose({ open })
 /** 查询共享权限列表 */
 async function getList() {
   loading.value = true
@@ -223,7 +156,7 @@ function openForm(type: string, row?: FilePermission) {
 
 /** 提交共享表单 */
 async function handleSubmit() {
-  const { valid } = await formRef.value.validate()
+  const { valid } = await permissionFormRef.value.validate()
   if (!valid) {
     return
   }

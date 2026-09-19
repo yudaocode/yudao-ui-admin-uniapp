@@ -157,8 +157,7 @@ const queryParams = reactive({
   priority: undefined as number | undefined,
 }) // 查询参数
 
-// 当前月份日历格子，固定 6 行 42 格
-const dayCells = computed<DayCell[]>(() => {
+const dayCells = computed<DayCell[]>(() => { // 当前月份日历格子，固定 6 行 42 格
   const firstDay = currentMonth.value.startOf('month')
   const start = firstDay.subtract(firstDay.day(), 'day')
   return Array.from({ length: 42 }, (_, index) => {
@@ -171,14 +170,12 @@ const dayCells = computed<DayCell[]>(() => {
   })
 })
 
-// 月历补齐相邻月份的日期，预留首尾一周
-const calendarRange = computed(() => [
+const calendarRange = computed(() => [ // 月历补齐相邻月份的日期，预留首尾一周
   currentMonth.value.startOf('month').subtract(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
   currentMonth.value.endOf('month').add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
 ])
 
-// 按日期分组的日程，跨天日程分别归入覆盖的每个自然日
-const scheduleMap = computed(() => {
+const scheduleMap = computed(() => { // 按日期分组的日程，跨天日程分别归入覆盖的每个自然日
   const result = new Map<string, Schedule[]>()
   list.value.forEach((schedule) => {
     let currentDate = dayjs(schedule.startTime).startOf('day')

@@ -65,8 +65,7 @@ const emit = defineEmits<{
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'] // 星期表头
 const currentMonth = ref(dayjs(props.modelValue).startOf('month')) // 当前展示月份
 
-// 当前月份日历格子，固定 6 行 42 格
-const dayCells = computed<DayCell[]>(() => {
+const dayCells = computed<DayCell[]>(() => { // 当前月份日历格子，固定 6 行 42 格
   const firstDay = currentMonth.value.startOf('month')
   const start = firstDay.subtract(firstDay.day(), 'day')
   return Array.from({ length: 42 }, (_, index) => {
@@ -79,8 +78,7 @@ const dayCells = computed<DayCell[]>(() => {
   })
 })
 
-// 有日程的日期集合，跨天日程归入覆盖的每个自然日
-const scheduleDateSet = computed(() => {
+const scheduleDateSet = computed(() => { // 有日程的日期集合，跨天日程归入覆盖的每个自然日
   const result = new Set<string>()
   props.schedules.forEach((item) => {
     let currentDate = dayjs(item.startTime).startOf('day')

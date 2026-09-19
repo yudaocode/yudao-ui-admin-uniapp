@@ -127,12 +127,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { TravelReimbursement } from '@/api/oa/travel-reimbursement'
+import type { TravelReimbursement } from '@/api/oa/travel/reimbursement'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { cancelTravelReimbursement, deleteTravelReimbursement, getTravelReimbursement, submitTravelReimbursement } from '@/api/oa/travel-reimbursement'
+import { cancelTravelReimbursement, deleteTravelReimbursement, getTravelReimbursement, submitTravelReimbursement } from '@/api/oa/travel/reimbursement'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

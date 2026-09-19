@@ -57,12 +57,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { OfficialDocTemplate } from '@/api/oa/officialdoc-template'
+import type { OfficialDocTemplate } from '@/api/oa/officialdoc/template'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { deleteOfficialDocTemplate, getOfficialDocTemplate } from '@/api/oa/officialdoc-template'
+import { deleteOfficialDocTemplate, getOfficialDocTemplate } from '@/api/oa/officialdoc/template'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
