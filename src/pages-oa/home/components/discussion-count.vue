@@ -1,7 +1,7 @@
 <template>
   <view
     class="rounded-12rpx bg-[linear-gradient(135deg,#722ed1,#9254de)] p-24rpx text-white"
-    @click="handleGo('/pages-oa/discussion/index')"
+    @click="handleGo('/pages-oa/discussion/list/index')"
   >
     <view class="mb-8rpx text-26rpx opacity-90">
       讨论区
