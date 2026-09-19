@@ -2935,17 +2935,39 @@
           ]
         },
         {
+          "key": "attendance",
+          "name": "考勤管理",
+          "menus": [
+            {
+              "key": "oaAttendanceMy",
+              "name": "我的考勤",
+              "icon": "time-line",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/attendance/my/index",
+              "permission": "oa:attendance:query"
+            },
+            {
+              "key": "oaAttendanceList",
+              "name": "团队考勤",
+              "icon": "user-group",
+              "iconColor": "#52c41a",
+              "url": "/pages-oa/attendance/list/index",
+              "permission": "oa:attendance:query"
+            },
+            {
+              "key": "oaAttendanceReport",
+              "name": "考勤报表",
+              "icon": "dashboard",
+              "iconColor": "#fa8c16",
+              "url": "/pages-oa/attendance/report/index",
+              "permission": "oa:attendance:query"
+            }
+          ]
+        },
+        {
           "key": "announcement",
           "name": "公告管理",
           "menus": [
-            {
-              "key": "oaAnnouncementMy",
-              "name": "我收到的",
-              "icon": "notification",
-              "iconColor": "#1677ff",
-              "url": "/pages-oa/announcement/my/index",
-              "permission": "oa:announcement:query"
-            },
             {
               "key": "oaAnnouncementList",
               "name": "我发布的",
@@ -2953,76 +2975,36 @@
               "iconColor": "#52c41a",
               "url": "/pages-oa/announcement/list/index",
               "permission": "oa:announcement:query"
+            },
+            {
+              "key": "oaAnnouncementMy",
+              "name": "我收到的",
+              "icon": "notification",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/announcement/my/index",
+              "permission": "oa:announcement:query"
             }
           ]
         },
         {
-          "key": "discussion",
-          "name": "讨论区",
+          "key": "task",
+          "name": "任务管理",
           "menus": [
             {
-              "key": "oaDiscussion",
-              "name": "讨论区",
-              "icon": "message",
-              "iconColor": "#722ed1",
-              "url": "/pages-oa/discussion/index",
-              "permission": "oa:discussion:query"
-            }
-          ]
-        },
-        {
-          "key": "file",
-          "name": "企业云盘",
-          "menus": [
+              "key": "oaTaskList",
+              "name": "我发布的",
+              "icon": "share-alt",
+              "iconColor": "#fa8c16",
+              "url": "/pages-oa/task/list/index",
+              "permission": "oa:task:query"
+            },
             {
-              "key": "oaFile",
-              "name": "企业云盘",
-              "icon": "folder",
-              "iconColor": "#e6a23c",
-              "url": "/pages-oa/file/index",
-              "permission": "oa:file:query"
-            }
-          ]
-        },
-        {
-          "key": "mail",
-          "name": "企业邮箱",
-          "menus": [
-            {
-              "key": "oaMail",
-              "name": "企业邮箱",
-              "icon": "email",
-              "iconColor": "#3b82f6",
-              "url": "/pages-oa/mail/index",
-              "permission": "oa:mail-account:query"
-            }
-          ]
-        },
-        {
-          "key": "contact",
-          "name": "通讯录",
-          "menus": [
-            {
-              "key": "oaContact",
-              "name": "联系人",
+              "key": "oaTaskMy",
+              "name": "我的任务",
               "icon": "user",
-              "iconColor": "#13c2c2",
-              "url": "/pages-oa/contact/index",
-              "permission": "oa:contact:query"
-            }
-          ]
-        },
-        {
-          "key": "note",
-          "name": "笔记管理",
-          "menus": [
-            {
-              "key": "oaNote",
-              "name": "笔记",
-              "icon": "edit",
-              "iconColor": "#722ed1",
-              "url": "/pages-oa/note/index",
-              "permission": "oa:note:query"
+              "iconColor": "#52c41a",
+              "url": "/pages-oa/task/my/index",
+              "permission": "oa:task:query"
             }
           ]
         },
@@ -3063,24 +3045,44 @@
           ]
         },
         {
-          "key": "task",
-          "name": "任务管理",
+          "key": "note",
+          "name": "笔记管理",
           "menus": [
             {
-              "key": "oaTaskMy",
-              "name": "我的任务",
-              "icon": "user",
-              "iconColor": "#52c41a",
-              "url": "/pages-oa/task/my/index",
-              "permission": "oa:task:query"
-            },
+              "key": "oaNote",
+              "name": "笔记",
+              "icon": "edit",
+              "iconColor": "#722ed1",
+              "url": "/pages-oa/note/index",
+              "permission": "oa:note:query"
+            }
+          ]
+        },
+        {
+          "key": "contact",
+          "name": "通讯录",
+          "menus": [
             {
-              "key": "oaTaskList",
-              "name": "我发布的",
-              "icon": "share-alt",
-              "iconColor": "#fa8c16",
-              "url": "/pages-oa/task/list/index",
-              "permission": "oa:task:query"
+              "key": "oaContact",
+              "name": "联系人",
+              "icon": "user",
+              "iconColor": "#13c2c2",
+              "url": "/pages-oa/contact/index",
+              "permission": "oa:contact:query"
+            }
+          ]
+        },
+        {
+          "key": "discussion",
+          "name": "讨论区",
+          "menus": [
+            {
+              "key": "oaDiscussion",
+              "name": "讨论区",
+              "icon": "message",
+              "iconColor": "#722ed1",
+              "url": "/pages-oa/discussion/index",
+              "permission": "oa:discussion:query"
             }
           ]
         },
@@ -3107,32 +3109,30 @@
           ]
         },
         {
-          "key": "attendance",
-          "name": "考勤管理",
+          "key": "mail",
+          "name": "企业邮箱",
           "menus": [
             {
-              "key": "oaAttendanceMy",
-              "name": "我的考勤",
-              "icon": "time-line",
-              "iconColor": "#1677ff",
-              "url": "/pages-oa/attendance/my/index",
-              "permission": "oa:attendance:query"
-            },
+              "key": "oaMail",
+              "name": "企业邮箱",
+              "icon": "email",
+              "iconColor": "#3b82f6",
+              "url": "/pages-oa/mail/index",
+              "permission": "oa:mail-account:query"
+            }
+          ]
+        },
+        {
+          "key": "file",
+          "name": "企业云盘",
+          "menus": [
             {
-              "key": "oaAttendanceList",
-              "name": "团队考勤",
-              "icon": "user-group",
-              "iconColor": "#52c41a",
-              "url": "/pages-oa/attendance/list/index",
-              "permission": "oa:attendance:query"
-            },
-            {
-              "key": "oaAttendanceReport",
-              "name": "考勤报表",
-              "icon": "dashboard",
-              "iconColor": "#fa8c16",
-              "url": "/pages-oa/attendance/report/index",
-              "permission": "oa:attendance:query"
+              "key": "oaFile",
+              "name": "企业云盘",
+              "icon": "folder",
+              "iconColor": "#e6a23c",
+              "url": "/pages-oa/file/index",
+              "permission": "oa:file:query"
             }
           ]
         },
@@ -3141,20 +3141,20 @@
           "name": "流程管理",
           "menus": [
             {
-              "key": "oaLeave",
-              "name": "请假申请",
-              "icon": "clock-circle",
-              "iconColor": "#722ed1",
-              "url": "/pages-oa/leave/index",
-              "permission": "oa:leave-apply:query"
-            },
-            {
               "key": "oaOvertime",
               "name": "加班申请",
               "icon": "time-line",
               "iconColor": "#fa8c16",
               "url": "/pages-oa/overtime/index",
               "permission": "oa:overtime-apply:query"
+            },
+            {
+              "key": "oaLeave",
+              "name": "请假申请",
+              "icon": "clock-circle",
+              "iconColor": "#722ed1",
+              "url": "/pages-oa/leave/index",
+              "permission": "oa:leave-apply:query"
             },
             {
               "key": "oaRegular",
@@ -3179,58 +3179,6 @@
               "iconColor": "#fa541c",
               "url": "/pages-oa/reimbursement/index",
               "permission": "oa:reimbursement:query"
-            }
-          ]
-        },
-        {
-          "key": "vehicle",
-          "name": "车辆管理",
-          "menus": [
-            {
-              "key": "oaVehicleList",
-              "name": "车辆信息",
-              "icon": "drive-file",
-              "iconColor": "#1677ff",
-              "url": "/pages-oa/vehicle/list/index",
-              "permission": "oa:vehicle:query"
-            },
-            {
-              "key": "oaVehicleApply",
-              "name": "用车申请",
-              "icon": "clock-circle",
-              "iconColor": "#52c41a",
-              "url": "/pages-oa/vehicle/apply/index",
-              "permission": "oa:vehicle-apply:query"
-            },
-            {
-              "key": "oaVehicleReturn",
-              "name": "还车申请",
-              "icon": "backward",
-              "iconColor": "#fa8c16",
-              "url": "/pages-oa/vehicle/return/index",
-              "permission": "oa:vehicle-return:query"
-            }
-          ]
-        },
-        {
-          "key": "meetingroom",
-          "name": "会议室管理",
-          "menus": [
-            {
-              "key": "oaMeetingRoom",
-              "name": "会议室信息",
-              "icon": "company",
-              "iconColor": "#1677ff",
-              "url": "/pages-oa/meetingroom/room/index",
-              "permission": "oa:meeting-room:query"
-            },
-            {
-              "key": "oaMeetingRoomBooking",
-              "name": "会议室预定",
-              "icon": "calendar-line",
-              "iconColor": "#13c2c2",
-              "url": "/pages-oa/meetingroom/booking/index",
-              "permission": "oa:meeting-room-booking:query"
             }
           ]
         },
@@ -3287,6 +3235,36 @@
           ]
         },
         {
+          "key": "vehicle",
+          "name": "车辆管理",
+          "menus": [
+            {
+              "key": "oaVehicleList",
+              "name": "车辆信息",
+              "icon": "drive-file",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/vehicle/list/index",
+              "permission": "oa:vehicle:query"
+            },
+            {
+              "key": "oaVehicleApply",
+              "name": "用车申请",
+              "icon": "clock-circle",
+              "iconColor": "#52c41a",
+              "url": "/pages-oa/vehicle/apply/index",
+              "permission": "oa:vehicle-apply:query"
+            },
+            {
+              "key": "oaVehicleReturn",
+              "name": "还车申请",
+              "icon": "backward",
+              "iconColor": "#fa8c16",
+              "url": "/pages-oa/vehicle/return/index",
+              "permission": "oa:vehicle-return:query"
+            }
+          ]
+        },
+        {
           "key": "travel",
           "name": "出差管理",
           "menus": [
@@ -3305,6 +3283,28 @@
               "iconColor": "#faad14",
               "url": "/pages-oa/travel/reimbursement/index",
               "permission": "oa:travel-reimbursement:query"
+            }
+          ]
+        },
+        {
+          "key": "meetingroom",
+          "name": "会议室管理",
+          "menus": [
+            {
+              "key": "oaMeetingRoom",
+              "name": "会议室信息",
+              "icon": "company",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/meetingroom/room/index",
+              "permission": "oa:meeting-room:query"
+            },
+            {
+              "key": "oaMeetingRoomBooking",
+              "name": "会议室预定",
+              "icon": "calendar-line",
+              "iconColor": "#13c2c2",
+              "url": "/pages-oa/meetingroom/booking/index",
+              "permission": "oa:meeting-room-booking:query"
             }
           ]
         },
