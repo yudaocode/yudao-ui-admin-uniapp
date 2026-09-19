@@ -121,6 +121,7 @@ export default defineConfig(({ command, mode }) => {
           'src/pages-fms', // “财务会计”模块
           'src/pages-wms', // “仓储管理”模块
           'src/pages-pms', // “项目管理”模块
+          'src/pages-oa', // “OA 办公”模块
         ],
         dts: 'src/types/uni-pages.d.ts',
       }),
