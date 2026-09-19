@@ -64,7 +64,7 @@
             },
             {
               "key": "social",
-              "name": "三方用户",
+              "name": "三方登录",
               "icon": "share-alt",
               "iconColor": "#f759ab",
               "url": "/pages-system/social/index",
@@ -72,7 +72,7 @@
             },
             {
               "key": "oauth2",
-              "name": "OAuth2.0",
+              "name": "OAuth 2.0",
               "icon": "lock",
               "iconColor": "#ff85c0",
               "url": "/pages-system/oauth2/index",
@@ -211,7 +211,7 @@
             },
             {
               "key": "file",
-              "name": "文件管理",
+              "name": "文件列表",
               "icon": "folder",
               "iconColor": "#2f54eb",
               "url": "/pages-infra/file/index",
@@ -303,7 +303,7 @@
           "menus": [
             {
               "key": "demo01",
-              "name": "单表",
+              "name": "单表（增删改查）",
               "icon": "list",
               "iconColor": "#1890ff",
               "url": "/pages-infra/demo/demo01/index",
@@ -311,7 +311,7 @@
             },
             {
               "key": "demo02",
-              "name": "树表",
+              "name": "树表（增删改查）",
               "icon": "folder",
               "iconColor": "#13c2c2",
               "url": "/pages-infra/demo/demo02/index",
@@ -431,14 +431,14 @@
           "menus": [
             {
               "key": "payDemoOrder",
-              "name": "示例订单",
+              "name": "支付&退款案例",
               "icon": "ordered-list",
               "iconColor": "#eb2f96",
               "url": "/pages-pay/demo/order/index"
             },
             {
               "key": "payDemoWithdraw",
-              "name": "示例提现",
+              "name": "提现转账案例",
               "icon": "safe",
               "iconColor": "#fa541c",
               "url": "/pages-pay/demo/withdraw/index"
@@ -653,7 +653,7 @@
     },
     {
       "key": "mall",
-      "name": "商城系统",
+      "name": "MALL 商城系统",
       "subGroups": [
         {
           "key": "overview",
@@ -668,7 +668,7 @@
             },
             {
               "key": "mallKefu",
-              "name": "客服会话",
+              "name": "客服中心",
               "icon": "message",
               "iconColor": "#722ed1",
               "url": "/pages-mall/kefu/index",
@@ -752,7 +752,7 @@
             },
             {
               "key": "mallDeliveryExpressTemplate",
-              "name": "运费模板",
+              "name": "运费模版",
               "icon": "file",
               "iconColor": "#2f54eb",
               "url": "/pages-mall/trade/delivery/express-template/index",
@@ -786,7 +786,7 @@
         },
         {
           "key": "promotion",
-          "name": "营销管理",
+          "name": "营销中心",
           "menus": [
             {
               "key": "mallPromotionBanner",
@@ -814,7 +814,7 @@
             },
             {
               "key": "mallPromotionCouponTemplate",
-              "name": "优惠券列表",
+              "name": "优惠劵列表",
               "icon": "tags",
               "iconColor": "#eb2f96",
               "url": "/pages-mall/promotion/coupon/template/index",
@@ -979,7 +979,7 @@
     },
     {
       "key": "mp",
-      "name": "MP 公众号",
+      "name": "MP 公众号管理",
       "subGroups": [
         {
           "key": "account",
@@ -1041,7 +1041,7 @@
             },
             {
               "key": "mpMessageTemplate",
-              "name": "消息模板",
+              "name": "模版消息",
               "icon": "notification",
               "iconColor": "#eb2f96",
               "url": "/pages-mp/message-template/index",
@@ -1530,7 +1530,7 @@
           "menus": [
             {
               "key": "mesHome",
-              "name": "MES 工作台",
+              "name": "MES 首页",
               "icon": "dashboard",
               "iconColor": "#1677ff",
               "url": "/pages-statistics/mes/home/index"
@@ -1561,7 +1561,7 @@
             },
             {
               "key": "mesMdItem",
-              "name": "物料产品",
+              "name": "物料产品管理",
               "icon": "archive",
               "iconColor": "#fa8c16",
               "url": "/pages-mes/md/item/index",
@@ -1569,7 +1569,7 @@
             },
             {
               "key": "mesMdItemType",
-              "name": "物料分类",
+              "name": "物料产品分类",
               "icon": "folder",
               "iconColor": "#faad14",
               "url": "/pages-mes/md/item/type/index",
@@ -1585,7 +1585,7 @@
             },
             {
               "key": "mesMdWorkshop",
-              "name": "车间管理",
+              "name": "车间设置",
               "icon": "home",
               "iconColor": "#eb2f96",
               "url": "/pages-mes/md/workstation/workshop/index",
@@ -1593,7 +1593,7 @@
             },
             {
               "key": "mesMdWorkstation",
-              "name": "工作站",
+              "name": "工作站设置",
               "icon": "location",
               "iconColor": "#36cfc9",
               "url": "/pages-mes/md/workstation/index",
@@ -1639,7 +1639,7 @@
             },
             {
               "key": "mesProProcess",
-              "name": "生产工序",
+              "name": "工序设置",
               "icon": "settings",
               "iconColor": "#389e0d",
               "url": "/pages-mes/pro/process/index",
@@ -1647,7 +1647,7 @@
             },
             {
               "key": "mesProRoute",
-              "name": "工艺路线",
+              "name": "工艺流程",
               "icon": "share-alt",
               "iconColor": "#13c2c2",
               "url": "/pages-mes/pro/route/index",
@@ -1655,7 +1655,7 @@
             },
             {
               "key": "mesProCard",
-              "name": "流转卡",
+              "name": "工序流转",
               "icon": "idcard",
               "iconColor": "#1677ff",
               "url": "/pages-mes/pro/card/index",
@@ -1663,7 +1663,7 @@
             },
             {
               "key": "mesProAndonRecord",
-              "name": "安灯记录",
+              "name": "安灯呼叫",
               "icon": "exclamation-circle",
               "iconColor": "#fa8c16",
               "url": "/pages-mes/pro/andon/record/index",
@@ -1673,7 +1673,7 @@
         },
         {
           "key": "wm",
-          "name": "仓储管理",
+          "name": "仓库管理",
           "menus": [
             {
               "key": "mesWmArrivalnotice",
@@ -1693,7 +1693,7 @@
             },
             {
               "key": "mesWmMiscreceipt",
-              "name": "其他入库",
+              "name": "杂项入库",
               "icon": "download",
               "iconColor": "#52c41a",
               "url": "/pages-mes/wm/miscreceipt/index",
@@ -1717,7 +1717,7 @@
             },
             {
               "key": "mesWmMiscissue",
-              "name": "其他出库",
+              "name": "杂项出库",
               "icon": "upload",
               "iconColor": "#13c2c2",
               "url": "/pages-mes/wm/miscissue/index",
@@ -1781,7 +1781,7 @@
             },
             {
               "key": "mesWmMaterialstock",
-              "name": "库存台账",
+              "name": "库存现有量",
               "icon": "dashboard",
               "iconColor": "#722ed1",
               "url": "/pages-mes/wm/materialstock/index",
@@ -1789,7 +1789,7 @@
             },
             {
               "key": "mesWmTransfer",
-              "name": "库存调拨",
+              "name": "转移调拨",
               "icon": "swap",
               "iconColor": "#87e8de",
               "url": "/pages-mes/wm/transfer/index",
@@ -1813,7 +1813,7 @@
             },
             {
               "key": "mesWmPackages",
-              "name": "装箱单",
+              "name": "装箱管理",
               "icon": "archive",
               "iconColor": "#ffc53d",
               "url": "/pages-mes/wm/packages/index",
@@ -1829,7 +1829,7 @@
             },
             {
               "key": "mesWmBarcode",
-              "name": "条码管理",
+              "name": "赋能管理",
               "icon": "code",
               "iconColor": "#1890ff",
               "url": "/pages-mes/wm/barcode/index",
@@ -1845,7 +1845,7 @@
             },
             {
               "key": "mesWmBatch",
-              "name": "批次管理",
+              "name": "批次追溯",
               "icon": "list",
               "iconColor": "#69c0ff",
               "url": "/pages-mes/wm/batch/index",
@@ -1853,7 +1853,7 @@
             },
             {
               "key": "mesWmWarehouse",
-              "name": "仓库管理",
+              "name": "仓库设置",
               "icon": "home",
               "iconColor": "#fa8c16",
               "url": "/pages-mes/wm/warehouse/index",
@@ -1875,7 +1875,7 @@
             },
             {
               "key": "mesQcIndicator",
-              "name": "质检指标",
+              "name": "检测项设置",
               "icon": "list",
               "iconColor": "#9254de",
               "url": "/pages-mes/qc/indicator/index",
@@ -1883,7 +1883,7 @@
             },
             {
               "key": "mesQcDefect",
-              "name": "缺陷类型",
+              "name": "常见缺陷",
               "icon": "exclamation-circle",
               "iconColor": "#f5222d",
               "url": "/pages-mes/qc/defect/index",
@@ -1923,7 +1923,7 @@
             },
             {
               "key": "mesQcRqc",
-              "name": "退货检验",
+              "name": "退料检验",
               "icon": "undo",
               "iconColor": "#eb2f96",
               "url": "/pages-mes/qc/rqc/index",
@@ -1961,7 +1961,7 @@
             },
             {
               "key": "mesDvSubject",
-              "name": "点检项目",
+              "name": "点检保养项目",
               "icon": "list",
               "iconColor": "#2f54eb",
               "url": "/pages-mes/dv/subject/index",
@@ -1969,7 +1969,7 @@
             },
             {
               "key": "mesDvCheckplan",
-              "name": "点检方案",
+              "name": "点检保养方案",
               "icon": "calendar-line",
               "iconColor": "#722ed1",
               "url": "/pages-mes/dv/checkplan/index",
@@ -1993,7 +1993,7 @@
             },
             {
               "key": "mesDvRepair",
-              "name": "维修工单",
+              "name": "维修单",
               "icon": "edit",
               "iconColor": "#fa8c16",
               "url": "/pages-mes/dv/repair/index",
@@ -2031,7 +2031,7 @@
             },
             {
               "key": "mesCalHoliday",
-              "name": "假期设置",
+              "name": "节假日设置",
               "icon": "clock-circle",
               "iconColor": "#fa8c16",
               "url": "/pages-mes/cal/holiday/index",
@@ -2045,7 +2045,7 @@
           "menus": [
             {
               "key": "mesTmTool",
-              "name": "工具台账",
+              "name": "工装夹具台账",
               "icon": "tool",
               "iconColor": "#faad14",
               "url": "/pages-mes/tm/tool/index",
@@ -2053,7 +2053,7 @@
             },
             {
               "key": "mesTmToolType",
-              "name": "工具类型",
+              "name": "工具类型设置",
               "icon": "folder",
               "iconColor": "#ffc53d",
               "url": "/pages-mes/tm/tool/type/index",
@@ -2083,7 +2083,7 @@
         },
         {
           "key": "master",
-          "name": "主数据",
+          "name": "基础数据",
           "menus": [
             {
               "key": "wmsWarehouse",
@@ -2129,7 +2129,7 @@
         },
         {
           "key": "stock",
-          "name": "库存",
+          "name": "库存管理",
           "menus": [
             {
               "key": "wmsInventory",
@@ -2155,7 +2155,7 @@
           "menus": [
             {
               "key": "wmsReceiptOrder",
-              "name": "入库单",
+              "name": "入库管理",
               "icon": "download",
               "iconColor": "#36cfc9",
               "url": "/pages-wms/order/receipt/index",
@@ -2163,7 +2163,7 @@
             },
             {
               "key": "wmsShipmentOrder",
-              "name": "出库单",
+              "name": "出库管理",
               "icon": "upload",
               "iconColor": "#13c2c2",
               "url": "/pages-wms/order/shipment/index",
@@ -2171,7 +2171,7 @@
             },
             {
               "key": "wmsMovementOrder",
-              "name": "移库单",
+              "name": "移库管理",
               "icon": "swap",
               "iconColor": "#5cdbd3",
               "url": "/pages-wms/order/movement/index",
@@ -2179,7 +2179,7 @@
             },
             {
               "key": "wmsCheckOrder",
-              "name": "盘库单",
+              "name": "盘库管理",
               "icon": "check-circle",
               "iconColor": "#87e8de",
               "url": "/pages-wms/order/check/index",
@@ -2441,7 +2441,7 @@
           "menus": [
             {
               "key": "hrmPerformancePlan",
-              "name": "KPI 考核",
+              "name": "KPI考核",
               "icon": "trophy",
               "iconColor": "#1677ff",
               "url": "/pages-hrm/performance/plan/index",
@@ -2923,11 +2923,11 @@
       "subGroups": [
         {
           "key": "home",
-          "name": "OA 工作台",
+          "name": "工作台",
           "menus": [
             {
               "key": "oaHome",
-              "name": "OA 工作台",
+              "name": "工作台",
               "icon": "dashboard",
               "iconColor": "#1677ff",
               "url": "/pages-oa/home/index"
@@ -2948,7 +2948,7 @@
             },
             {
               "key": "oaAttendanceList",
-              "name": "团队考勤",
+              "name": "考勤记录",
               "icon": "user-group",
               "iconColor": "#52c41a",
               "url": "/pages-oa/attendance/list/index",
@@ -3080,7 +3080,7 @@
           "menus": [
             {
               "key": "oaNote",
-              "name": "笔记",
+              "name": "笔记管理",
               "icon": "edit",
               "iconColor": "#722ed1",
               "url": "/pages-oa/note/index",
@@ -3094,7 +3094,7 @@
           "menus": [
             {
               "key": "oaContact",
-              "name": "联系人",
+              "name": "通讯录",
               "icon": "user",
               "iconColor": "#13c2c2",
               "url": "/pages-oa/contact/index",
@@ -3216,11 +3216,11 @@
         },
         {
           "key": "supply",
-          "name": "办公用品",
+          "name": "办公用品管理",
           "menus": [
             {
               "key": "oaSupplyItem",
-              "name": "用品管理",
+              "name": "办公用品信息",
               "icon": "archive",
               "iconColor": "#722ed1",
               "url": "/pages-oa/supply/item/index",
@@ -3389,7 +3389,7 @@
             },
             {
               "key": "aiImage",
-              "name": "AI 绘图",
+              "name": "AI 绘画",
               "icon": "image",
               "iconColor": "#722ed1",
               "url": "/pages-ai/image/index"
@@ -3426,7 +3426,7 @@
             },
             {
               "key": "aiMindMap",
-              "name": "思维导图",
+              "name": "AI 思维导图",
               "icon": "share-alt",
               "iconColor": "#52c41a",
               "url": "/pages-ai/mindmap/index"
@@ -3479,7 +3479,7 @@
             },
             {
               "key": "aiImageManager",
-              "name": "绘图管理",
+              "name": "绘画管理",
               "icon": "image",
               "iconColor": "#eb2f96",
               "url": "/pages-ai/image/manager/index",
@@ -3661,7 +3661,7 @@
         },
         {
           "key": "friend",
-          "name": "好友管理",
+          "name": "私聊管理",
           "menus": [
             {
               "key": "imFriend",

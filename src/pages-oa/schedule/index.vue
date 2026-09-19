@@ -3,11 +3,13 @@
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="日程管理"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
+      placeholder safe-area-inset-top fixed
     >
-      <template #right>
-        <wd-icon name="calendar-line" size="40rpx" color="#333" @click="handleCalendar" />
+      <template #left>
+        <view class="flex items-center gap-24rpx pl-4rpx">
+          <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <wd-icon name="calendar-line" size="40rpx" color="#333" @click="handleCalendar" />
+        </view>
       </template>
     </wd-navbar>
 
