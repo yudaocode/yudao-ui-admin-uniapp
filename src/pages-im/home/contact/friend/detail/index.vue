@@ -1,16 +1,6 @@
 <template>
   <view class="yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar title="" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack">
-      <template v-if="relation === 'friend'" #right>
-        <view class="pr-8rpx" @click="goSetting">
-          <wd-icon name="more" size="44rpx" color="#333" />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar title="" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-26rpx pl-4rpx">
@@ -19,7 +9,6 @@
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 用户资料 -->
     <scroll-view class="min-h-0 flex-1" scroll-y>

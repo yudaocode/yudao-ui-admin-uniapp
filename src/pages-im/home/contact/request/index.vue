@@ -1,24 +1,6 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="navbarTitle"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <text
-          v-if="showAddFriend"
-          class="pr-8rpx text-28rpx text-[#333]"
-          @click="openFriendApply"
-        >
-          添加朋友
-        </text>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="navbarTitle" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
@@ -33,7 +15,6 @@
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 申请类型 -->
     <wd-tabs v-if="!singleGroupId" v-model="activeTab" line-theme="text" @change="handleTabChange">

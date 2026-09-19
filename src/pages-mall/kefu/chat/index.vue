@@ -1,16 +1,6 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏：标题为会员昵称，并提供会员资料入口 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="nickname || '会话'"
-      left-arrow placeholder safe-area-inset-top fixed
-      right-text="会员资料"
-      @click-left="handleBack"
-      @click-right="handleMember"
-    />
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="nickname || '会话'" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-26rpx pl-4rpx">
@@ -19,7 +9,6 @@
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 消息列表：z-paging 聊天记录模式（最新在底部，下拉加载更早） -->
     <z-paging

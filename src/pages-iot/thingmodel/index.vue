@@ -1,19 +1,6 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      title="产品物模型"
-      left-arrow
-      placeholder
-      safe-area-inset-top
-      fixed
-      :right-text="showTsl ? 'TSL' : ''"
-      @click-left="handleBack"
-      @click-right="handleTsl"
-    />
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar title="产品物模型" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-24rpx pl-4rpx">
@@ -22,7 +9,6 @@
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 搜索组件 -->
     <SearchForm :default-product-id="defaultProductId" @search="handleQuery" @reset="handleReset" />

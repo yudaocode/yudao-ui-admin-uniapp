@@ -1,30 +1,17 @@
 <template>
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
-    <!-- #ifndef MP-WEIXIN -->
-    <wd-navbar
-      :title="navbarTitle"
-      left-arrow placeholder safe-area-inset-top fixed
-      @click-left="handleBack"
-    >
-      <template #right>
-        <view class="flex items-center gap-30rpx pr-8rpx">
-          <wd-icon v-if="!isChannel && !isQuitGroupConversation" name="phone" size="40rpx" color="#333" @click="openCallMenu" />
-          <wd-icon v-if="!isChannel" name="more" size="44rpx" color="#333" @click="openSetting" />
-        </view>
-      </template>
-    </wd-navbar>
-    <!-- #endif -->
-    <!-- #ifdef MP-WEIXIN -->
     <wd-navbar :title="navbarTitle" placeholder safe-area-inset-top fixed>
       <template #left>
         <view class="flex items-center gap-26rpx pl-4rpx">
           <wd-icon name="arrow-left" size="38rpx" color="#333" @click="handleBack" />
+          <!-- #ifndef MP-WEIXIN -->
+          <wd-icon v-if="!isChannel && !isQuitGroupConversation" name="phone" size="40rpx" color="#333" @click="openCallMenu" />
+          <!-- #endif -->
           <wd-icon v-if="!isChannel" name="more" size="42rpx" color="#333" @click="openSetting" />
         </view>
       </template>
     </wd-navbar>
-    <!-- #endif -->
 
     <!-- 私聊非好友提示 -->
     <view

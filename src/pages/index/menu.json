@@ -3130,11 +3130,27 @@
           "menus": [
             {
               "key": "oaMail",
-              "name": "企业邮箱",
+              "name": "收件箱",
               "icon": "email",
               "iconColor": "#3b82f6",
               "url": "/pages-oa/mail/index",
               "permission": "oa:mail-account:query"
+            },
+            {
+              "key": "oaMailAccount",
+              "name": "我的邮箱账号",
+              "icon": "user",
+              "iconColor": "#13c2c2",
+              "url": "/pages-oa/mail/account/index",
+              "permission": "oa:mail-account:query"
+            },
+            {
+              "key": "oaMailProvider",
+              "name": "邮箱服务配置",
+              "icon": "settings",
+              "iconColor": "#909399",
+              "url": "/pages-oa/mail/provider/index",
+              "permission": "oa:mail-provider:query"
             }
           ]
         },
