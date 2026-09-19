@@ -3014,17 +3014,25 @@
           "menus": [
             {
               "key": "oaSchedule",
-              "name": "日程",
+              "name": "日程管理",
               "icon": "calendar-line",
               "iconColor": "#fa8c16",
               "url": "/pages-oa/schedule/index",
+              "permission": "oa:schedule:query"
+            },
+            {
+              "key": "oaScheduleCalendar",
+              "name": "我的日历",
+              "icon": "calendar-line",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/schedule/calendar/index",
               "permission": "oa:schedule:query"
             }
           ]
         },
         {
           "key": "plan",
-          "name": "工作计划",
+          "name": "计划管理",
           "menus": [
             {
               "key": "oaPlan",
@@ -3041,6 +3049,28 @@
               "iconColor": "#13c2c2",
               "url": "/pages-oa/plan/report/index",
               "permission": "oa:plan:query"
+            }
+          ]
+        },
+        {
+          "key": "workreport",
+          "name": "工作汇报",
+          "menus": [
+            {
+              "key": "oaWorkReport",
+              "name": "我的汇报",
+              "icon": "edit",
+              "iconColor": "#722ed1",
+              "url": "/pages-oa/workreport/index",
+              "permission": "oa:work-report:query"
+            },
+            {
+              "key": "oaWorkReportStatistics",
+              "name": "汇报统计",
+              "icon": "dashboard",
+              "iconColor": "#eb2f96",
+              "url": "/pages-oa/workreport/statistics/index",
+              "permission": "oa:work-report:statistics"
             }
           ]
         },
@@ -3083,28 +3113,6 @@
               "iconColor": "#722ed1",
               "url": "/pages-oa/discussion/index",
               "permission": "oa:discussion:query"
-            }
-          ]
-        },
-        {
-          "key": "workreport",
-          "name": "工作汇报",
-          "menus": [
-            {
-              "key": "oaWorkReport",
-              "name": "我的汇报",
-              "icon": "edit",
-              "iconColor": "#722ed1",
-              "url": "/pages-oa/workreport/index",
-              "permission": "oa:work-report:query"
-            },
-            {
-              "key": "oaWorkReportStatistics",
-              "name": "汇报统计",
-              "icon": "dashboard",
-              "iconColor": "#eb2f96",
-              "url": "/pages-oa/workreport/statistics/index",
-              "permission": "oa:work-report:statistics"
             }
           ]
         },
