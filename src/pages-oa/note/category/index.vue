@@ -154,7 +154,7 @@ async function handleSubmit() {
 /** 删除目录 */
 async function handleDelete(item: NoteCategory) {
   try {
-    await dialog.confirm({ title: '提示', msg: `确认删除目录“${item.name}”吗？` })
+    await dialog.confirm({ title: '提示', msg: `确认删除目录“${item.name}”及目录内的所有笔记吗？` })
   } catch {
     return
   }

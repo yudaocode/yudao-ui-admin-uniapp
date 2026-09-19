@@ -1,41 +1,46 @@
 <template>
   <view class="rounded-12rpx bg-white p-24rpx">
-    <view class="mb-16rpx flex items-center justify-between">
-      <text class="text-30rpx text-[#333] font-semibold">我的笔记</text>
-      <text class="text-26rpx text-[#1677ff]" @click="handleGo('/pages-oa/note/index')">更多</text>
+    <view v-if="loadError" class="py-24rpx text-center text-26rpx" @click.stop="loadData">
+      我的笔记加载失败，点击重试
     </view>
-    <view v-if="!notes.length" class="py-24rpx text-center text-24rpx text-[#999]">
-      暂无笔记
-    </view>
-    <view
-      v-for="item in notes"
-      :key="item.id"
-      class="mb-12rpx flex items-center gap-12rpx"
-      @click="handleGo(`/pages-oa/note/detail/index?id=${item.id}`)"
-    >
-      <view class="min-w-0 flex-1">
-        <view class="line-clamp-1 text-28rpx text-[#333] font-medium">
-          {{ item.title }}
-        </view>
-        <view class="line-clamp-1 mt-2rpx text-22rpx text-[#999]">
-          {{ stripHtmlTags(item.content || '') || '暂无内容' }}
-        </view>
+    <template v-else>
+      <view class="mb-16rpx flex items-center justify-between">
+        <text class="text-30rpx text-[#333] font-semibold">我的笔记</text>
+        <text class="text-26rpx text-[#1677ff]" @click="handleGo('/pages-oa/note/index')">更多</text>
       </view>
-      <text class="shrink-0 text-22rpx text-[#999]">{{ formatDate(item.createTime, 'MM-DD') }}</text>
-    </view>
-    <!-- 快捷新增笔记 -->
-    <view v-if="hasAccessByCodes(['oa:note:create'])" class="mt-16rpx flex items-center gap-16rpx">
-      <wd-input
-        v-model="quickNote"
-        class="flex-1"
-        placeholder="输入笔记内容"
-        :maxlength="255"
-        @confirm="handleQuickNote"
-      />
-      <wd-button size="small" type="primary" :loading="savingNote" @click="handleQuickNote">
-        添加
-      </wd-button>
-    </view>
+      <view v-if="!notes.length" class="py-24rpx text-center text-24rpx text-[#999]">
+        暂无笔记
+      </view>
+      <view
+        v-for="item in notes"
+        :key="item.id"
+        class="mb-12rpx flex items-center gap-12rpx"
+        @click="handleGo(`/pages-oa/note/detail/index?id=${item.id}`)"
+      >
+        <view class="min-w-0 flex-1">
+          <view class="line-clamp-1 text-28rpx text-[#333] font-medium">
+            {{ item.title }}
+          </view>
+          <view class="line-clamp-1 mt-2rpx text-22rpx text-[#999]">
+            {{ stripHtmlTags(item.content || '') || '暂无内容' }}
+          </view>
+        </view>
+        <text class="shrink-0 text-22rpx text-[#999]">{{ formatDate(item.createTime, 'MM-DD') }}</text>
+      </view>
+      <!-- 快捷新增笔记 -->
+      <view v-if="hasAccessByCodes(['oa:note:create'])" class="mt-16rpx flex items-center gap-16rpx">
+        <wd-input
+          v-model="quickNote"
+          class="flex-1"
+          placeholder="输入笔记内容"
+          :maxlength="255"
+          @confirm="handleQuickNote"
+        />
+        <wd-button size="small" type="primary" :loading="savingNote" @click="handleQuickNote">
+          添加
+        </wd-button>
+      </view>
+    </template>
   </view>
 </template>
 
@@ -48,6 +53,9 @@ import { useAccess } from '@/hooks/useAccess'
 import { formatDate } from '@/utils/date'
 import { stripHtmlTags } from '@/utils/format'
 import { OA_NOTE_TYPE, OA_PRIORITY } from '../../utils/constants'
+
+const loadError = ref(false) // 加载失败时显示重试入口
+const loading = ref(false) // 防止重复加载
 
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
@@ -91,10 +99,22 @@ async function handleQuickNote() {
   }
 }
 
+/** 加载面板数据，失败不展示为零值或空列表 */
+async function loadData() {
+  if (loading.value) {
+    return
+  }
+  loading.value = true
+  try {
+    notes.value = (await getMyNotePage({ pageNo: 1, pageSize: 5 })).list
+    loadError.value = false
+  } catch {
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
 /** 初始化 */
-onMounted(() => {
-  getMyNotePage({ pageNo: 1, pageSize: 5 }).then((data) => {
-    notes.value = data.list
-  })
-})
+onMounted(loadData)
 </script>

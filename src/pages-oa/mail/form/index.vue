@@ -96,12 +96,20 @@
       </view>
 
       <!-- 附件 -->
+      <view v-if="draftNeedsRefresh" class="mt-24rpx rounded-12rpx bg-white p-24rpx">
+        <view class="mb-16rpx text-26rpx text-[#666]">
+          草稿已保存，附件信息尚未加载完成。请刷新后继续保存或发送。
+        </view>
+        <wd-button size="small" variant="plain" :loading="refreshingDraft" @click="refreshDraftAttachments">
+          刷新附件
+        </wd-button>
+      </view>
       <view v-if="formData.attachments?.length || newFiles.length" class="mt-24rpx rounded-12rpx bg-white p-24rpx">
         <view class="mb-12rpx flex items-center justify-between">
           <text class="text-26rpx text-[#333] font-medium">附件</text>
           <!-- 仅 H5 支持选择本地文件，小程序端受 multipart 限制不新增附件 -->
           <!-- #ifdef H5 -->
-          <wd-button size="small" variant="plain" @click="handleAddAttachment">
+          <wd-button size="small" variant="plain" :disabled="draftNeedsRefresh" @click="handleAddAttachment">
             添加附件
           </wd-button>
           <!-- #endif -->
@@ -113,7 +121,7 @@
         >
           <wd-icon name="attach" size="26rpx" />
           <text class="line-clamp-1 min-w-0 flex-1">{{ attachment.name }}</text>
-          <text class="shrink-0 text-[#f56c6c]" @click="handleRemoveAttachment(attachment.part)">移除</text>
+          <text v-if="!draftNeedsRefresh" class="shrink-0 text-[#f56c6c]" @click="handleRemoveAttachment(attachment.part)">移除</text>
         </view>
         <view
           v-for="(file, index) in newFiles"
@@ -127,7 +135,7 @@
       </view>
       <!-- #ifdef H5 -->
       <view v-else class="mt-24rpx">
-        <wd-button size="small" variant="plain" @click="handleAddAttachment">
+        <wd-button size="small" variant="plain" :disabled="draftNeedsRefresh" @click="handleAddAttachment">
           添加附件
         </wd-button>
       </view>
@@ -139,7 +147,7 @@
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="formData.draftId"
-          class="flex-1" type="error" variant="plain"
+          class="flex-1" type="danger" variant="plain"
           :disabled="formLoading || savingDraft"
           @click="handleDelete"
         >
@@ -148,7 +156,7 @@
         <wd-button
           class="flex-1" variant="plain"
           :loading="savingDraft"
-          :disabled="formLoading"
+          :disabled="formLoading || draftNeedsRefresh"
           @click="handleSaveDraft"
         >
           存草稿
@@ -156,7 +164,7 @@
         <wd-button
           class="flex-1" type="primary"
           :loading="formLoading"
-          :disabled="savingDraft"
+          :disabled="savingDraft || draftNeedsRefresh"
           @click="handleSend"
         >
           发送
@@ -200,6 +208,8 @@ const dialog = useDialog()
 const toast = useToast()
 const formLoading = ref(false) // 发送中
 const savingDraft = ref(false) // 存草稿中
+const draftNeedsRefresh = ref(false) // 保存成功后，附件部件路径尚未刷新
+const refreshingDraft = ref(false) // 附件回显加载中
 const recipientInput = ref('') // 收件人输入
 const ccInput = ref('') // 抄送人输入
 const contentText = ref('') // 本次输入的正文纯文本
@@ -299,6 +309,9 @@ function buildSubmitData(): Partial<MailMessage> {
 
 /** 发送邮件 */
 async function handleSend() {
+  if (formLoading.value || savingDraft.value || draftNeedsRefresh.value) {
+    return
+  }
   if (!formData.value.recipients?.length) {
     toast.warning('请填写收件人')
     return
@@ -323,6 +336,9 @@ async function handleSend() {
 
 /** 保存草稿，保留返回编号供后续保存更新同一封草稿 */
 async function handleSaveDraft() {
+  if (formLoading.value || savingDraft.value || draftNeedsRefresh.value) {
+    return
+  }
   savingDraft.value = true
   try {
     const draftId = newFiles.value.length
@@ -330,14 +346,32 @@ async function handleSaveDraft() {
       : await saveMailMessageDraft(buildSubmitData())
     formData.value.draftId = draftId
     newFiles.value = []
-    // 重新获取草稿，刷新附件 MIME 部件路径，避免连续保存/发送时按旧路径丢附件
-    const draft = await getMailMessageCompose(draftId, OA_MAIL_COMPOSE_MODE.DRAFT)
-    formData.value.attachments = draft.attachments
-    formData.value.attachmentParts = draft.attachments?.map(item => item.part) || []
-    toast.success('保存成功')
+    draftNeedsRefresh.value = true
     uni.$emit('oa:mail:reload')
+    await refreshDraftAttachments()
+    if (!draftNeedsRefresh.value) {
+      toast.success('保存成功')
+    }
   } finally {
     savingDraft.value = false
+  }
+}
+
+/** 回显失败时保留待刷新状态，禁止用过期 MIME 路径再次提交 */
+async function refreshDraftAttachments() {
+  if (!formData.value.draftId || refreshingDraft.value) {
+    return
+  }
+  refreshingDraft.value = true
+  try {
+    const draft = await getMailMessageCompose(formData.value.draftId, OA_MAIL_COMPOSE_MODE.DRAFT)
+    formData.value.attachments = draft.attachments
+    formData.value.attachmentParts = draft.attachmentParts || draft.attachments?.map(item => item.part) || []
+    draftNeedsRefresh.value = false
+  } catch {
+    // 请求层提示错误，保留刷新入口；已保存的草稿不重复上传。
+  } finally {
+    refreshingDraft.value = false
   }
 }
 

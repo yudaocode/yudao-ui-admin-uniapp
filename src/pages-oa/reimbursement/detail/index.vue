@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container pb-160rpx">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="费用报销详情"
@@ -84,26 +84,24 @@
           <text class="line-clamp-1">{{ getFileName(url) }}</text>
         </view>
       </view>
-
-      <!-- 审批进度入口 -->
-      <view
-        v-if="formData?.processInstanceId"
-        class="mt-20rpx flex items-center justify-between rounded-12rpx bg-white p-24rpx"
-        @click="handleViewProcess"
-      >
-        <text class="text-28rpx text-[#333]">审批进度</text>
-        <wd-icon name="arrow-right" size="28rpx" color="#999" />
-      </view>
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="formData?.status === OA_APPLY_STATUS.NOT_START && hasAccessByCodes(['oa:reimbursement:create'])" class="yd-detail-footer">
+    <view v-if="formData?.processInstanceId || (formData?.status === OA_APPLY_STATUS.NOT_START && hasAccessByCodes(['oa:reimbursement:create']))" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
-        <wd-button class="flex-1" type="warning" @click="handleEdit">
-          编辑
-        </wd-button>
-        <wd-button class="flex-1" type="primary" :loading="submitting" @click="handleSubmitApply">
-          提交审批
+        <template v-if="formData?.status === OA_APPLY_STATUS.NOT_START && hasAccessByCodes(['oa:reimbursement:create'])">
+          <wd-button class="flex-1" type="warning" @click="handleEdit">
+            编辑
+          </wd-button>
+          <wd-button class="flex-1" type="primary" :loading="submitting" @click="handleSubmitApply">
+            提交审批
+          </wd-button>
+        </template>
+        <wd-button
+          v-if="formData?.processInstanceId"
+          class="flex-1" type="primary" @click="handleViewProcess"
+        >
+          审批进度
         </wd-button>
       </view>
     </view>

@@ -53,12 +53,7 @@
         <view class="mb-16rpx text-32rpx text-[#333] font-semibold">
           修改考勤状态
         </view>
-        <view class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f5f5f5] px-24rpx py-20rpx" @click="statusPickerVisible = true">
-          <text class="text-28rpx text-[#999]">考勤状态</text>
-          <text class="text-28rpx" :class="editStatus === undefined ? 'text-[#999]' : 'text-[#333]'">
-            {{ editStatus === undefined ? '请选择状态' : getDictLabel(DICT_TYPE.OA_ATTENDANCE_STATUS, editStatus) }}
-          </text>
-        </view>
+        <yd-form-picker v-model="editStatus" label="考勤状态" :columns="statusOptions" />
         <wd-textarea
           v-model="editRemark"
           :maxlength="500"
@@ -76,12 +71,6 @@
         </wd-button>
       </view>
     </wd-popup>
-    <wd-picker
-      v-model="editStatus"
-      v-model:visible="statusPickerVisible"
-      :columns="statusOptions"
-      title="考勤状态"
-    />
   </view>
 </template>
 
@@ -119,7 +108,6 @@ const editVisible = ref(false) // 修改状态弹窗显示状态
 const editStatus = ref<number>() // 修改的状态
 const editRemark = ref('') // 修改的备注
 const updating = ref(false) // 修改提交状态
-const statusPickerVisible = ref(false) // 状态选择器显示状态
 const statusOptions = computed(() => { // 状态选项按考勤类型限定：上班仅正常/迟到，下班仅正常/早退，请假/出差仅对应状态
   const values = {
     [OA_ATTENDANCE_TYPE.CLOCK_IN]: [OA_ATTENDANCE_STATUS.NORMAL, OA_ATTENDANCE_STATUS.LATE],

@@ -1,55 +1,60 @@
 <template>
   <!-- 任务完成情况：状态占比 + 完成排行，纯样式条形图 -->
   <view class="rounded-12rpx bg-white p-24rpx">
-    <view class="mb-16rpx flex items-center justify-between">
-      <text class="text-30rpx text-[#333] font-semibold">任务完成情况</text>
-      <text class="text-26rpx text-[#1677ff]" @click="handleMore">查看任务</text>
+    <view v-if="loadError" class="py-24rpx text-center text-26rpx" @click.stop="loadData">
+      任务完成情况加载失败，点击重试
     </view>
+    <template v-else>
+      <view class="mb-16rpx flex items-center justify-between">
+        <text class="text-30rpx text-[#333] font-semibold">任务完成情况</text>
+        <text class="text-26rpx text-[#1677ff]" @click="handleMore">查看任务</text>
+      </view>
 
-    <!-- 我的任务状态 -->
-    <view class="mb-16rpx">
-      <view class="mb-12rpx text-26rpx text-[#666]">
-        我的任务
-      </view>
-      <view
-        v-for="item in taskStatuses"
-        :key="item.status"
-        class="mb-12rpx flex items-center gap-16rpx"
-      >
-        <dict-tag :type="DICT_TYPE.OA_TASK_STATUS" :value="item.status" />
-        <view class="h-16rpx flex-1 overflow-hidden rounded-full bg-[#f0f0f0]">
-          <view
-            class="h-full rounded-full bg-[#3b82f6]"
-            :style="{ width: `${getStatusPercentage(item.count)}%` }"
-          />
+      <!-- 我的任务状态 -->
+      <view class="mb-16rpx">
+        <view class="mb-12rpx text-26rpx text-[#666]">
+          我的任务
         </view>
-        <text class="w-48rpx text-right text-24rpx text-[#999]">{{ item.count }}</text>
+        <view
+          v-for="item in taskStatuses"
+          :key="item.status"
+          class="mb-12rpx flex items-center gap-16rpx"
+        >
+          <dict-tag :type="DICT_TYPE.OA_TASK_STATUS" :value="item.status" />
+          <view class="h-16rpx flex-1 overflow-hidden rounded-full bg-[#f0f0f0]">
+            <view
+              class="h-full rounded-full bg-[#3b82f6]"
+              :style="{ width: `${getStatusPercentage(item.count)}%` }"
+            />
+          </view>
+          <text class="w-48rpx text-right text-24rpx text-[#999]">{{ item.count }}</text>
+        </view>
       </view>
-    </view>
 
-    <!-- 任务完成排行（按发布人） -->
-    <view>
-      <view class="mb-12rpx text-26rpx text-[#666]">
-        任务完成排行（按发布人）
-      </view>
-      <view v-if="!rankings.length" class="py-24rpx text-center text-24rpx text-[#999]">
-        暂无完成记录
-      </view>
-      <view
-        v-for="item in rankings"
-        :key="item.userId"
-        class="mb-12rpx flex items-center gap-16rpx"
-      >
-        <text class="line-clamp-1 w-140rpx text-26rpx text-[#333]">{{ item.userName || `用户 ${item.userId}` }}</text>
-        <view class="h-16rpx flex-1 overflow-hidden rounded-full bg-[#f0f0f0]">
-          <view
-            class="h-full rounded-full bg-[#52c41a]"
-            :style="{ width: `${getRankingPercentage(item.completedCount)}%` }"
-          />
+      <!-- 任务完成排行（按发布人） -->
+      <view>
+        <view class="mb-12rpx text-26rpx text-[#666]">
+          任务完成排行（按发布人）
         </view>
-        <text class="w-48rpx text-right text-24rpx text-[#999]">{{ item.completedCount }}</text>
+        <view v-if="!rankings.length" class="py-24rpx text-center text-24rpx text-[#999]">
+          暂无完成记录
+        </view>
+        <view
+          v-for="item in rankings"
+          :key="item.userId"
+          class="mb-12rpx flex items-center gap-16rpx"
+        >
+          <text class="line-clamp-1 w-140rpx text-26rpx text-[#333]">{{ item.userName || `用户 ${item.userId}` }}</text>
+          <view class="h-16rpx flex-1 overflow-hidden rounded-full bg-[#f0f0f0]">
+            <view
+              class="h-full rounded-full bg-[#52c41a]"
+              :style="{ width: `${getRankingPercentage(item.completedCount)}%` }"
+            />
+          </view>
+          <text class="w-48rpx text-right text-24rpx text-[#999]">{{ item.completedCount }}</text>
+        </view>
       </view>
-    </view>
+    </template>
   </view>
 </template>
 
@@ -59,6 +64,9 @@ import { computed, onMounted, ref } from 'vue'
 import { getCompletedTaskRanking, getTaskStatusCount } from '@/api/oa/task'
 import { DICT_TYPE } from '@/utils/constants'
 import { OA_TASK_STATUS } from '../../utils/constants'
+
+const loadError = ref(false) // 加载失败时显示重试入口
+const loading = ref(false) // 防止重复加载
 
 const statusCountMap = ref<Record<number, number>>({}) // 状态与任务数量
 const rankings = ref<TaskRanking[]>([]) // 任务完成排行
@@ -87,13 +95,24 @@ function handleMore() {
   })
 }
 
+/** 加载面板数据，失败不展示为零值或空列表 */
+async function loadData() {
+  if (loading.value) {
+    return
+  }
+  loading.value = true
+  try {
+    const [counts, rows] = await Promise.all([getTaskStatusCount(), getCompletedTaskRanking()])
+    statusCountMap.value = counts
+    rankings.value = rows
+    loadError.value = false
+  } catch {
+    loadError.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
 /** 初始化 */
-onMounted(() => {
-  getTaskStatusCount().then((data) => {
-    statusCountMap.value = data
-  })
-  getCompletedTaskRanking().then((data) => {
-    rankings.value = data
-  })
-})
+onMounted(loadData)
 </script>

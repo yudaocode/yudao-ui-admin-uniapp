@@ -25,7 +25,7 @@
 
     <!-- 成员筛选 -->
     <view class="bg-white px-24rpx pb-16rpx">
-      <UserSearchPicker v-model="queryUserId" label="成员" placeholder="请选择成员，默认管理范围" @confirm="getList" />
+      <UserSearchPicker v-model="queryUserId" label="成员" placeholder="请选择成员，默认管理范围" @change="getList" />
     </view>
 
     <!-- 周报：成员 x 每日打卡 -->
@@ -46,12 +46,26 @@
           <text class="w-180rpx shrink-0 text-[#666]">{{ formatDate(day.date) }} {{ getWeekDayText(day.date) }}</text>
           <view class="flex flex-1 items-center gap-8rpx">
             <text class="shrink-0 text-22rpx text-[#999]">上班</text>
-            <text :class="day.clockInTime ? 'text-[#333]' : 'text-[#999]'">{{ formatClockTime(day.clockInTime) }}</text>
+            <text
+              v-if="day.clockInId && hasAccessByCodes(['oa:attendance:update'])"
+              class="text-[#1677ff]"
+              @click="handleDetail(day.clockInId)"
+            >
+              {{ formatClockTime(day.clockInTime) }}
+            </text>
+            <text v-else :class="day.clockInTime ? 'text-[#333]' : 'text-[#999]'">{{ formatClockTime(day.clockInTime) }}</text>
             <dict-tag v-if="day.clockInStatus != null" :type="DICT_TYPE.OA_ATTENDANCE_STATUS" :value="day.clockInStatus" />
           </view>
           <view class="flex flex-1 items-center gap-8rpx">
             <text class="shrink-0 text-22rpx text-[#999]">下班</text>
-            <text :class="day.clockOutTime ? 'text-[#333]' : 'text-[#999]'">{{ formatClockTime(day.clockOutTime) }}</text>
+            <text
+              v-if="day.clockOutId && hasAccessByCodes(['oa:attendance:update'])"
+              class="text-[#1677ff]"
+              @click="handleDetail(day.clockOutId)"
+            >
+              {{ formatClockTime(day.clockOutTime) }}
+            </text>
+            <text v-else :class="day.clockOutTime ? 'text-[#333]' : 'text-[#999]'">{{ formatClockTime(day.clockOutTime) }}</text>
             <dict-tag v-if="day.clockOutStatus != null" :type="DICT_TYPE.OA_ATTENDANCE_STATUS" :value="day.clockOutStatus" />
           </view>
         </view>
@@ -66,12 +80,14 @@
 <script lang="ts" setup>
 import type { AttendanceWeekReport } from '@/api/oa/attendance'
 import dayjs from 'dayjs'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getAttendanceWeekReport } from '@/api/oa/attendance'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
+import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateTime } from '@/utils/date'
 
+const { hasAccessByCodes } = useAccess()
 const periodDate = ref<number>(Date.now()) // 统计周期内任意日期
 const periodPickerVisible = ref(false) // 周期选择器显示状态
 const queryUserId = ref<number>() // 成员筛选，空为管理范围
@@ -113,8 +129,18 @@ function handlePeriodChange(step: number) {
   getList()
 }
 
-/** 初始化 */
+/** 查看打卡记录，在详情页修改状态 */
+function handleDetail(id: number) {
+  uni.navigateTo({ url: `/pages-oa/attendance/detail/index?id=${id}` })
+}
+
+/** 初始化并监听考勤修改 */
 onMounted(() => {
+  uni.$on('oa:attendance:reload', getList)
   getList()
+})
+/** 卸载时移除刷新监听 */
+onBeforeUnmount(() => {
+  uni.$off('oa:attendance:reload', getList)
 })
 </script>

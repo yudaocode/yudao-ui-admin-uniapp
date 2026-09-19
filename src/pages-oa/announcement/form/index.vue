@@ -78,7 +78,6 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { createAnnouncement, getAnnouncement, updateAnnouncement } from '@/api/oa/announcement'
 import { delay, navigateBackPlus } from '@/utils'
-import { isHtmlContent } from '@/utils/format'
 import { DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import { OA_ANNOUNCEMENT_TYPE, OA_PRIORITY } from '../../utils/constants'
@@ -124,11 +123,6 @@ async function getDetail() {
     return
   }
   formData.value = await getAnnouncement(Number(props.id))
-  // 富文本公告用纯文本编辑器保存会把 HTML 标签写成正文，阻止编辑并返回
-  if (isHtmlContent(formData.value.content)) {
-    toast.warning('富文本公告请到 PC 端编辑')
-    delay(handleBack)
-  }
 }
 
 /** 提交表单 */

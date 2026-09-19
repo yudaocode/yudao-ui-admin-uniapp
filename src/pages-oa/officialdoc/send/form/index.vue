@@ -163,7 +163,6 @@ import { getOfficialDocTemplate, getSimpleOfficialDocTemplateList } from '@/api/
 import { getSimpleDeptList } from '@/api/system/dept'
 import { DeptFormPicker } from '@/components/system-select'
 import { delay, navigateBackPlus } from '@/utils'
-import { isHtmlContent } from '@/utils/format'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { handleTree } from '@/utils/tree'
@@ -239,11 +238,6 @@ async function getDetail() {
   const data = await getOfficialDocSend(Number(props.id))
   formData.value = data
   issueTime.value = data.issueTime ? toTimestamp(data.issueTime) : ''
-  // 富文本发文用纯文本编辑器保存会把 HTML 标签写成正文，阻止编辑并返回
-  if (isHtmlContent(data.content)) {
-    toast.warning('富文本发文请到 PC 端编辑')
-    delay(handleBack)
-  }
 }
 
 /** 提交表单：保存为草稿，提交审批在详情页操作 */

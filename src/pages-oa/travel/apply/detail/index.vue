@@ -83,11 +83,10 @@
           <text class="line-clamp-1">{{ getFileName(url) }}</text>
         </view>
       </view>
-
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="formData?.processInstanceId || (showActions)" class="yd-detail-footer">
+    <view v-if="formData?.processInstanceId || showActions" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="canRework">
           <wd-button

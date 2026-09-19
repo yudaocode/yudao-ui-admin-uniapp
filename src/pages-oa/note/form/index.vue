@@ -83,12 +83,12 @@ import { getSimpleNoteCategoryList } from '@/api/oa/note/category'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { isHtmlContent } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 import { OA_NOTE_TYPE, OA_PRIORITY } from '../../utils/constants'
 
 const props = defineProps<{
   id?: string
+  categoryId?: string // 新增时默认归入当前目录
 }>()
 
 definePage({
@@ -105,7 +105,7 @@ const formData = ref<Partial<Note>>({ // 表单数据；笔记内容为纯文本
   id: undefined,
   type: OA_NOTE_TYPE.PRIVATE,
   priority: OA_PRIORITY.NORMAL,
-  categoryId: undefined,
+  categoryId: props.categoryId ? Number(props.categoryId) : undefined,
   title: '',
   content: '',
   fileUrls: [],
@@ -137,11 +137,6 @@ async function getDetail() {
     return
   }
   formData.value = await getNote(Number(props.id))
-  // 富文本笔记用纯文本编辑器保存会破坏正文，阻止编辑并返回
-  if (isHtmlContent(formData.value.content)) {
-    toast.warning('富文本笔记请到 PC 端编辑')
-    delay(handleBack)
-  }
 }
 
 /** 提交表单 */

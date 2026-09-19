@@ -26,6 +26,7 @@
             prop="categoryId"
             :columns="categoryOptions"
             placeholder="请选择分类"
+            clearable
           />
           <wd-form-item title="性别" title-width="180rpx" prop="sex" center>
             <wd-radio-group v-model="formData.sex" type="button">

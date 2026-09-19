@@ -48,60 +48,63 @@
 
     <!-- 底部操作按钮 -->
     <view class="yd-detail-footer">
-      <view v-if="scene === 'mine'" class="yd-detail-footer-actions">
-        <template v-if="isOwner">
-          <UserPicker
-            v-model="shareUserIds"
-            type="checkbox"
-            title="共享给"
-            @confirm="handleShareConfirm"
-          >
-            <view class="flex-1">
-              <wd-button type="primary" block>
-                共享
-              </wd-button>
-            </view>
-          </UserPicker>
-          <wd-button
-            v-if="hasAccessByCodes(['oa:contact:update'])"
-            class="flex-1" type="warning" @click="handleEdit"
-          >
-            编辑
-          </wd-button>
-          <wd-button
-            v-if="hasAccessByCodes(['oa:contact:delete'])"
-            class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-          >
-            删除
-          </wd-button>
+      <view v-if="formData" class="yd-detail-footer-actions">
+        <wd-button class="flex-1" type="primary" @click="shareVisible = true">
+          共享
+        </wd-button>
+        <template v-if="scene === 'mine'">
+          <template v-if="isOwner">
+            <wd-button
+              v-if="hasAccessByCodes(['oa:contact:update'])"
+              class="flex-1" type="warning" @click="handleEdit"
+            >
+              编辑
+            </wd-button>
+            <wd-button
+              v-if="hasAccessByCodes(['oa:contact:delete'])"
+              class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
+            >
+              删除
+            </wd-button>
+          </template>
+          <template v-else>
+            <wd-button class="flex-1" type="primary" @click="handleOpenCategoryPopup">
+              移动
+            </wd-button>
+            <wd-button class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
+              删除
+            </wd-button>
+          </template>
         </template>
-        <template v-else>
+        <template v-else-if="scene === 'received'">
           <wd-button
+            v-if="!formData.handleStatus"
             class="flex-1" type="primary" @click="handleOpenCategoryPopup"
           >
-            移动
+            处理
           </wd-button>
-          <wd-button
-            class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-          >
+          <wd-button class="flex-1" type="danger" :loading="deleting" @click="handleDelete">
             删除
           </wd-button>
         </template>
       </view>
-      <view v-else-if="scene === 'received'" class="yd-detail-footer-actions">
-        <wd-button
-          v-if="!formData?.handleStatus"
-          class="flex-1" type="primary" @click="handleOpenCategoryPopup"
-        >
-          处理
-        </wd-button>
-        <wd-button
-          class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
-        >
-          删除
+    </view>
+
+    <!-- 共享仅追加接收人，不撤销已有共享 -->
+    <wd-popup v-model="shareVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
+      <view class="p-24rpx">
+        <view class="mb-24rpx text-center text-32rpx font-semibold">
+          共享联系人
+        </view>
+        <UserFormPicker v-model="shareUserIds" type="checkbox" label="共享给" />
+        <view class="my-24rpx text-24rpx text-[#999]">
+          仅追加共享接收人，取消勾选不会撤销已有共享。
+        </view>
+        <wd-button type="primary" block :loading="sharing" @click="handleShareConfirm">
+          确定
         </wd-button>
       </view>
-    </view>
+    </wd-popup>
 
     <!-- 归类弹窗：处理共享 / 移动到我的分类 -->
     <wd-popup v-model="handlePopupVisible" position="bottom" root-portal custom-style="border-radius: 24rpx 24rpx 0 0;">
@@ -145,7 +148,7 @@ import {
   shareContact,
 } from '@/api/oa/contact'
 import { getSimpleContactCategoryList } from '@/api/oa/contact/category'
-import UserPicker from '@/components/system-select/user-picker.vue'
+import UserFormPicker from '@/components/system-select/user-form-picker.vue'
 import { useAccess } from '@/hooks/useAccess'
 import { useUserStore } from '@/store/user'
 import { delay, navigateBackPlus } from '@/utils'
@@ -170,11 +173,12 @@ const toast = useToast()
 const formData = ref<Contact>() // 详情数据
 const deleting = ref(false) // 删除状态
 const scene = computed(() => props.scene || 'mine') // 当前场景
-const categoryName = computed(() => // 分类名称：接收视角展示接收人分类
-  scene.value === 'received' ? formData.value?.sharedCategoryName : formData.value?.categoryName)
+const categoryName = computed(() => formData.value?.sharedCategoryName) // 当前持有人的分类
 const sexText = computed(() => // 性别文案
   formData.value?.sex === 1 ? '男' : formData.value?.sex === 2 ? '女' : '未知')
 const isOwner = computed(() => formData.value?.ownerUserId === userStore.userInfo.userId) // 当前用户是否创建人
+const shareVisible = ref(false) // 共享弹窗显示状态
+const sharing = ref(false) // 共享提交状态
 const shareUserIds = ref<number[]>([]) // 共享选择的用户编号
 const handlePopupVisible = ref(false) // 处理共享弹窗显示状态
 const handleCategoryId = ref(0) // 处理共享选中的分类编号
@@ -239,19 +243,23 @@ async function handleDelete() {
 
 /** 共享联系人 */
 async function handleShareConfirm() {
+  if (sharing.value) {
+    return
+  }
   if (!props.id || shareUserIds.value.length === 0) {
     if (shareUserIds.value.length === 0) {
       toast.warning('请选择要共享的用户')
     }
     return
   }
+  sharing.value = true
   try {
     await shareContact(Number(props.id), shareUserIds.value)
     toast.success('共享成功')
+    shareVisible.value = false
     uni.$emit('oa:contact:reload')
-    getDetail()
-  } catch {
-    // 请求层已提示
+  } finally {
+    sharing.value = false
   }
 }
 

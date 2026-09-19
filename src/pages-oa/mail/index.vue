@@ -249,6 +249,20 @@ function handleRemoveMessage(id: number) {
   refreshFolders()
 }
 
+/** 同步已读状态，筛选不再匹配时仅移除该行 */
+function handleReadMessage({ id, readStatus }: { id: number, readStatus: boolean }) {
+  const index = list.value.findIndex(item => item.id === id)
+  if (index >= 0) {
+    if ((folderKey.value === OA_MAIL_FOLDER_KEY.UNREAD && readStatus)
+      || (queryParams.value.readStatus !== undefined && queryParams.value.readStatus !== readStatus)) {
+      list.value.splice(index, 1)
+    } else {
+      list.value[index].readStatus = readStatus
+    }
+  }
+  refreshFolders()
+}
+
 /** 切换邮箱账号：重载该账号文件夹并重置文件夹页签与搜索条件 */
 async function handleAccountSelect({ index }: { index: number }) {
   currentAccount.value = accounts.value[index]
@@ -317,6 +331,7 @@ onMounted(async () => {
   uni.$on('oa:mail:reload', handleReload)
   uni.$on('oa:mail:refresh-folders', refreshFolders)
   uni.$on('oa:mail:remove-message', handleRemoveMessage)
+  uni.$on('oa:mail:read-message', handleReadMessage)
 })
 
 /** 卸载 */
@@ -324,5 +339,6 @@ onUnload(() => {
   uni.$off('oa:mail:reload', handleReload)
   uni.$off('oa:mail:refresh-folders', refreshFolders)
   uni.$off('oa:mail:remove-message', handleRemoveMessage)
+  uni.$off('oa:mail:read-message', handleReadMessage)
 })
 </script>

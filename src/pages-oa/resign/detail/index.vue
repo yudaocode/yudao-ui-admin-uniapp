@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container pb-160rpx">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="离职详情"
@@ -46,32 +46,30 @@
           {{ formData.unfinishedWork }}
         </view>
       </view>
-
-      <!-- 审批进度入口 -->
-      <view
-        v-if="formData?.processInstanceId"
-        class="mt-20rpx flex items-center justify-between rounded-12rpx bg-white p-24rpx"
-        @click="handleViewProcess"
-      >
-        <text class="text-28rpx text-[#333]">审批进度</text>
-        <wd-icon name="arrow-right" size="28rpx" color="#999" />
-      </view>
     </view>
 
-    <!-- 底部操作按钮：草稿可编辑、提交审批 -->
-    <view v-if="formData?.status === OA_APPLY_STATUS.NOT_START" class="yd-detail-footer">
+    <!-- 底部操作按钮 -->
+    <view v-if="formData?.processInstanceId || formData?.status === OA_APPLY_STATUS.NOT_START" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
+        <template v-if="formData?.status === OA_APPLY_STATUS.NOT_START">
+          <wd-button
+            v-if="hasAccessByCodes(['oa:resign-apply:create'])"
+            class="flex-1" type="warning" @click="handleEdit"
+          >
+            编辑
+          </wd-button>
+          <wd-button
+            v-if="hasAccessByCodes(['oa:resign-apply:create'])"
+            class="flex-1" type="primary" :loading="submitting" @click="handleSubmitApply"
+          >
+            提交审批
+          </wd-button>
+        </template>
         <wd-button
-          v-if="hasAccessByCodes(['oa:resign-apply:create'])"
-          class="flex-1" type="warning" @click="handleEdit"
+          v-if="formData?.processInstanceId"
+          class="flex-1" type="primary" @click="handleViewProcess"
         >
-          编辑
-        </wd-button>
-        <wd-button
-          v-if="hasAccessByCodes(['oa:resign-apply:create'])"
-          class="flex-1" type="primary" :loading="submitting" @click="handleSubmitApply"
-        >
-          提交审批
+          审批进度
         </wd-button>
       </view>
     </view>

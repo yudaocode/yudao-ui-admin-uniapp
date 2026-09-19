@@ -86,11 +86,10 @@
         <text class="text-28rpx text-[#333]">正式公文</text>
         <wd-icon name="arrow-right" size="28rpx" color="#999" />
       </view>
-
     </view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="formData?.processInstanceId || (showActions)" class="yd-detail-footer">
+    <view v-if="formData?.processInstanceId || showActions" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <template v-if="formData?.status === OA_APPLY_STATUS.NOT_START">
           <wd-button

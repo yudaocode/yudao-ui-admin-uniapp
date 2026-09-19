@@ -123,9 +123,9 @@ function handleBack() {
   navigateBackPlus()
 }
 
-/** 通知列表刷新文件夹未读数（轻操作不重置列表页码） */
+/** 同步列表行与文件夹未读数，保留当前分页 */
 function emitRefreshFolders() {
-  uni.$emit('oa:mail:refresh-folders')
+  uni.$emit('oa:mail:read-message', { id: formData.value.id, readStatus: formData.value.readStatus })
 }
 
 /** 加载详情，读取成功后同步已读状态 */

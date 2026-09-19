@@ -103,7 +103,7 @@
                   接收人：{{ item.share?.userName || '-' }}<text v-if="item.share?.createTime"> · {{ formatDateTime(item.share.createTime) }}</text>
                 </template>
                 <template v-else>
-                  分类：{{ item.categoryName || '未分类' }}
+                  分类：{{ item.sharedCategoryName || '未分类' }}
                 </template>
               </view>
             </view>

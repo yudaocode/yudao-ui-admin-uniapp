@@ -1,24 +1,29 @@
 <template>
   <view>
-    <ScheduleCalendar v-model="selectedDate" :schedules="schedules" @month-change="getScheduleList" />
-    <view class="mt-16rpx rounded-12rpx bg-white p-24rpx">
-      <view class="mb-12rpx flex items-center justify-between">
-        <text class="text-28rpx text-[#333] font-semibold">{{ selectedDateTitle }}</text>
-        <text class="text-26rpx text-[#1677ff]" @click="handleGo('/pages-oa/schedule/calendar/index')">日程管理</text>
-      </view>
-      <view v-if="!selectedSchedules.length" class="py-16rpx text-center text-24rpx text-[#999]">
-        暂无日程
-      </view>
-      <view
-        v-for="item in selectedSchedules"
-        :key="item.id"
-        class="mb-8rpx flex items-center gap-16rpx"
-        @click="handleGo(`/pages-oa/schedule/detail/index?id=${item.id}`)"
-      >
-        <text class="w-88rpx shrink-0 text-24rpx text-[#1677ff]">
-          {{ dayjs(item.startTime).isSame(selectedDate, 'day') ? dayjs(item.startTime).format('HH:mm') : '持续' }}
-        </text>
-        <text class="line-clamp-1 min-w-0 flex-1 text-28rpx text-[#333]">{{ item.title }}</text>
+    <view v-if="loadError" class="py-24rpx text-center text-26rpx" @click.stop="loadData">
+      行事历加载失败，点击重试
+    </view>
+    <view v-show="!loadError">
+      <ScheduleCalendar v-model="selectedDate" :schedules="schedules" @month-change="handleMonthChange" />
+      <view class="mt-16rpx rounded-12rpx bg-white p-24rpx">
+        <view class="mb-12rpx flex items-center justify-between">
+          <text class="text-28rpx text-[#333] font-semibold">{{ selectedDateTitle }}</text>
+          <text class="text-26rpx text-[#1677ff]" @click="handleGo('/pages-oa/schedule/calendar/index')">日程管理</text>
+        </view>
+        <view v-if="!selectedSchedules.length" class="py-16rpx text-center text-24rpx text-[#999]">
+          暂无日程
+        </view>
+        <view
+          v-for="item in selectedSchedules"
+          :key="item.id"
+          class="mb-8rpx flex items-center gap-16rpx"
+          @click="handleGo(`/pages-oa/schedule/detail/index?id=${item.id}`)"
+        >
+          <text class="w-88rpx shrink-0 text-24rpx text-[#1677ff]">
+            {{ dayjs(item.startTime).isSame(selectedDate, 'day') ? dayjs(item.startTime).format('HH:mm') : '持续' }}
+          </text>
+          <text class="line-clamp-1 min-w-0 flex-1 text-28rpx text-[#333]">{{ item.title }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -31,6 +36,9 @@ import { computed, onMounted, ref } from 'vue'
 import { getMySchedulePage } from '@/api/oa/schedule'
 import ScheduleCalendar from '../../schedule/components/schedule-calendar.vue'
 
+const loadError = ref(false) // 加载失败时显示重试入口
+
+const currentMonth = ref(dayjs().format('YYYY-MM')) // 当前查看月份
 const schedules = ref<Schedule[]>([]) // 当前月份日程
 const selectedDate = ref(dayjs().format('YYYY-MM-DD')) // 选中日期
 
@@ -57,7 +65,7 @@ async function getScheduleList(month: string) {
     const data = await getMySchedulePage({
       pageNo,
       pageSize: 200,
-      startTime: [beginTime, endTime],
+      overlapTime: [beginTime, endTime],
     })
     list.push(...data.list)
     total = data.total
@@ -66,11 +74,32 @@ async function getScheduleList(month: string) {
       break
     }
   } while (list.length < total)
-  schedules.value = list
+  return list
+}
+
+/** 切换月份，失败后按当前月份重试 */
+function handleMonthChange(month: string) {
+  currentMonth.value = month
+  loadData()
+}
+
+/** 加载面板数据，失败不展示为零值或空列表 */
+async function loadData() {
+  const month = currentMonth.value
+  try {
+    const data = await getScheduleList(month)
+    if (month === currentMonth.value) {
+      schedules.value = data
+      loadError.value = false
+    }
+  } catch {
+    // 切月后的旧请求不覆盖当前月份的展示状态。
+    if (month === currentMonth.value) {
+      loadError.value = true
+    }
+  }
 }
 
 /** 初始化 */
-onMounted(() => {
-  getScheduleList(dayjs().format('YYYY-MM'))
-})
+onMounted(loadData)
 </script>

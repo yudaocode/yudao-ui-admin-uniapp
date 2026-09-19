@@ -17,7 +17,7 @@
     </wd-tabs>
 
     <!-- 目录筛选 -->
-    <view class="flex items-center bg-white">
+    <view v-if="scene === 'mine'" class="flex items-center bg-white">
       <scroll-view scroll-x class="min-w-0 flex-1 whitespace-nowrap">
         <view class="inline-flex items-center gap-16rpx px-24rpx py-16rpx">
           <view
@@ -151,7 +151,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const params = {
       ...queryParams.value,
-      categoryId: categoryId.value,
+      categoryId: scene.value === 'mine' ? categoryId.value : undefined,
       pageNo,
       pageSize,
     }
@@ -204,7 +204,7 @@ async function loadCategories() {
 /** 新增笔记 */
 function handleAdd() {
   uni.navigateTo({
-    url: '/pages-oa/note/form/index',
+    url: `/pages-oa/note/form/index${categoryId.value ? `?categoryId=${categoryId.value}` : ''}`,
   })
 }
 

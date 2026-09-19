@@ -154,7 +154,7 @@ async function handleSubmit() {
 /** 删除分类 */
 async function handleDelete(item: ContactCategory) {
   try {
-    await dialog.confirm({ title: '提示', msg: `确认删除分类“${item.name}”吗？` })
+    await dialog.confirm({ title: '提示', msg: `确认删除分类“${item.name}”吗？分类内的联系人将移至未分类，不会被删除。` })
   } catch {
     return
   }

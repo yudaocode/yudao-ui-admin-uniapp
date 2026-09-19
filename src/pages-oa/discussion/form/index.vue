@@ -139,7 +139,6 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { createDiscussion, getDiscussion, updateDiscussion } from '@/api/oa/discussion'
 import { delay, navigateBackPlus } from '@/utils'
-import { isHtmlContent } from '@/utils/format'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime, toTimestamp } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
@@ -201,11 +200,6 @@ async function getDetail() {
   formData.value = data
   voteStartTime.value = data.voteStartTime ? toTimestamp(data.voteStartTime) : ''
   voteEndTime.value = data.voteEndTime ? toTimestamp(data.voteEndTime) : ''
-  // 富文本讨论用纯文本编辑器保存会把 HTML 标签写成正文，阻止编辑并返回
-  if (isHtmlContent(data.content)) {
-    toast.warning('富文本讨论请到 PC 端编辑')
-    delay(handleBack)
-  }
 }
 
 /** 新增投票选项 */

@@ -141,12 +141,7 @@
         <view class="mb-16rpx text-32rpx text-[#333] font-semibold">
           任务反馈
         </view>
-        <view class="mb-16rpx flex items-center justify-between rounded-12rpx bg-[#f5f5f5] px-24rpx py-20rpx" @click="statusPickerVisible = true">
-          <text class="text-28rpx text-[#999]">反馈状态</text>
-          <text class="text-28rpx" :class="feedbackStatus === undefined ? 'text-[#999]' : 'text-[#333]'">
-            {{ feedbackStatus === undefined ? '请选择状态' : getDictLabel(DICT_TYPE.OA_TASK_STATUS, feedbackStatus) }}
-          </text>
-        </view>
+        <yd-form-picker v-model="feedbackStatus" label="反馈状态" :columns="feedbackStatusOptions" />
         <wd-textarea
           v-model="feedbackContent"
           :maxlength="1000"
@@ -164,12 +159,6 @@
         </wd-button>
       </view>
     </wd-popup>
-    <wd-picker
-      v-model="feedbackStatus"
-      v-model:visible="statusPickerVisible"
-      :columns="feedbackStatusOptions"
-      title="反馈状态"
-    />
   </view>
 </template>
 
@@ -211,7 +200,6 @@ const feedbackVisible = ref(false) // 反馈弹窗显示状态
 const feedbackStatus = ref<number>() // 反馈状态
 const feedbackContent = ref('') // 反馈内容
 const feedbacking = ref(false) // 反馈提交状态
-const statusPickerVisible = ref(false) // 状态选择器显示状态
 const isPublisher = computed(() => { // 发布人视角：优先按入口场景判断，未传场景时回退到发布人身份
   if (props.scene) {
     return props.scene === 'published'

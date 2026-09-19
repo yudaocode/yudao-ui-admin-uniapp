@@ -25,7 +25,7 @@
 
     <!-- 成员筛选 -->
     <view class="bg-white px-24rpx pb-16rpx">
-      <UserSearchPicker v-model="queryUserId" label="成员" placeholder="请选择成员，默认管理范围" @confirm="getList" />
+      <UserSearchPicker v-model="queryUserId" label="成员" placeholder="请选择成员，默认管理范围" @change="getList" />
     </view>
 
     <!-- 月报：成员 x 次数汇总 -->
