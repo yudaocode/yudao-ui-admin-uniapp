@@ -3107,11 +3107,19 @@
           "name": "讨论区",
           "menus": [
             {
+              "key": "oaDiscussionManage",
+              "name": "讨论管理",
+              "icon": "edit",
+              "iconColor": "#1677ff",
+              "url": "/pages-oa/discussion/manage/index",
+              "permission": "oa:discussion:query"
+            },
+            {
               "key": "oaDiscussion",
-              "name": "讨论区",
+              "name": "讨论区列表",
               "icon": "message",
               "iconColor": "#722ed1",
-              "url": "/pages-oa/discussion/index",
+              "url": "/pages-oa/discussion/list/index",
               "permission": "oa:discussion:query"
             }
           ]
