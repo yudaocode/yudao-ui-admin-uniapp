@@ -1,5 +1,5 @@
 <template>
-  <view class="yd-page-container">
+  <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
       title="邮件详情"
@@ -45,39 +45,41 @@
     </scroll-view>
 
     <!-- 底部操作 -->
-    <view v-if="formData.id" class="yd-detail-footer">
+    <view v-if="formData.id" class="mail-footer shrink-0 bg-white p-24rpx">
       <view v-if="folderKey === OA_MAIL_FOLDER_KEY.TRASH" class="yd-detail-footer-actions">
-        <wd-button variant="plain" :loading="operating" @click="handleRestore">
+        <wd-button class="flex-1" type="primary" :loading="operating" @click="handleRestore">
           恢复到收件箱
         </wd-button>
-        <wd-button type="error" :loading="operating" @click="handleDelete">
+        <wd-button class="flex-1" type="danger" variant="plain" :disabled="operating" @click="handleDelete">
           彻底删除
         </wd-button>
       </view>
       <view v-else class="yd-detail-footer-actions">
-        <wd-button variant="plain" :disabled="operating" @click="handleCompose(OA_MAIL_COMPOSE_MODE.REPLY)">
+        <wd-button class="flex-1" type="primary" :disabled="operating" @click="handleCompose(OA_MAIL_COMPOSE_MODE.REPLY)">
           回复
         </wd-button>
-        <wd-button variant="plain" :disabled="operating" @click="handleCompose(OA_MAIL_COMPOSE_MODE.REPLY_ALL)">
-          回复全部
-        </wd-button>
-        <wd-button variant="plain" :disabled="operating" @click="handleCompose(OA_MAIL_COMPOSE_MODE.FORWARD)">
+        <wd-button class="flex-1" variant="plain" :disabled="operating" @click="handleCompose(OA_MAIL_COMPOSE_MODE.FORWARD)">
           转发
         </wd-button>
-        <wd-button variant="plain" :loading="operating" @click="handleRead">
-          {{ formData.readStatus ? '标记未读' : '标记已读' }}
-        </wd-button>
-        <wd-button type="error" :loading="operating" @click="handleDelete">
-          删除
+        <wd-button class="flex-1" type="info" variant="plain" :loading="operating" @click="moreActionVisible = true">
+          更多
         </wd-button>
       </view>
     </view>
+
+    <!-- 更多操作 -->
+    <wd-action-sheet
+      v-model="moreActionVisible"
+      :actions="moreActions"
+      cancel-text="取消"
+      @select="handleMoreAction"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { MailAttachment, MailMessage } from '@/api/oa/mail'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
@@ -109,6 +111,12 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<Partial<MailMessage>>({}) // 详情数据
 const operating = ref(false) // 远端操作中
+const moreActionVisible = ref(false) // 更多操作菜单
+const moreActions = computed(() => [ // 次要操作集中展示
+  { name: '回复全部', value: 'replyAll' },
+  { name: formData.value.readStatus ? '标记未读' : '标记已读', value: 'read' },
+  { name: '删除', value: 'delete', color: '#f56c6c' },
+])
 
 /** 返回上一页 */
 function handleBack() {
@@ -144,6 +152,20 @@ function handleCompose(mode: string) {
   uni.navigateTo({
     url: `/pages-oa/mail/form/index?accountId=${formData.value.accountId}&mode=${mode}&id=${formData.value.id}`,
   })
+}
+
+/** 执行更多操作 */
+function handleMoreAction({ item }: { item: { value: string } }) {
+  if (operating.value) {
+    return
+  }
+  if (item.value === 'replyAll') {
+    handleCompose(OA_MAIL_COMPOSE_MODE.REPLY_ALL)
+  } else if (item.value === 'read') {
+    handleRead()
+  } else if (item.value === 'delete') {
+    handleDelete()
+  }
 }
 
 /** 切换已读状态 */
@@ -205,6 +227,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.mail-footer {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
 // 正文宽度约束：防止表格、大图横向溢出（外部图片策略待产品确认，暂不拦截）
 .mail-content {
   max-width: 100%;

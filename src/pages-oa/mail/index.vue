@@ -15,9 +15,15 @@
     </wd-navbar>
 
     <!-- 无可用账号引导 -->
-    <view v-if="accountLoaded && !accounts.length" class="m-24rpx rounded-12rpx bg-white p-48rpx text-center">
-      <view class="mb-16rpx text-30rpx text-[#333]">
-        请先添加并启用邮箱账号
+    <view v-if="accountLoaded && !accounts.length" class="m-24rpx rounded-20rpx bg-white px-32rpx py-64rpx text-center">
+      <view class="mx-auto mb-24rpx h-104rpx w-104rpx flex items-center justify-center rounded-full bg-[#edf4ff]">
+        <wd-icon name="email" size="52rpx" color="#4380d9" />
+      </view>
+      <view class="mb-12rpx text-32rpx text-[#1f2937] font-medium">
+        还没有可用的邮箱账号
+      </view>
+      <view class="mb-32rpx text-26rpx text-[#94a3b8]">
+        添加并启用账号后，即可收发邮件
       </view>
       <wd-button type="primary" @click="handleAccountManage">
         前往账号管理
@@ -26,35 +32,44 @@
 
     <template v-else>
       <!-- 当前账号 -->
-      <view class="flex items-center justify-between bg-white px-24rpx py-20rpx" @click="accountVisible = true">
-        <view class="min-w-0 flex items-center gap-12rpx">
-          <wd-icon name="email" size="36rpx" color="#1677ff" />
-          <text class="line-clamp-1 text-28rpx text-[#333] font-medium">{{ currentAccount?.mail || '请选择邮箱账号' }}</text>
-          <wd-tag v-if="currentAccount?.defaultStatus" size="small" type="success">
-            默认
-          </wd-tag>
+      <view class="shrink-0 bg-white px-24rpx pb-20rpx pt-12rpx">
+        <view class="flex items-center gap-16rpx rounded-16rpx bg-[#f7f8fa] p-20rpx" @click="accountVisible = true">
+          <view class="h-72rpx w-72rpx flex shrink-0 items-center justify-center rounded-16rpx bg-[#edf4ff]">
+            <wd-icon name="email" size="36rpx" color="#4380d9" />
+          </view>
+          <view class="min-w-0 flex-1">
+            <view class="mb-6rpx flex items-center gap-12rpx text-22rpx text-[#94a3b8]">
+              <text>当前邮箱</text>
+              <text v-if="currentAccount?.defaultStatus" class="text-[#4380d9]">默认账号</text>
+            </view>
+            <view class="truncate text-28rpx text-[#334155] font-medium">
+              {{ currentAccount?.mail || '请选择邮箱账号' }}
+            </view>
+          </view>
+          <wd-icon name="arrow-down" size="28rpx" color="#94a3b8" />
         </view>
-        <wd-icon name="arrow-down" size="28rpx" color="#999" />
       </view>
 
       <!-- 文件夹页签 -->
-      <scroll-view scroll-x class="shrink-0 whitespace-nowrap bg-white px-16rpx">
-        <view
-          v-for="folder in folders"
-          :key="folder.key"
-          class="mr-32rpx inline-flex items-center gap-8rpx py-20rpx text-28rpx"
-          :class="folderKey === folder.key ? 'text-[#1677ff] font-semibold' : 'text-[#666]'"
-          @click="handleFolderChange(folder.key)"
-        >
-          <text>{{ folder.name }}</text>
-          <text v-if="folder.unreadCount" class="rounded-full bg-[#f5222d] px-8rpx text-20rpx text-white">
-            {{ folder.unreadCount }}
-          </text>
+      <scroll-view v-if="folders.length" scroll-x :show-scrollbar="false" class="shrink-0 whitespace-nowrap bg-white pb-12rpx">
+        <view class="w-max inline-flex gap-12rpx px-24rpx">
+          <view
+            v-for="folder in folders"
+            :key="folder.key"
+            class="inline-flex shrink-0 items-center gap-10rpx whitespace-nowrap rounded-12rpx px-24rpx py-16rpx text-26rpx"
+            :class="folderKey === folder.key ? 'bg-[#edf4ff] text-[#1677ff] font-medium' : 'text-[#64748b]'"
+            @click="handleFolderChange(folder.key)"
+          >
+            <text>{{ folder.name }}</text>
+            <text v-if="folder.unreadCount" class="rounded-full bg-[#e8edf5] px-10rpx text-20rpx text-[#64748b]">
+              {{ folder.unreadCount }}
+            </text>
+          </view>
         </view>
       </scroll-view>
 
       <!-- 搜索组件 -->
-      <SearchForm @search="handleQuery" @reset="handleReset" />
+      <SearchForm :key="`${currentAccount?.id}-${folderKey}`" @search="handleQuery" @reset="handleReset" />
 
       <!-- 邮件列表 -->
       <z-paging
@@ -69,35 +84,37 @@
         :empty-view-text="emptyText"
         @query="queryList"
       >
-        <view class="p-24rpx">
+        <view v-if="list.length" class="mx-24rpx my-20rpx overflow-hidden rounded-20rpx bg-white">
           <view
             v-for="item in list"
             :key="item.id"
-            class="mb-16rpx rounded-12rpx bg-white p-24rpx shadow-sm"
+            class="flex gap-20rpx border-b border-[#f0f2f5] border-b-solid p-24rpx last:border-b-0"
             @click="handleOpen(item)"
           >
-            <view class="mb-8rpx flex items-center justify-between gap-12rpx">
-              <view class="min-w-0 flex flex-1 items-center gap-8rpx">
-                <view v-if="!item.readStatus" class="h-12rpx w-12rpx shrink-0 rounded-full bg-[#1677ff]" />
-                <text
-                  class="line-clamp-1 text-28rpx"
-                  :class="item.readStatus ? 'text-[#666]' : 'text-[#333] font-semibold'"
-                >
-                  {{ folderKey === OA_MAIL_FOLDER_KEY.SENT || folderKey === OA_MAIL_FOLDER_KEY.DRAFTS
-                    ? (item.recipients?.join('、') || '（无收件人）')
-                    : (item.sender || '-') }}
-                </text>
-              </view>
-              <text class="shrink-0 text-22rpx text-[#999]">{{ formatDateTime(item.receiveTime) }}</text>
+            <view
+              class="relative mt-2rpx h-68rpx w-68rpx flex shrink-0 items-center justify-center rounded-full text-28rpx font-medium"
+              :class="item.readStatus ? 'bg-[#f1f3f6] text-[#94a3b8]' : 'bg-[#edf4ff] text-[#4380d9]'"
+            >
+              {{ getCorrespondent(item).charAt(0) }}
+              <view v-if="!item.readStatus" class="absolute right-0 top-0 h-14rpx w-14rpx rounded-full bg-[#1677ff]" />
             </view>
-            <view class="flex items-center justify-between gap-12rpx">
-              <text
-                class="line-clamp-1 min-w-0 flex-1 text-26rpx"
-                :class="item.readStatus ? 'text-[#999]' : 'text-[#666]'"
-              >
+            <view class="min-w-0 flex-1">
+              <view class="mb-10rpx flex items-center justify-between gap-12rpx">
+                <text
+                  class="min-w-0 flex-1 truncate text-28rpx"
+                  :class="item.readStatus ? 'text-[#64748b]' : 'text-[#1f2937] font-semibold'"
+                >
+                  {{ getCorrespondent(item) }}
+                </text>
+                <text class="shrink-0 text-22rpx text-[#94a3b8]">{{ formatDate(item.receiveTime, 'MM-DD HH:mm') }}</text>
+              </view>
+              <view class="line-clamp-2 break-words text-26rpx text-[#475569] leading-40rpx">
                 {{ item.subject || '（无主题）' }}
-              </text>
-              <wd-icon v-if="item.hasAttach" name="link" size="26rpx" color="#999" />
+              </view>
+              <view v-if="item.hasAttach" class="mt-10rpx flex items-center gap-6rpx text-22rpx text-[#94a3b8]">
+                <wd-icon name="attach" size="24rpx" />
+                <text>含附件</text>
+              </view>
             </view>
           </view>
         </view>
@@ -108,6 +125,7 @@
         v-if="currentAccount"
         position="right-bottom"
         type="primary"
+        inactive-icon="edit"
         :expandable="false"
         @click="handleCompose(OA_MAIL_COMPOSE_MODE.NEW)"
       />
@@ -117,6 +135,8 @@
     <wd-action-sheet
       v-model="accountVisible"
       :actions="accountActions"
+      title="切换邮箱账号"
+      cancel-text="取消"
       @select="handleAccountSelect"
     />
   </view>
@@ -134,9 +154,10 @@ import {
   syncMailMessageList,
 } from '@/api/oa/mail'
 import { navigateBackPlus } from '@/utils'
-import { formatDateTime } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { CommonStatusEnum } from '@/utils/constants'
 import { OA_MAIL_COMPOSE_MODE, OA_MAIL_FOLDER_KEY } from '../utils/constants'
+import SearchForm from './components/search-form.vue'
 
 definePage({
   style: {
@@ -164,6 +185,15 @@ const emptyText = computed(() => // 空态文案：区分未同步和正常空�
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
+}
+
+/** 收件显示发件人，已发送和草稿显示收件人 */
+function getCorrespondent(item: MailMessage) {
+  if (folderKey.value === OA_MAIL_FOLDER_KEY.SENT || folderKey.value === OA_MAIL_FOLDER_KEY.DRAFTS) {
+    return item.recipients?.join('、') || '（无收件人）'
+  }
+  const sender = item.sender || '-'
+  return sender.replace(/<[^>]*>/g, '').replace(/^"|"$/g, '').trim() || sender
 }
 
 /** 查询邮件列表 */
