@@ -131,7 +131,7 @@ async function handleSave() {
     // 保存前重新拉取任务状态，避免拖拽期间任务已完成或取消
     const checkedChanges = await Promise.all(changes.map(async change => ({
       change,
-      task: await getTask(Number(change.id)).catch(() => undefined),
+      task: await getTask(Number(change.id)),
     })))
     const updates = checkedChanges.filter(({ task }) => {
       return task?.id

@@ -99,7 +99,7 @@
     </scroll-view>
 
     <!-- 底部操作按钮 -->
-    <view v-if="canUpdate || canUpdateStatus || hasAccessByCodes(['erp:purchase-in:delete'])" class="yd-detail-footer">
+    <view v-if="canUpdate || canUpdateStatus || canDelete" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button
           v-if="canUpdate"
@@ -114,7 +114,7 @@
           {{ nextStatus === ErpAuditStatusEnum.AUDITED ? '审批' : '反审批' }}
         </wd-button>
         <wd-button
-          v-if="hasAccessByCodes(['erp:purchase-in:delete'])"
+          v-if="canDelete"
           class="flex-1" type="danger" :loading="deleting" :disabled="statusLoading" @click="handleDelete"
         >
           删除
@@ -157,6 +157,7 @@ const statusLoading = ref(false) // 审批提交状态
 const items = computed(() => Array.isArray(formData.value?.items) ? formData.value.items : [])
 const unpaidPrice = computed(() => Number(formData.value?.totalPrice || 0) - Number(formData.value?.paymentPrice || 0))
 const canUpdate = computed(() => formData.value?.status !== ErpAuditStatusEnum.AUDITED && hasAccessByCodes(['erp:purchase-in:update']))
+const canDelete = computed(() => formData.value?.status !== ErpAuditStatusEnum.AUDITED && hasAccessByCodes(['erp:purchase-in:delete']))
 const canUpdateStatus = computed(() => hasAccessByCodes(['erp:purchase-in:update-status']) && (formData.value?.status === ErpAuditStatusEnum.UNAUDITED || formData.value?.status === ErpAuditStatusEnum.AUDITED))
 const nextStatus = computed(() => formData.value?.status === ErpAuditStatusEnum.UNAUDITED ? ErpAuditStatusEnum.AUDITED : ErpAuditStatusEnum.UNAUDITED)
 
