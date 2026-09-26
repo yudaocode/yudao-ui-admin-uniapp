@@ -1,6 +1,6 @@
 <template>
   <yd-tree-select
-    :model-value="selectedValue"
+    :model-value="modelValue"
     :data="deptOptions"
     :props="treeProps"
     :label="label"
@@ -49,7 +49,6 @@ const emit = defineEmits<{
 }>()
 
 const deptList = ref<Dept[]>([]) // 部门选项
-const selectedValue = computed(() => props.modelValue ?? (props.showRoot ? 0 : undefined)) // 当前选择值
 const treeProps = {
   children: 'children',
   label: 'name',
@@ -57,7 +56,10 @@ const treeProps = {
 } // 树字段映射
 const deptOptions = computed<DeptOption[]>(() => { // 部门树形选项
   const departments = handleTree<DeptOption>(deptList.value)
-  return props.showRoot ? [{ id: 0, name: '顶级部门' }, ...departments] : departments
+  if (props.showRoot && (deptList.value.length === 0 || deptList.value.some(dept => dept.parentId === 0))) {
+    return [{ id: 0, name: '顶级部门' }, ...departments]
+  }
+  return departments
 })
 let loadingPromise: Promise<void> | undefined // 部门列表加载请求
 
@@ -73,7 +75,7 @@ function handleChange(value: number | string | undefined) {
 
 /** 标准化部门编号 */
 function normalizeDeptId(value: number | string | undefined) {
-  return value == null ? (props.showRoot ? 0 : undefined) : Number(value)
+  return value == null ? undefined : Number(value)
 }
 
 /** 加载部门选项 */

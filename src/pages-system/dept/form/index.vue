@@ -100,10 +100,10 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑部门' : '新增部门')
 const formLoading = ref(false) // 表单提交状态
-const formData = ref<Dept>({
+const formData = ref<Omit<Dept, 'parentId'> & { parentId?: number }>({
   id: undefined,
   name: '',
-  parentId: props.parentId || 0,
+  parentId: Number(props.parentId) || undefined,
   sort: 0,
   status: CommonStatusEnum.ENABLE,
   leaderUserId: undefined,
@@ -143,10 +143,10 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     if (props.id) {
-      await updateDept(formData.value)
+      await updateDept(formData.value as Dept)
       toast.success('修改成功')
     } else {
-      await createDept(formData.value)
+      await createDept(formData.value as Dept)
       toast.success('新增成功')
     }
     uni.$emit('system:dept:reload')
