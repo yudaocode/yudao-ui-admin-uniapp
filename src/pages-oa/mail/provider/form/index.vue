@@ -11,14 +11,13 @@
       <!-- 表单区域 -->
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border title="基本信息">
-          <wd-input
-            v-model="formData.name"
-            label="名称"
-            label-width="220rpx"
-            prop="name"
-            placeholder="例如：腾讯企业邮箱"
-            clearable
-          />
+          <wd-form-item title="名称" title-width="220rpx" prop="name">
+            <wd-input
+              v-model="formData.name"
+              placeholder="例如：腾讯企业邮箱"
+              clearable
+            />
+          </wd-form-item>
           <wd-cell title="状态" title-width="220rpx">
             <wd-radio-group v-model="formData.status" inline>
               <wd-radio
@@ -33,14 +32,13 @@
         </wd-cell-group>
 
         <wd-cell-group border title="收信连接（IMAP）">
-          <wd-input
-            v-model="formData.imap.host"
-            label="服务器域名"
-            label-width="220rpx"
-            prop="imap.host"
-            placeholder="例如：imap.exmail.qq.com"
-            clearable
-          />
+          <wd-form-item title="服务器域名" title-width="220rpx" prop="imap.host">
+            <wd-input
+              v-model="formData.imap.host"
+              placeholder="例如：imap.exmail.qq.com"
+              clearable
+            />
+          </wd-form-item>
           <wd-cell title="服务器端口" title-width="220rpx">
             <wd-input-number v-model="formData.imap.port" :min="1" :max="65535" :precision="0" />
           </wd-cell>
@@ -53,14 +51,13 @@
         </wd-cell-group>
 
         <wd-cell-group border title="发信连接（SMTP）">
-          <wd-input
-            v-model="formData.smtp.host"
-            label="服务器域名"
-            label-width="220rpx"
-            prop="smtp.host"
-            placeholder="例如：smtp.exmail.qq.com"
-            clearable
-          />
+          <wd-form-item title="服务器域名" title-width="220rpx" prop="smtp.host">
+            <wd-input
+              v-model="formData.smtp.host"
+              placeholder="例如：smtp.exmail.qq.com"
+              clearable
+            />
+          </wd-form-item>
           <wd-cell title="服务器端口" title-width="220rpx">
             <wd-input-number v-model="formData.smtp.port" :min="1" :max="65535" :precision="0" />
           </wd-cell>
@@ -101,6 +98,7 @@ import {
 import { getIntDictOptions } from '@/hooks/useDict'
 import { navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { isServerHost } from '@/utils/validator'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -125,8 +123,8 @@ const formData = ref<Partial<MailProvider>>({
 }) // 表单数据
 const formSchema = createFormSchema({
   'name': [{ required: true, message: '名称不能为空' }],
-  'imap.host': [{ required: true, message: '收信服务器域名不能为空' }],
-  'smtp.host': [{ required: true, message: '发信服务器域名不能为空' }],
+  'imap.host': [{ required: true, message: '收信服务器域名不能为空' }, { validator: value => isServerHost(String(value)), message: '请输入有效的服务器域名或 IP 地址' }],
+  'smtp.host': [{ required: true, message: '发信服务器域名不能为空' }, { validator: value => isServerHost(String(value)), message: '请输入有效的服务器域名或 IP 地址' }],
 }) // 表单校验规则
 const formRef = ref<FormInstance>() // 表单组件引用
 
