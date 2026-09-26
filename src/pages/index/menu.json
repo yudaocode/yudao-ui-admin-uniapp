@@ -14,7 +14,7 @@
               "icon": "user",
               "iconColor": "#1890ff",
               "url": "/pages-system/user/index",
-              "permission": "system:user:list"
+              "permission": "system:user:query"
             },
             {
               "key": "role",
@@ -76,7 +76,7 @@
               "icon": "lock",
               "iconColor": "#ff85c0",
               "url": "/pages-system/oauth2/index",
-              "permission": "system:oauth2-client:query"
+              "permissions": ["system:oauth2-client:query", "system:oauth2-token:query"]
             }
           ]
         },
@@ -98,7 +98,7 @@
               "icon": "message",
               "iconColor": "#faad14",
               "url": "/pages-system/sms/index",
-              "permission": "system:sms-channel:query"
+              "permissions": ["system:sms-channel:query", "system:sms-template:query", "system:sms-log:query"]
             },
             {
               "key": "mail",
@@ -106,7 +106,7 @@
               "icon": "email",
               "iconColor": "#ffc53d",
               "url": "/pages-system/mail/index",
-              "permission": "system:mail-account:query"
+              "permissions": ["system:mail-account:query", "system:mail-template:query", "system:mail-log:query"]
             },
             {
               "key": "notify",
@@ -114,7 +114,7 @@
               "icon": "message",
               "iconColor": "#ff7a45",
               "url": "/pages-system/notify/index",
-              "permission": "system:notify-template:query"
+              "permissions": ["system:notify-template:query", "system:notify-message:query"]
             }
           ]
         },

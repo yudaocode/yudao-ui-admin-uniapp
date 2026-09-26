@@ -59,13 +59,6 @@
               </wd-radio>
             </wd-radio-group>
           </wd-form-item>
-          <wd-form-item title="状态" title-width="180rpx" center prop="status">
-            <wd-switch
-              v-model="formData.status"
-              :active-value="CommonStatusEnum.ENABLE"
-              :inactive-value="CommonStatusEnum.DISABLE"
-            />
-          </wd-form-item>
           <wd-form-item title="备注" title-width="180rpx">
             <wd-textarea
               v-model="formData.remark"
@@ -140,7 +133,6 @@ const formSchema = createFormSchema({
   email: [{ type: 'email', message: '请输入正确的邮箱地址' }],
   mobile: [{ type: 'mobile', message: '请输入正确的手机号码' }],
   sex: [{ required: true, message: '性别不能为空' }],
-  status: [{ required: true, message: '状态不能为空' }],
 })
 const formRef = ref<FormInstance>() // 表单组件引用
 

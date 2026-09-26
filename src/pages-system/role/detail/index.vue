@@ -25,13 +25,13 @@
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button
-          v-if="hasAccessByCodes(['system:role:update'])"
+          v-if="formData?.type === SystemRoleTypeEnum.CUSTOM && hasAccessByCodes(['system:role:update'])"
           class="flex-1" type="warning" @click="handleEdit"
         >
           编辑
         </wd-button>
         <wd-button
-          v-if="hasAccessByCodes(['system:role:delete'])"
+          v-if="formData?.type === SystemRoleTypeEnum.CUSTOM && hasAccessByCodes(['system:role:delete'])"
           class="flex-1" type="danger" :loading="deleting" @click="handleDelete"
         >
           删除
@@ -63,7 +63,7 @@ import { computed, onMounted, ref } from 'vue'
 import { deleteRole, getRole } from '@/api/system/role'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, SystemRoleTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import DataPermissionForm from './components/data-permission-form.vue'
 import MenuPermissionForm from './components/menu-permission-form.vue'

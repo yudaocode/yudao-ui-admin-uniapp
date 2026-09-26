@@ -119,8 +119,8 @@ const verifyRef = ref()
 const captchaType = ref('blockPuzzle') // 滑块验证码 blockPuzzle|clickWord
 
 const formData = reactive({
-  username: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || '',
-  password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || '',
+  username: import.meta.env.DEV ? import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || '' : '',
+  password: import.meta.env.DEV ? import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || '' : '',
   captchaVerification: '', // 验证码校验值
 }) // 表单数据
 const socialBindingContext = ref<SocialLoginBindingContext>() // 待绑定的三方授权上下文

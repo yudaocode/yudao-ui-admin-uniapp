@@ -141,7 +141,7 @@ export const useTokenStore = defineStore(
           }
           case 'sms': {
             res = await smsLogin(loginForm as AuthSmsLoginReqVO)
-            typeName = '注册'
+            typeName = '登录'
             break
           }
           default: {

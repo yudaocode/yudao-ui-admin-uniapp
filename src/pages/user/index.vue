@@ -167,6 +167,7 @@ async function handleTenantConfirm(tenant: TenantVO) {
   // 访问租户只切换数据上下文，用户与权限仍沿用登录租户
   userStore.setVisitTenantId(restoreLoginTenant ? null : tenant.id)
   dictStore.clearDictCache()
+  void dictStore.loadDictCacheWithRetry()
   toast.success(restoreLoginTenant ? '已恢复登录租户' : `已切换至${tenant.name}`)
   setTimeout(() => {
     uni.reLaunch({ url: '/pages/index/index' })

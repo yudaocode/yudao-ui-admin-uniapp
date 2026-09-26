@@ -179,7 +179,6 @@ async function verifySuccess(params: any) {
       type: 'register',
       ...formData,
     })
-    toast.success('注册成功')
     // 处理跳转
     redirectAfterLogin()
   } finally {
