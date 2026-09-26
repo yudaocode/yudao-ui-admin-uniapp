@@ -65,7 +65,7 @@
         <template v-else-if="sinkType === IotDataSinkTypeEnum.MQTT">
           <wd-cell title="服务地址" :value="config.url || '-'" />
           <wd-cell title="用户名" :value="config.username || '-'" />
-          <wd-cell title="密码" :value="config.password || '-'" />
+          <wd-cell title="密码" :value="formatSecret(config.password)" />
           <wd-cell title="客户端 ID" :value="config.clientId || '-'" />
           <wd-cell title="主题" :value="config.topic || '-'" />
         </template>
@@ -74,15 +74,15 @@
         <template v-else-if="sinkType === IotDataSinkTypeEnum.DATABASE">
           <wd-cell title="JDBC 地址" :value="config.jdbcUrl || '-'" />
           <wd-cell title="用户名" :value="config.username || '-'" />
-          <wd-cell title="密码" :value="config.password || '-'" />
+          <wd-cell title="密码" :value="formatSecret(config.password)" />
           <wd-cell title="目标表名" :value="config.tableName || '-'" />
         </template>
 
         <!-- RocketMQ -->
         <template v-else-if="sinkType === IotDataSinkTypeEnum.ROCKETMQ">
           <wd-cell title="NameServer" :value="config.nameServer || '-'" />
-          <wd-cell title="AccessKey" :value="config.accessKey || '-'" />
-          <wd-cell title="SecretKey" :value="config.secretKey || '-'" />
+          <wd-cell title="AccessKey" :value="formatSecret(config.accessKey)" />
+          <wd-cell title="SecretKey" :value="formatSecret(config.secretKey)" />
           <wd-cell title="消费组" :value="config.group || '-'" />
           <wd-cell title="主题" :value="config.topic || '-'" />
           <wd-cell title="标签" :value="config.tags || '-'" />
@@ -92,7 +92,7 @@
         <template v-else-if="sinkType === IotDataSinkTypeEnum.KAFKA">
           <wd-cell title="服务地址" :value="config.bootstrapServers || '-'" />
           <wd-cell title="用户名" :value="config.username || '-'" />
-          <wd-cell title="密码" :value="config.password || '-'" />
+          <wd-cell title="密码" :value="formatSecret(config.password)" />
           <wd-cell title="启用 SSL" :value="formatBool(config.ssl)" />
           <wd-cell title="主题" :value="config.topic || '-'" />
         </template>
@@ -103,7 +103,7 @@
           <wd-cell title="端口" :value="formatValue(config.port)" />
           <wd-cell title="虚拟主机" :value="config.virtualHost || '-'" />
           <wd-cell title="用户名" :value="config.username || '-'" />
-          <wd-cell title="密码" :value="config.password || '-'" />
+          <wd-cell title="密码" :value="formatSecret(config.password)" />
           <wd-cell title="交换机" :value="config.exchange || '-'" />
           <wd-cell title="路由键" :value="config.routingKey || '-'" />
           <wd-cell title="队列" :value="config.queue || '-'" />
@@ -113,7 +113,7 @@
         <template v-else-if="sinkType === IotDataSinkTypeEnum.REDIS_STREAM">
           <wd-cell title="主机地址" :value="config.host || '-'" />
           <wd-cell title="端口" :value="formatValue(config.port)" />
-          <wd-cell title="密码" :value="config.password || '-'" />
+          <wd-cell title="密码" :value="formatSecret(config.password)" />
           <wd-cell title="数据库" :value="formatValue(config.database)" />
           <wd-cell title="主题" :value="config.topic || '-'" />
         </template>
@@ -177,6 +177,11 @@ const sinkType = computed(() => formData.value?.type) // 目的类型
 /** 格式化标量值，空值兜底 - */
 function formatValue(value: any) {
   return value === undefined || value === null || value === '' ? '-' : String(value)
+}
+
+/** 格式化敏感配置，详情页不直接展示凭据 */
+function formatSecret(value: any) {
+  return value ? '******' : '-'
 }
 
 /** 格式化布尔值为是/否 */

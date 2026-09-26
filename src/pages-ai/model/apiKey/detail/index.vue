@@ -15,7 +15,7 @@
           <text v-else>-</text>
         </wd-cell>
         <wd-cell title="名称" :value="formData?.name || '-'" />
-        <wd-cell title="密钥" :value="formData?.apiKey || '-'" />
+        <wd-cell title="密钥" :value="formData?.apiKey ? '******' : '-'" />
         <wd-cell title="API URL" :value="formData?.url || '-'" />
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />

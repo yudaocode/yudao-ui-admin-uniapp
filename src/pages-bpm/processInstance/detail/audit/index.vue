@@ -132,7 +132,7 @@ import { uploadFile as uploadFileToServer } from '@/api/infra/file'
 import FormCreate from '@/pages-bpm/components/form-create/packages/wot-ui/src/index.vue'
 import ProcessInstanceTimeline from '@/pages-bpm/processInstance/detail/components/time-line.vue'
 import { setConfAndFields2 } from '@/pages-bpm/utils'
-import { delay, getEnvBaseUrl, navigateBackPlus } from '@/utils'
+import { delay, navigateBackPlus } from '@/utils'
 import { BpmCandidateStrategyEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import { isEmptyValue } from '@/utils/is'
@@ -279,18 +279,29 @@ function handleApproveFormChange(data: Record<string, any>) {
   approveForm.value.value = data
 }
 
+/** 获取当前任务的流程表单变量缓存键 */
+function getNormalFormVariablesCacheKey() {
+  if (!processInstanceId.value || !taskId.value) {
+    return undefined
+  }
+  const cacheKey = `bpm-normal-form-variables:${processInstanceId.value}:${taskId.value}`
+  return props.variablesCacheKey === cacheKey ? cacheKey : undefined
+}
+
 /** 获取详情页暂存的流程表单变量 */
 function getCachedNormalFormVariables() {
-  if (!props.variablesCacheKey) {
+  const cacheKey = getNormalFormVariablesCacheKey()
+  if (!cacheKey) {
     return {}
   }
-  return uni.getStorageSync(props.variablesCacheKey) || {}
+  return uni.getStorageSync(cacheKey) || {}
 }
 
 /** 清理详情页暂存的流程表单变量 */
 function clearCachedNormalFormVariables() {
-  if (props.variablesCacheKey) {
-    uni.removeStorageSync(props.variablesCacheKey)
+  const cacheKey = getNormalFormVariablesCacheKey()
+  if (cacheKey) {
+    uni.removeStorageSync(cacheKey)
   }
 }
 
@@ -347,30 +358,13 @@ async function handleSignatureConfirm(result: { tempFilePath: string, base64: st
 }
 
 /** 上传签名文件 */
-function uploadSignatureFile(tempFilePath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    uni.uploadFile({
-      url: `${getEnvBaseUrl()}/infra/file/upload`,
-      filePath: tempFilePath,
-      name: 'file',
-      success: (uploadFileRes) => {
-        try {
-          const data = JSON.parse(uploadFileRes.data)
-          if (data.code === 0 && data.data) {
-            resolve(data.data)
-          } else {
-            reject(new Error(data.msg || '上传失败'))
-          }
-        } catch (err) {
-          reject(err)
-        }
-      },
-      fail: (err) => {
-        console.error('上传失败:', err)
-        reject(err)
-      },
-    })
-  })
+async function uploadSignatureFile(tempFilePath: string): Promise<string> {
+  try {
+    return await uploadFileToServer(tempFilePath)
+  } catch (err) {
+    console.error('上传失败:', err)
+    throw err
+  }
 }
 
 /** 签名清除 */
