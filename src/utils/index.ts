@@ -39,9 +39,16 @@ export function currRoute() {
   return parseUrlToObj(fullPath)
 }
 
-export function ensureDecodeURIComponent(url: string) {
+export function ensureDecodeURIComponent(url?: string) {
+  if (!url) {
+    return ''
+  }
   if (url.startsWith('%')) {
-    return ensureDecodeURIComponent(decodeURIComponent(url))
+    try {
+      return ensureDecodeURIComponent(decodeURIComponent(url))
+    } catch {
+      return url
+    }
   }
   return url
 }
@@ -83,9 +90,13 @@ export function parseUrlToObj(url: string) {
   }
   const query: Record<string, string> = {}
   queryStr.split('&').forEach((item) => {
-    const [key, value] = item.split('=')
+    const [key, ...valueParts] = item.split('=')
+    if (!key) {
+      return
+    }
+    const value = valueParts.join('=')
     // console.log(key, value)
-    query[key] = ensureDecodeURIComponent(value) // 这里需要统一 decodeURIComponent 一下，可以兼容h5和微信y
+    query[key] = decodeUrlText(value) // 这里需要统一 decodeURIComponent 一下，可以兼容h5和微信y
   })
   return { path, query }
 }

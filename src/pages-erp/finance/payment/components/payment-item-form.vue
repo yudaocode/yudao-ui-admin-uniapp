@@ -30,7 +30,13 @@
       </view>
       <view class="mb-20rpx flex items-center justify-between rounded-8rpx bg-[#f8f8f8] p-16rpx">
         <text class="text-26rpx text-[#666]">本次付款</text>
-        <wd-input-number v-model="item.paymentPrice" :precision="2" :disabled="disabled" />
+        <wd-input-number
+          v-model="item.paymentPrice"
+          :precision="2"
+          :min="item.bizType === ErpBizType.PURCHASE_RETURN ? item.totalPrice : 0"
+          :max="item.bizType === ErpBizType.PURCHASE_RETURN ? 0 : undefined"
+          :disabled="disabled"
+        />
       </view>
       <wd-input v-model="item.remark" label="备注" label-width="80rpx" placeholder="请输入备注" clearable :disabled="disabled" />
     </view>
@@ -136,6 +142,14 @@ function validate() {
   const invalidIndex = items.value.findIndex(item => item.paymentPrice === undefined || item.paymentPrice === null || item.paymentPrice === '')
   if (invalidIndex >= 0) {
     toast.warning(`请完善付款明细 ${invalidIndex + 1}`)
+    return false
+  }
+  const signInvalidIndex = items.value.findIndex((item) => {
+    const paymentPrice = toNumber(item.paymentPrice)
+    return item.bizType === ErpBizType.PURCHASE_RETURN ? paymentPrice > 0 : paymentPrice < 0
+  })
+  if (signInvalidIndex >= 0) {
+    toast.warning(`付款明细 ${signInvalidIndex + 1} 的金额方向不正确`)
     return false
   }
   return true

@@ -56,10 +56,10 @@ export function uploadTemporaryMaterial(
 }
 
 /** 执行素材上传 */
-function doUploadMaterial(path: string, filePath: string, data: Record<string, any>) {
+async function doUploadMaterial(path: string, filePath: string, data: Record<string, any>) {
   const tokenStore = useTokenStore()
   const userStore = useUserStore()
-  const token = tokenStore.updateNowTime().validToken
+  const token = await tokenStore.tryGetValidToken()
   return new Promise<Material>((resolve, reject) => {
     uni.uploadFile({
       url: getUploadUrl(path),

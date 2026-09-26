@@ -45,6 +45,7 @@ export const useTokenStore = defineStore(
     const tokenInfo = ref<IAuthLoginRes>({ ...tokenInfoState })
 
     const nowTime = ref(Date.now()) // 当前时间戳，用于触发 token 过期计算
+    let refreshingTokenPromise: Promise<string> | undefined // 专用通道共用同一刷新请求
 
     /** 更新时间戳，让 token 过期计算重新执行 */
     const updateNowTime = () => {
@@ -296,14 +297,18 @@ export const useTokenStore = defineStore(
     const tryGetValidToken = async (): Promise<string> => {
       updateNowTime()
       if (!getValidToken.value && isDoubleTokenMode && !isRefreshTokenExpired.value) {
-        try {
-          await refreshToken()
-          return getValidToken.value
+        if (!refreshingTokenPromise) {
+          refreshingTokenPromise = refreshToken()
+            .then(() => getValidToken.value)
+            .catch((error) => {
+              console.error('尝试刷新token失败:', error)
+              return ''
+            })
+            .finally(() => {
+              refreshingTokenPromise = undefined
+            })
         }
-        catch (error) {
-          console.error('尝试刷新token失败:', error)
-          return ''
-        }
+        return refreshingTokenPromise
       }
       return getValidToken.value
     }

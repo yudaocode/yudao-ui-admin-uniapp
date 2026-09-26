@@ -1,4 +1,5 @@
 import { useTokenStore } from '@/store/token'
+import { useUserStore } from '@/store/user'
 import { getEnvBaseUrl } from '@/utils'
 
 // #ifdef MP-WEIXIN
@@ -171,6 +172,7 @@ function getSseBaseUrl() {
 /** 发送微信小程序 SSE POST 请求 */
 async function sendMpSsePost<T>(url: string, options: SseOptions<T>) {
   const mpToken = await useTokenStore().tryGetValidToken()
+  const userStore = useUserStore()
   const mpParser = createSseParser(options)
   const decoder = createUtf8ChunkDecoder()
   let processing = Promise.resolve()
@@ -231,6 +233,7 @@ async function sendMpSsePost<T>(url: string, options: SseOptions<T>) {
       method: 'POST',
       header: {
         'Content-Type': 'application/json',
+        'tenant-id': userStore.visitTenantId || userStore.tenantId,
         ...(mpToken ? { Authorization: `Bearer ${mpToken}` } : {}),
       },
       data: options.data,
@@ -284,6 +287,7 @@ async function sendMpSsePost<T>(url: string, options: SseOptions<T>) {
 /** 发送 H5 SSE POST 请求 */
 async function sendH5SsePost<T>(url: string, options: SseOptions<T>) {
   const token = await useTokenStore().tryGetValidToken()
+  const userStore = useUserStore()
   const parser = createSseParser(options)
   const requestController = new AbortController()
   let timedOut = false
@@ -302,6 +306,7 @@ async function sendH5SsePost<T>(url: string, options: SseOptions<T>) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'tenant-id': String(userStore.visitTenantId || userStore.tenantId),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(options.data),
