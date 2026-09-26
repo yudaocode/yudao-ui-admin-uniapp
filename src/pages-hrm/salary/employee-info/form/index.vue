@@ -311,10 +311,10 @@ function syncDraftMaps() {
 function getSelectedOptionDefinitions() {
   const template = salaryTemplateList.value.find(item => item.id === selectedTemplateId.value)
   if (template?.options?.length) {
-    return template.options.map(item => ({
-      code: item.code,
-      name: item.name,
-    }))
+    const enabledOptions = new Map(salaryOptionList.value.map(item => [item.code, item]))
+    return template.options
+      .filter(item => enabledOptions.has(item.code))
+      .map(item => ({ code: item.code, name: enabledOptions.get(item.code)!.name }))
   }
   return salaryOptionList.value.map(item => ({ code: item.code, name: item.name }))
 }
@@ -345,7 +345,7 @@ function applySelectedTemplate(syncDraft = true) {
 /** 加载薪资项和调薪模板 */
 async function loadSimpleData() {
   const [options, templates, adjustmentMinEffectDate] = await Promise.all([
-    getSalaryOptionSimpleList(),
+    getSalaryOptionSimpleList(true),
     getSalaryChangeTemplateList(),
     getSalaryAdjustmentMinEffectDate(),
   ])

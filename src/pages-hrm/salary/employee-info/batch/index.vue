@@ -205,7 +205,7 @@ async function loadSimpleData() {
   formLoading.value = true
   try {
     const [options, departments, adjustmentMinEffectDate] = await Promise.all([
-      getSalaryOptionSimpleList(),
+      getSalaryOptionSimpleList(true),
       getSimpleDeptList(),
       getSalaryAdjustmentMinEffectDate(),
     ])
