@@ -19,7 +19,7 @@
           </wd-form-item>
           <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <ProductCategoryFormPicker v-model="formData.categoryId" prop="categoryId" />
-          <yd-form-picker v-model="formData.unit" label="产品单位" prop="unit" :dict-type="DICT_TYPE.CRM_PRODUCT_UNIT" placeholder="请选择产品单位" />
+          <yd-form-picker v-model="formData.unit" label="产品单位" prop="unit" :dict-type="DICT_TYPE.CRM_PRODUCT_UNIT" dict-kind="int" placeholder="请选择产品单位" />
           <wd-form-item title="价格" title-width="200rpx" prop="price">
             <wd-input-number v-model="formData.price" :min="0" :precision="2" input-type="number" allow-null placeholder="请输入价格" />
           </wd-form-item>
