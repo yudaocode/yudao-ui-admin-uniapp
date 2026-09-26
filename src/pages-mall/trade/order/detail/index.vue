@@ -294,7 +294,7 @@ import { getSimpleDeliveryPickUpStoreList } from '@/api/mall/trade/delivery/pick
 import { getAreaTree } from '@/api/system/area'
 import { getDictLabel } from '@/hooks/useDict'
 import { useAccess } from '@/hooks/useAccess'
-import { fenToYuan, formatDisplayMoney, yuanToFen } from '@/utils/format'
+import { formatDisplayMoney, yuanToFen } from '@/utils/format'
 import { navigateBackPlus } from '@/utils'
 import { DeliveryTypeEnum, DICT_TYPE, TradeOrderStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -383,15 +383,23 @@ async function handleRemark() {
 
 /** 打开改价弹窗 */
 function openPrice() {
-  priceForm.adjustPrice = fenToYuan(formData.value?.adjustPrice)
+  priceForm.adjustPrice = 0
   priceVisible.value = true
 }
 
 /** 订单改价 */
 async function handlePrice() {
+  if (submitting.value) {
+    return
+  }
+  const adjustPrice = yuanToFen(priceForm.adjustPrice)
+  if (adjustPrice === 0) {
+    toast.warning('请输入本次调价金额')
+    return
+  }
   submitting.value = true
   try {
-    await updateTradeOrderPrice({ id: detailId.value, adjustPrice: yuanToFen(priceForm.adjustPrice) })
+    await updateTradeOrderPrice({ id: detailId.value, adjustPrice })
     priceVisible.value = false
     await afterSubmit()
   } finally {

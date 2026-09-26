@@ -209,19 +209,23 @@ const moreActions = computed(() => {
     return []
   }
   const actions: { name: string, value: string }[] = []
-  if (validateOwnerUser.value) {
+  if (validateOwnerUser.value && hasAccessByCodes(['crm:customer:update'])) {
     actions.push({ name: '转移', value: 'transfer' })
   }
   if (validateWrite.value) {
     actions.push({ name: data.dealStatus ? '标记未成交' : '标记已成交', value: 'deal' })
   }
-  if (validateOwnerUser.value) {
+  if (validateOwnerUser.value && hasAccessByCodes(['crm:customer:update'])) {
     actions.push({ name: data.lockStatus ? '解锁客户' : '锁定客户', value: 'lock' })
   }
   if (!data.ownerUserId) {
-    actions.push({ name: '领取', value: 'receive' })
-    actions.push({ name: '分配', value: 'distribute' })
-  } else if (validateOwnerUser.value) {
+    if (hasAccessByCodes(['crm:customer:receive'])) {
+      actions.push({ name: '领取', value: 'receive' })
+    }
+    if (hasAccessByCodes(['crm:customer:distribute'])) {
+      actions.push({ name: '分配', value: 'distribute' })
+    }
+  } else if (validateOwnerUser.value && hasAccessByCodes(['crm:customer:update'])) {
     actions.push({ name: '放入公海', value: 'putPool' })
   }
   return actions
