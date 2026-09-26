@@ -21,6 +21,7 @@ export interface MenuItem {
   icon: string // 菜单图标（支持 @wot-ui/ui 图标名或图片路径）
   url?: string // 跳转路径
   iconColor?: string // 图标颜色（可选）
+  visible?: boolean // 是否显示，默认 true
   permission?: string // 权限标识（可选）
   permissions?: string[] // 权限标识列表（任一匹配即展示）
   onlyPc?: boolean // 仅 PC 端可用（移动端点击跳转至提示页）
@@ -62,11 +63,13 @@ export function setMenuLayout(layout: MenuLayout) {
 interface RawSubGroup {
   key: string
   name: string
+  visible?: boolean // 是否显示，默认 true
   menus: MenuItem[]
 }
 interface RawGroup {
   key: string
   name: string
+  visible?: boolean // 是否显示，默认 true
   subGroups: RawSubGroup[]
 }
 
@@ -90,20 +93,26 @@ function hasMenuAccess(item: MenuItem, hasAccessByCodes: (codes: string[]) => bo
 }
 
 /**
- * 获取所有菜单分组数据（带权限过滤）
+ * 获取所有菜单分组数据（带显隐和权限过滤）
  *
- * 逐二级分组过滤掉没有权限的菜单项；二级分组为空则丢弃；整个分组无菜单则不展示。
+ * 隐藏 visible 为 false 的分组和菜单；过滤掉没有权限的菜单项；空的二级分组和大分组均不展示。
  * 分组、二级分组、菜单的展示顺序均以 menu.json 中的排列顺序为准。
  */
 export function getMenuGroups(): MenuGroup[] {
   const { hasAccessByCodes } = useAccess()
   const result: MenuGroup[] = []
   for (const group of groupsData) {
+    if (group.visible === false) {
+      continue
+    }
     const subGroups: MenuSubGroup[] = []
     for (const sub of group.subGroups) {
+      if (sub.visible === false) {
+        continue
+      }
       // 没有配置权限的菜单项默认展示
       const menus = sub.menus
-        .filter(menu => hasMenuAccess(menu, hasAccessByCodes))
+        .filter(menu => menu.visible !== false && hasMenuAccess(menu, hasAccessByCodes))
         .map(resolveItem)
       if (menus.length > 0) {
         subGroups.push({ key: sub.key, name: sub.name, menus })

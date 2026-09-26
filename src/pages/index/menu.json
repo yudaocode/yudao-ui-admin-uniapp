@@ -3,14 +3,17 @@
     {
       "key": "system",
       "name": "系统管理",
+      "visible": true,
       "subGroups": [
         {
           "key": "permission",
           "name": "权限管理",
+          "visible": true,
           "menus": [
             {
               "key": "user",
               "name": "用户管理",
+              "visible": true,
               "icon": "user",
               "iconColor": "#1890ff",
               "url": "/pages-system/user/index",
