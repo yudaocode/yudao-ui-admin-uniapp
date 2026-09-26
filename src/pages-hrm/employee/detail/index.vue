@@ -52,7 +52,7 @@
       <wd-cell-group border title="岗位信息">
         <wd-cell title="工号" :value="formData.jobNumber || '-'" />
         <wd-cell title="所属部门" :value="formData.deptName || '-'" />
-        <wd-cell title="职位名称" :value="formData.postName || '-'" />
+        <wd-cell title="岗位" :value="formData.postName || '-'" />
         <wd-cell title="岗位职级" :value="formData.postLevel || '-'" />
         <wd-cell title="直属上级" :value="formData.leaderEmployeeName || '-'" />
         <wd-cell title="入职状态">

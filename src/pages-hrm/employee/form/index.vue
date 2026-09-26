@@ -119,8 +119,8 @@
             prop="deptId"
             placeholder="请选择部门"
           />
-          <wd-form-item v-if="isFieldVisible('postName')" title="职位名称" title-width="200rpx" prop="postName">
-            <wd-input v-model="formData.postName" clearable placeholder="请输入职位名称" :maxlength="255" />
+          <wd-form-item v-if="isFieldVisible('postName')" title="岗位" title-width="200rpx" prop="postName">
+            <wd-input v-model="formData.postName" clearable placeholder="请输入岗位" :maxlength="255" />
           </wd-form-item>
           <wd-form-item v-if="isFieldVisible('postLevel')" title="岗位职级" title-width="200rpx" prop="postLevel">
             <wd-input v-model="formData.postLevel" clearable placeholder="请输入岗位职级" :maxlength="255" />

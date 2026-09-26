@@ -10,8 +10,8 @@ export interface EmployeeChangeRecord {
   oldDeptName?: string // 原部门名称
   newDeptId?: number // 新部门编号
   newDeptName?: string // 新部门名称
-  oldPostName?: string // 原职位
-  newPostName?: string // 新职位
+  oldPostName?: string // 原岗位
+  newPostName?: string // 新岗位
   oldPostLevel?: string // 原岗位职级
   newPostLevel?: string // 新岗位职级
   oldWorkAddress?: string // 原工作地点

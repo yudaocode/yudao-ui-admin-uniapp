@@ -26,7 +26,7 @@
         岗位：{{ item.oldPostName || '-' }} → {{ item.newPostName || '-' }}
       </view>
       <view class="mb-8rpx text-26rpx text-[#666]">
-        职级：{{ item.oldPostLevel || '-' }} → {{ item.newPostLevel || '-' }}
+        岗位职级：{{ item.oldPostLevel || '-' }} → {{ item.newPostLevel || '-' }}
       </view>
       <view class="mb-8rpx text-26rpx text-[#666]">
         上级：{{ item.oldLeaderEmployeeName || '-' }} → {{ item.newLeaderEmployeeName || '-' }}

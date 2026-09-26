@@ -65,7 +65,7 @@
               :maxlength="255"
             />
           </wd-form-item>
-          <wd-form-item title="新职级" title-width="200rpx" prop="newPostLevel">
+          <wd-form-item title="新岗位职级" title-width="200rpx" prop="newPostLevel">
             <wd-input
               v-model="formData.newPostLevel"
               clearable

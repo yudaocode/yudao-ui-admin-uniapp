@@ -31,7 +31,7 @@ export interface Employee {
   probation?: number // 试用期，单位月
   regularTime?: Date | string | number // 转正时间
   leaveTime?: Date | string | number // 离职时间
-  postName?: string // 职位名称
+  postName?: string // 岗位
   postLevel?: string // 岗位职级
   workCity?: string // 工作城市
   workAddress?: string // 工作地点
@@ -77,7 +77,7 @@ export interface EmployeeRegularReq {
   reason?: number // 异动原因
   newDeptId?: number // 新部门编号
   newPostName?: string // 新岗位名称
-  newPostLevel?: string // 新职级
+  newPostLevel?: string // 新岗位职级
   newWorkAddress?: string // 新工作地点
   newLeaderEmployeeId?: number // 新直属上级员工编号
   effectTime?: number // 生效时间
@@ -89,7 +89,7 @@ export interface EmployeeTransferReq {
   employeeId?: number // 员工编号
   reason?: number // 异动原因
   newDeptId?: number // 新部门编号
-  newPostName?: string // 新职位
+  newPostName?: string // 新岗位
   newPostLevel?: string // 新岗位职级
   newWorkAddress?: string // 新工作地点
   newLeaderEmployeeId?: number // 新直属上级员工编号
@@ -104,7 +104,7 @@ export interface EmployeeConvertToFullTimeReq {
   probation?: number // 试用期，单位月
   newDeptId?: number // 新部门编号
   newPostName?: string // 新岗位名称
-  newPostLevel?: string // 新职级
+  newPostLevel?: string // 新岗位职级
   newWorkAddress?: string // 新工作地点
   newLeaderEmployeeId?: number // 新直属上级员工编号
   effectTime?: number // 生效时间
