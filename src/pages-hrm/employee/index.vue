@@ -12,10 +12,17 @@
 
     <!-- 员工状态 tab -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex" slidable="always" @change="handleTabChange">
+      <!-- Wot 不监听子页签数量变化，移除来源页签时重新初始化 -->
+      <wd-tabs
+        :key="queryParams.surveyType === HrmEmployeeSurveyType.ENTRY ? 'entry' : 'status'"
+        v-model="activeStatus"
+        slidable="always"
+        @change="handleTabChange"
+      >
         <wd-tab
           v-for="tab in statusTabs"
           :key="tab.value"
+          :name="tab.value"
           :title="`${tab.label}(${tab.count})`"
         />
       </wd-tabs>
@@ -129,7 +136,8 @@ const { hasAccessByCodes } = useAccess()
 const list = ref<Employee[]>([]) // 员工列表
 const pagingRef = ref<any>() // 分页组件引用
 const statusCounts = ref<Record<number, number>>({}) // 状态统计
-const tabIndex = ref(1) // 默认全职页签
+const activeStatus = ref(String(HrmEmployeeStatusTab.FULL_TIME)) // 当前状态页签
+const entryTotal = ref(0) // 本月入职筛选结果总数
 const queryParams = ref<Record<string, any>>({
   statusCategory: HrmEmployeeStatusTab.FULL_TIME,
 }) // 查询参数
@@ -150,11 +158,17 @@ const statusItems = [ // 员工状态页签
   { status: HrmEmployeeStatusTab.LEFT, label: '已离职' },
 ]
 
-const statusTabs = computed(() => statusItems.map(item => ({
-  label: item.label,
-  value: item.status,
-  count: statusCounts.value[item.status] ?? 0,
-})))
+const statusTabs = computed(() => {
+  const items = statusItems.map(item => ({
+    label: item.label,
+    value: String(item.status),
+    count: statusCounts.value[item.status] ?? 0,
+  }))
+  if (queryParams.value.surveyType === HrmEmployeeSurveyType.ENTRY) {
+    items.unshift({ label: '本月入职', value: 'entry', count: entryTotal.value })
+  }
+  return items
+})
 
 /** 返回上一页 */
 function handleBack() {
@@ -172,6 +186,7 @@ async function queryList(pageNo: number, pageSize: number) {
       }),
       refreshStatusCounts(),
     ])
+    entryTotal.value = data.total
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
@@ -180,7 +195,10 @@ async function queryList(pageNo: number, pageSize: number) {
 
 /** 刷新状态统计 */
 async function refreshStatusCounts() {
-  const counts = await getEmployeeStatusCount(queryParams.value)
+  const counts = await getEmployeeStatusCount({
+    ...queryParams.value,
+    surveyType: queryParams.value.surveyType === HrmEmployeeSurveyType.ENTRY ? undefined : queryParams.value.surveyType,
+  })
   statusCounts.value = Object.fromEntries(counts.map(item => [item.status, item.count]))
 }
 
@@ -203,23 +221,29 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery()
+  activeStatus.value = String(HrmEmployeeStatusTab.ACTIVE)
+  queryParams.value = {
+    statusCategory: HrmEmployeeStatusTab.ACTIVE,
+    leaderEmployeeId: queryParams.value.leaderEmployeeId,
+  }
+  reload()
 }
 
 /** tab 切换 */
-function handleTabChange({ index }: { index: number }) {
-  const tab = statusTabs.value[index]
-  if (!tab) {
+function handleTabChange({ name }: { name: number | string }) {
+  const tab = statusTabs.value.find(item => item.value === String(name))
+  if (!tab || tab.value === 'entry') {
     return
   }
   queryParams.value = {
     ...queryParams.value,
-    statusCategory: tab.value,
+    statusCategory: Number(tab.value),
     entryStatus: undefined,
     status: undefined,
     surveyType: undefined,
     todoType: undefined,
   }
+  activeStatus.value = tab.value
   reload()
 }
 
@@ -246,14 +270,12 @@ function applyHomeFilter(options: Record<string, string | undefined>) {
   queryParams.value.surveyType = undefined
   queryParams.value.todoType = undefined
   queryParams.value.leaderEmployeeId = undefined
-  tabIndex.value = 1
+  activeStatus.value = String(HrmEmployeeStatusTab.FULL_TIME)
 
   const statusCategory = Number(options.statusCategory)
-  const statusCategoryValues: number[] = Object.values(HrmEmployeeStatusTab)
-  if (statusCategoryValues.includes(statusCategory)) {
+  if (statusItems.some(item => item.status === statusCategory)) {
     queryParams.value.statusCategory = statusCategory
-    const index = statusItems.findIndex(item => item.status === statusCategory)
-    tabIndex.value = index >= 0 ? index : 1
+    activeStatus.value = String(statusCategory)
   }
 
   const surveyType = Number(options.surveyType)
@@ -268,10 +290,12 @@ function applyHomeFilter(options: Record<string, string | undefined>) {
     } else if (surveyType === HrmEmployeeSurveyType.PENDING_LEAVE) {
       surveyStatusCategory = HrmEmployeeStatusTab.PENDING_LEAVE
     }
-    if (surveyStatusCategory != null) {
+    if (surveyType === HrmEmployeeSurveyType.ENTRY) {
+      queryParams.value.statusCategory = undefined
+      activeStatus.value = 'entry'
+    } else if (surveyStatusCategory != null) {
       queryParams.value.statusCategory = surveyStatusCategory
-      const index = statusItems.findIndex(item => item.status === surveyStatusCategory)
-      tabIndex.value = index >= 0 ? index : tabIndex.value
+      activeStatus.value = String(surveyStatusCategory)
     }
   }
 
