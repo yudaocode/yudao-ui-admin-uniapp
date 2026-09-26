@@ -1,6 +1,10 @@
 import { useTokenStore } from '@/store/token'
 import { getEnvBaseUrl } from '@/utils'
 
+// #ifdef MP-WEIXIN
+import { AbortController as PolyfillAbortController } from 'abortcontroller-polyfill/dist/cjs-ponyfill'
+// #endif
+
 export interface SseOptions<T = Record<string, any>> {
   data: T
   ctrl: AbortController
@@ -14,6 +18,18 @@ interface ChunkRequestTask extends UniNamespace.RequestTask {
 }
 
 const SSE_TIMEOUT = 10 * 60 * 1000 // 流式请求最长等待时间
+
+/** 创建流式请求控制器 */
+export function createSseController(): AbortController {
+  let controller: AbortController
+  // #ifdef MP-WEIXIN
+  controller = new PolyfillAbortController()
+  // #endif
+  // #ifndef MP-WEIXIN
+  controller = new AbortController()
+  // #endif
+  return controller
+}
 
 /** 创建 SSE 消息解析器 */
 function createSseParser<T>(options: SseOptions<T>) {

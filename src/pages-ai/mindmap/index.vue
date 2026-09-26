@@ -39,6 +39,7 @@ import type { AiMindMapGenerateReq } from '@/api/ai/mindmap'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnmounted, reactive, ref } from 'vue'
 import { generateMindMap } from '@/api/ai/mindmap'
+import { createSseController } from '@/http/sse'
 import { navigateBackPlus } from '@/utils'
 import MindmapHistoryList from './components/mindmap-history-list.vue'
 import MindmapInputPanel from './components/mindmap-input-panel.vue'
@@ -79,7 +80,7 @@ async function handleSubmit() {
   }
   generatedContent.value = ''
   isGenerating.value = true
-  streamController.value = new AbortController()
+  streamController.value = createSseController()
   void generateMindMap({
     data: { ...formData },
     ctrl: streamController.value,

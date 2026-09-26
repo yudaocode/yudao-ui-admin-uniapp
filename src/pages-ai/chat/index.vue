@@ -119,6 +119,7 @@ import {
   getChatMessageListByConversationId,
   sendChatMessageStream,
 } from '@/api/ai/chat/message'
+import { createSseController } from '@/http/sse'
 import { navigateBackPlus } from '@/utils'
 import ChatInput from './components/chat-input.vue'
 import ChatMessageList from './components/chat-message-list.vue'
@@ -559,7 +560,7 @@ async function handleSend() {
   scrollToBottom()
 
   // 发起 SSE 流式生成
-  streamController.value = new AbortController()
+  streamController.value = createSseController()
   conversationInProgress.value = true
   void sendChatMessageStream(
     conversationId,

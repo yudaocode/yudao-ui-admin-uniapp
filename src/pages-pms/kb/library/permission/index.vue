@@ -131,10 +131,11 @@ import { getKnowledgeLibrary } from '@/api/pms/kb/library'
 import { getKnowledgeLibraryMemberList } from '@/api/pms/kb/library/member'
 import DeptFormPicker from '@/components/system-select/dept-form-picker.vue'
 import UserFormPicker from '@/components/system-select/user-form-picker.vue'
+import { getIntDictOptions } from '@/hooks/useDict'
 import {
   PmsKnowledgeContentLevel,
 } from '@/pages-pms/kb/utils/constants'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/constants'
+import { DICT_TYPE } from '@/utils/constants'
 import { navigateBackPlus } from '@/utils'
 
 interface EditableMember extends KnowledgeContentPermissionMember {

@@ -39,6 +39,7 @@ import type { AiWriteGenerateReq } from '@/api/ai/write'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnmounted, reactive, ref } from 'vue'
 import { writeStream } from '@/api/ai/write'
+import { createSseController } from '@/http/sse'
 import { navigateBackPlus } from '@/utils'
 import { AiWriteDefaultOptions, AiWriteTypeEnum } from '@/utils/constants'
 import WriteHistoryList from './components/write-history-list.vue'
@@ -83,7 +84,7 @@ async function handleSubmit() {
   }
   writeResult.value = ''
   isWriting.value = true
-  streamController.value = new AbortController()
+  streamController.value = createSseController()
   void writeStream({
     data: { ...formData },
     ctrl: streamController.value,
