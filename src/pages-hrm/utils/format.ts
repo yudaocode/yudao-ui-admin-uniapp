@@ -195,20 +195,9 @@ export function formatHrmDateRange(
   return `${formatHrmDate(startDate)} 至 ${formatHrmDate(endDate)}`
 }
 
-/** 获得叶子薪资项 */
+/** 获得工资表表头中的明细项，跳过空分类 */
 export function getSalaryLeafOptions(options?: SalaryOption[]): SalaryOption[] {
-  const result: SalaryOption[] = []
-  function append(optionsToAppend?: SalaryOption[]) {
-    for (const option of optionsToAppend || []) {
-      if (option.children?.length) {
-        append(option.children)
-      } else {
-        result.push(option)
-      }
-    }
-  }
-  append(options)
-  return result
+  return (options || []).flatMap(category => category.children || [])
 }
 
 /** 格式化带千分位的 HRM 金额 */

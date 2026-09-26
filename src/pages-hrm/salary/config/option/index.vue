@@ -19,6 +19,10 @@
       </wd-tabs>
     </view>
 
+    <view class="px-24rpx pt-16rpx text-24rpx text-[#999]">
+      同步保留启用和显示设置，已移除的标准项可通过「添加薪资项」恢复。
+    </view>
+
     <!-- 薪资项列表 -->
     <view class="p-24rpx pb-160rpx">
       <view v-if="loading" class="py-80rpx text-center text-28rpx text-[#999]">
@@ -353,7 +357,7 @@ async function handleSync() {
   syncing.value = true
   try {
     await syncSalaryOption()
-    toast.success('修改成功')
+    toast.success('同步完成，已保留启用和显示设置')
     await getList()
   } finally {
     syncing.value = false

@@ -104,11 +104,13 @@ const canEdit = computed(() => { // 是否可编辑
 
 const displayOptions = computed(() => { // 工资项展示列表
   const values = formData.value.optionValues || []
-  return values.map((item: SalaryOptionValue) => ({
-    code: item.code,
-    name: item.name || (item.code != null ? optionNameMap.value[item.code] : undefined),
-    value: item.value,
-  }))
+  return values
+    .filter(item => item.code != null && optionNameMap.value[item.code] !== undefined)
+    .map((item: SalaryOptionValue) => ({
+      code: item.code,
+      name: optionNameMap.value[item.code!] || item.name,
+      value: item.value,
+    }))
 })
 
 /** 返回上一页 */
