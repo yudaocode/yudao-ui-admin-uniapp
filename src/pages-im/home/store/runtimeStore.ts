@@ -105,6 +105,7 @@ export const useImRuntimeStore = defineStore('imRuntimeStore', () => {
   }
 
   uni.$on('auth:logout', reset)
+  uni.$on('tenant:change', reset)
   uni.$on('im:state:resync', resyncState)
 
   /** 暴露运行时状态与动作 */

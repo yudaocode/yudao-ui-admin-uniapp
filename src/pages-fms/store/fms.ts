@@ -87,8 +87,13 @@ export const useFmsStore = defineStore('fms', () => {
   function clearAccountSet() {
     accountSet.value = undefined
     currentMonth.value = undefined
+    accountSetList.value = []
+    accountSetListLoaded.value = false
     uni.removeStorageSync(FMS_ACCOUNT_SET_CACHE_KEY)
   }
+
+  uni.$on('tenant:change', clearAccountSet)
+  uni.$on('auth:logout', clearAccountSet)
 
   return {
     accountSet,

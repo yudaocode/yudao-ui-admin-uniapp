@@ -166,6 +166,9 @@ async function getDetail() {
     getSimpleUserList(),
     getEmployeeDeptStatistics(),
   ])
+  if (!deptData) {
+    return
+  }
   formData.value = deptData
   parentDeptName.value = deptList.find(item => item.id === deptData.parentId)?.name
   leaderUserName.value = userList.find(item => item.id === deptData.leaderUserId)?.nickname

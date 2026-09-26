@@ -13,8 +13,8 @@
         <wd-cell title="名称" :value="formData?.name || '-'" />
         <wd-cell title="微信号" :value="formData?.account || '-'" />
         <wd-cell title="AppID" :value="formData?.appId || '-'" />
-        <wd-cell title="Token" :value="formData?.token || '-'" />
-        <wd-cell title="加解密密钥" :value="formData?.aesKey || '-'" />
+        <wd-cell title="Token" :value="formatSecret(formData?.token)" />
+        <wd-cell title="加解密密钥" :value="formatSecret(formData?.aesKey)" />
         <wd-cell title="服务器地址">
           <view class="break-all text-right text-26rpx text-[#666]">
             http://服务端地址/admin-api/mp/open/{{ formData?.appId || '-' }}
@@ -95,6 +95,11 @@ const moreActions = computed(() => {
   }
   return actions
 })
+
+/** 格式化敏感配置，详情页不直接展示凭据 */
+function formatSecret(value?: string) {
+  return value ? '******' : '-'
+}
 
 /** 返回上一页 */
 function handleBack() {
