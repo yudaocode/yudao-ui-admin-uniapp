@@ -85,15 +85,19 @@ export async function uploadFile(
       },
       formData: directory ? { directory } : undefined,
       success: (res) => {
-        if (res.statusCode === 200) {
-          const result = JSON.parse(res.data)
-          if (result.code === 0) {
-            resolve(result.data)
+        try {
+          if (res.statusCode === 200) {
+            const result = JSON.parse(res.data)
+            if (result.code === 0) {
+              resolve(result.data)
+            } else {
+              reject(new Error(result.msg || '上传失败'))
+            }
           } else {
-            reject(new Error(result.msg || '上传失败'))
+            reject(new Error('上传失败'))
           }
-        } else {
-          reject(new Error('上传失败'))
+        } catch (error) {
+          reject(error)
         }
       },
       fail: (err) => {

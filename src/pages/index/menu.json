@@ -218,7 +218,7 @@
               "icon": "folder",
               "iconColor": "#2f54eb",
               "url": "/pages-infra/file/index",
-              "permission": "infra:file:query"
+              "permissions": ["infra:file:query", "infra:file-config:query"]
             },
             {
               "key": "websocket",

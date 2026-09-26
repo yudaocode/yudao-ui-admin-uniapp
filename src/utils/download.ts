@@ -4,14 +4,14 @@
 
 import { isH5, isMpWeixin } from '@uni-helper/uni-env'
 import { useTokenStore, useUserStore } from '@/store'
-import { getEnvBaseUrl } from '@/utils'
+import { decodeUrlText, getEnvBaseUrl } from '@/utils'
 import { stringifyQuery } from '@/http/tools/queryString'
 import { openSafeUrl } from '@/utils/url'
 
 /** 下载后端接口文件 */
 export async function downloadApiFile(url: string, params?: Record<string, any>, fileName?: string): Promise<void> {
   const requestUrl = buildApiDownloadUrl(url, params)
-  const header = buildDownloadHeader()
+  const header = await buildDownloadHeader()
   if (isH5) {
     const response = await fetch(requestUrl, { headers: header as HeadersInit })
     if (!response.ok) {
@@ -190,15 +190,20 @@ function buildApiDownloadUrl(url: string, params?: Record<string, any>) {
 }
 
 /** 构造下载请求头 */
-function buildDownloadHeader() {
+async function buildDownloadHeader() {
   const header: Record<string, any> = {}
-  const token = useTokenStore().updateNowTime().validToken
+  const token = await useTokenStore().tryGetValidToken()
   if (token) {
     header.Authorization = `Bearer ${token}`
   }
-  const tenantId = useUserStore().tenantId
-  if (tenantId) {
-    header['tenant-id'] = tenantId
+  const userStore = useUserStore()
+  if (import.meta.env.VITE_APP_TENANT_ENABLE === 'true') {
+    if (userStore.tenantId) {
+      header['tenant-id'] = userStore.tenantId
+    }
+    if (token && userStore.visitTenantId) {
+      header['visit-tenant-id'] = userStore.visitTenantId
+    }
   }
   return header
 }
@@ -210,10 +215,10 @@ function resolveDownloadFileName(contentDisposition: string | null, fallback: st
   }
   const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)
   if (utf8Match?.[1]) {
-    return decodeURIComponent(utf8Match[1])
+    return decodeUrlText(utf8Match[1])
   }
   const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i)
-  return filenameMatch?.[1] ? decodeURIComponent(filenameMatch[1]) : fallback
+  return filenameMatch?.[1] ? decodeUrlText(filenameMatch[1]) : fallback
 }
 
 /** 从 URL 中解析文件名 */
@@ -352,7 +357,7 @@ export function openFile(url?: string) {
     return
   }
   // #ifdef H5
-  window.open(url)
+  openSafeUrl(url)
   // #endif
   // #ifndef H5
   uni.showLoading({ title: '打开中...' })

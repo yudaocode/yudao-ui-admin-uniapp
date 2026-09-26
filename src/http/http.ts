@@ -89,7 +89,7 @@ export function http<T>(options: CustomRequestOptions) {
             responseData = ApiEncrypt.decryptResponse(responseData)
           } catch (error) {
             console.error('响应数据解密失败:', error)
-            throw new Error(`响应数据解密失败: ${(error as Error).message}`)
+            return reject(new Error(`响应数据解密失败: ${(error as Error).message}`))
           }
         }
 
