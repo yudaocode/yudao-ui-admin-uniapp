@@ -46,6 +46,7 @@
     <!-- 底部保存按钮 -->
     <view class="yd-detail-footer">
       <wd-button
+        v-if="hasAccessByCodes([formData.id ? 'pay:channel:update' : 'pay:channel:create'])"
         type="primary"
         block
         :loading="formLoading"
@@ -66,6 +67,7 @@ import {
   getPayChannel,
   updatePayChannel,
 } from '@/api/pay/channel'
+import { useAccess } from '@/hooks/useAccess'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE, PayChannelEnum } from '@/utils/constants'
@@ -85,6 +87,7 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const alipayConfigRef = ref<any>() // 支付宝配置子组件引用

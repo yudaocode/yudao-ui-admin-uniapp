@@ -83,7 +83,7 @@ const toast = useToast()
 const formData = ref<PayApp>({}) // 详情数据
 const deleting = ref(false) // 删除状态
 const statusChanging = ref(false) // 状态切换中
-const canConfigChannel = computed(() => !!props.id)
+const canConfigChannel = computed(() => !!props.id && hasAccessByCodes(['pay:channel:query'])) // 可查看渠道配置
 
 /** 返回上一页 */
 function handleBack() {

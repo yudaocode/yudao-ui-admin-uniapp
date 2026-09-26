@@ -16,7 +16,9 @@
     <!-- 详情分类 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex" slidable="always">
-        <wd-tab v-for="tab in tabs" :key="tab.key" :title="tab.title" />
+        <template v-for="(tab, index) in tabs" :key="tab.key">
+          <wd-tab v-if="tab.key !== 'balance' || hasAccessByCodes(['pay:wallet:query'])" :name="String(index)" :title="tab.title" />
+        </template>
       </wd-tabs>
     </view>
 
@@ -75,7 +77,7 @@
               成长值
             </view>
           </view>
-          <view>
+          <view v-if="hasAccessByCodes(['pay:wallet:query'])">
             <view class="break-all text-28rpx text-[#333] font-semibold">
               {{ formatAmount(walletData?.balance) }}
             </view>
@@ -83,7 +85,7 @@
               当前余额
             </view>
           </view>
-          <view>
+          <view v-if="hasAccessByCodes(['pay:wallet:query'])">
             <view class="break-all text-28rpx text-[#333] font-semibold">
               {{ formatAmount(walletData?.totalExpense) }}
             </view>
@@ -91,7 +93,7 @@
               支出金额
             </view>
           </view>
-          <view>
+          <view v-if="hasAccessByCodes(['pay:wallet:query'])">
             <view class="break-all text-28rpx text-[#333] font-semibold">
               {{ formatAmount(walletData?.totalRecharge) }}
             </view>
@@ -126,7 +128,7 @@
     <PointList v-if="loadedTabs.has('point')" v-show="activeTab === 'point'" class="min-h-0 flex-1" :user-id="props.id" />
     <SignList v-if="loadedTabs.has('sign')" v-show="activeTab === 'sign'" class="min-h-0 flex-1" :user-id="props.id" />
     <ExperienceList v-if="loadedTabs.has('experience')" v-show="activeTab === 'experience'" class="min-h-0 flex-1" :user-id="props.id" />
-    <BalanceList v-if="loadedTabs.has('balance')" v-show="activeTab === 'balance'" class="min-h-0 flex-1" :wallet-id="walletData?.id" />
+    <BalanceList v-if="loadedTabs.has('balance') && hasAccessByCodes(['pay:wallet:query'])" v-show="activeTab === 'balance'" class="min-h-0 flex-1" :wallet-id="walletData?.id" />
     <AddressList v-if="loadedTabs.has('address')" v-show="activeTab === 'address'" :user-id="props.id" />
     <OrderList v-if="loadedTabs.has('order')" v-show="activeTab === 'order'" class="min-h-0 flex-1" :user-id="props.id" />
     <AfterSaleList v-if="loadedTabs.has('after-sale')" v-show="activeTab === 'after-sale'" class="min-h-0 flex-1" :user-id="props.id" />
@@ -220,14 +222,14 @@ const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const formData = ref<MemberUser>() // 详情数据
 const walletData = ref<PayWallet>() // 钱包数据
-const tabIndex = ref(0) // 当前详情分类下标
+const tabIndex = ref('0') // 当前详情分类下标
 const loadedTabs = ref(new Set<string>(['basic'])) // 已加载过的分类；懒加载，避免打开详情即并发全部列表请求
 const moreActionVisible = ref(false) // 更多操作菜单
 const levelFormVisible = ref(false) // 修改等级弹窗
 const pointFormVisible = ref(false) // 修改积分弹窗
 const balanceFormVisible = ref(false) // 修改余额弹窗
 const couponSendVisible = ref(false) // 发送优惠券弹窗
-const activeTab = computed(() => tabs[tabIndex.value]?.key || 'basic') // 当前详情分类
+const activeTab = computed(() => tabs[Number(tabIndex.value)]?.key || 'basic') // 当前详情分类
 const isPagingTab = computed(() => !['basic', 'address'].includes(activeTab.value)) // 分页详情分类使用固定高布局
 const moreActions = computed(() => { // 更多操作菜单项
   const actions = []
@@ -268,12 +270,10 @@ async function getDetail() {
   try {
     toast.loading('加载中...')
     const userId = Number(props.id)
-    const [user, wallet] = await Promise.all([
-      getMemberUser(userId),
-      getPayWallet({ userId }),
-    ])
-    formData.value = user
-    walletData.value = wallet
+    formData.value = await getMemberUser(userId)
+    if (hasAccessByCodes(['pay:wallet:query'])) {
+      walletData.value = await getPayWallet({ userId })
+    }
   } finally {
     toast.close()
   }

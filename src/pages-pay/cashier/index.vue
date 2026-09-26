@@ -126,7 +126,8 @@ import type { PayOrder } from '@/api/pay/order'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getPayOrder, submitPayOrder } from '@/api/pay/order'
-import { navigateBackPlus } from '@/utils'
+import { decodeUrlText, navigateBackPlus } from '@/utils'
+import { isOpenableUrl } from '@/utils/url'
 import { PayChannelEnum, PayDisplayModeEnum, PayOrderStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import { formatDisplayMoney } from '@/utils/format'
@@ -307,6 +308,13 @@ function displayUrl(url?: string) {
   if (!url) {
     return
   }
+  const allowedScheme = currentChannelCode.value.startsWith('alipay_')
+    ? /^alipays:\/\//i
+    : currentChannelCode.value.startsWith('wx_') ? /^weixin:\/\//i : undefined
+  if (!isOpenableUrl(url) && !allowedScheme?.test(url)) {
+    toast.error('支付链接无效')
+    return
+  }
   // #ifdef H5
   window.location.href = url
   // #endif
@@ -420,7 +428,7 @@ function goReturnUrl(payResult: string) {
 
 /** 初始化 */
 onMounted(() => {
-  returnUrl.value = props.returnUrl ? decodeURIComponent(props.returnUrl) : ''
+  returnUrl.value = props.returnUrl ? decodeUrlText(props.returnUrl) : ''
   getDetail()
 })
 

@@ -46,6 +46,7 @@
               <text>{{ getChannel(channel.code)?.feeRate ?? 0 }}%</text>
             </view>
             <wd-button
+              v-if="hasAccessByCodes([getChannel(channel.code)?.id ? 'pay:channel:update' : 'pay:channel:create'])"
               size="small"
               type="primary"
               @click="handleConfig(channel.code)"
@@ -64,6 +65,7 @@ import type { PayChannel } from '@/api/pay/channel'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { getPayChannelList } from '@/api/pay/channel'
+import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE, PayChannelEnum } from '@/utils/constants'
 
@@ -78,6 +80,7 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const list = ref<PayChannel[]>([]) // 渠道列表
 const channelGroups = [
   {
@@ -130,7 +133,7 @@ function getChannel(code: string) {
 
 /** 编辑渠道配置 */
 function handleConfig(code: string) {
-  if (!props.appId) {
+  if (!props.appId || !hasAccessByCodes(['pay:channel:query'])) {
     return
   }
   uni.navigateTo({
@@ -140,7 +143,7 @@ function handleConfig(code: string) {
 
 /** 加载渠道列表 */
 async function loadChannels() {
-  if (!props.appId) {
+  if (!props.appId || !hasAccessByCodes(['pay:channel:query'])) {
     return
   }
   list.value = await getPayChannelList(Number(props.appId)) || []
