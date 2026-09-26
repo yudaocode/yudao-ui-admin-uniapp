@@ -69,16 +69,17 @@
           label-width="200rpx"
         />
         <yd-form-picker
-          v-model="conditionData.operator"
+          :model-value="conditionData.operator"
           label="操作符"
           :columns="operatorOptions"
           label-key="label"
           value-key="value"
           placeholder="请选择操作符"
           label-width="200rpx"
+          @update:model-value="onOperatorChange"
         />
         <wd-form-item title="比较值" title-width="200rpx">
-          <wd-input v-model="conditionData.param" placeholder="请输入比较值" />
+          <ValueInput v-model="conditionData.param" :operator="conditionData.operator" />
         </wd-form-item>
       </template>
 
@@ -128,6 +129,7 @@ import {
   statusOperatorOptions,
   timeOperatorOptions,
 } from '@/utils/constants'
+import ValueInput from './value-input.vue'
 
 const props = defineProps<{ condition: TriggerCondition, productOptions: Product[], index: number }>()
 const emit = defineEmits<{
@@ -205,6 +207,14 @@ function onConditionTypeChange() {
     return
   }
   conditionData.value.operator = IotRuleSceneTriggerConditionParameterOperatorEnum.EQUALS.value
+}
+
+/** 切换操作符时清空旧比较值 */
+function onOperatorChange(operator: string) {
+  if (conditionData.value.operator !== operator) {
+    conditionData.value.operator = operator
+    conditionData.value.param = ''
+  }
 }
 
 /** 产品切换 */

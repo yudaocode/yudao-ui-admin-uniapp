@@ -1,6 +1,18 @@
 import type { Action, Trigger, TriggerCondition } from '@/api/iot/rule/scene'
 import { isEmptyValue } from '@/utils/is'
-import { IotRuleSceneActionTypeEnum, IotRuleSceneTriggerConditionTypeEnum, IotRuleSceneTriggerTimeOperatorEnum, IotRuleSceneTriggerTypeEnum, isDeviceTrigger } from '@/utils/constants'
+import { IotRuleSceneActionTypeEnum, IotRuleSceneTriggerConditionParameterOperatorEnum, IotRuleSceneTriggerConditionTypeEnum, IotRuleSceneTriggerTimeOperatorEnum, IotRuleSceneTriggerTypeEnum, isDeviceTrigger } from '@/utils/constants'
+
+/** 是否为范围比较操作符 */
+export function isRangeOperator(operator?: string) {
+  return operator === IotRuleSceneTriggerConditionParameterOperatorEnum.BETWEEN.value
+    || operator === IotRuleSceneTriggerConditionParameterOperatorEnum.NOT_BETWEEN.value
+}
+
+/** 范围比较必须填写两个边界值 */
+function isRangeValueComplete(value?: string) {
+  const parts = (value ?? '').split(',')
+  return parts.length === 2 && parts.every(part => part.trim() !== '')
+}
 
 /** 执行器参数是否为空（空字符串 / 空对象视为空） */
 export function isActionParamsEmpty(params?: string) {
@@ -164,6 +176,9 @@ export function validateTriggerItem(trigger: Trigger, index: number): string | n
       if (isEmptyValue(trigger.value)) {
         return `触发器 ${index + 1}：比较值不能为空`
       }
+      if (isRangeOperator(trigger.operator) && !isRangeValueComplete(trigger.value)) {
+        return `触发器 ${index + 1}：请填写完整的比较范围`
+      }
     }
     return validateTriggerConditionGroups(trigger.conditionGroups, index)
   }
@@ -210,6 +225,9 @@ export function validateTriggerCondition(condition: TriggerCondition, path: stri
     }
     if (isEmptyValue(condition.param)) {
       return `${path}：比较值不能为空`
+    }
+    if (isRangeOperator(condition.operator) && !isRangeValueComplete(condition.param)) {
+      return `${path}：请填写完整的比较范围`
     }
     return null
   }

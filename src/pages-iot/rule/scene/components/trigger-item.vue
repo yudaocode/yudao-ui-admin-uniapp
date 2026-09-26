@@ -44,13 +44,14 @@
         />
         <template v-if="showOperatorValue">
           <yd-form-picker
-            v-model="triggerData.operator"
+            :model-value="triggerData.operator"
             label="操作符"
             :columns="operatorOptions"
             label-key="label"
             value-key="value"
             placeholder="请选择操作符"
             label-width="200rpx"
+            @update:model-value="onOperatorChange"
           />
           <yd-form-picker
             v-if="isStateUpdate"
@@ -63,7 +64,7 @@
             label-width="200rpx"
           />
           <wd-form-item v-else title="比较值" title-width="200rpx">
-            <wd-input v-model="triggerData.value" placeholder="请输入比较值" />
+            <ValueInput v-model="triggerData.value" :operator="triggerData.operator" />
           </wd-form-item>
         </template>
       </template>
@@ -89,6 +90,7 @@ import ProductFormPicker from '@/pages-iot/product/product/components/product-fo
 import ThingModelPicker from '@/pages-iot/thingmodel/components/thing-model-picker.vue'
 import { deviceStatusOptions, IOT_ALL_DEVICE_OPTION, IotRuleSceneTriggerTypeEnum, IoTThingModelTypeEnum, isDeviceTrigger, operatorOptions, triggerTypeOptions } from '@/utils/constants'
 import ConditionGroupEditor from './condition-group-editor.vue'
+import ValueInput from './value-input.vue'
 
 const props = defineProps<{ trigger: Trigger, productOptions: Product[], index: number }>()
 const emit = defineEmits<{
@@ -165,6 +167,14 @@ function onTypeChange() {
   triggerData.value.value = undefined
   triggerData.value.cronExpression = undefined
   triggerData.value.conditionGroups = []
+}
+
+/** 切换操作符时清空旧比较值 */
+function onOperatorChange(operator: string) {
+  if (triggerData.value.operator !== operator) {
+    triggerData.value.operator = operator
+    triggerData.value.value = ''
+  }
 }
 
 /** 切换产品重置设备与监控项 */
