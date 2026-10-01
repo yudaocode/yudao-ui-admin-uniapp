@@ -177,6 +177,9 @@ function handleBack() {
 
 /** 查询会员列表 */
 async function queryList(pageNo: number, pageSize: number) {
+  if (pageNo === 1) {
+    selectedIds.value = []
+  }
   try {
     const data = await getMemberUserPage({
       ...queryParams.value,

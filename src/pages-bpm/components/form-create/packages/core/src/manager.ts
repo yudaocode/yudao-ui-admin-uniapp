@@ -5,7 +5,7 @@ import type { ParseSubFormRules } from './subForm'
 import { applyControlRules } from './control'
 import { getValidateRules } from './provider'
 import { isSubFormRule, normalizeSubFormRules } from './subForm'
-import { isRuleHidden } from './utils'
+import { isRuleDisabled, isRuleHidden } from './utils'
 import { validateFormCreateRule } from './validate'
 
 export function createFormSchema(
@@ -18,7 +18,7 @@ export function createFormSchema(
     async validate(model) {
       const issues: FormSchemaIssue[] = []
       for (const rule of rules()) {
-        if (!rule.field || isRuleHidden(rule, fieldStates[rule.field])) {
+        if (!rule.field || isRuleHidden(rule, fieldStates[rule.field]) || isRuleDisabled(false, fieldStates[rule.field], rule)) {
           continue
         }
         const value = model[rule.field]
@@ -74,7 +74,7 @@ async function validateSubFormRule(
     const controlResult = applyControlRules(children, row || {})
     for (const childRule of controlResult.rules) {
       const childState = childRule.field ? controlResult.fieldStates[childRule.field] : undefined
-      if (!childRule.field || isRuleHidden(childRule, childState)) {
+      if (!childRule.field || isRuleHidden(childRule, childState) || isRuleDisabled(false, childState, childRule)) {
         continue
       }
       const childValue = row?.[childRule.field]

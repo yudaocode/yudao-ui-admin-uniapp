@@ -153,9 +153,6 @@ async function handleBusinessChange(business?: Business) {
     return
   }
   const detail = await getBusiness(business.id)
-  if (formData.value.businessId !== business.id) {
-    return
-  }
   formData.value.businessName = detail.name
   const products = Array.isArray(detail.products) ? detail.products : []
   formData.value.products = products.map((item: Record<string, any>) => ({ ...item, id: undefined, contractPrice: item.businessPrice }))

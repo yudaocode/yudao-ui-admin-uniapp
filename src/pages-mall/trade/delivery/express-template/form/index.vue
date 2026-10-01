@@ -98,7 +98,9 @@ const getTitle = computed(() => props.id ? '编辑运费模板' : '新增运费�
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用
 const areaTree = ref<Area[]>([]) // 地区树
-const charges = ref<Record<string, any>[]>([]) // 计费区域规则（金额单位元）
+const charges = ref<Record<string, any>[]>([
+  { areaIds: [1], startCount: 2, startPrice: 5, extraCount: 5, extraPrice: 10 },
+]) // 计费区域规则（金额单位元）
 const frees = ref<Record<string, any>[]>([]) // 包邮区域规则（金额单位元）
 const formData = ref<DeliveryExpressTemplate>({
   id: undefined,
