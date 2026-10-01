@@ -316,3 +316,21 @@ export function getByteOrderOptions(rawDataType?: string) {
   }
   return ModbusByteOrder16Options
 }
+
+export const IotRedisDataStructureEnum = { // Redis 数据结构
+  STREAM: 1,
+  HASH: 2,
+  LIST: 3,
+  SET: 4,
+  ZSET: 5,
+  STRING: 6,
+} as const
+
+export const IOT_REDIS_DATA_STRUCTURE_OPTIONS = [ // Redis 数据结构选项
+  { label: 'Stream', value: IotRedisDataStructureEnum.STREAM },
+  { label: 'Hash', value: IotRedisDataStructureEnum.HASH },
+  { label: 'List', value: IotRedisDataStructureEnum.LIST },
+  { label: 'Set', value: IotRedisDataStructureEnum.SET },
+  { label: 'ZSet', value: IotRedisDataStructureEnum.ZSET },
+  { label: 'String', value: IotRedisDataStructureEnum.STRING },
+]

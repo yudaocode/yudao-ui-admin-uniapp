@@ -320,6 +320,21 @@
             <wd-form-item title="主题" title-width="200rpx">
               <wd-input v-model="config.topic" placeholder="请输入主题" clearable />
             </wd-form-item>
+            <yd-form-picker
+              v-model="config.dataStructure"
+              label="数据结构"
+              label-width="200rpx"
+              :columns="IOT_REDIS_DATA_STRUCTURE_OPTIONS"
+              label-key="label"
+              value-key="value"
+              placeholder="请选择数据结构"
+            />
+            <wd-form-item v-if="config.dataStructure === IotRedisDataStructureEnum.HASH" title="Hash 字段" title-width="200rpx">
+              <wd-input v-model="config.hashField" placeholder="留空时使用设备 ID" clearable />
+            </wd-form-item>
+            <wd-form-item v-if="config.dataStructure === IotRedisDataStructureEnum.ZSET" title="Score 字段" title-width="200rpx">
+              <wd-input v-model="config.scoreField" placeholder="留空时使用当前时间戳" clearable />
+            </wd-form-item>
           </template>
         </wd-cell-group>
       </wd-form>
@@ -342,7 +357,7 @@ import { computed, onMounted, ref } from 'vue'
 import { createDataSink, getDataSink, IotDataSinkTypeEnum, updateDataSink } from '@/api/iot/rule/data/sink'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE, IOT_REDIS_DATA_STRUCTURE_OPTIONS, IotRedisDataStructureEnum } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ id?: number | string }>()
@@ -407,7 +422,7 @@ function createDefaultConfig(type: number = IotDataSinkTypeEnum.HTTP): DataSinkC
     case IotDataSinkTypeEnum.DATABASE:
       return { ...base, jdbcUrl: '', username: '', password: '', tableName: 'iot_device_message_sink' }
     case IotDataSinkTypeEnum.REDIS_STREAM:
-      return { ...base, host: '', port: 6379, password: '', database: 0, topic: '' }
+      return { ...base, host: '', port: 6379, password: '', database: 0, topic: '', dataStructure: IotRedisDataStructureEnum.STREAM }
     case IotDataSinkTypeEnum.ROCKETMQ:
       return { ...base, nameServer: '', accessKey: '', secretKey: '', group: '', topic: '', tags: '' }
     case IotDataSinkTypeEnum.RABBITMQ:
@@ -423,7 +438,11 @@ function createDefaultConfig(type: number = IotDataSinkTypeEnum.HTTP): DataSinkC
 /** 合并默认配置 */
 function normalizeConfig(type?: number, source?: DataSinkConfig) {
   const currentType = type || IotDataSinkTypeEnum.HTTP
-  return { ...createDefaultConfig(currentType), ...(source || {}), type: String(currentType) }
+  const normalized = { ...createDefaultConfig(currentType), ...(source || {}), type: String(currentType) }
+  if (currentType === IotDataSinkTypeEnum.REDIS_STREAM) {
+    normalized.dataStructure ??= IotRedisDataStructureEnum.STREAM
+  }
+  return normalized
 }
 
 /** 对象转换为 Key/Value 行 */
@@ -579,7 +598,11 @@ function buildSubmitConfig() {
       }
       return { ...config.value }
     case IotDataSinkTypeEnum.REDIS_STREAM:
-      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'database', label: '数据库' }, { key: 'topic', label: '主题' }])) {
+      if (!validateRequired([{ key: 'host', label: '主机地址' }, { key: 'port', label: '端口' }, { key: 'database', label: '数据库' }, { key: 'topic', label: '主题' }, { key: 'dataStructure', label: '数据结构' }])) {
+        return undefined
+      }
+      if (!IOT_REDIS_DATA_STRUCTURE_OPTIONS.some(item => item.value === config.value.dataStructure)) {
+        toast.warning('请选择有效的数据结构')
         return undefined
       }
       return { ...config.value }
