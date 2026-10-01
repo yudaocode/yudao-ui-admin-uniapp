@@ -188,7 +188,7 @@ const formData = ref<StockTakingResult>(getDefaultFormData()) // 表单数据
 const taskLineOptions = ref<TaskLineOption[]>([]) // 盘点清单选项
 const itemPickerRef = ref<InstanceType<typeof ItemPicker>>() // 物料选择器
 const isCreateMode = computed(() => formType.value === 'create')
-const isLineSelected = computed(() => isCreateMode.value && formData.value.lineId !== undefined)
+const isLineSelected = computed(() => isCreateMode.value && !!formData.value.lineId)
 const formTitle = computed(() => isCreateMode.value ? '新增盘点结果' : '编辑盘点结果')
 const itemDisplayValue = computed(() => {
   if (formData.value.itemCode || formData.value.itemName) {
