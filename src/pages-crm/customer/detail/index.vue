@@ -108,7 +108,7 @@
     <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
 
     <!-- 转移 -->
-    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="getDetail" />
+    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="handleTransferSuccess" />
 
     <!-- 公海分配 -->
     <wd-popup v-model="distributeVisible" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0;">
@@ -377,6 +377,13 @@ async function handlePutPool() {
   } finally {
     actionLoading.value = false
   }
+}
+
+/** 转移成功后刷新列表并返回 */
+function handleTransferSuccess() {
+  uni.$off('crm:customer:reload', getDetail)
+  uni.$emit('crm:customer:reload')
+  delay(handleBack)
 }
 
 /** 退出团队后返回 */

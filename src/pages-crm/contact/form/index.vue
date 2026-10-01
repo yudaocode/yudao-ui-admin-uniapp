@@ -14,7 +14,7 @@
           <wd-form-item title="联系人姓名" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入联系人姓名" clearable />
           </wd-form-item>
-          <CustomerFormPicker v-model="formData.customerId" prop="customerId" />
+          <CustomerFormPicker v-model="formData.customerId" prop="customerId" :disabled="customerLocked" />
           <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="手机" title-width="200rpx" prop="mobile">
             <wd-input v-model="formData.mobile" placeholder="请输入手机" clearable />
@@ -89,6 +89,7 @@ const toast = useToast()
 const userStore = useUserStore()
 const getTitle = computed(() => props.id ? '编辑联系人' : '新增联系人')
 const formLoading = ref(false) // 表单提交状态
+const customerLocked = computed(() => !props.id && !!props.customerId) // 预填客户不可改
 const formData = ref<Contact>({
   id: undefined,
   name: '',

@@ -135,18 +135,27 @@ function handleBack() {
   navigateBackPlus('/pages-crm/contract/index')
 }
 
-/** 客户变更后清空商机、客户签约人 */
+/** 客户变更后清空商机、客户签约人和产品 */
 function handleCustomerChange() {
   formData.value.businessId = undefined
+  formData.value.businessName = undefined
   formData.value.signContactId = undefined
+  formData.value.products = []
+  handleProductTotalsChange(0, 0)
 }
 
 /** 商机变更后回填产品清单（商机产品的「商机价」即合同的「合同价」） */
 async function handleBusinessChange(business?: Business) {
   if (!business?.id) {
+    formData.value.businessName = undefined
+    formData.value.products = []
+    handleProductTotalsChange(0, 0)
     return
   }
   const detail = await getBusiness(business.id)
+  if (formData.value.businessId !== business.id) {
+    return
+  }
   formData.value.businessName = detail.name
   const products = Array.isArray(detail.products) ? detail.products : []
   formData.value.products = products.map((item: Record<string, any>) => ({ ...item, id: undefined, contractPrice: item.businessPrice }))

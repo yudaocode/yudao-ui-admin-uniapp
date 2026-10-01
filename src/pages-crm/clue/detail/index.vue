@@ -101,7 +101,7 @@
     <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
 
     <!-- 转移 -->
-    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="getDetail" />
+    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="handleTransferSuccess" />
   </view>
 </template>
 
@@ -232,6 +232,13 @@ async function handleTransform() {
   } finally {
     actionLoading.value = false
   }
+}
+
+/** 转移成功后刷新列表并返回 */
+function handleTransferSuccess() {
+  uni.$off('crm:clue:reload', getDetail)
+  uni.$emit('crm:clue:reload')
+  delay(handleBack)
 }
 
 /** 退出团队后返回 */

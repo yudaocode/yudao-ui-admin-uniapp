@@ -147,7 +147,7 @@
     <wd-action-sheet v-model="moreActionVisible" :actions="moreActions" @select="handleMoreAction" />
 
     <!-- 转移 -->
-    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="getDetail" />
+    <CrmTransferForm ref="transferFormRef" :biz-type="bizType" @success="handleTransferSuccess" />
   </view>
 </template>
 
@@ -307,6 +307,13 @@ function handleViewProcess() {
     return
   }
   uni.navigateTo({ url: `/pages-bpm/processInstance/detail/index?id=${processInstanceId}` })
+}
+
+/** 转移成功后刷新列表并返回 */
+function handleTransferSuccess() {
+  uni.$off('crm:contract:reload', getDetail)
+  uni.$emit('crm:contract:reload')
+  delay(handleBack)
 }
 
 /** 退出团队后返回 */
