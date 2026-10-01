@@ -115,10 +115,13 @@ function planFilter(raw: Record<string, any>) {
   return !raw.receivableId
 }
 
-/** 客户变更后清空合同、回款期数 */
+/** 客户变更后清空旧客户关联的回款数据 */
 function handleCustomerChange() {
   formData.value.contractId = undefined
   formData.value.planId = undefined
+  formData.value.price = undefined
+  formData.value.returnTime = undefined
+  formData.value.returnType = undefined
 }
 
 /** 合同变更后清空回款期数，并回填应回款金额（合同金额 - 已回款金额） */

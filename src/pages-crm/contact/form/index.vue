@@ -14,7 +14,7 @@
           <wd-form-item title="联系人姓名" title-width="200rpx" prop="name">
             <wd-input v-model="formData.name" placeholder="请输入联系人姓名" clearable />
           </wd-form-item>
-          <CustomerFormPicker v-model="formData.customerId" prop="customerId" :disabled="customerLocked" />
+          <CustomerFormPicker v-model="formData.customerId" prop="customerId" :disabled="customerLocked" @change="handleCustomerChange" />
           <UserFormPicker v-model="formData.ownerUserId" label="负责人" prop="ownerUserId" placeholder="请选择负责人" :disabled="!!props.id" />
           <wd-form-item title="手机" title-width="200rpx" prop="mobile">
             <wd-input v-model="formData.mobile" placeholder="请输入手机" clearable />
@@ -38,7 +38,7 @@
             <wd-switch v-model="formData.master" />
           </wd-form-item>
           <yd-form-picker v-model="formData.sex" label="性别" prop="sex" :dict-type="DICT_TYPE.SYSTEM_USER_SEX" placeholder="请选择性别" />
-          <ContactFormPicker v-model="formData.parentId" label="直属上级" prop="parentId" placeholder="请选择直属上级" :option-filter="parentFilter" />
+          <ContactFormPicker v-model="formData.parentId" label="直属上级" prop="parentId" placeholder="请选择直属上级" :option-filter="parentFilter" :customer-id="formData.customerId" :disabled="!formData.customerId" />
           <yd-tree-select v-model="formData.areaId" :data="areaTree" label="地区" prop="areaId" label-width="200rpx" placeholder="请选择地区" />
           <wd-form-item title="详细地址" title-width="200rpx" prop="detailAddress">
             <wd-input v-model="formData.detailAddress" placeholder="请输入详细地址" clearable />
@@ -124,6 +124,11 @@ const formSchema = createFormSchema({
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-crm/contact/index')
+}
+
+/** 客户变更后清空直属上级 */
+function handleCustomerChange() {
+  formData.value.parentId = undefined
 }
 
 /** 加载联系人详情 */
