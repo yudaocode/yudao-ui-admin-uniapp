@@ -196,6 +196,7 @@
             v-model:visible="entryTimeVisible"
             type="datetime"
             title="入职时间"
+            :max-date="entryTimeMaxDate"
           />
           <wd-form-item
             v-if="isFieldVisible('probation') && formData.type === HrmEmployeeType.FORMAL"
@@ -354,6 +355,12 @@ const nonFormalStatusColumns = computed(() =>
   getIntDictOptions(DICT_TYPE.HRM_EMPLOYEE_STATUS)
     .filter(item => (HRM_EMPLOYEE_NON_FORMAL_STATUSES as readonly number[]).includes(Number(item.value))))
 
+/** 确认入职和再入职只能选择今天及以前的时间 */
+const entryTimeMaxDate = computed(() =>
+  formMode.value === 'confirm' || formMode.value === 'rehire'
+    ? new Date().setHours(23, 59, 59, 999)
+    : undefined)
+
 const formSchema = createFormSchema({
   name: [{ required: true, message: '员工姓名不能为空' }],
   jobNumber: [{
@@ -367,7 +374,10 @@ const formSchema = createFormSchema({
   email: [{ type: 'email', message: '请输入正确的邮箱地址' }],
   entryStatus: [{ required: true, message: '请选择入职状态' }],
   type: [{ required: true, message: '请选择聘用形式' }],
-  entryTime: [{ required: true, message: '请选择入职时间' }],
+  entryTime: [
+    { required: true, message: '请选择入职时间' },
+    { validator: value => entryTimeMaxDate.value === undefined || Number(value) <= entryTimeMaxDate.value, message: '入职时间不能晚于今天' },
+  ],
   probation: [{
     required: () => formData.value.type === HrmEmployeeType.FORMAL,
     message: '请输入试用期',
