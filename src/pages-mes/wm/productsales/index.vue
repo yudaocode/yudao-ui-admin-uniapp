@@ -57,6 +57,14 @@
               <text class="min-w-0 flex-1 truncate">{{ item.contactName || '-' }}</text>
             </view>
             <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+              <text class="mr-8rpx shrink-0 text-[#999]">联系方式：</text>
+              <text class="min-w-0 flex-1 truncate">{{ item.contactTelephone || '-' }}</text>
+            </view>
+            <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+              <text class="mr-8rpx shrink-0 text-[#999]">收货地址：</text>
+              <text class="min-w-0 flex-1 truncate">{{ item.contactAddress || '-' }}</text>
+            </view>
+            <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
               <text class="mr-8rpx shrink-0 text-[#999]">运输单号：</text>
               <text class="min-w-0 flex-1 truncate">{{ item.shippingNumber || '-' }}</text>
             </view>

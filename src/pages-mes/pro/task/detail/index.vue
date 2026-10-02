@@ -16,7 +16,7 @@
           <dict-tag v-if="formData?.orderSourceType != null" :type="DICT_TYPE.MES_PRO_WORK_ORDER_SOURCE_TYPE" :value="formData.orderSourceType" />
           <text v-else>-</text>
         </wd-cell>
-        <wd-cell title="来源单据" :value="formData?.orderSourceCode || '-'" />
+        <wd-cell v-if="formData?.orderSourceType === MesProWorkOrderSourceTypeEnum.ORDER" title="来源单据" :value="formData?.orderSourceCode || '-'" />
         <wd-cell title="产品编码" :value="formData?.productCode || '-'" />
         <wd-cell title="产品名称" :value="formData?.productName || '-'" />
         <wd-cell title="规格型号" :value="formData?.productSpecification || '-'" />
@@ -25,6 +25,11 @@
         <wd-cell title="已排产数量" :value="formData?.quantityScheduled ?? 0" />
         <wd-cell title="已生产数量" :value="formData?.quantityProduced ?? 0" />
         <wd-cell title="客户" :value="clientText" />
+        <wd-cell
+          v-if="formData?.type === MesProWorkOrderTypeEnum.OUTSOURCE || formData?.type === MesProWorkOrderTypeEnum.PURCHASE"
+          title="供应商"
+          :value="vendorText"
+        />
         <wd-cell title="需求日期" :value="formatDate(formData?.requestDate) || '-'" />
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
@@ -71,7 +76,7 @@ import { getRouteProcessListByProduct } from '@/api/mes/pro/route/process'
 import { finishWorkOrder, getWorkOrder } from '@/api/mes/pro/workorder'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE, MesProWorkOrderStatusEnum } from '@/utils/constants'
+import { DICT_TYPE, MesProWorkOrderSourceTypeEnum, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import ProcessTaskList from '../components/process-task-list.vue'
 
@@ -112,6 +117,13 @@ const clientText = computed(() => {
     return '-'
   }
   return `${formData.value.clientCode || '-'} / ${formData.value.clientName || '-'}`
+})
+
+const vendorText = computed(() => {
+  if (!formData.value?.vendorName && !formData.value?.vendorCode) {
+    return '-'
+  }
+  return `${formData.value.vendorCode || '-'} / ${formData.value.vendorName || '-'}`
 })
 
 /** 返回上一页 */
