@@ -68,7 +68,7 @@ const formData = ref({
   remark: '',
 })
 const formSchema = createFormSchema({
-  eliminate: [{ required: true, message: '淘汰原因不能为空' }],
+  eliminate: [{ required: true, message: '淘汰原因不能为空' }, { max: 255, message: '淘汰原因不能超过255字' }],
 })
 const formRef = ref<FormInstance>() // 表单引用
 const title = computed(() => batchMode.value ? '批量淘汰候选人' : '淘汰候选人')

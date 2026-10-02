@@ -105,8 +105,9 @@
         <wd-form ref="formRef" :model="formData" :schema="formSchema">
           <wd-cell-group border>
             <yd-form-picker
-              v-if="isCreateMode"
+              v-if="isCreateMode || formData.lineId"
               v-model="formData.lineId"
+              :disabled="!isCreateMode"
               label="盘点清单"
               label-width="220rpx"
               :columns="taskLineOptions"
@@ -269,6 +270,7 @@ async function openUpdateForm(item: StockTakingResult) {
   formLoading.value = true
   try {
     formData.value = await getStockTakingResult(item.id)
+    await loadTaskLineOptions()
   } finally {
     formLoading.value = false
   }

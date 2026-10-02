@@ -20,12 +20,7 @@
             title-width="220rpx"
             prop="notifyDays"
           >
-            <wd-input
-              v-model.number="formData.notifyDays"
-              type="number"
-              clearable
-              placeholder="请输入提前提醒天数"
-            />
+            <wd-input-number v-model="formData.notifyDays" :min="0" :precision="0" />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -70,7 +65,7 @@ const formData = ref<ContractConfig>({
   notifyEnabled: false,
 }) // 表单数据
 const formSchema = createFormSchema({
-  notifyDays: [{ required: model => !!model?.notifyEnabled, message: '提前提醒天数不能为空' }],
+  notifyDays: [{ required: model => !!model?.notifyEnabled, message: '提前提醒天数不能为空' }, { validator: value => value === undefined || value === null || value === '' || (Number.isInteger(Number(value)) && Number(value) >= 0), message: '天数必须为非负整数' }],
 })
 
 /** 返回上一页 */

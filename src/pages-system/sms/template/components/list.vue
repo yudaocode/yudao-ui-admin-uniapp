@@ -31,6 +31,10 @@
               <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="item.status" />
             </view>
             <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+              <text class="mr-8rpx shrink-0 text-[#999]">短信渠道：</text>
+              <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="item.channelCode" />
+            </view>
+            <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
               <text class="mr-8rpx shrink-0 text-[#999]">模板编码：</text>
               <text class="min-w-0 flex-1 truncate">{{ item.code }}</text>
             </view>

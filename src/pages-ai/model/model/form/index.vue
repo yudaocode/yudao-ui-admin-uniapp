@@ -42,7 +42,7 @@
           <!-- 聊天模型专属参数 -->
           <template v-if="formData.type === AiModelTypeEnum.CHAT">
             <wd-form-item title="温度" title-width="200rpx" prop="temperature">
-              <wd-input-number v-model="formData.temperature" :min="0" :max="2" :step="0.1" />
+              <wd-input-number v-model="formData.temperature" :min="0" :max="2" :step="0.1" :precision="2" />
             </wd-form-item>
             <wd-form-item title="Token 数" title-width="200rpx" prop="maxTokens">
               <wd-input-number v-model="formData.maxTokens" :min="0" :max="8192" />

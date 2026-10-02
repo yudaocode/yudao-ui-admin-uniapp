@@ -26,10 +26,15 @@
                 备注：{{ item.remark }}
               </view>
             </view>
+            <wd-button v-if="hasAccessByCodes(['mes:dv-machinery:query'])" class="mt-16rpx" size="small" variant="plain" @click.stop="handleBarcode(item)">
+              条码
+            </wd-button>
           </view>
         </view>
       </view>
     </z-paging>
+
+    <BarcodeDetailPopup ref="barcodeDetailPopupRef" />
 
     <!-- 新增按钮 -->
     <wd-fab v-if="hasAccessByCodes(['mes:dv-machinery:create'])" position="right-bottom" type="primary" :expandable="false" @click="handleAdd" />
@@ -43,7 +48,8 @@ import { onMounted, ref } from 'vue'
 import { getMachineryPage } from '@/api/mes/dv/machinery'
 import { useAccess } from '@/hooks/useAccess'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import BarcodeDetailPopup from '@/pages-mes/wm/barcode/components/barcode-detail-popup.vue'
+import { BarcodeBizTypeEnum, DICT_TYPE } from '@/utils/constants'
 import SearchForm from './components/search-form.vue'
 
 definePage({
@@ -56,6 +62,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const list = ref<DvMachinery[]>([]) // 列表数据
 const pagingRef = ref<ZPagingRef<DvMachinery>>() // 分页组件引用
+const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码详情弹窗
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 
 /** 返回上一页 */
@@ -92,6 +99,13 @@ function reload() {
 /** 新增设备 */
 function handleAdd() {
   uni.navigateTo({ url: `/pages-mes/dv/machinery/form/index` })
+}
+
+/** 查看设备条码 */
+function handleBarcode(item: DvMachinery) {
+  if (!item.id)
+    return
+  barcodeDetailPopupRef.value?.openByBusiness(item.id, BarcodeBizTypeEnum.MACHINERY)
 }
 
 /** 查看详情 */

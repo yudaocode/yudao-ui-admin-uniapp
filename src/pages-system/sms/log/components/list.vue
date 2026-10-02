@@ -31,6 +31,11 @@
               <dict-tag :type="DICT_TYPE.SYSTEM_SMS_SEND_STATUS" :value="item.sendStatus" />
             </view>
             <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
+              <text class="mr-8rpx shrink-0 text-[#999]">用户类型：</text>
+              <dict-tag :type="DICT_TYPE.USER_TYPE" :value="item.userType" />
+              <text class="ml-8rpx">（{{ item.userId ?? '-' }}）</text>
+            </view>
+            <view class="mb-12rpx flex items-center text-28rpx text-[#666]">
               <text class="mr-8rpx shrink-0 text-[#999]">短信渠道：</text>
               <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="item.channelCode" />
             </view>

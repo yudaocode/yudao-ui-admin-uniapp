@@ -11,6 +11,10 @@
     <view>
       <wd-cell-group border>
         <wd-cell title="日志编号" :value="formData?.id" />
+        <wd-cell title="用户类型">
+          <dict-tag :type="DICT_TYPE.USER_TYPE" :value="formData?.userType" />
+        </wd-cell>
+        <wd-cell title="用户编号" :value="formData?.userId" />
         <wd-cell title="手机号" :value="formData?.mobile" />
         <wd-cell title="短信渠道">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE" :value="formData?.channelCode" />

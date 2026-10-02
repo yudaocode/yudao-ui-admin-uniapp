@@ -16,20 +16,10 @@
           </wd-form-item>
           <template v-if="formData.enabled">
             <wd-form-item title="不跟进天数" title-width="220rpx" prop="contactExpireDays">
-              <wd-input
-                v-model.number="formData.contactExpireDays"
-                type="number"
-                clearable
-                placeholder="请输入不跟进天数"
-              />
+              <wd-input-number v-model="formData.contactExpireDays" :min="0" :precision="0" />
             </wd-form-item>
             <wd-form-item title="未成交天数" title-width="220rpx" prop="dealExpireDays">
-              <wd-input
-                v-model.number="formData.dealExpireDays"
-                type="number"
-                clearable
-                placeholder="请输入未成交天数"
-              />
+              <wd-input-number v-model="formData.dealExpireDays" :min="0" :precision="0" />
             </wd-form-item>
             <wd-form-item title="提前提醒" title-width="220rpx" prop="notifyEnabled" center>
               <wd-switch v-model="formData.notifyEnabled" @change="handleNotifyChange" />
@@ -40,12 +30,7 @@
               title-width="220rpx"
               prop="notifyDays"
             >
-              <wd-input
-                v-model.number="formData.notifyDays"
-                type="number"
-                clearable
-                placeholder="请输入提前提醒天数"
-              />
+              <wd-input-number v-model="formData.notifyDays" :min="0" :precision="0" />
             </wd-form-item>
           </template>
         </wd-cell-group>
@@ -93,9 +78,9 @@ const formData = ref<CustomerPoolConfig>({
 }) // 表单数据
 const formSchema = createFormSchema({
   enabled: [{ required: true, message: '请选择是否启用公海规则' }],
-  contactExpireDays: [{ required: model => !!model?.enabled, message: '不跟进天数不能为空' }],
-  dealExpireDays: [{ required: model => !!model?.enabled, message: '未成交天数不能为空' }],
-  notifyDays: [{ required: model => !!model?.enabled && !!model?.notifyEnabled, message: '提前提醒天数不能为空' }],
+  contactExpireDays: [{ required: model => !!model?.enabled, message: '不跟进天数不能为空' }, { validator: value => value === undefined || value === null || value === '' || (Number.isInteger(Number(value)) && Number(value) >= 0), message: '天数必须为非负整数' }],
+  dealExpireDays: [{ required: model => !!model?.enabled, message: '未成交天数不能为空' }, { validator: value => value === undefined || value === null || value === '' || (Number.isInteger(Number(value)) && Number(value) >= 0), message: '天数必须为非负整数' }],
+  notifyDays: [{ required: model => !!model?.enabled && !!model?.notifyEnabled, message: '提前提醒天数不能为空' }, { validator: value => value === undefined || value === null || value === '' || (Number.isInteger(Number(value)) && Number(value) >= 0), message: '天数必须为非负整数' }],
 })
 
 /** 返回上一页 */
