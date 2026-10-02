@@ -179,10 +179,26 @@ async function getDetail() {
   grade.value = gradeData || { name: '', teacher: '' }
 }
 
+/** 校验课程明细 */
+function validateCourses() {
+  for (let index = 0; index < courses.value.length; index++) {
+    const course = courses.value[index]
+    if (!course.name?.trim()) {
+      toast.error(`第 ${index + 1} 行课程名称不能为空`)
+      return false
+    }
+    if (course.score == null || String(course.score).trim() === '') {
+      toast.error(`第 ${index + 1} 行课程分数不能为空`)
+      return false
+    }
+  }
+  return true
+}
+
 /** 提交表单 */
 async function handleSubmit() {
   const { valid } = await formRef.value.validate()
-  if (!valid) {
+  if (!valid || !validateCourses()) {
     return
   }
   formLoading.value = true

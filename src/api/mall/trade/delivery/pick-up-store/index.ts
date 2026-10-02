@@ -16,6 +16,7 @@ export interface DeliveryPickUpStore {
   latitude?: number
   longitude?: number
   status?: number
+  verifyUserIds?: number[]
   verifyUsers?: { id?: number, nickname?: string }[]
   createTime?: string
 }

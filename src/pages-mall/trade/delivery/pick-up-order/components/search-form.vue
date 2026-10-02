@@ -54,7 +54,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <PickUpStoreSearchPicker ref="pickUpStoreSearchPickerRef" v-model="formData.pickUpStoreId" />
+      <PickUpStoreSearchPicker ref="pickUpStoreSearchPickerRef" v-model="formData.pickUpStoreId" :options="stores" :all-option="false" />
       <yd-search-date-range v-model="formData.createTime" label="下单时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -69,12 +69,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
 import PickUpStoreSearchPicker from '../../pick-up-store/components/pick-up-store-search-picker.vue'
+
+const props = defineProps<{ stores: DeliveryPickUpStore[], defaultStoreId?: number }>()
 
 const emit = defineEmits<{
   search: [data: Record<string, any>]
@@ -92,6 +95,12 @@ const formData = reactive({
   pickUpStoreId: undefined as number | undefined, // 单选自提门店，提交时转 pickUpStoreIds 数组
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
+
+watch(() => props.defaultStoreId, (id) => {
+  if (formData.pickUpStoreId === undefined) {
+    formData.pickUpStoreId = id
+  }
+})
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
@@ -138,7 +147,7 @@ function handleReset() {
   formData.userNickname = undefined
   formData.userMobile = undefined
   formData.status = -1
-  formData.pickUpStoreId = undefined
+  formData.pickUpStoreId = props.defaultStoreId
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

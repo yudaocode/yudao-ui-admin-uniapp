@@ -7,7 +7,7 @@
     label-key="name"
     value-key="id"
     :placeholder="placeholder"
-    all-option
+    :all-option="allOption"
     @update:model-value="handleUpdate"
   />
 </template>
@@ -15,14 +15,18 @@
 <script lang="ts" setup>
 import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getSimpleDeliveryPickUpStoreList } from '@/api/mall/trade/delivery/pick-up-store'
 
 const props = withDefaults(defineProps<{
+  options?: DeliveryPickUpStore[]
+  allOption?: boolean
   modelValue?: number
   label?: string
   placeholder?: string
 }>(), {
+  options: undefined,
+  allOption: true,
   label: '自提门店',
   placeholder: '请选择自提门店',
 })
@@ -33,7 +37,8 @@ const emit = defineEmits<{
 }>()
 
 const pickerRef = ref<YdSearchPickerExpose>() // 通用搜索选择器
-const options = ref<DeliveryPickUpStore[]>([]) // 自提门店选项
+const loadedOptions = ref<DeliveryPickUpStore[]>([])
+const options = computed(() => props.options ?? loadedOptions.value) // 自提门店选项
 
 /** 更新自提门店 */
 function handleUpdate(value?: number) {
@@ -50,6 +55,8 @@ defineExpose({ format })
 
 /** 初始化 */
 onMounted(async () => {
-  options.value = await getSimpleDeliveryPickUpStoreList()
+  if (props.options === undefined) {
+    loadedOptions.value = await getSimpleDeliveryPickUpStoreList()
+  }
 })
 </script>

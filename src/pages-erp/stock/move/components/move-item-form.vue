@@ -208,7 +208,7 @@ watch(() => props.warehouseOptions, applyDefaultWarehouse, { deep: true })
 
 /** 明细变更后回写表单 */
 watch(items, (value) => {
-  value.forEach(item => refreshErpItemAmount(item))
+  value.forEach(item => refreshErpItemAmount(item, true))
   emit('update:modelValue', value)
 }, { deep: true })
 

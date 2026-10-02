@@ -188,11 +188,16 @@ export async function loadErpItemStockCount(item: Record<string, any>, warehouse
 }
 
 /** 刷新单条明细金额（自动兼容含税明细） */
-export function refreshErpItemAmount(item: Record<string, any>) {
+export function refreshErpItemAmount(item: Record<string, any>, clearInvalid = false) {
   const hasCount = isFiniteNumberValue(item.count)
   const hasProductPrice = isFiniteNumberValue(item.productPrice)
   const hasPrice = isFiniteNumberValue(item.price)
   if (!hasCount || (!hasProductPrice && !hasPrice)) {
+    if (clearInvalid) {
+      item.totalProductPrice = undefined
+      item.taxPrice = undefined
+      item.totalPrice = undefined
+    }
     return
   }
 

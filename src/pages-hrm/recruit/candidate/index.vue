@@ -352,6 +352,7 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
+  tabIndex.value = 0
   handleQuery()
 }
 

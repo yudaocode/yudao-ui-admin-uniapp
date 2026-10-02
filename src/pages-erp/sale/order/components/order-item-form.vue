@@ -151,10 +151,14 @@ async function handleProductConfirm(index: number, productId?: number | string) 
 function refreshItemAmount(item: Record<string, any>) {
   const count = toNumber(item.count)
   const price = toNumber(item.productPrice)
-  if (item.count !== undefined && item.productPrice !== undefined) {
+  if (item.count != null && item.count !== '' && item.productPrice != null && item.productPrice !== '') {
     item.totalProductPrice = roundPrice(count * price)
     item.taxPrice = roundPrice(item.totalProductPrice * toNumber(item.taxPercent) / 100)
     item.totalPrice = roundPrice(item.totalProductPrice + item.taxPrice)
+  } else {
+    item.totalProductPrice = undefined
+    item.taxPrice = undefined
+    item.totalPrice = undefined
   }
 }
 

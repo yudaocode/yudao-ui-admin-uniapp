@@ -30,6 +30,11 @@
           <view v-if="item.returnTime" class="text-28rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">日期：</text>{{ formatDate(item.returnTime) }}
           </view>
+          <view v-if="hasAccessByCodes(['crm:receivable:create'])" class="mt-20rpx flex justify-end">
+            <wd-button size="small" :disabled="!!item.receivableId" @click.stop="handleCreateReceivable(item)">
+              创建回款
+            </wd-button>
+          </view>
         </view>
       </view>
     </z-paging>
@@ -39,11 +44,13 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { getReceivablePlanPageByCustomer } from '@/api/crm/receivable/plan'
+import { useAccess } from '@/hooks/useAccess'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import { formatMoney } from '@/utils/format'
 
 const props = defineProps<{ customerId?: number, contractId?: number }>()
+const { hasAccessByCodes } = useAccess()
 const list = ref<Record<string, any>[]>([]) // 回款计划列表
 const pagingRef = ref<any>() // 分页组件引用
 
@@ -76,6 +83,19 @@ function handleDetail(item: Record<string, any>) {
   uni.navigateTo({ url: `/pages-crm/receivable-plan/detail/index?id=${item.id}` })
 }
 
+/** 从计划创建回款 */
+function handleCreateReceivable(item: Record<string, any>) {
+  const query = Object.entries({
+    customerId: item.customerId,
+    contractId: item.contractId,
+    planId: item.id,
+    price: item.price,
+    returnType: item.returnType,
+    ownerUserId: item.ownerUserId,
+  }).filter(([, value]) => value != null && value !== '').map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`).join('&')
+  uni.navigateTo({ url: `/pages-crm/receivable/form/index?${query}` })
+}
+
 /** 新增回款计划 */
 function openAdd() {
   const params = [
@@ -92,10 +112,12 @@ defineExpose({ reload, getList: reload, openAdd })
 /** 初始化 */
 onMounted(() => {
   uni.$on('crm:receivablePlan:reload', reload)
+  uni.$on('crm:receivable:reload', reload)
 })
 
 /** 卸载 */
 onUnmounted(() => {
   uni.$off('crm:receivablePlan:reload', reload)
+  uni.$off('crm:receivable:reload', reload)
 })
 </script>

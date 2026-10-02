@@ -8,7 +8,7 @@
     />
 
     <!-- 搜索组件 -->
-    <SearchForm @search="handleQuery" @reset="handleReset" />
+    <SearchForm :stores="pickUpStoreList" :default-store-id="pickUpStoreList[0]?.id" @search="handleQuery" @reset="handleReset" />
 
     <!-- 核销码核销入口 -->
     <view v-if="hasAccessByCodes(['trade:order:pick-up'])" class="px-24rpx pt-24rpx">
@@ -110,6 +110,9 @@ import type { TradeOrder } from '@/api/mall/trade/order'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
+import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
+import { getSimpleDeliveryPickUpStoreList } from '@/api/mall/trade/delivery/pick-up-store'
+import { useUserStore } from '@/store/user'
 import { getDeliveryPickUpOrderPage } from '@/api/mall/trade/delivery/pick-up-order'
 import { getTradeOrderByPickUpVerifyCode, pickUpTradeOrderByVerifyCode } from '@/api/mall/trade/order'
 import { formatDisplayMoney } from '@/utils/format'
@@ -131,6 +134,8 @@ const { hasAccessByCodes } = useAccess()
 
 const list = ref<TradeOrder[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
+const pickUpStoreList = ref<DeliveryPickUpStore[]>([]) // 当前用户可核销的门店
+const userStore = useUserStore()
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const verifyVisible = ref(false) // 核销码弹窗显示状态
 const verifyCode = ref('') // 核销码
@@ -146,7 +151,21 @@ function handleBack() {
 /** 查询核销订单列表 */
 async function queryList(pageNo: number, pageSize: number) {
   try {
-    const data = await getDeliveryPickUpOrderPage({ ...queryParams.value, pageNo, pageSize })
+    const stores = await getSimpleDeliveryPickUpStoreList()
+    const userId = userStore.userInfo.id
+    pickUpStoreList.value = stores.filter(item => item.verifyUserIds?.includes(userId))
+    if (pickUpStoreList.value.length === 0) {
+      pagingRef.value?.completeByTotal([], 0)
+      toast.warning('当前登录人没绑定任何自提点')
+      return
+    }
+    const storeId = queryParams.value.pickUpStoreIds?.[0] ?? pickUpStoreList.value[0].id
+    if (!pickUpStoreList.value.some(store => store.id === storeId)) {
+      pagingRef.value?.completeByTotal([], 0)
+      toast.warning('无权核销该自提门店')
+      return
+    }
+    const data = await getDeliveryPickUpOrderPage({ ...queryParams.value, pickUpStoreIds: [storeId], pageNo, pageSize })
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {
     pagingRef.value?.complete(false)
