@@ -14,11 +14,13 @@
           <CustomerFormPicker
             v-model="formData.customerId"
             prop="customerId"
+            :disabled="!!props.id"
             @change="handleCustomerChange"
           />
           <ContractFormPicker
             v-model="formData.contractId"
             prop="contractId"
+            :disabled="!!props.id || !formData.customerId"
             :customer-id="formData.customerId"
           />
           <wd-form-item v-if="props.id" title="期数" title-width="200rpx" :value="formData.period !== undefined && formData.period !== null ? String(formData.period) : '-'" />

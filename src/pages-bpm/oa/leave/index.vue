@@ -66,16 +66,16 @@
             </view>
           </view>
           <view class="bpm-actions">
-            <view class="bpm-action-btn" @click.stop="handleDetail(item)">
+            <view v-if="hasAccessByCodes(['bpm:oa-leave:query'])" class="bpm-action-btn" @click.stop="handleDetail(item)">
               <wd-icon name="eye" size="32rpx" />
               <text class="ml-8rpx">详情</text>
             </view>
-            <view class="bpm-action-btn" @click.stop="handleProgress(item)">
+            <view v-if="hasAccessByCodes(['bpm:oa-leave:query'])" class="bpm-action-btn" @click.stop="handleProgress(item)">
               <wd-icon name="list" size="32rpx" />
               <text class="ml-8rpx">审批进度</text>
             </view>
             <view
-              v-if="item.status === BpmProcessInstanceStatus.RUNNING"
+              v-if="item.status === BpmProcessInstanceStatus.RUNNING && hasAccessByCodes(['bpm:process-instance:cancel'])"
               class="bpm-action-btn text-[#ff4d4f]!"
               @click.stop="handleCancel(item)"
             >
@@ -83,7 +83,7 @@
               <text class="ml-8rpx">取消</text>
             </view>
             <view
-              v-else
+              v-if="item.status !== BpmProcessInstanceStatus.RUNNING && hasAccessByCodes(['bpm:oa-leave:create'])"
               class="bpm-action-btn"
               @click.stop="handleReCreate(item)"
             >

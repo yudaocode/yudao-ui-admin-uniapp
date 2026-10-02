@@ -134,6 +134,10 @@ const formSchema = createFormSchema({
   startTime: [{ required: true, message: '开始时间不能为空' }],
   endTime: [{ required: true, message: '结束时间不能为空' }],
   userSize: [{ required: true, message: '成团人数不能为空' }],
+  limitDuration: [{ required: true, message: '限制时长不能为空' }],
+  totalLimitCount: [{ required: true, message: '总限购数量不能为空' }],
+  singleLimitCount: [{ required: true, message: '单次限购数量不能为空' }],
+  virtualGroup: [{ required: true, message: '虚拟成团不能为空' }],
 })
 
 /** 创建单个 SKU 的拼团配置默认值 */

@@ -99,7 +99,7 @@ function handleBack() {
 
 /** 是否低于最低库存预警 */
 function isLowStock(item: SupplyItem) {
-  return (item.minStockQuantity ?? 0) > 0 && (item.stockQuantity ?? 0) < (item.minStockQuantity ?? 0)
+  return item.stockQuantity != null && (item.minStockQuantity ?? 0) > 0 && item.stockQuantity < (item.minStockQuantity ?? 0)
 }
 
 /** 查询用品列表 */
