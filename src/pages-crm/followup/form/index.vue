@@ -21,8 +21,8 @@
           <wd-form-item title="跟进内容" title-width="200rpx" prop="content">
             <wd-textarea v-model="formData.content" placeholder="请输入跟进内容" :maxlength="500" show-word-limit clearable />
           </wd-form-item>
-          <wd-form-item title="下次联系" title-width="200rpx" prop="nextTime" is-link :value="formatDateTime(formData.nextTime) || ''" placeholder="请选择下次联系时间" @click="nextTimeVisible = true" />
-          <wd-datetime-picker v-model="formData.nextTime" v-model:visible="nextTimeVisible" title="请选择下次联系时间" type="datetime" />
+          <wd-form-item title="下次联系" title-width="200rpx" prop="nextTime" is-link :value="formatDate(formData.nextTime) || ''" placeholder="请选择下次联系时间" @click="nextTimeVisible = true" />
+          <wd-datetime-picker v-model="formData.nextTime" v-model:visible="nextTimeVisible" title="请选择下次联系时间" type="date" />
           <wd-form-item title="图片" title-width="200rpx">
             <yd-upload-imgs v-model="formData.picUrls" directory="crm/followup" :limit="9" />
           </wd-form-item>
@@ -60,7 +60,7 @@ import { BizTypeEnum } from '@/api/crm/permission'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
-import { formatDateTime } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ bizId?: number | any, bizType?: number | any }>()
