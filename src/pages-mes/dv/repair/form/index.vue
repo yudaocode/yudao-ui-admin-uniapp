@@ -17,10 +17,10 @@
                 v-model="formData.code"
                 class="min-w-0 flex-1"
                 clearable
-                :disabled="isHeaderReadonly"
+                :disabled="isHeaderReadonly || !!props.id"
                 placeholder="请输入维修单编码"
               />
-              <wd-button v-if="isEditable" size="small" type="primary" :loading="codeLoading" @click="handleGenerateCode">
+              <wd-button v-if="isEditable && !props.id" size="small" type="primary" :loading="codeLoading" @click="handleGenerateCode">
                 生成
               </wd-button>
             </view>

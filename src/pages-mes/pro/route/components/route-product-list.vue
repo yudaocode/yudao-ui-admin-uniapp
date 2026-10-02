@@ -73,7 +73,13 @@
           <wd-cell-group border>
             <wd-form-item title="产品" title-width="220rpx" prop="itemId" is-link :value="productDisplayValue" placeholder="请选择产品" @click="openProductPicker" />
             <wd-form-item title="生产数量" title-width="220rpx" prop="quantity" center>
-              <wd-input-number v-model="formData.quantity" :min="1" :precision="0" />
+              <wd-input-number
+                :model-value="formData.quantity ?? ''"
+                allow-null
+                :min="1"
+                :precision="0"
+                @update:model-value="value => formData.quantity = toFiniteNumber(value)"
+              />
             </wd-form-item>
             <wd-form-item title="生产用时" title-width="220rpx" prop="productionTime" center>
               <wd-input-number
@@ -157,11 +163,9 @@ const productDisplayValue = computed(() => {
 const formSchema = createFormSchema({
   itemId: [{ required: true, message: '产品不能为空' }],
   quantity: [
-    { required: true, message: '生产数量不能为空' },
-    { validator: value => Number(value) >= 1 || '生产数量必须大于 0' },
+    { validator: value => value == null || Number(value) >= 1 || '生产数量必须大于 0' },
   ],
   productionTime: [{ validator: value => value == null || Number(value) >= 0 || '生产用时不能小于 0' }],
-  timeUnitType: [{ required: true, message: '时间单位不能为空' }],
 })
 
 /** 创建默认表单数据 */

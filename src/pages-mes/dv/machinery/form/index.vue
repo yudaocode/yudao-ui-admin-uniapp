@@ -5,8 +5,8 @@
       <wd-form ref="formRef" :model="formData" :schema="formSchema">
         <wd-cell-group border>
           <wd-form-item title="设备编码" title-width="220rpx" prop="code">
-            <wd-input v-model="formData.code" placeholder="请输入或点击生成" clearable>
-              <template #suffix>
+            <wd-input v-model="formData.code" placeholder="请输入或点击生成" :disabled="!!props.id" clearable>
+              <template v-if="!props.id" #suffix>
                 <wd-button size="small" type="primary" variant="plain" :loading="codeLoading" @click="handleGenerateCode">
                   生成
                 </wd-button>

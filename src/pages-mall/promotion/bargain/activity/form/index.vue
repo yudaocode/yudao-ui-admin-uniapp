@@ -124,8 +124,8 @@ const formData = ref<PromotionBargainActivity>({
   randomMaxPrice: 0,
   stock: 0,
   totalLimitCount: 1,
-  helpMaxCount: 1,
-  bargainCount: 1,
+  helpMaxCount: 2,
+  bargainCount: 2,
 }) // 表单数据
 const formSchema = createFormSchema({
   name: [{ required: true, message: '活动名称不能为空' }],
