@@ -60,8 +60,9 @@ const formData = ref({
   confirmPassword: '',
 }) // 表单数据
 const formSchema = createFormSchema({
-  password: [{ required: true, message: '请输入新密码' }],
+  password: [{ required: true, message: '请输入新密码' }, { min: 4, max: 16, message: '密码长度为 4-16 位' }],
   confirmPassword: [
+    { min: 4, max: 16, message: '密码长度为 4-16 位' },
     { required: true, message: '请再次输入新密码' },
     { validator: (value, model) => value === model.password || '两次输入的密码不一致' },
   ],

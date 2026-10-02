@@ -75,9 +75,10 @@ const formData = reactive({
   confirmPassword: '',
 }) // 表单数据
 const formSchema = createFormSchema({
-  oldPassword: [{ required: true, message: '请输入旧密码' }],
-  newPassword: [{ required: true, message: '请输入新密码' }],
+  oldPassword: [{ required: true, message: '请输入旧密码' }, { min: 4, max: 16, message: '密码长度为 4-16 位' }],
+  newPassword: [{ required: true, message: '请输入新密码' }, { min: 4, max: 16, message: '密码长度为 4-16 位' }],
   confirmPassword: [
+    { min: 4, max: 16, message: '密码长度为 4-16 位' },
     { required: true, message: '请确认新密码' },
     { validator: (value, model) => value === model.newPassword || '两次输入的密码不一致' },
   ],

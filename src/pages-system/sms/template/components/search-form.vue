@@ -67,6 +67,12 @@
           clearable
         />
       </view>
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          模板内容
+        </view>
+        <wd-input v-model="formData.content" placeholder="请输入模板内容" clearable />
+      </view>
       <SmsChannelSearchPicker ref="channelPickerRef" v-model="formData.channelId" />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
@@ -98,6 +104,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const channelPickerRef = ref<InstanceType<typeof SmsChannelSearchPicker>>() // 短信渠道选择器
 const formData = reactive({
   code: undefined as string | undefined,
+  content: undefined as string | undefined,
   type: -1,
   status: -1,
   apiTemplateId: undefined as string | undefined,
@@ -110,6 +117,9 @@ const placeholder = computed(() => {
   const conditions: string[] = []
   if (formData.code) {
     conditions.push(`编码:${formData.code}`)
+  }
+  if (formData.content) {
+    conditions.push(`内容:${formData.content}`)
   }
   if (formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE, formData.type)}`)
@@ -134,6 +144,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     code: formData.code || undefined,
+    content: formData.content || undefined,
     type: formData.type === -1 ? undefined : formData.type,
     status: formData.status === -1 ? undefined : formData.status,
     apiTemplateId: formData.apiTemplateId || undefined,
@@ -145,6 +156,7 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.code = undefined
+  formData.content = undefined
   formData.type = -1
   formData.status = -1
   formData.apiTemplateId = undefined
