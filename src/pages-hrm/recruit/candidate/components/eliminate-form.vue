@@ -11,15 +11,17 @@
           </wd-form-item>
           <yd-form-picker
             v-model="formData.eliminate"
-            label="淘汰原因"
+            label="常用淘汰原因"
             label-width="180rpx"
-            prop="eliminate"
             :columns="reasonOptions"
             label-key="label"
             value-key="value"
             placeholder="请选择或输入淘汰原因"
             filterable
           />
+          <wd-form-item title="淘汰原因" title-width="180rpx" prop="eliminate">
+            <wd-input v-model="formData.eliminate" clearable placeholder="请选择或输入淘汰原因" :maxlength="255" />
+          </wd-form-item>
           <wd-form-item title="备注" title-width="180rpx" prop="remark" vertical>
             <wd-textarea
               v-model="formData.remark"
