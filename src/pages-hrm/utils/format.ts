@@ -250,16 +250,16 @@ export function getAttendanceYearMonth(month?: dayjs.ConfigType): { year: number
 }
 
 /** 格式化 HRM 分析项的字典分类 */
-export function formatHrmAnalysisDictType(dictType: string, type: number | null): string {
-  return type === null ? '未填写' : getDictLabel(dictType, type) || '未知'
+export function formatHrmAnalysisDictType(dictType: string, type: number | null | undefined): string {
+  return type == null ? '未填写' : getDictLabel(dictType, type) || '未知'
 }
 
 /** 格式化 HRM 分析项的区间分类 */
 export function formatHrmAnalysisRangeType(
   rangeNames: Record<number, string>,
-  type: number | null,
+  type: number | null | undefined,
 ): string {
-  return type === null ? '未填写' : rangeNames[type] || '未知'
+  return type == null ? '未填写' : rangeNames[type] || '未知'
 }
 
 /** 格式化招聘职位薪资范围 */
