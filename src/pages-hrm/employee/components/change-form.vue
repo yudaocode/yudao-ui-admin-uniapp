@@ -169,11 +169,13 @@ const optionalPlaceholder = computed(() => { // 可选字段占位
 })
 
 const reasonColumns = computed(() => {
-  const options = HrmEmployeeChangeReasonOptions.filter(item =>
-    changeType.value === HrmEmployeeChangeType.DEMOTION
-      ? item.value >= HrmEmployeeChangeReason.VIOLATION
-      : item.value <= HrmEmployeeChangeReason.WORK_ARRANGEMENT,
-  )
+  const options = changeType.value === HrmEmployeeChangeType.REGULAR || changeType.value === HrmEmployeeChangeType.FULL_TIME
+    ? HrmEmployeeChangeReasonOptions
+    : HrmEmployeeChangeReasonOptions.filter(item =>
+        changeType.value === HrmEmployeeChangeType.DEMOTION
+          ? item.value >= HrmEmployeeChangeReason.VIOLATION
+          : item.value <= HrmEmployeeChangeReason.WORK_ARRANGEMENT,
+      )
   return options.map(item => ({ label: item.label, value: item.value }))
 })
 

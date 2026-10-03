@@ -32,7 +32,7 @@
                 归档后项目只允许查看，不能继续维护项目中的迭代和工作项。
               </view>
             </view>
-            <wd-button size="small" variant="plain" @click="handleArchive">
+            <wd-button v-if="hasAccessByCodes(['pms:pm:project:update'])" size="small" variant="plain" @click="handleArchive">
               归档
             </wd-button>
           </view>
@@ -46,7 +46,7 @@
                 项目进入回收站后不可访问；只有项目拥有者可以在回收站彻底删除。
               </view>
             </view>
-            <wd-button size="small" type="danger" variant="plain" @click="handleRecycle">
+            <wd-button v-if="hasAccessByCodes(['pms:pm:project:update'])" size="small" type="danger" variant="plain" @click="handleRecycle">
               移入回收站
             </wd-button>
           </view>
