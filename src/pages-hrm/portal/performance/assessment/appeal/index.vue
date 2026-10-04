@@ -98,7 +98,7 @@ const completedReviewStages = ref<PerformanceAssessmentStage[]>([]) // 已完成
 const formData = ref({
   assessmentId: undefined as number | undefined,
   appealReason: '',
-  appealFileUrls: [] as string[],
+  appealFileUrls: [] as string | string[],
   reviewStageIds: [] as number[],
 })
 const formSchema = createFormSchema({
@@ -122,7 +122,11 @@ async function handleSubmit() {
     await submitPortalPerformanceAssessmentAppeal({
       assessmentId: formData.value.assessmentId,
       appealReason: formData.value.appealReason,
-      appealFileUrls: formData.value.appealFileUrls,
+      appealFileUrls: Array.isArray(formData.value.appealFileUrls)
+        ? formData.value.appealFileUrls
+        : formData.value.appealFileUrls
+          ? [formData.value.appealFileUrls]
+          : [],
       reviewStageIds: formData.value.reviewStageIds,
     })
     toast.success('绩效申诉已提交')

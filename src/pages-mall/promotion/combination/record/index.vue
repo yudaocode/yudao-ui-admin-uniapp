@@ -68,7 +68,7 @@
                 <dict-tag v-if="item.status != null" class="shrink-0" :type="DICT_TYPE.PROMOTION_COMBINATION_RECORD_STATUS" :value="item.status" />
               </view>
               <view class="mt-6rpx text-26rpx text-[#999]">
-                团长：{{ item.nickname || '-' }}
+                团长：{{ item.headNickname || '-' }}
               </view>
             </view>
           </view>

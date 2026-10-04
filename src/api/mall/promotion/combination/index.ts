@@ -34,6 +34,7 @@ export interface PromotionCombinationRecord {
   id?: number
   activityId?: number
   nickname?: string
+  headNickname?: string
   avatar?: string
   headId?: number
   expireTime?: string | number | Date
