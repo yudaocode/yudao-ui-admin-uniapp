@@ -60,6 +60,7 @@ const dictTags = computed(() => {
       label: dict.label || '',
       tagType: COLOR_TYPE_MAP[dict.colorType || ''] || 'default',
       cssClass: dict.cssClass,
+      color: /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(dict.cssClass || '') ? dict.cssClass : undefined,
     }))
 })
 </script>
@@ -74,7 +75,9 @@ const dictTags = computed(() => {
       :key="index"
       :type="tag.tagType"
       :variant="plain ? 'plain' : undefined"
-      :custom-class="tag.cssClass"
+      :custom-class="tag.color ? undefined : tag.cssClass"
+      :color="tag.color ? (plain ? tag.color : '#fff') : undefined"
+      :bg-color="tag.color"
     >
       {{ tag.label }}
     </wd-tag>

@@ -87,7 +87,14 @@ export function getPromotionCombinationRecordPage(params: PageParam) {
   return http.get<PageResult<PromotionCombinationRecord>>('/promotion/combination-record/page', params)
 }
 
+/** 拼团记录概要 */
+export interface PromotionCombinationRecordSummary {
+  userCount: number
+  successCount: number
+  virtualGroupCount: number
+}
+
 /** 获取拼团记录概要 */
 export function getPromotionCombinationRecordSummary() {
-  return http.get<Record<string, any>>('/promotion/combination-record/get-summary')
+  return http.get<PromotionCombinationRecordSummary>('/promotion/combination-record/get-summary')
 }

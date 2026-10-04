@@ -7,6 +7,33 @@
       @click-left="handleBack"
     />
 
+    <view class="grid grid-cols-3 gap-12rpx px-24rpx py-20rpx">
+      <view class="rounded-12rpx bg-white p-16rpx text-center">
+        <view class="text-36rpx font-semibold">
+          {{ summary.userCount }}
+        </view>
+        <view class="text-24rpx text-[#999]">
+          参与人数
+        </view>
+      </view>
+      <view class="rounded-12rpx bg-white p-16rpx text-center">
+        <view class="text-36rpx font-semibold">
+          {{ summary.successCount }}
+        </view>
+        <view class="text-24rpx text-[#999]">
+          成团数量
+        </view>
+      </view>
+      <view class="rounded-12rpx bg-white p-16rpx text-center">
+        <view class="text-36rpx font-semibold">
+          {{ summary.virtualGroupCount }}
+        </view>
+        <view class="text-24rpx text-[#999]">
+          虚拟成团数量
+        </view>
+      </view>
+    </view>
+
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
@@ -60,10 +87,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { PromotionCombinationRecord } from '@/api/mall/promotion/combination'
+import type { PromotionCombinationRecord, PromotionCombinationRecordSummary } from '@/api/mall/promotion/combination'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
-import { getPromotionCombinationRecordPage } from '@/api/mall/promotion/combination'
+import { getPromotionCombinationRecordPage, getPromotionCombinationRecordSummary } from '@/api/mall/promotion/combination'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -75,6 +102,12 @@ definePage({
     navigationStyle: 'custom',
   },
 })
+
+const summary = ref<PromotionCombinationRecordSummary>({ userCount: 0, successCount: 0, virtualGroupCount: 0 })
+
+async function getSummary() {
+  summary.value = await getPromotionCombinationRecordSummary()
+}
 
 const list = ref<PromotionCombinationRecord[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
@@ -113,6 +146,7 @@ function reload() {
 
 /** 初始化 */
 onMounted(() => {
+  getSummary()
   uni.$on('mall:promotion-combination-record:reload', reload)
 })
 
