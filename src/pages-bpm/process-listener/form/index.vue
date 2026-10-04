@@ -95,7 +95,7 @@ import { computed, onMounted, ref } from 'vue'
 import { createProcessListener, getProcessListener, updateProcessListener } from '@/api/bpm/process-listener'
 import { getIntDictOptions, getStrDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { BPM_PROCESS_LISTENER_EXECUTION_EVENT_OPTIONS, BPM_PROCESS_LISTENER_TASK_EVENT_OPTIONS, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
@@ -108,22 +108,6 @@ definePage({
     navigationStyle: 'custom',
   },
 })
-
-/** 执行监听器事件选项 */
-const EVENT_EXECUTION_OPTIONS = [
-  { label: '开始', value: 'start' },
-  { label: '结束', value: 'end' },
-]
-
-/** 任务监听器事件选项 */
-const EVENT_OPTIONS = [
-  { label: '创建', value: 'create' },
-  { label: '指派', value: 'assignment' },
-  { label: '完成', value: 'complete' },
-  { label: '删除', value: 'delete' },
-  { label: '更新', value: 'update' },
-  { label: '超时', value: 'timeout' },
-]
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑流程监听器' : '新增流程监听器')
@@ -149,7 +133,7 @@ const formRef = ref<FormInstance>() // 表单组件引用
 
 /** 根据类型获取事件选项 */
 const eventOptions = computed(() => {
-  return formData.value.type === 'execution' ? EVENT_EXECUTION_OPTIONS : EVENT_OPTIONS
+  return formData.value.type === 'execution' ? BPM_PROCESS_LISTENER_EXECUTION_EVENT_OPTIONS : BPM_PROCESS_LISTENER_TASK_EVENT_OPTIONS
 })
 
 /** 值标签 */
