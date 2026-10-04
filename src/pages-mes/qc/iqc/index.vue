@@ -150,6 +150,9 @@ function handleAdd() {
 
 /** 查看详情 */
 function handleDetail(item: QcIqc) {
+  if (!hasAccessByCodes(['mes:qc-iqc:query'])) {
+    return
+  }
   uni.navigateTo({ url: `/pages-mes/qc/iqc/detail/index?id=${item.id}` })
 }
 

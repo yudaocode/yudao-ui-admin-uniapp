@@ -53,7 +53,7 @@
         <wd-input-number v-model="item.count" :min="0.001" :precision="3" :disabled="disabled" />
       </wd-form-item>
       <wd-form-item title="产品单价" title-width="180rpx" center>
-        <wd-input-number v-model="item.productPrice" :min="0.01" :precision="2" :disabled="disabled" />
+        <wd-input-number v-model="item.productPrice" :min="0" :precision="2" :disabled="disabled" />
       </wd-form-item>
       <view class="mb-20rpx rounded-8rpx bg-[#f8f8f8] p-16rpx">
         <text class="block text-24rpx text-[#999]">合计金额</text>

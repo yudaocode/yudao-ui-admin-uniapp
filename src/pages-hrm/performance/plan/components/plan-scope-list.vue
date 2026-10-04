@@ -46,6 +46,7 @@
           :props="treeProps"
           multiple
           check-strictly
+          filterable
           :disabled="disabled"
         />
       </template>

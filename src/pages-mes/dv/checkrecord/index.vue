@@ -144,6 +144,9 @@ function handleAdd() {
 
 /** 查看详情 */
 function handleDetail(item: DvCheckRecord) {
+  if (!hasAccessByCodes(['mes:dv-check-record:query'])) {
+    return
+  }
   uni.navigateTo({
     url: `/pages-mes/dv/checkrecord/detail/index?id=${item.id}`,
   })

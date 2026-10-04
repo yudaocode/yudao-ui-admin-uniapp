@@ -144,6 +144,9 @@ function handleAdd() {
 
 /** 查看详情 */
 function handleDetail(item: DvMaintenRecord) {
+  if (!hasAccessByCodes(['mes:dv-mainten-record:query'])) {
+    return
+  }
   uni.navigateTo({
     url: `/pages-mes/dv/maintenrecord/detail/index?id=${item.id}`,
   })

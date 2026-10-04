@@ -255,6 +255,10 @@ async function getFavoriteList() {
 
 /** 查询个人项目分组 */
 async function getGroupList() {
+  if (!hasAccessByCodes(['pms:pm:project-group:query'])) {
+    groupList.value = []
+    return
+  }
   groupList.value = await getProjectGroupList()
 }
 

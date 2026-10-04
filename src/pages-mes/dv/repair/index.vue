@@ -149,6 +149,9 @@ function handleAdd() {
 
 /** 查看详情 */
 function handleDetail(item: DvRepair) {
+  if (!hasAccessByCodes(['mes:dv-repair:query'])) {
+    return
+  }
   uni.navigateTo({
     url: `/pages-mes/dv/repair/detail/index?id=${item.id}`,
   })

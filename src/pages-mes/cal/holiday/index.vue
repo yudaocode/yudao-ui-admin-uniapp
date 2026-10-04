@@ -219,6 +219,10 @@ async function handleDayClick(day: CalendarDay) {
     toast.warning('没有假期设置权限')
     return
   }
+  if (!hasAccessByCodes(['mes:cal-holiday:query'])) {
+    toast.warning('没有假期查询权限')
+    return
+  }
   selectedDay.value = day.date
   const submitDay = toTimestamp(formatDateStartTime(day.date))
   formData.id = undefined

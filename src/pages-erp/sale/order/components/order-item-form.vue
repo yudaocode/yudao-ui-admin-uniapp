@@ -47,7 +47,7 @@
         <wd-input-number v-model="item.count" :min="0.001" :precision="3" :disabled="disabled" />
       </wd-form-item>
       <wd-form-item title="产品单价" title-width="180rpx" center>
-        <wd-input-number v-model="item.productPrice" :min="0.01" :precision="2" :disabled="disabled" />
+        <wd-input-number v-model="item.productPrice" :min="0" :precision="2" :disabled="disabled" />
       </wd-form-item>
       <wd-form-item title="税率(%)" title-width="180rpx" center>
         <wd-input-number v-model="item.taxPercent" :min="0" :precision="2" :disabled="disabled" />

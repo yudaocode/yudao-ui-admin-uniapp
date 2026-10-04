@@ -41,6 +41,7 @@
             :props="treeProps"
             multiple
             check-strictly
+            filterable
           />
           <EmployeeFormPicker
             v-model="formData.employeeIds"
