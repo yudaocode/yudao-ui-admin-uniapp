@@ -87,7 +87,7 @@
             </view>
           </wd-form-item>
           <wd-form-item title="附件" title-width="180rpx" prop="fileUrls">
-            <yd-upload-file v-model="formData.fileUrls" :limit="1" directory="oa/plan" />
+            <yd-upload-file v-model="formData.fileUrls" :limit="5" directory="oa/plan" />
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
@@ -196,7 +196,7 @@ async function getDetail() {
   syncingPeriod = true
   try {
     const data = await getPlan(Number(props.id))
-    formData.value = data
+    formData.value = { ...data, fileUrls: data.fileUrls ?? [] }
     startTime.value = data.startTime ? toTimestamp(data.startTime) : ''
     endTime.value = data.endTime ? toTimestamp(data.endTime) : ''
   } finally {
@@ -221,13 +221,11 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    // 时间戳由后端 Jackson 反序列化为 LocalDateTime；附件组件 limit=1 时回传字符串，提交前归一化为数组
-    const fileUrls = formData.value.fileUrls as unknown as string | string[] | undefined
+    // 时间戳由后端 Jackson 反序列化为 LocalDateTime
     const data = {
       ...formData.value,
       startTime: startTime.value,
       endTime: endTime.value,
-      fileUrls: Array.isArray(fileUrls) ? fileUrls : (fileUrls ? [fileUrls] : []),
     } as unknown as Plan
     if (props.id) {
       await updatePlan(data)

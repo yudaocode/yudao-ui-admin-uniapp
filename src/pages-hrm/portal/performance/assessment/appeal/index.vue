@@ -46,7 +46,7 @@
               <yd-upload-file
                 v-model="formData.appealFileUrls"
                 directory="hrm/performance/appeal"
-                :limit="1"
+                :limit="5"
                 :file-size="20"
               />
             </wd-form-item>
@@ -98,7 +98,7 @@ const completedReviewStages = ref<PerformanceAssessmentStage[]>([]) // 已完成
 const formData = ref({
   assessmentId: undefined as number | undefined,
   appealReason: '',
-  appealFileUrls: [] as string | string[],
+  appealFileUrls: [] as string[],
   reviewStageIds: [] as number[],
 })
 const formSchema = createFormSchema({
@@ -122,11 +122,7 @@ async function handleSubmit() {
     await submitPortalPerformanceAssessmentAppeal({
       assessmentId: formData.value.assessmentId,
       appealReason: formData.value.appealReason,
-      appealFileUrls: Array.isArray(formData.value.appealFileUrls)
-        ? formData.value.appealFileUrls
-        : formData.value.appealFileUrls
-          ? [formData.value.appealFileUrls]
-          : [],
+      appealFileUrls: formData.value.appealFileUrls,
       reviewStageIds: formData.value.reviewStageIds,
     })
     toast.success('绩效申诉已提交')
