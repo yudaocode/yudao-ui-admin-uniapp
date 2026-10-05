@@ -3,11 +3,9 @@ import { getDictLabel } from '@/hooks/useDict'
 import { DICT_TYPE } from '@/utils/constants'
 import dayjs from 'dayjs'
 import {
-  PmsIterationStatus,
   PmsProjectGroupType,
   PmsProjectType,
   PmsWorkItemPriority,
-  PmsWorkItemStatusType,
   PmsWorkItemType,
 } from './constants'
 

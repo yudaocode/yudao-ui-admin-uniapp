@@ -78,77 +78,77 @@
 </template>
 
 <script lang="ts" setup>
-import type { WorkbenchWorkItem } from "@/api/pms/pm/workbench";
-import { ref } from "vue";
-import { useToast } from "@wot-ui/ui/components/wd-toast";
+import type { WorkbenchWorkItem } from '@/api/pms/pm/workbench'
+import { ref } from 'vue'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
   getWorkItem,
   updateWorkItem,
   updateWorkItemStatus,
-} from "@/api/pms/pm/workitem";
-import { getWorkItemStatusList } from "@/api/pms/pm/workitem/status";
-import ProjectMemberFormPicker from "@/pages-pms/pm/project/components/project-member-form-picker.vue";
-import { getIntDictOptions } from "@/hooks/useDict";
-import { DICT_TYPE } from "@/utils/constants";
-import { formatDateTime, toTimestamp } from "@/utils/date";
+} from '@/api/pms/pm/workitem'
+import { getWorkItemStatusList } from '@/api/pms/pm/workitem/status'
+import ProjectMemberFormPicker from '@/pages-pms/pm/project/components/project-member-form-picker.vue'
+import { getIntDictOptions } from '@/hooks/useDict'
+import { DICT_TYPE } from '@/utils/constants'
+import { formatDateTime, toTimestamp } from '@/utils/date'
 
-const emit = defineEmits<{ success: [] }>(); // 保存成功事件，供列表刷新
+const emit = defineEmits<{ success: [] }>() // 保存成功事件，供列表刷新
 
-const toast = useToast();
-const visible = ref(false); // 弹窗显示状态
-const saving = ref(false); // 保存中
-const endTimeVisible = ref(false); // 截止时间选择器显示状态
-const workItem = ref<WorkbenchWorkItem>(); // 当前编辑的工作项
-const statusColumns = ref<Array<{ label: string; value: number }>>([]); // 状态选项
+const toast = useToast()
+const visible = ref(false) // 弹窗显示状态
+const saving = ref(false) // 保存中
+const endTimeVisible = ref(false) // 截止时间选择器显示状态
+const workItem = ref<WorkbenchWorkItem>() // 当前编辑的工作项
+const statusColumns = ref<Array<{ label: string, value: number }>>([]) // 状态选项
 const formData = ref({
   priority: 0 as number,
   statusId: 0 as number,
   assigneeUserId: undefined as number | undefined,
-  endTime: "" as number | "",
-}); // 快捷编辑表单
+  endTime: '' as number | '',
+}) // 快捷编辑表单
 
 /** 打开弹窗 */
 async function open(item: WorkbenchWorkItem) {
-  workItem.value = item;
+  workItem.value = item
   formData.value = {
     priority: item.priority,
     statusId: item.statusId,
     assigneeUserId: item.assigneeUserId,
-    endTime: item.endTime ? toTimestamp(item.endTime) : "",
-  };
-  visible.value = true;
-  const statuses = await getWorkItemStatusList(item.projectId, item.type);
-  statusColumns.value = statuses.map((status) => ({
+    endTime: item.endTime ? toTimestamp(item.endTime) : '',
+  }
+  visible.value = true
+  const statuses = await getWorkItemStatusList(item.projectId, item.type)
+  statusColumns.value = statuses.map(status => ({
     label: status.name,
     value: status.id,
-  }));
+  }))
 }
 
 /** 保存快捷编辑 */
 async function handleSubmit() {
-  const item = workItem.value;
+  const item = workItem.value
   if (!item) {
-    return;
+    return
   }
-  saving.value = true;
+  saving.value = true
   try {
     if (formData.value.statusId !== item.statusId) {
-      await updateWorkItemStatus(item.id, formData.value.statusId);
+      await updateWorkItemStatus(item.id, formData.value.statusId)
     }
-    const current = await getWorkItem(item.id);
+    const current = await getWorkItem(item.id)
     await updateWorkItem({
       ...current,
       priority: formData.value.priority,
       assigneeUserId: formData.value.assigneeUserId,
       endTime: formData.value.endTime || undefined,
-    });
-    toast.success("工作项已更新");
-    visible.value = false;
-    emit("success");
+    })
+    toast.success('工作项已更新')
+    visible.value = false
+    emit('success')
   } finally {
-    saving.value = false;
+    saving.value = false
   }
 }
 
-defineExpose({ open });
+defineExpose({ open })
 </script>
