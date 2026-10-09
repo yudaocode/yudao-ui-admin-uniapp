@@ -236,7 +236,15 @@ async function refreshCalendar() {
       startDate: currentMonth.value.startOf('month').format('YYYY-MM-DD'),
       endDate: currentMonth.value.endOf('month').format('YYYY-MM-DD'),
     })
-    calendarItems.value = props.itemFilter ? items.filter(props.itemFilter) : items
+    const normalizedItems = items.map(item => ({
+      ...item,
+      date: Array.isArray(item.date)
+        ? dayjs(new Date(item.date[0], item.date[1] - 1, item.date[2])).format('YYYY-MM-DD')
+        : item.date,
+    }))
+    calendarItems.value = props.itemFilter
+      ? normalizedItems.filter(props.itemFilter)
+      : normalizedItems
   } finally {
     loading.value = false
   }
