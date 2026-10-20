@@ -3,7 +3,10 @@
 import type { Ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref, shallowRef } from 'vue'
+// LiveKit Web SDK 依赖浏览器 DOM，仅 H5 加载，避免 App 启动报 DOMException 白屏：https://t.zsxq.com/HIauN
+// #ifdef H5
 import { Room, RoomEvent, Track } from 'livekit-client'
+// #endif
 import { useImRtc } from './useImRtc'
 
 /** 参与者媒体轨道；视频优先屏幕共享，其次摄像头 */

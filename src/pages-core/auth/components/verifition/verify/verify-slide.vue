@@ -35,7 +35,7 @@
             'background-color': moveBlockBackgroundColor,
             'left': moveBlockLeft,
             'transition': transitionLeft,
-          }" class="verify-move-block" @touchstart="start" @touchend="end" @touchmove="move" @mouseup="end"
+          }" class="verify-move-block" @touchstart="start" @touchend="end" @touchmove="move" @touchcancel="cancel" @mouseup="end"
         >
           <view class="verify-icon iconfont" :class="[iconClass]" :style="{ color: iconColor }" />
           <view
@@ -58,7 +58,7 @@
 </template>
 
 <script setup name="VerifySlide">
-import { computed, getCurrentInstance, nextTick, onMounted, reactive, ref, toRefs, watch } from 'vue'
+import { getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive, ref, toRefs, watch } from 'vue'
 import { checkCaptcha, getCode } from '@/api/login'
 /**
  * VerifySlide
@@ -152,11 +152,22 @@ const transitionLeft = ref('')
 const transitionWidth = ref('')
 const startLeft = ref(0)
 const instance = getCurrentInstance()
-const barArea = computed(() => {
-  const query = uni.createSelectorQuery().in(instance.proxy)
-  return query.select('.verify-bar-area')
-})
 const rectData = ref() // 布局数据
+const checking = ref(false) // 校验中，等待结果期间禁止再次拖动
+const refreshing = ref(false) // 获取验证码中，避免重复请求
+const timers = new Set() // 延时任务，卸载时统一清理
+let unmounted = false
+/** 组件存活时才执行的延时任务 */
+function setTimer(fn, delay) {
+  if (unmounted) {
+    return
+  }
+  const timer = setTimeout(() => {
+    timers.delete(timer)
+    fn()
+  }, delay)
+  timers.add(timer)
+}
 function init() {
   if (explain.value === '') {
     text.value = '向右滑动完成验证'
@@ -186,6 +197,11 @@ onMounted(() => {
     return false
   }
 })
+onBeforeUnmount(() => {
+  unmounted = true
+  timers.forEach(timer => clearTimeout(timer))
+  timers.clear()
+})
 function getPointerX(e) {
   const touch = e?.touches?.[0] || e?.changedTouches?.[0]
   if (touch) {
@@ -195,20 +211,31 @@ function getPointerX(e) {
 }
 // 鼠标按下
 function start(e) {
+  if (isEnd.value || checking.value || refreshing.value) {
+    return
+  }
+  // 上次获取验证码失败时没有有效 token，按下即重新获取，不拖动旧图
+  if (!backToken.value) {
+    refresh()
+    return
+  }
   const x = getPointerX(e)
-  barArea.value.boundingClientRect((rect) => {
+  rectData.value = undefined
+  // App 端 exec 会把查询队列里的组件改写为 nodeId，复用同一个 SelectorQuery 再次 exec 会抛错，导致失败后无法再拖动；每次按下重新创建
+  uni.createSelectorQuery().in(instance.proxy).select('.verify-bar-area').boundingClientRect((rect) => {
+    if (!rect) {
+      return
+    }
     rectData.value = rect
     startLeft.value = Math.floor(x - rect.left)
   }).exec()
   startMoveTime.value = +new Date() // 开始滑动的时间
-  if (isEnd.value === false) {
-    text.value = ''
-    moveBlockBackgroundColor.value = '#337ab7'
-    leftBarBorderColor.value = '#337AB7'
-    iconColor.value = '#fff'
-    e?.stopPropagation?.()
-    status.value = true
-  }
+  text.value = ''
+  moveBlockBackgroundColor.value = '#337ab7'
+  leftBarBorderColor.value = '#337AB7'
+  iconColor.value = '#fff'
+  e?.stopPropagation?.()
+  status.value = true
 }
 // 鼠标移动
 function move(e) {
@@ -241,6 +268,12 @@ function end() {
   endMovetime.value = +new Date()
   // 判断是否重合
   if (status.value && isEnd.value === false) {
+    status.value = false
+    // 未取到滑动条布局或没有有效验证码时，直接复位，不提交校验
+    if (!rectData.value || !backToken.value) {
+      resetBlock()
+      return
+    }
     let moveLeftDistance = Number.parseInt((moveBlockLeft.value || '0').replace('px', ''))
     moveLeftDistance = (moveLeftDistance * 310) / Number.parseInt(setSize.imgWidth)
     const data = {
@@ -250,8 +283,10 @@ function end() {
         : JSON.stringify({ x: moveLeftDistance, y: 5.0 }),
       token: backToken.value,
     }
+    checking.value = true
     checkCaptcha(data).then((res) => {
       if (res.repCode === '0000') {
+        checking.value = false
         moveBlockBackgroundColor.value = '#5cb85c'
         leftBarBorderColor.value = '#5cb85c'
         iconColor.value = '#fff'
@@ -259,7 +294,7 @@ function end() {
         showRefresh.value = false
         isEnd.value = true
         if (mode.value === 'pop') {
-          setTimeout(() => {
+          setTimer(() => {
             proxy.$parent.clickShow = false
             refresh()
           }, 1500)
@@ -272,32 +307,55 @@ function end() {
               secretKey.value,
             )
           : `${backToken.value}---${JSON.stringify({ x: moveLeftDistance, y: 5.0 })}`
-        setTimeout(() => {
+        setTimer(() => {
           tipWords.value = ''
           emit('success', { captchaVerification })
         }, 1000)
       } else {
-        moveBlockBackgroundColor.value = '#d9534f'
-        leftBarBorderColor.value = '#d9534f'
-        iconColor.value = '#fff'
-        iconClass.value = 'icon-close'
-        passFlag.value = false
-        setTimeout(() => {
-          refresh()
-        }, 1000)
-        emit('error', proxy)
-        tipWords.value = '验证失败'
-        setTimeout(() => {
-          tipWords.value = ''
-        }, 1000)
+        handleCheckFail()
       }
-    })
-    status.value = false
+    }).catch(handleCheckFail) // 请求异常或响应结构异常（如 res 为空）都按失败换图，避免 checking 卡住
+  }
+}
+
+/** 校验失败或校验请求异常：提示后换一张验证码，允许重新拖动 */
+function handleCheckFail() {
+  moveBlockBackgroundColor.value = '#d9534f'
+  leftBarBorderColor.value = '#d9534f'
+  iconColor.value = '#fff'
+  iconClass.value = 'icon-close'
+  passFlag.value = false
+  setTimer(() => {
+    checking.value = false
+    refresh()
+  }, 1000)
+  emit('error', proxy)
+  tipWords.value = '验证失败'
+  setTimer(() => {
+    tipWords.value = ''
+  }, 1000)
+}
+
+/** 触摸被系统打断（touchcancel）时不提交校验，滑块复位后可重新拖动 */
+function cancel() {
+  if (status.value) {
+    resetBlock()
   }
 }
 
 async function refresh() {
+  // 校验中或获取验证码中不重复刷新
+  if (checking.value || refreshing.value) {
+    return
+  }
   showRefresh.value = true
+  resetBlock()
+  await getPictrue()
+}
+
+/** 滑块复位到起点 */
+function resetBlock() {
+  status.value = false
   finishText.value = ''
 
   transitionLeft.value = 'left .3s'
@@ -311,12 +369,10 @@ async function refresh() {
   iconColor.value = '#000'
   iconClass.value = 'icon-right'
   isEnd.value = false
-
-  await getPictrue()
-  setTimeout(() => {
+  setTimer(() => {
     transitionWidth.value = ''
     transitionLeft.value = ''
-    text.value = explain.value
+    text.value = explain.value || '向右滑动完成验证'
   }, 300)
 }
 
@@ -325,15 +381,26 @@ async function getPictrue() {
   const data = {
     captchaType: captchaType.value,
   }
-  const res = await getCode(data)
+  refreshing.value = true
+  // 获取期间旧 token 作废；失败时保持为空，避免再次拖动提交旧验证码
+  backToken.value = ''
+  secretKey.value = ''
+  try {
+    const res = await getCode(data)
 
-  if (res.repCode === '0000') {
-    backImgBase.value = res.repData.originalImageBase64
-    blockBackImgBase.value = res.repData.jigsawImageBase64
-    backToken.value = res.repData.token
-    secretKey.value = res.repData.secretKey
-  } else {
-    tipWords.value = res.repMsg
+    if (res.repCode === '0000') {
+      backImgBase.value = res.repData.originalImageBase64
+      blockBackImgBase.value = res.repData.jigsawImageBase64
+      backToken.value = res.repData.token
+      secretKey.value = res.repData.secretKey
+      tipWords.value = ''
+    } else {
+      tipWords.value = res.repMsg
+    }
+  } catch {
+    // 请求层已提示错误；保留刷新按钮，点击刷新或再次拖动即可重试
+  } finally {
+    refreshing.value = false
   }
 }
 </script>
