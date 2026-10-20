@@ -1,5 +1,5 @@
 <template>
-  <scroll-view class="min-h-0 flex-1" scroll-y scroll-with-animation>
+  <scroll-view class="h-full min-h-0 flex-1" scroll-y scroll-with-animation>
     <!-- 常用 -->
     <MenuFavorite :menus="favorites" />
     <!-- 最近使用 -->

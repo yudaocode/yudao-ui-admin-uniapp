@@ -1,5 +1,5 @@
 <template>
-  <view class="min-h-0 flex flex-1 flex-col overflow-hidden bg-white">
+  <view class="h-full min-h-0 flex flex-1 flex-col overflow-hidden bg-white">
     <!-- 顶部横向 Tab -->
     <scroll-view
       class="flex-shrink-0 border-b-1rpx border-#f0f0f0"

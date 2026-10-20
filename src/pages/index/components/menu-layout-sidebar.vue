@@ -1,7 +1,7 @@
 <template>
-  <view class="min-h-0 flex flex-1 overflow-hidden bg-white">
+  <view class="h-full min-h-0 flex flex-1 overflow-hidden bg-white">
     <!-- 左侧模块栏 -->
-    <scroll-view class="w-172rpx flex-shrink-0 bg-#f5f6f8" scroll-y>
+    <scroll-view class="h-full w-172rpx flex-shrink-0 bg-#f5f6f8" scroll-y>
       <view
         class="relative py-26rpx text-center text-24rpx leading-tight"
         :class="active === FAVORITE_TAB_KEY ? 'bg-white text-#3370ff font-500' : 'text-#666'"
@@ -23,7 +23,7 @@
     </scroll-view>
 
     <!-- 右侧内容区 -->
-    <scroll-view class="min-w-0 flex-1 bg-white" scroll-y scroll-with-animation :scroll-into-view="topAnchor">
+    <scroll-view class="h-full min-w-0 flex-1 bg-white" scroll-y scroll-with-animation :scroll-into-view="topAnchor">
       <view id="pane-top" />
       <!-- 我的常用 + 最近使用 -->
       <template v-if="active === FAVORITE_TAB_KEY">

@@ -13,8 +13,8 @@
     <UserHeader />
     <!-- Banner 轮播图 -->
     <HomeBanner />
-    <!-- 菜单区域 -->
-    <MenuSection />
+    <!-- 菜单区域（占满剩余高度，内部独立滚动），对应 https://t.zsxq.com/RMwwV -->
+    <MenuSection class="min-h-0 flex-1" />
   </view>
 </template>
 

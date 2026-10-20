@@ -1,29 +1,39 @@
 <template>
-  <!-- 根据布局开关渲染对应外壳，四种布局共用同一份菜单数据 -->
-  <MenuLayoutSection
-    v-if="currentLayout === 'section'"
-    :groups="menuGroups"
-    :favorites="favoriteMenuItems"
-    :recents="recentMenuItems"
-  />
-  <MenuLayoutAccordion
-    v-else-if="currentLayout === 'accordion'"
-    :groups="menuGroups"
-    :favorites="favoriteMenuItems"
-    :recents="recentMenuItems"
-  />
-  <MenuLayoutTabs
-    v-else-if="currentLayout === 'tabs'"
-    :groups="menuGroups"
-    :favorites="favoriteMenuItems"
-    :recents="recentMenuItems"
-  />
-  <MenuLayoutSidebar
-    v-else
-    :groups="menuGroups"
-    :favorites="favoriteMenuItems"
-    :recents="recentMenuItems"
-  />
+  <!-- 小程序组件宿主节点不参与父级 flex，需逐层用 flex-1 / h-full 传递高度，scroll-view 才能独立滚动 -->
+  <view class="h-full min-h-0 flex flex-col">
+    <!-- 根据布局开关渲染对应外壳，四种布局共用同一份菜单数据 -->
+    <MenuLayoutSection
+      v-if="currentLayout === 'section'"
+      class="min-h-0 flex-1"
+      :groups="menuGroups"
+      :favorites="favoriteMenuItems"
+      :recents="recentMenuItems"
+    />
+    <MenuLayoutAccordion
+      v-else-if="currentLayout === 'accordion'"
+      class="min-h-0 flex-1"
+      :groups="menuGroups"
+      :favorites="favoriteMenuItems"
+      :recents="recentMenuItems"
+    />
+    <MenuLayoutTabs
+      v-else-if="currentLayout === 'tabs'"
+      class="min-h-0 flex-1"
+      :groups="menuGroups"
+      :favorites="favoriteMenuItems"
+      :recents="recentMenuItems"
+    />
+    <MenuLayoutSidebar
+      v-else
+      class="min-h-0 flex-1"
+      :groups="menuGroups"
+      :favorites="favoriteMenuItems"
+      :recents="recentMenuItems"
+    />
+
+    <!-- 底部 tabbar 占位（与 src/tabbar/index.vue 占位同高），避免菜单末项被固定 tabbar 遮挡 -->
+    <view class="h-50px flex-shrink-0 pb-safe" />
+  </view>
 </template>
 
 <script lang="ts" setup>
