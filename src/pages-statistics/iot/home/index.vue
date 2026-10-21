@@ -187,7 +187,8 @@
           </view>
           <view v-else>
             <view class="relative h-360rpx overflow-hidden rounded-12rpx bg-[#f7f8fa]">
-              <view :id="MAP_CONTAINER_ID" class="h-full w-full" />
+              <!-- #ifdef H5 -->
+              <view ref="mapContainerRef" class="h-full w-full" />
               <view v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-[#f7f8fa]">
                 <wd-loading size="32rpx" />
               </view>
@@ -195,6 +196,18 @@
                 <text class="text-28rpx text-[#666]">{{ mapLoadError }}</text>
                 <text class="mt-12rpx text-24rpx text-[#999]">下方展示设备位置明细</text>
               </view>
+              <!-- #endif -->
+              <!-- #ifndef H5 -->
+              <map
+                class="h-full w-full"
+                :latitude="nativeMapCenter.latitude"
+                :longitude="nativeMapCenter.longitude"
+                :scale="nativeMarkers.length === 1 ? 12 : 5"
+                :markers="nativeMarkers"
+                :include-points="nativeIncludePoints"
+                @callouttap="handleNativeCalloutTap"
+              />
+              <!-- #endif -->
             </view>
             <view class="mt-20rpx">
               <view
@@ -230,6 +243,7 @@
 
 <script lang="ts" setup>
 import type { Device } from '@/api/iot/device/device'
+import type { ComponentPublicInstance } from 'vue'
 import type {
   IotStatisticsDeviceMessageSummaryByDateResp,
   IotStatisticsSummaryResp,
@@ -244,6 +258,12 @@ import Card from '@/pages-statistics/components/card/card.vue'
 import YdChart from '@/pages-statistics/components/yd-chart/yd-chart.vue'
 import { formatDate, formatDateRange } from '@/utils/date'
 import { formatNumber, toFiniteNumber } from '@/utils/format'
+// #ifdef H5
+import { loadBaiduMapSdk } from '@/utils/baidu-map'
+// #endif
+// #ifndef H5
+import { bd09ToGcj02, NATIVE_MAP_MARKER } from '@/utils/coordinate'
+// #endif
 
 definePage({
   style: {
@@ -259,22 +279,15 @@ interface DeviceLocationItem {
   nickname?: string
   productName?: string
   state?: number
-  longitude: number
-  latitude: number
+  longitude: number // 经度（百度 BD09）
+  latitude: number // 纬度（百度 BD09）
 }
 
-declare global {
-  interface Window {
-    BMapGL?: any
-    __BAIDU_MAP_LOAD_CALLBACK__?: () => void
-  }
-}
-
-const MAP_CONTAINER_ID = 'iot-device-location-map'
-const BAIDU_MAP_CALLBACK_NAME = '__BAIDU_MAP_LOAD_CALLBACK__'
-let baiduMapLoadPromise: Promise<void> | null = null
-let mapInstance: any = null
-const markerIconUrls: string[] = []
+// #ifdef H5
+const mapContainerRef = ref<ComponentPublicInstance>() // 百度地图容器（H5 view 组件实例）
+let mapInstance: any = null // 百度地图实例
+const markerIconUrls: string[] = [] // 标记图标 Blob URL，销毁地图时释放
+// #endif
 const IOT_HOME_TAB = {
   OVERVIEW: 0,
   MESSAGE: 1,
@@ -415,6 +428,30 @@ const stateOptions = computed(() => getIntDictOptions(DICT_TYPE.IOT_DEVICE_STATE
 const visibleDeviceLocations = computed(() => deviceLocationList.value.slice(0, 6)) // 可见设备位置
 const isActiveTabLoading = computed(() => !!loadingTabs[activeTab.value]) // 当前分组是否加载中
 const activeLoadError = computed(() => !!loadErrors[activeTab.value]) // 当前分组是否加载失败
+// #ifndef H5
+const nativeMarkers = computed<any[]>(() => deviceLocationList.value.map((device) => {
+  const config = getStateConfig(device.state)
+  return {
+    id: device.markerId,
+    ...bd09ToGcj02(device.longitude, device.latitude),
+    ...NATIVE_MAP_MARKER,
+    title: getDeviceTitle(device),
+    callout: {
+      content: `${getDeviceTitle(device)}\n产品：${device.productName || '-'}\n状态：${config.name}\n点击查看详情 ›`,
+      color: '#333333',
+      fontSize: 12,
+      borderRadius: 6,
+      padding: 8,
+      bgColor: '#ffffff',
+      display: 'BYCLICK',
+    },
+  }
+})) // 原生地图标记（设备 BD09 转 GCJ02）
+const nativeIncludePoints = computed(() => nativeMarkers.value.length > 1
+  ? nativeMarkers.value.map(({ latitude, longitude }) => ({ latitude, longitude }))
+  : []) // 多设备时自动缩放到全部标记
+const nativeMapCenter = computed(() => nativeMarkers.value[0] || { latitude: 37.5, longitude: 106 }) // 原生地图中心点
+// #endif
 
 /** 返回上一页 */
 function handleBack() {
@@ -450,6 +487,7 @@ function getStateConfig(state?: number) {
   }
 }
 
+// #ifdef H5
 /** 转义地图弹窗内容 */
 function escapeHtml(value?: number | string) {
   return String(value ?? '-').replace(/[&<>"']/g, char => ({
@@ -460,6 +498,7 @@ function escapeHtml(value?: number | string) {
     '\'': '&#39;',
   }[char] || char))
 }
+// #endif
 
 /** 标准化设备位置 */
 function normalizeDeviceLocation(item: Device, index: number): DeviceLocationItem | undefined {
@@ -480,57 +519,18 @@ function normalizeDeviceLocation(item: Device, index: number): DeviceLocationIte
   }
 }
 
-/** 加载百度地图 SDK */
-function loadBaiduMapSdk(timeout = 10000): Promise<void> {
-  const baiduWindow = window
-  if (baiduWindow.BMapGL) {
-    return Promise.resolve()
-  }
-  if (baiduMapLoadPromise) {
-    return baiduMapLoadPromise
-  }
-
-  const mapKey = import.meta.env.VITE_BAIDU_MAP_KEY
-  if (!mapKey) {
-    return Promise.reject(new Error('百度地图 Key 未配置'))
-  }
-
-  baiduMapLoadPromise = new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      baiduMapLoadPromise = null
-      reject(new Error('百度地图 SDK 加载超时'))
-    }, timeout)
-
-    baiduWindow[BAIDU_MAP_CALLBACK_NAME] = () => {
-      clearTimeout(timeoutId)
-      delete baiduWindow[BAIDU_MAP_CALLBACK_NAME]
-      resolve()
-    }
-
-    const script = document.createElement('script')
-    script.src = `https://api.map.baidu.com/api?v=1.0&type=webgl&ak=${mapKey}&callback=${BAIDU_MAP_CALLBACK_NAME}`
-    script.onerror = () => {
-      clearTimeout(timeoutId)
-      baiduMapLoadPromise = null
-      delete baiduWindow[BAIDU_MAP_CALLBACK_NAME]
-      script.remove()
-      reject(new Error('百度地图 SDK 加载失败'))
-    }
-    document.body.appendChild(script)
-  })
-
-  return baiduMapLoadPromise
-}
-
-/** 销毁地图实例 */
+/** 销毁地图实例（H5 百度地图；原生地图随组件销毁） */
 function destroyDeviceMap() {
+  // #ifdef H5
   if (mapInstance) {
     mapInstance.destroy?.()
     mapInstance = null
   }
   markerIconUrls.splice(0).forEach(url => URL.revokeObjectURL(url))
+  // #endif
 }
 
+// #ifdef H5
 /** 创建地图标记图标 */
 function createMarkerIcon(color: string, isOnline: boolean) {
   const baiduWindow = window
@@ -573,8 +573,9 @@ function createInfoWindowContent(device: DeviceLocationItem) {
 /** 初始化设备分布地图 */
 function initDeviceMap() {
   const baiduWindow = window
-  const container = document.getElementById(MAP_CONTAINER_ID)
-  if (!container || !baiduWindow.BMapGL) {
+  // H5 的 view 引用是组件实例，实际节点为 $el
+  const container = mapContainerRef.value?.$el
+  if (!(container instanceof HTMLElement) || !baiduWindow.BMapGL) {
     return
   }
 
@@ -620,8 +621,9 @@ function initDeviceMap() {
     mapInstance.centerAndZoom(viewport.center, viewport.zoom)
   }
 }
+// #endif
 
-/** 渲染设备分布地图 */
+/** 渲染设备分布地图（H5 百度地图；原生地图由 markers 响应式渲染） */
 async function renderDeviceMap() {
   mapLoadError.value = ''
   destroyDeviceMap()
@@ -629,6 +631,7 @@ async function renderDeviceMap() {
     return
   }
 
+  // #ifdef H5
   mapLoading.value = true
   try {
     await nextTick()
@@ -640,6 +643,7 @@ async function renderDeviceMap() {
   } finally {
     mapLoading.value = false
   }
+  // #endif
 }
 
 /** 查询全局统计 */
@@ -688,6 +692,14 @@ function handleDeviceDetail(id?: number) {
   }
   uni.navigateTo({ url: `/pages-iot/device/device/detail/index?id=${id}` })
 }
+
+// #ifndef H5
+/** 原生地图气泡点击：进入设备详情 */
+function handleNativeCalloutTap(event: { detail: { markerId: number } }) {
+  const device = deviceLocationList.value.find(item => item.markerId === event.detail.markerId)
+  handleDeviceDetail(device?.id)
+}
+// #endif
 
 /** 查看设备列表 */
 function handleDeviceList() {

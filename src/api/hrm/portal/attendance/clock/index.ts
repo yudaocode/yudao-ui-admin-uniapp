@@ -5,8 +5,8 @@ import { http } from '@/http/http'
 export interface PortalAttendanceClockPoint {
   name?: string // 地点名称
   address?: string // 定位地址
-  latitude?: number // 纬度
-  longitude?: number // 经度
+  latitude?: number // 纬度（百度 BD09）
+  longitude?: number // 经度（百度 BD09）
   radius?: number // 有效半径（米）
 }
 
@@ -53,8 +53,8 @@ export interface PortalAttendanceClockDetail {
 /** 员工端手机打卡请求 */
 export interface PortalAttendanceClockCreateReq {
   address?: string // 打卡地址
-  longitude?: number // 经度
-  latitude?: number // 纬度
+  longitude?: number // 经度（百度 BD09）
+  latitude?: number // 纬度（百度 BD09）
   ssid?: string // WiFi 名称
   mac?: string // WiFi MAC 地址
 }

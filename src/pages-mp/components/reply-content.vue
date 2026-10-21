@@ -63,20 +63,20 @@
     </view>
 
     <view v-else-if="type === 'location'">
-      <map
-        v-if="hasLocation"
+      <YdMap
+        v-if="wxLocation"
         class="w-full rounded-12rpx"
         style="height: 280rpx"
-        :latitude="locationX"
-        :longitude="locationY"
-        :markers="markers"
+        :latitude="wxLocation.latitude"
+        :longitude="wxLocation.longitude"
+        coord-type="gcj02"
         :scale="scale || 16"
-        @tap="handleOpenLocation"
+        @click="handleOpenLocation"
       />
       <view v-if="label" class="mt-8rpx text-26rpx text-[#333]">
         {{ label }}
       </view>
-      <view v-if="hasLocation" class="mt-8rpx text-24rpx text-[#576b95]" @click="handleOpenLocation">
+      <view v-if="wxLocation" class="mt-8rpx text-24rpx text-[#576b95]" @click="handleOpenLocation">
         在地图中查看 ›
       </view>
       <text v-else-if="!label">-</text>
@@ -98,9 +98,15 @@
 <script lang="ts" setup>
 import type { MpArticle } from '@/api/mp/message'
 import { computed } from 'vue'
+import YdMap from '@/components/yudao-ui/yd-map/yd-map.vue'
+import { gcj02ToBd09 } from '@/utils/coordinate'
+import { toFiniteNumber } from '@/utils/format'
 import { openUrl } from '@/utils/url'
 import MediaPreview from './media-preview.vue'
 import NewsCard from './news-card.vue'
+// #ifdef H5
+import { getBaiduMarkerUrl } from '@/utils/baidu-map'
+// #endif
 
 type TagType = 'primary' | 'success' | 'danger' | 'warning'
 
@@ -119,8 +125,8 @@ const props = defineProps<{
   thumbMediaUrl?: string
   musicUrl?: string
   hqMusicUrl?: string
-  locationX?: number
-  locationY?: number
+  locationX?: number // 纬度（微信 GCJ02）
+  locationY?: number // 经度（微信 GCJ02）
   scale?: number
   label?: string
 }>()
@@ -139,23 +145,35 @@ const EVENT_CONFIG: Record<string, { label: string, type: TagType }> = {
   location_select: { label: '选择地理位置', type: 'warning' },
 }
 
-const hasLocation = computed(() => props.locationX != null && props.locationY != null)
-const markers = computed<any[]>(() => hasLocation.value
-  ? [{ id: 0, latitude: props.locationX!, longitude: props.locationY! }]
-  : [])
+const wxLocation = computed(() => {
+  const latitude = toFiniteNumber(props.locationX)
+  const longitude = toFiniteNumber(props.locationY)
+  return latitude === undefined || longitude === undefined ? undefined : { latitude, longitude }
+}) // 微信定位（GCJ02）
+// #ifdef H5
+const baiduPoint = computed(() => wxLocation.value
+  ? gcj02ToBd09(wxLocation.value.longitude, wxLocation.value.latitude)
+  : undefined) // H5 百度地图标注页坐标（BD09）
+// #endif
 const eventLabel = computed(() => props.event ? (EVENT_CONFIG[props.event]?.label || '未知事件类型') : '-')
 const eventTagType = computed<TagType>(() => props.event ? (EVENT_CONFIG[props.event]?.type || 'danger') : 'primary')
 
-/** 打开位置 */
+/** 打开位置：H5 打开百度地图标注页，其他端使用原生地图 */
 function handleOpenLocation() {
-  if (!hasLocation.value) {
+  if (!wxLocation.value) {
     return
   }
+  // #ifdef H5
+  if (baiduPoint.value) {
+    openUrl(getBaiduMarkerUrl(baiduPoint.value, props.label))
+  }
+  // #endif
+  // #ifndef H5
   uni.openLocation({
-    latitude: props.locationX!,
-    longitude: props.locationY!,
+    ...wxLocation.value,
     name: props.label,
     scale: props.scale || 16,
   })
+  // #endif
 }
 </script>

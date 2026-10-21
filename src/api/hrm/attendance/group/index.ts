@@ -5,8 +5,8 @@ import { http } from '@/http/http'
 export interface AttendancePoint {
   name: string // 地点名称
   address?: string // 定位地址
-  latitude?: number // 纬度
-  longitude?: number // 经度
+  latitude?: number // 纬度（百度 BD09）
+  longitude?: number // 经度（百度 BD09）
   radius?: number // 有效打卡半径（米）
 }
 

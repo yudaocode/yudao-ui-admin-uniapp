@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    BaiduMap: typeof import('./../components/yudao-ui/yd-map/baidu-map.vue')['default']
     DeptFormPicker: typeof import('./../components/system-select/dept-form-picker.vue')['default']
     DeptSearchPicker: typeof import('./../components/system-select/dept-search-picker.vue')['default']
     DictTag: typeof import('./../components/dict-tag/dict-tag.vue')['default']
@@ -14,6 +15,7 @@ declare module 'vue' {
     UserPicker: typeof import('./../components/system-select/user-picker.vue')['default']
     UserSearchPicker: typeof import('./../components/system-select/user-search-picker.vue')['default']
     YdFormPicker: typeof import('./../components/yudao-ui/yd-form-picker/yd-form-picker.vue')['default']
+    YdMap: typeof import('./../components/yudao-ui/yd-map/yd-map.vue')['default']
     YdSearchDateRange: typeof import('./../components/yudao-ui/yd-search-date-range/yd-search-date-range.vue')['default']
     YdSearchPicker: typeof import('./../components/yudao-ui/yd-search-picker/yd-search-picker.vue')['default']
     YdTreeSelect: typeof import('./../components/yudao-ui/yd-tree-select/yd-tree-select.vue')['default']

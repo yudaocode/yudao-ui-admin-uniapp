@@ -58,7 +58,7 @@
         </wd-cell-group>
       </wd-form>
       <view class="mt-16rpx text-24rpx text-[#999]">
-        移动端请手动填写经纬度；范围单位为米。
+        移动端请手动填写百度地图（BD09）经纬度，可在百度地图拾取坐标；范围单位为米。
       </view>
       <view class="mt-32rpx">
         <wd-button type="primary" block @click="handleConfirm">

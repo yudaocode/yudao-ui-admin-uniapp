@@ -1,5 +1,6 @@
 export type { YdFormPickerExpose } from './yd-form-picker/types'
 export { default as YdFormPicker } from './yd-form-picker/yd-form-picker.vue'
+export { default as YdMap } from './yd-map/yd-map.vue'
 export { default as YdSearchDateRange } from './yd-search-date-range/yd-search-date-range.vue'
 export type { YdSearchPickerExpose } from './yd-search-picker/types'
 export { default as YdSearchPicker } from './yd-search-picker/yd-search-picker.vue'

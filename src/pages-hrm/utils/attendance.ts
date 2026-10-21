@@ -4,6 +4,7 @@ import type {
 } from '@/api/hrm/attendance/group'
 import type { AttendanceDailyDetail } from '@/api/hrm/attendance/statistics'
 import { computed, ref } from 'vue'
+import { gcj02ToBd09, wgs84ToGcj02 } from '@/utils/coordinate'
 import { isRecord } from '@/utils/is'
 
 export type AttendanceClockDeviceState
@@ -50,7 +51,7 @@ export function getHrmAttendanceDayState(
 /** 员工端考勤打卡设备能力 */
 export function useAttendanceClockDevice() {
   const locationState = ref<AttendanceClockDeviceState>('disabled') // 定位状态
-  const location = ref<AttendanceClockLocation>() // 当前定位
+  const location = ref<AttendanceClockLocation>() // 当前定位（BD09，已由 WGS84 转换）
   const locationError = ref('') // 定位失败原因
   const wifiState = ref<AttendanceClockDeviceState>('disabled') // WiFi 状态
   const wifi = ref<AttendanceWifi>() // 当前 WiFi
@@ -119,10 +120,9 @@ export function useAttendanceClockDevice() {
           })
         },
       )
-      const coordinates = convertWgs84ToGcj02(
-        result.latitude,
-        result.longitude,
-      )
+      // 系统定位为 WGS84，考勤点按百度 BD09 维护，距离比较和打卡请求统一使用 BD09
+      const gcj02 = wgs84ToGcj02(result.longitude, result.latitude)
+      const coordinates = gcj02ToBd09(gcj02.longitude, gcj02.latitude)
       location.value = {
         address: getLocationAddress(result.address),
         latitude: coordinates.latitude,
@@ -266,90 +266,4 @@ function getRawDeviceErrorMessage(error: unknown): string {
     return error.errMsg
   }
   return ''
-}
-
-/** 将系统 WGS84 坐标转换为考勤配置使用的 GCJ02 坐标 */
-function convertWgs84ToGcj02(latitude: number, longitude: number) {
-  if (isOutsideChina(latitude, longitude)) {
-    return { latitude, longitude }
-  }
-  const latitudeOffset = transformLatitude(longitude - 105, latitude - 35)
-  const longitudeOffset = transformLongitude(longitude - 105, latitude - 35)
-  const radianLatitude = (latitude / 180) * Math.PI
-  const magic = 1 - 0.006693421622965943 * Math.sin(radianLatitude) ** 2
-  const sqrtMagic = Math.sqrt(magic)
-  return {
-    latitude:
-      latitude
-      + (latitudeOffset * 180)
-      / ((6335552.717000426 / (magic * sqrtMagic)) * Math.PI),
-    longitude:
-      longitude
-      + (longitudeOffset * 180)
-      / ((6378245 / sqrtMagic) * Math.cos(radianLatitude) * Math.PI),
-  }
-}
-
-/** 判断坐标是否位于中国大陆转换范围外 */
-function isOutsideChina(latitude: number, longitude: number) {
-  return (
-    longitude < 72.004
-    || longitude > 137.8347
-    || latitude < 0.8293
-    || latitude > 55.8271
-  )
-}
-
-/** 计算 GCJ02 纬度偏移 */
-function transformLatitude(longitude: number, latitude: number) {
-  let result
-    = -100
-      + 2 * longitude
-      + 3 * latitude
-      + 0.2 * latitude ** 2
-      + 0.1 * longitude * latitude
-      + 0.2 * Math.sqrt(Math.abs(longitude))
-  result
-    += ((20 * Math.sin(6 * longitude * Math.PI)
-      + 20 * Math.sin(2 * longitude * Math.PI))
-    * 2)
-  / 3
-  result
-    += ((20 * Math.sin(latitude * Math.PI)
-      + 40 * Math.sin((latitude / 3) * Math.PI))
-    * 2)
-  / 3
-  result
-    += ((160 * Math.sin((latitude / 12) * Math.PI)
-      + 320 * Math.sin((latitude * Math.PI) / 30))
-    * 2)
-  / 3
-  return result
-}
-
-/** 计算 GCJ02 经度偏移 */
-function transformLongitude(longitude: number, latitude: number) {
-  let result
-    = 300
-      + longitude
-      + 2 * latitude
-      + 0.1 * longitude ** 2
-      + 0.1 * longitude * latitude
-      + 0.1 * Math.sqrt(Math.abs(longitude))
-  result
-    += ((20 * Math.sin(6 * longitude * Math.PI)
-      + 20 * Math.sin(2 * longitude * Math.PI))
-    * 2)
-  / 3
-  result
-    += ((20 * Math.sin(longitude * Math.PI)
-      + 40 * Math.sin((longitude / 3) * Math.PI))
-    * 2)
-  / 3
-  result
-    += ((150 * Math.sin((longitude / 12) * Math.PI)
-      + 300 * Math.sin((longitude / 30) * Math.PI))
-    * 2)
-  / 3
-  return result
 }
