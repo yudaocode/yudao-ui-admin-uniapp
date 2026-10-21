@@ -15,13 +15,16 @@ import {
   leaveCall,
   rejectCall,
 } from '@/api/im/rtc'
+import { RTC_APP_ENABLED, RTC_MP_GATEWAY_URL } from '@/pages-im/utils/config'
 import {
   ImConversationType,
   ImMessageType,
+  ImRtcCallMediaType,
   ImRtcCallStage,
   ImRtcCallStatus,
   ImRtcParticipantStatus,
 } from '@/pages-im/utils/constants'
+import { requestRtcPermissions } from '@/pages-im/utils/rtcPermission'
 import { useUserStore } from '@/store/user'
 import { useRtcStore } from '../store/rtcStore'
 
@@ -52,14 +55,34 @@ export function useImRtc() {
   const userStore = useUserStore()
   const rtcStore = useRtcStore()
 
-  /** 当前平台是否支持 LiveKit 通话 */
+  /** 当前平台是否支持 LiveKit 通话；App、小程序仅在显式开启试验开关时开放 */
   function supportsRtc() {
     // #ifdef H5
     return true
     // #endif
-    // #ifndef H5
+    // #ifdef APP-PLUS
+    return RTC_APP_ENABLED
+    // #endif
+    // #ifdef MP-WEIXIN
+    return !!RTC_MP_GATEWAY_URL
+    // #endif
+    // #ifndef H5 || APP-PLUS || MP-WEIXIN
     return false
     // #endif
+  }
+
+  /** 申请通话系统权限；私聊视频默认开启摄像头，需同时申请相机 */
+  async function ensureRtcPermissions(conversationType: number, mediaType: number) {
+    const camera = mediaType === ImRtcCallMediaType.VIDEO && conversationType !== ImConversationType.GROUP
+    if (await requestRtcPermissions(camera)) {
+      return true
+    }
+    let settingName = '系统设置' // 权限开启位置
+    // #ifdef MP-WEIXIN
+    settingName = '小程序设置'
+    // #endif
+    toast?.show(camera ? `请在${settingName}中允许麦克风和相机权限` : `请在${settingName}中允许麦克风权限`)
+    return false
   }
 
   /** 打开通话页 */
@@ -92,6 +115,10 @@ export function useImRtc() {
       }
       if (rtcStore.isActive) {
         toast?.show('当前正在通话中')
+        return false
+      }
+      if (!await ensureRtcPermissions(options.conversationType, options.mediaType)
+        || startCallTask !== task) {
         return false
       }
       const data = await createCall(options)
@@ -134,6 +161,11 @@ export function useImRtc() {
       return false
     }
     const task = (async () => {
+      if (!await ensureRtcPermissions(ImConversationType.GROUP, ImRtcCallMediaType.VOICE)
+        || joinCallTask?.task !== task
+        || rtcStore.isActive) {
+        return false
+      }
       const data = await joinCall(room)
       if (joinCallTask?.task !== task) {
         return false
@@ -167,6 +199,14 @@ export function useImRtc() {
       return acceptCallTask.room === room ? acceptCallTask.task : false
     }
     const task = (async () => {
+      const payload = rtcStore.incomingPayload
+      if (!payload
+        || !await ensureRtcPermissions(payload.conversationType, payload.mediaType)
+        || acceptCallTask?.task !== task
+        || rtcStore.stage !== ImRtcCallStage.INCOMING
+        || rtcStore.incomingPayload?.room !== room) {
+        return false
+      }
       const data = await acceptCall(room)
       if (acceptCallTask?.task !== task) {
         return false

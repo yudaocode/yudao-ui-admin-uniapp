@@ -31,6 +31,12 @@ interface ImportMetaEnv {
   readonly VITE_AUTH_MODE: 'single' | 'double'
   /** 是否清除console */
   readonly VITE_DELETE_CONSOLE: string
+  /** App 端 IM 音视频通话试验开关，未配置即关闭 */
+  readonly VITE_IM_RTC_APP_ENABLED?: 'true' | 'false'
+  /** 微信小程序 IM 音视频通话试验开关（经 RTMP 网关），未配置即关闭 */
+  readonly VITE_IM_RTC_MP_ENABLED?: 'true' | 'false'
+  /** 微信小程序 IM 通话网关地址，需 https 且在小程序 request 合法域名中 */
+  readonly VITE_IM_RTC_MP_GATEWAY_URL?: string
   // 更多环境变量...
 }
 

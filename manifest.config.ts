@@ -83,12 +83,16 @@ export default defineManifestConfig({
           '<uses-permission android:name="android.permission.FLASHLIGHT"/>',
           '<uses-feature android:name="android.hardware.camera"/>',
           '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
+          '<uses-permission android:name="android.permission.RECORD_AUDIO"/>',
+          '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>',
         ],
       },
       /* ios打包配置 */
       ios: {
         privacyDescription: {
           NSLocationWhenInUseUsageDescription: '用于员工考勤定位及获取当前 WiFi 信息',
+          NSMicrophoneUsageDescription: '用于发送 IM 语音消息及语音、视频通话',
+          NSCameraUsageDescription: '用于拍摄聊天图片及 IM 视频通话',
         },
         capabilities: {
           entitlements: {

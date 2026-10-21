@@ -12,10 +12,16 @@
         :member="participant"
         :is-local="participant.isLocal"
         :video-track="participant.videoTrack"
+        :video-visible="participant.videoVisible"
+        :media-state="participant.mediaState"
         :audio-track="participant.audioTrack"
         :speaker-enabled="speakerEnabled"
       />
     </view>
+
+    <!-- #ifdef APP-PLUS -->
+    <RtcLiveKitBridge />
+    <!-- #endif -->
 
     <!-- 通话信息 -->
     <view class="relative z-2 flex flex-1 flex-col items-center px-48rpx pt-[calc(100rpx+env(safe-area-inset-top))]">
@@ -63,7 +69,7 @@
 
 <script lang="ts" setup>
 import type { GroupMember } from '../../../../types'
-import type { RtcParticipantTracks } from '../../../../composables/useLiveKitRoom'
+import type { RtcConnectFailedReason, RtcParticipantTracks } from '../../../../composables/useLiveKitRoom'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
@@ -86,6 +92,9 @@ import ImAvatar from '../../../../components/im-avatar.vue'
 import RtcCallControls from './rtc-call-controls.vue'
 import RtcCallIncoming from './rtc-call-incoming.vue'
 import RtcCallParticipantTile from './rtc-call-participant-tile.vue'
+// #ifdef APP-PLUS
+import RtcLiveKitBridge from './rtc-livekit-bridge.vue'
+// #endif
 
 const emit = defineEmits<{
   ended: [] // 通话结束
@@ -139,7 +148,7 @@ const {
   disposeRoom,
 } = useLiveKitRoom({
   initialCameraEnabled,
-  onConnectFailed: handleHangup,
+  onConnectFailed: handleConnectFailed,
   onRoomDisconnected: handleHangup,
 })
 const currentUserId = computed(() => userStore.userInfo.userId) // 当前用户编号
@@ -164,6 +173,8 @@ const mediaParticipants = computed(() => { // 参与者资料与 LiveKit 轨道�
       videoTrack: !track?.screenShareMuted && track?.screenShareTrack
         ? track.screenShareTrack
         : !track?.cameraMuted ? track?.cameraTrack : undefined,
+      videoVisible: !!track?.videoVisible,
+      mediaState: track?.mediaState,
       audioTrack: track?.audioMuted ? undefined : track?.audioTrack,
     }
   })
@@ -347,6 +358,20 @@ function finishCall(source: 'local' | 'remote' | 'page-unload') {
 /** 挂断 */
 async function handleHangup() {
   await finishCall('local')
+}
+
+/** 连接失败；同账号小程序会话占用时按远端结束收尾，只清理本地通话状态，不发送取消 / 拒绝 / 离开 */
+async function handleConnectFailed(reason?: RtcConnectFailedReason) {
+  if (reason !== 'busy' || finishTask) {
+    await handleHangup()
+    return
+  }
+  const { room } = snapshotEndContext()
+  const task = finishCall('remote')
+  if (room && (rtcStore.call?.room === room || rtcStore.incomingPayload?.room === room)) {
+    rtcStore.reset()
+  }
+  await task
 }
 
 /** Store 进入空闲：本地结束时是 reset 回声，远端结束时才驱动收尾 */
