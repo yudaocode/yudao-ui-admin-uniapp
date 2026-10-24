@@ -145,3 +145,8 @@ export function socialLogin(data: AuthSocialLoginReq) {
     hideErrorToast: true,
   })
 }
+
+/** 手机确认电脑端扫码登录，用户身份由当前登录态决定 */
+export function confirmQrcode(qrcodeId: string) {
+  return http.post<boolean>('/system/auth/confirm-qrcode', { qrcodeId })
+}

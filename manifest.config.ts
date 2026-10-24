@@ -57,6 +57,7 @@ export default defineManifestConfig({
     /* 模块配置 */
     modules: {
       Geolocation: {},
+      Barcode: {},
     },
     /* 应用发布信息 */
     distribute: {
