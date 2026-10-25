@@ -95,7 +95,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getPerformanceAssessmentTemplate(Number(props.id))
+  formData.value = await getPerformanceAssessmentTemplate(props.id)
 }
 
 /** 提交表单 */

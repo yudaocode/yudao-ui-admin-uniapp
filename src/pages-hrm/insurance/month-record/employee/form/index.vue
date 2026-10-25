@@ -159,7 +159,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const detail = await getInsuranceMonthEmployeeRecord(Number(props.id))
+  const detail = await getInsuranceMonthEmployeeRecord(props.id)
   formData.value = {
     id: detail.id,
     employeeName: detail.employeeName,

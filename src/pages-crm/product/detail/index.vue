@@ -82,7 +82,7 @@ const toast = useToast()
 const formData = ref<Record<string, any>>({}) // 详情数据
 const tabIndex = ref(0) // 当前详情分类下标
 const deleting = ref(false) // 删除状态
-const productId = computed(() => Number(props.id))
+const productId = computed(() => props.id)
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => activeTab.value === 'log') // 操作日志 tab 用 z-paging 固定高布局
 const hasFooter = computed(() => {

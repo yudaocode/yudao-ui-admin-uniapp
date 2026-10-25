@@ -1,3 +1,4 @@
+import { isIdType, parseId } from '@/utils/id'
 import type { FriendNotificationPayload } from './friendStore'
 import type { ImNotificationWebSocketDTO, WebSocketFrame } from '../types'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
@@ -142,7 +143,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       await handleFriendNotification(
         contentType,
         payload as FriendNotificationPayload,
-        Number(payload.friendUserId),
+        parseId(payload.friendUserId) as number,
       )
       return
     }
@@ -164,7 +165,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
         room: payload.room,
         conversationType: payload.conversationType ?? conversationType,
         groupId: payload.groupId,
-        userId: Number(payload.userId || payload.participantUserId || payload.operatorUserId),
+        userId: parseId(payload.userId || payload.participantUserId || payload.operatorUserId) as number,
         mediaType: payload.mediaType,
         inviterUserId: payload.inviterUserId ?? payload.inviterId,
       }, contentType)
@@ -179,8 +180,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   ) {
     const currentUserId = useUserStore().userInfo.userId
     const { conversationType, contentType, payload } = notification
-    if (Number(payload.senderId) !== currentUserId
-      && Number(payload.receiverId) !== currentUserId) {
+    if (parseId(payload.senderId) !== currentUserId
+      && parseId(payload.receiverId) !== currentUserId) {
       return
     }
     if (contentType === ImMessageType.READ) {
@@ -203,10 +204,10 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
   ) {
     const currentUserId = useUserStore().userInfo.userId
     const { conversationType, contentType, payload } = notification
-    if (Number(payload.senderId) !== currentUserId
+    if (parseId(payload.senderId) !== currentUserId
       && Array.isArray(payload.receiverUserIds)
       && payload.receiverUserIds.length > 0
-      && !payload.receiverUserIds.map(Number).includes(currentUserId)) {
+      && !payload.receiverUserIds.map(parseId).filter(isIdType).includes(currentUserId)) {
       return
     }
     if (contentType === ImMessageType.READ) {
@@ -240,7 +241,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (!MESSAGE_PRIVATE_READ_ENABLED) {
       return
     }
-    await applyConversationRead(ImConversationType.PRIVATE, Number(payload.receiverId), payload, isActive)
+    await applyConversationRead(ImConversationType.PRIVATE, parseId(payload.receiverId) as number, payload, isActive)
   }
 
   /** 应用群聊已读位置 */
@@ -248,12 +249,12 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (!MESSAGE_GROUP_READ_ENABLED) {
       return
     }
-    await applyConversationRead(ImConversationType.GROUP, Number(payload.groupId), payload, isActive)
+    await applyConversationRead(ImConversationType.GROUP, parseId(payload.groupId) as number, payload, isActive)
   }
 
   /** 应用频道已读位置 */
   async function handleChannelRead(payload: any, isActive: () => boolean) {
-    await applyConversationRead(ImConversationType.CHANNEL, Number(payload.channelId), payload, isActive)
+    await applyConversationRead(ImConversationType.CHANNEL, parseId(payload.channelId) as number, payload, isActive)
   }
 
   /** 应用会话已读位置 */
@@ -263,12 +264,12 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     payload: any,
     isActive: () => boolean,
   ) {
-    const messageId = Number(payload.readId || payload.messageId || payload.id)
+    const messageId = parseId(payload.readId || payload.messageId || payload.id)
     if (!messageId || !targetId) {
       return
     }
     await useConversationStore().applyConversationReadList([{
-      id: Number(payload.id || messageId),
+      id: parseId(payload.id || messageId) as number,
       conversationType,
       targetId,
       messageId,
@@ -283,8 +284,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     }
     await useMessageStore().applyMessageReadReceipt({
       conversationType: ImConversationType.PRIVATE,
-      targetId: Number(payload.senderId),
-      privateReadMaxId: Number(payload.messageId || payload.id),
+      targetId: parseId(payload.senderId) as number,
+      privateReadMaxId: parseId(payload.messageId || payload.id) as number,
     })
   }
 
@@ -295,8 +296,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     }
     await useMessageStore().applyMessageReadReceipt({
       conversationType: ImConversationType.GROUP,
-      targetId: Number(payload.groupId),
-      groupMessageId: Number(payload.messageId || payload.id),
+      targetId: parseId(payload.groupId) as number,
+      groupMessageId: parseId(payload.messageId || payload.id) as number,
       readCount: payload.readCount,
       receiptStatus: payload.receiptStatus,
     })
@@ -359,7 +360,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
         void useFriendStore().fetchFriendInfo(peerUserId).catch(() => undefined)
       }
     } else if (conversationType === ImConversationType.GROUP) {
-      const groupId = Number(payload.groupId)
+      const groupId = parseId(payload.groupId)
       if (groupId && !useGroupStore().getGroup(groupId)) {
         void useGroupStore().fetchGroupInfo(groupId, true).catch(() => undefined)
       }
@@ -392,9 +393,9 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 计算私聊对端用户编号 */
   function computeFriendPeerId(payload: any, currentUserId: number) {
-    return Number(payload.senderId) === currentUserId
-      ? Number(payload.receiverId)
-      : Number(payload.senderId)
+    return parseId(payload.senderId) === currentUserId
+      ? parseId(payload.receiverId) as number
+      : parseId(payload.senderId) as number
   }
 
   /** 应用群通话开始消息 */
@@ -402,7 +403,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     const callPayload = typeof payload.content === 'string'
       ? parseRtcCallPayload(payload.content)
       : payload
-    const groupId = Number(payload.groupId || callPayload?.groupId)
+    const groupId = parseId(payload.groupId || callPayload?.groupId)
     if (!groupId || !callPayload?.room || !callPayload.mediaType || !callPayload.inviterUserId) {
       return
     }
@@ -410,8 +411,8 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       room: callPayload.room,
       groupId,
       mediaType: Number(callPayload.mediaType || 0),
-      inviterId: Number(callPayload.inviterUserId || payload.senderId || 0),
-      joinedUserIds: callPayload.inviterUserId ? [Number(callPayload.inviterUserId)] : [],
+      inviterId: parseId(callPayload.inviterUserId || payload.senderId || 0) as number,
+      joinedUserIds: callPayload.inviterUserId ? [parseId(callPayload.inviterUserId) as number] : [],
       inviteeIds: [],
     })
   }
@@ -421,7 +422,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     const callPayload = typeof payload.content === 'string' ? safeParse(payload.content) : payload
     useImRtc().end(
       callPayload?.room || payload.room,
-      Number(payload.groupId || callPayload?.groupId || 0) || undefined,
+      parseId(payload.groupId || callPayload?.groupId || 0) || undefined,
     )
   }
 
@@ -465,7 +466,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
 
   /** 分发加群申请通知 */
   function handleGroupRequestNotification(contentType: number, payload: { requestId?: number }) {
-    const requestId = Number(payload.requestId)
+    const requestId = parseId(payload.requestId)
     if (!requestId) {
       return
     }
@@ -507,13 +508,13 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     const currentUserId = useUserStore().userInfo.userId
     if (contentType >= ImMessageType.FRIEND_REQUEST_APPROVED && contentType <= ImMessageType.FRIEND_UPDATE) {
       const eventContent = typeof payload.content === 'string' ? safeParse(payload.content) || {} : payload
-      const peerUserId = Number(payload.senderId) === currentUserId
-        ? Number(payload.receiverId)
-        : Number(payload.senderId)
+      const peerUserId = parseId(payload.senderId) === currentUserId
+        ? parseId(payload.receiverId) as number
+        : parseId(payload.senderId) as number
       const friendPayload = {
         ...eventContent,
-        operatorUserId: Number(eventContent.operatorUserId || payload.senderId || 0),
-        friendUserId: Number(eventContent.friendUserId || peerUserId || 0),
+        operatorUserId: parseId(eventContent.operatorUserId || payload.senderId || 0) as number,
+        friendUserId: parseId(eventContent.friendUserId || peerUserId || 0) as number,
       } as FriendNotificationPayload
       await handleFriendNotification(
         contentType,
@@ -527,7 +528,7 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
     if (contentType < ImMessageType.GROUP_CREATE || contentType > ImMessageType.GROUP_BANNED) {
       return false
     }
-    const groupId = Number(payload.groupId)
+    const groupId = parseId(payload.groupId) as number
     const eventContent = typeof payload.content === 'string' ? safeParse(payload.content) || {} : payload
     const groupEventContent = JSON.stringify(eventContent)
     if (contentType === ImMessageType.GROUP_MEMBER_SETTING_UPDATE) {
@@ -545,14 +546,14 @@ export const useImWebSocketStore = defineStore('imWebSocketStore', () => {
       || contentType === ImMessageType.GROUP_REQUEST_APPROVED
       || contentType === ImMessageType.GROUP_REQUEST_REJECTED) {
       handleGroupRequestNotification(contentType, {
-        requestId: Number(eventContent.requestId || payload.requestId),
+        requestId: parseId(eventContent.requestId || payload.requestId) as number,
       })
     }
     const removedSelf = contentType === ImMessageType.GROUP_DISSOLVE
       || (contentType === ImMessageType.GROUP_MEMBER_QUIT
-        && Number(eventContent.operatorUserId || payload.operatorUserId) === currentUserId)
+        && parseId(eventContent.operatorUserId || payload.operatorUserId) === currentUserId)
       || (contentType === ImMessageType.GROUP_MEMBER_KICK
-        && (eventContent.memberUserIds || payload.memberUserIds || []).map(Number).includes(currentUserId))
+        && (eventContent.memberUserIds || payload.memberUserIds || []).map(parseId).filter(isIdType).includes(currentUserId))
     return removedSelf
   }
 

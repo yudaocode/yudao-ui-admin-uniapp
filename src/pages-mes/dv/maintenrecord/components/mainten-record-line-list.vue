@@ -128,6 +128,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvSubject } from '@/api/mes/dv/subject'
 import type { DvMaintenRecordLine } from '@/api/mes/dv/maintenrecord/line'
@@ -230,7 +232,8 @@ async function loadExistingSubjectIds() {
   const subjectIds = lines
     .filter(line => line.id !== formData.value.id)
     .map(line => line.subjectId)
-    .filter((subjectId): subjectId is number => typeof subjectId === 'number')
+    .map(parseId)
+    .filter(isIdType)
   existingSubjectIds.value = Array.from(new Set(subjectIds))
 }
 

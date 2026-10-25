@@ -9,7 +9,7 @@
 
     <!-- 搜索组件 -->
     <SearchForm
-      :group-id="props.groupId ? Number(props.groupId) : undefined"
+      :group-id="props.groupId ? parseId(props.groupId) : undefined"
       @search="handleQuery"
       @reset="handleReset"
     />
@@ -57,6 +57,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerGroupMessageVO } from '@/api/im/manager/message/group'
 import { ref } from 'vue'
 import { getManagerGroupMessagePage } from '@/api/im/manager/message/group'
@@ -81,7 +83,7 @@ definePage({
 const list = ref<ImManagerGroupMessageVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({ // 查询参数
-  groupId: props.groupId ? Number(props.groupId) : undefined,
+  groupId: props.groupId ? parseId(props.groupId) : undefined,
 })
 
 /** 返回上一页 */
@@ -112,7 +114,7 @@ function handleQuery(data?: Record<string, any>) {
 /** 重置按钮操作 */
 function handleReset() {
   handleQuery({
-    groupId: props.groupId ? Number(props.groupId) : undefined,
+    groupId: props.groupId ? parseId(props.groupId) : undefined,
   })
 }
 

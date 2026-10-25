@@ -9,7 +9,7 @@
 
     <!-- 搜索组件 -->
     <SearchForm
-      :pack-id="props.packId ? Number(props.packId) : undefined"
+      :pack-id="props.packId ? parseId(props.packId) : undefined"
       @search="handleQuery"
       @reset="handleReset"
     />
@@ -69,6 +69,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerFacePackItemVO } from '@/api/im/manager/face/item'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -93,7 +95,7 @@ const { hasAccessByCodes } = useAccess()
 const list = ref<ImManagerFacePackItemVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({ // 查询参数
-  packId: props.packId ? Number(props.packId) : undefined,
+  packId: props.packId ? parseId(props.packId) : undefined,
 })
 
 /** 返回上一页 */
@@ -123,7 +125,7 @@ function handleQuery(data?: Record<string, any>) {
 
 /** 重置按钮操作 */
 function handleReset() {
-  handleQuery({ packId: props.packId ? Number(props.packId) : undefined })
+  handleQuery({ packId: props.packId ? parseId(props.packId) : undefined })
 }
 
 /** 重新加载 */

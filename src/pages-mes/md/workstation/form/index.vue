@@ -160,7 +160,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWorkstation(Number(props.id))
+  formData.value = await getWorkstation(props.id as number)
 }
 
 /** 生成工作站编码 */

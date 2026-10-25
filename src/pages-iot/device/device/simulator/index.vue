@@ -254,7 +254,7 @@ async function sendMessage(method: string, params: any) {
     return
   }
   await sendDeviceMessage({
-    deviceId: Number(props.deviceId),
+    deviceId: props.deviceId as number,
     method,
     params,
   })
@@ -346,7 +346,7 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    deviceData.value = await getDevice(Number(props.deviceId))
+    deviceData.value = await getDevice(props.deviceId as number)
     if (deviceData.value.productId) {
       thingModelList.value = await getThingModelList({ productId: deviceData.value.productId })
     }

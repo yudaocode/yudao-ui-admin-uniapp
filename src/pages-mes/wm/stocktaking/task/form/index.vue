@@ -121,6 +121,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { User } from '@/api/system/user'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { StockTakingTask } from '@/api/mes/wm/stocktaking/task'
@@ -159,7 +161,7 @@ definePage({
 const dialog = useDialog()
 const toast = useToast()
 const { hasAccessByCodes } = useAccess()
-const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
+const routeId = computed(() => props.id ? parseId(props.id) : undefined) // 路由编号
 const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref('') // 当前页面模式

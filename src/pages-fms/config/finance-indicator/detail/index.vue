@@ -85,7 +85,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getFinanceIndicator(accountSetId, Number(props.id))
+  formData.value = await getFinanceIndicator(accountSetId, props.id)
 }
 
 /** 编辑财务指标 */
@@ -112,7 +112,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteFinanceIndicator(accountSetId, Number(props.id))
+    await deleteFinanceIndicator(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:finance-indicator:reload')
     delay(handleBack)

@@ -160,7 +160,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionCombinationActivity(Number(props.id))
+  const data = await getPromotionCombinationActivity(props.id)
   formData.value = {
     ...data,
     virtualGroup: !!data.virtualGroup,

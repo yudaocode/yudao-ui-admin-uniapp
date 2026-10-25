@@ -149,6 +149,7 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
 import type { MdItem } from '@/api/mes/md/item'
 import type { StockTakingResult } from '@/api/mes/wm/stocktaking/task/result'
 import {
@@ -278,7 +279,7 @@ async function openUpdateForm(item: StockTakingResult) {
 
 /** 选择盘点清单 */
 async function handleLineConfirm(value: number) {
-  const lineId = Number(value)
+  const lineId = parseId(value)
   const line = taskLineOptions.value.find(item => item.id === lineId)
   if (!line) {
     return

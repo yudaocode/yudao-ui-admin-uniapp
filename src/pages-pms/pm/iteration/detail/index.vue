@@ -615,7 +615,7 @@ onMounted(async () => {
   if (!props.id) {
     return
   }
-  iteration.value = await getIteration(Number(props.id))
+  iteration.value = await getIteration(props.id)
   project.value = await getProject(iteration.value.projectId)
   await getOverview()
   uni.$on('pms:pm:iteration:reload', handleIterationReload)

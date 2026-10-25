@@ -163,7 +163,7 @@
     <OperateLogList
       v-else-if="activeTab === 'log' && props.id"
       class="min-h-0 flex-1"
-      :biz-id="Number(props.id)"
+      :biz-id="parseId(props.id) as number"
       :biz-type="HrmBizType.RECRUIT_CANDIDATE"
     />
 
@@ -209,6 +209,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { RecruitCandidate } from '@/api/hrm/recruit/candidate'
 import type { RecruitInterview } from '@/api/hrm/recruit/interview'
 import { onShow } from '@dcloudio/uni-app'
@@ -376,7 +378,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getRecruitCandidate(Number(props.id))
+  formData.value = await getRecruitCandidate(props.id)
   await Promise.all([getInterviewList()])
 }
 
@@ -385,7 +387,7 @@ async function getInterviewList() {
   if (!props.id) {
     return
   }
-  interviewList.value = await getRecruitInterviewListByCandidate(Number(props.id))
+  interviewList.value = await getRecruitInterviewListByCandidate(props.id)
 }
 
 /** 编辑 */
@@ -405,7 +407,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRecruitCandidate(Number(props.id))
+    await deleteRecruitCandidate(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:recruit:candidate:reload')
     delay(handleBack)

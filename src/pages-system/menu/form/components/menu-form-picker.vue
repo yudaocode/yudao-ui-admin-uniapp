@@ -13,6 +13,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Menu } from '@/api/system/menu'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getSimpleMenuList } from '@/api/system/menu'
@@ -64,7 +66,7 @@ watch(
 
 /** 监听选中值变化，更新外部值 */
 watch(selectedValue, (value) => {
-  emit('update:modelValue', value === undefined ? 0 : Number(value))
+  emit('update:modelValue', value === undefined ? 0 : parseId(value) as number)
 })
 
 /** 加载菜单列表 */

@@ -1,3 +1,4 @@
+import { isPositiveId } from '@/utils/id'
 // IM 本地数据库：统一入口 + 按平台分发
 // - H5：IndexedDB
 // - 微信小程序：uni storage 分页分片
@@ -41,7 +42,7 @@ function createImDbClient(): ImDbClient | null {
 /** 初始化当前用户的 IM 本地库 */
 export async function initDb(): Promise<ImDbClient> {
   const userId = useUserStore().userInfo.userId
-  if (!Number.isFinite(userId) || userId <= 0) {
+  if (!isPositiveId(userId)) {
     throw new Error('当前用户不存在，无法初始化 IM 本地库')
   }
   if (client?.userId === userId) {

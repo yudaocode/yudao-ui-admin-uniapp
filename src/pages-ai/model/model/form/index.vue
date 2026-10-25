@@ -142,7 +142,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getModel(Number(props.id))
+  formData.value = await getModel(props.id)
 }
 
 /** 提交表单 */

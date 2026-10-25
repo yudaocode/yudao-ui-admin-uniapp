@@ -26,7 +26,7 @@
         </wd-cell-group>
       </wd-form>
 
-      <TeamMemberList v-if="props.id" :team-id="Number(props.id)" editable />
+      <TeamMemberList v-if="props.id" :team-id="parseId(props.id) as number" editable />
       <view v-else class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
         新增班组保存后，可在编辑页维护班组成员。
       </view>
@@ -45,6 +45,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CalTeam } from '@/api/mes/cal/team'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -93,7 +95,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getTeam(Number(props.id))
+  formData.value = await getTeam(props.id as number)
 }
 
 /** 生成班组编码 */

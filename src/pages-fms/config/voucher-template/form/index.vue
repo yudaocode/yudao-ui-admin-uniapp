@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Subject } from '@/api/fms/config/subject'
 import type { VoucherTemplate, VoucherTemplateEntry } from '@/api/fms/config/voucher-template'
@@ -115,7 +117,7 @@ async function getDetail() {
     return
   }
   const list = await getVoucherTemplateList(accountSetId)
-  const template = list.find(item => item.id === Number(props.id))
+  const template = list.find(item => item.id === parseId(props.id))
   if (template) {
     template.entries.forEach((entry) => {
       entry.auxiliaries = entry.auxiliaries || []

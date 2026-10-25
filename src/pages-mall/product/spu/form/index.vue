@@ -138,6 +138,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProductSku, ProductSpu } from '@/api/mall/product/spu'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -165,7 +167,7 @@ definePage({
 const toast = useToast()
 const formRef = ref<FormInstance>() // 表单组件引用
 const formLoading = ref(false) // 表单提交状态
-const formId = computed(() => props.id != null && props.id !== '' ? Number(props.id) : undefined) // 商品编号（路由透传）
+const formId = computed(() => props.id != null && props.id !== '' ? parseId(props.id) : undefined) // 商品编号（路由透传）
 const activeTab = ref(0) // 当前分组 tab 下标
 const SPU_FORM_TABS = ['基础设置', '价格库存', '物流设置', '商品详情', '其它设置'] // 分组 tab
 const getTitle = computed(() => `${formId.value ? '编辑' : '新增'}商品`)

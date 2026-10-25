@@ -163,7 +163,7 @@ async function handleConfirm() {
     toast.warning('请选择销售订单')
     return
   }
-  const detail = await getSaleOrder(Number(currentOrder.value.id))
+  const detail = await getSaleOrder(currentOrder.value.id)
   emit('success', detail)
   visible.value = false
 }

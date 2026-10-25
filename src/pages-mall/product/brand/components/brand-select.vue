@@ -13,6 +13,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { onMounted, ref } from 'vue'
 import { getSimpleProductBrandList } from '@/api/mall/product/brand'
 
@@ -40,6 +42,6 @@ const options = ref<{ label: string, value: number }[]>([]) // 商品品牌选�
 /** 加载商品品牌列表（回显需要据此解析名称） */
 onMounted(async () => {
   const list = await getSimpleProductBrandList()
-  options.value = list.map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
+  options.value = list.map(item => ({ label: item.name || String(item.id), value: parseId(item.id) as number }))
 })
 </script>

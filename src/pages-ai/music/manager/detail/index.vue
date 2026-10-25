@@ -124,7 +124,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMusic(Number(props.id))
+    formData.value = await getMusic(props.id)
   } finally {
     toast.close()
   }
@@ -173,7 +173,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMusic(Number(props.id))
+    await deleteMusic(props.id)
     toast.success('删除成功')
     uni.$emit('ai:music:reload')
     delay(handleBack)

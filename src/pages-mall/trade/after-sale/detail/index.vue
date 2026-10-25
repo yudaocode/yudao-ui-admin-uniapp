@@ -218,7 +218,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const detailId = computed(() => props.id != null && props.id !== '' ? Number(props.id) : undefined) // 售后编号（路由透传）
+const detailId = computed(() => props.id != null && props.id !== '' ? props.id : undefined) // 售后编号（路由透传）
 const formData = ref<TradeAfterSale>() // 售后详情
 const rejectVisible = ref(false) // 拒绝弹窗
 const rejectReason = ref('') // 拒绝原因

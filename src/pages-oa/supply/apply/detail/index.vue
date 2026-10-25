@@ -178,7 +178,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getSupplyApply(Number(props.id))
+    formData.value = await getSupplyApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -211,7 +211,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSupplyApply(Number(props.id))
+    await deleteSupplyApply(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:supply-apply:reload')
     delay(handleBack)
@@ -235,7 +235,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitSupplyApply(Number(props.id))
+    await submitSupplyApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:supply-apply:reload')
     delay(handleBack)
@@ -259,7 +259,7 @@ async function handleCancel() {
   }
   cancelling.value = true
   try {
-    await cancelSupplyApply(Number(props.id))
+    await cancelSupplyApply(props.id as unknown as number)
     toast.success('取消成功')
     uni.$emit('oa:supply-apply:reload')
     getDetail()

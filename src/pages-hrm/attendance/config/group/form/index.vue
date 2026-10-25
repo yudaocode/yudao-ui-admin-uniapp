@@ -317,6 +317,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Dept } from '@/api/system/dept'
 import type {
@@ -420,7 +422,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getAttendanceGroup(Number(props.id))
+  const data = await getAttendanceGroup(props.id)
   formData.value = {
     ...createDefaultFormData(),
     ...data,
@@ -580,8 +582,8 @@ function validateCardSettings() {
 
 /** 提交表单 */
 async function handleSubmit() {
-  formData.value.deptIds = (formData.value.deptIds || []).map(Number)
-  formData.value.employeeIds = (formData.value.employeeIds || []).map(Number)
+  formData.value.deptIds = (formData.value.deptIds || []).map(parseId).filter(isIdType)
+  formData.value.employeeIds = (formData.value.employeeIds || []).map(parseId).filter(isIdType)
 
   if (!formData.value.deptIds.length && !formData.value.employeeIds.length) {
     toast.warning('至少选择一个适用部门或员工')

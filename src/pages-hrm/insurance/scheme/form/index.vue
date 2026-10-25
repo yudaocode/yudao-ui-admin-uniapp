@@ -177,7 +177,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getInsuranceScheme(Number(props.id))
+  formData.value = await getInsuranceScheme(props.id)
   if (formData.value.areaId) {
     await getInsuranceTypeList(formData.value.areaId)
   }

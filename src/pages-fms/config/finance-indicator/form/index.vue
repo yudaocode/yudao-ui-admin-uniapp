@@ -147,7 +147,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getFinanceIndicator(accountSetId, Number(props.id))
+  formData.value = await getFinanceIndicator(accountSetId, props.id)
 }
 
 /** 提交表单 */

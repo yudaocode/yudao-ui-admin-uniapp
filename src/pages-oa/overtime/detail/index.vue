@@ -112,7 +112,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getOvertimeApply(Number(props.id))
+    formData.value = await getOvertimeApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -140,7 +140,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitOvertimeApply(Number(props.id))
+    await submitOvertimeApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:overtime:reload')
     delay(handleBack)

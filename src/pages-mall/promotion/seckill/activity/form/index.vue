@@ -92,6 +92,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProductSku } from '@/api/mall/product/spu'
 import type { PromotionSeckillActivity, PromotionSeckillConfig } from '@/api/mall/promotion/seckill'
@@ -168,11 +170,11 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionSeckillActivity(Number(props.id))
+  const data = await getPromotionSeckillActivity(props.id)
   formData.value = {
     ...data,
   }
-  configIds.value = String(data.configIds || '').split(',').map(Number).filter(Boolean)
+  configIds.value = String(data.configIds || '').split(',').map(parseId).filter(isIdType).filter(Boolean)
   if (data.products?.length) {
     spuId.value = data.products[0].spuId
     await editorRef.value?.setFromDetail(data.products[0].spuId!, data.products)

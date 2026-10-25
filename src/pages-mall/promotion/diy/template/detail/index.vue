@@ -110,8 +110,8 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const detail = await getPromotionDiyTemplate(Number(props.id))
-    const property = await getPromotionDiyTemplateProperty(Number(props.id))
+    const detail = await getPromotionDiyTemplate(props.id)
+    const property = await getPromotionDiyTemplateProperty(props.id)
     formData.value = { ...detail, property: property.property ?? detail.property }
   } finally {
     toast.close()
@@ -135,7 +135,7 @@ async function handleUse() {
   }
   using.value = true
   try {
-    await usePromotionDiyTemplate(Number(props.id))
+    await usePromotionDiyTemplate(props.id)
     toast.success('使用成功')
     uni.$emit('mall:promotion-diy-template:reload')
     await getDetail()
@@ -156,7 +156,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionDiyTemplate(Number(props.id))
+    await deletePromotionDiyTemplate(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-diy-template:reload')
     delay(handleBack)

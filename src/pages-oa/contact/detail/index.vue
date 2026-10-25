@@ -197,7 +197,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getContact(Number(props.id))
+    formData.value = await getContact(props.id as unknown as number)
     // 共享选择器回显已有接收人，后端会过滤重复共享
     shareUserIds.value = (formData.value.shares || []).map(share => share.userId)
   } finally {
@@ -229,9 +229,9 @@ async function handleDelete() {
   try {
     // 非本人持有的联系人仅移除自己的持有关系，不影响联系人和其他持有人
     if (scene.value === 'mine' && isOwner.value) {
-      await deleteContact(Number(props.id))
+      await deleteContact(props.id as unknown as number)
     } else {
-      await deleteReceivedContact(Number(props.id))
+      await deleteReceivedContact(props.id as unknown as number)
     }
     toast.success('删除成功')
     uni.$emit('oa:contact:reload')
@@ -254,7 +254,7 @@ async function handleShareConfirm() {
   }
   sharing.value = true
   try {
-    await shareContact(Number(props.id), shareUserIds.value)
+    await shareContact(props.id as unknown as number, shareUserIds.value)
     toast.success('共享成功')
     shareVisible.value = false
     uni.$emit('oa:contact:reload')
@@ -279,7 +279,7 @@ async function handleShareHandle() {
   }
   handling.value = true
   try {
-    await handleContactShare(Number(props.id), handleCategoryId.value || undefined)
+    await handleContactShare(props.id as unknown as number, handleCategoryId.value || undefined)
     toast.success(scene.value === 'received' ? '处理成功' : '移动成功')
     handlePopupVisible.value = false
     uni.$emit('oa:contact:reload')

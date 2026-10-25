@@ -159,6 +159,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdItemBatchConfig } from '@/api/mes/md/item/batchConfig'
 import type { MdItem } from '@/api/mes/md/item'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -193,7 +195,7 @@ const saving = ref(false) // 保存状态
 /** 所有属性字段默认 false */
 function defaultForm(): MdItemBatchConfig {
   return {
-    itemId: Number(props.itemId) || 0,
+    itemId: parseId(props.itemId) || 0,
     produceDateFlag: false,
     expireDateFlag: false,
     receiptDateFlag: false,
@@ -219,7 +221,7 @@ function hydrateConfig(config: MdItemBatchConfig | null): MdItemBatchConfig {
     return defaultForm()
   }
   return {
-    itemId: Number(props.itemId),
+    itemId: parseId(props.itemId) as number,
     produceDateFlag: Boolean(config.produceDateFlag),
     expireDateFlag: Boolean(config.expireDateFlag),
     receiptDateFlag: Boolean(config.receiptDateFlag),
@@ -250,8 +252,8 @@ async function loadAll() {
   loading.value = true
   try {
     const [itemData, config] = await Promise.all([
-      getItem(Number(props.itemId)),
-      getBatchConfigByItemId(Number(props.itemId)),
+      getItem(props.itemId as number),
+      getBatchConfigByItemId(props.itemId as number),
     ])
     item.value = itemData
     if (!itemData.batchFlag) {
@@ -298,7 +300,7 @@ async function handleSave() {
     await saveBatchConfig(formData.value)
     toast.success('保存成功')
     // 重新加载，展示后端实际保存结果
-    const config = await getBatchConfigByItemId(Number(props.itemId))
+    const config = await getBatchConfigByItemId(props.itemId as number)
     formData.value = hydrateConfig(config)
   } finally {
     saving.value = false

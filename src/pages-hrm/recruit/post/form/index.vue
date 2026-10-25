@@ -352,7 +352,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getRecruitPost(Number(props.id))
+  const data = await getRecruitPost(props.id)
   salaryNegotiable.value
     = data.salaryUnit === SALARY_NEGOTIABLE_UNIT_VALUE
       || (data.minSalary === SALARY_NEGOTIABLE_VALUE && data.maxSalary === SALARY_NEGOTIABLE_VALUE)

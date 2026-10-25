@@ -336,6 +336,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type {
   WorkItemBoardItem,
   WorkItemStatus,
@@ -380,7 +382,7 @@ definePage({
 })
 
 const toast = useToast()
-const projectId = Number(props.projectId) // 项目编号
+const projectId = parseId(props.projectId) as number // 项目编号
 const type = Number(props.type || PmsWorkItemType.TASK) // 工作项类型
 const tabIndex = ref(0) // 当前配置页签下标
 const saving = ref(false) // 保存中

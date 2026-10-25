@@ -101,7 +101,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItem(Number(props.id))
+  formData.value = await getItem(props.id)
 }
 
 /** 编辑商品 */
@@ -127,7 +127,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteItem(Number(props.id))
+    await deleteItem(props.id)
     toast.success('删除成功')
     uni.$emit('wms:item:reload')
     delay(handleBack)

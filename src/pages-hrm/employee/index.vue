@@ -101,6 +101,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { Employee } from '@/api/hrm/employee'
 import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
@@ -305,8 +307,8 @@ function applyHomeFilter(options: Record<string, string | undefined>) {
     queryParams.value.todoType = todoType
   }
 
-  const leaderEmployeeId = Number(options.leaderEmployeeId)
-  if (Number.isSafeInteger(leaderEmployeeId) && leaderEmployeeId > 0) {
+  const leaderEmployeeId = parseId(options.leaderEmployeeId)
+  if (isPositiveId(leaderEmployeeId)) {
     queryParams.value.leaderEmployeeId = leaderEmployeeId
   }
 }

@@ -31,6 +31,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -90,7 +92,7 @@ async function getDetail() {
     return
   }
   const list = await getAuxiliaryTypeList(accountSetId)
-  const auxiliaryType = list.find(item => item.id === Number(props.id))
+  const auxiliaryType = list.find(item => item.id === parseId(props.id))
   if (auxiliaryType) {
     formData.value = auxiliaryType
   }
@@ -120,7 +122,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAuxiliaryType(accountSetId, Number(props.id))
+    await deleteAuxiliaryType(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:auxiliary:reload')
     delay(handleBack)

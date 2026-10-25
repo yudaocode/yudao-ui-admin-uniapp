@@ -240,7 +240,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getReimbursement(Number(props.id))
+  const data = await getReimbursement(props.id as unknown as number)
   formData.value = data
   items.value = (data.items || []).map(row => ({
     expenseTime: row.expenseTime ? toTimestamp(row.expenseTime) : '',

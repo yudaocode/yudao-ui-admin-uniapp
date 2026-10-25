@@ -117,7 +117,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getSalaryChangeTemplate(Number(props.id))
+  formData.value = await getSalaryChangeTemplate(props.id)
 }
 
 /** 编辑 */
@@ -143,7 +143,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteSalaryChangeTemplate(Number(props.id))
+    await deleteSalaryChangeTemplate(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:salary:change-template:reload')
     delay(handleBack)

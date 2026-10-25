@@ -118,7 +118,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getImage(Number(props.id))
+    formData.value = await getImage(props.id)
   } finally {
     toast.close()
   }
@@ -167,7 +167,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteImage(Number(props.id))
+    await deleteImage(props.id)
     toast.success('删除成功')
     uni.$emit('ai:image:reload')
     delay(handleBack)

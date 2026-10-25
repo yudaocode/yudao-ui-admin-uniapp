@@ -178,7 +178,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTravelReimbursement(Number(props.id))
+    formData.value = await getTravelReimbursement(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -211,7 +211,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteTravelReimbursement(Number(props.id))
+    await deleteTravelReimbursement(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:travel-reimbursement:reload')
     delay(handleBack)
@@ -235,7 +235,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitTravelReimbursement(Number(props.id))
+    await submitTravelReimbursement(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:travel-reimbursement:reload')
     delay(handleBack)
@@ -259,7 +259,7 @@ async function handleCancel() {
   }
   cancelling.value = true
   try {
-    await cancelTravelReimbursement(Number(props.id))
+    await cancelTravelReimbursement(props.id as unknown as number)
     toast.success('撤回成功')
     uni.$emit('oa:travel-reimbursement:reload')
     getDetail()

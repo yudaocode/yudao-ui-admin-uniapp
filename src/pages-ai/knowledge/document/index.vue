@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeDocument } from '@/api/ai/knowledge/document'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
@@ -109,7 +111,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const params = {
       ...queryParams.value,
-      knowledgeId: props.knowledgeId ? Number(props.knowledgeId) : undefined,
+      knowledgeId: props.knowledgeId ? parseId(props.knowledgeId) : undefined,
       pageNo,
       pageSize,
     }

@@ -76,6 +76,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -115,7 +117,7 @@ const formData = ref<MdUnitMeasure>({
 }) // 表单数据
 const formRef = ref<FormInstance>() // 表单组件引用
 const unitMeasureList = ref<MdUnitMeasure[]>([]) // 计量单位列表
-const primaryUnitOptions = computed(() => unitMeasureList.value.filter(item => item.primaryFlag && item.id !== Number(props.id))) // 主单位选项
+const primaryUnitOptions = computed(() => unitMeasureList.value.filter(item => item.primaryFlag && item.id !== parseId(props.id))) // 主单位选项
 const formSchema = createFormSchema(() => ({
   code: [{ required: true, message: '单位编码不能为空' }],
   name: [{ required: true, message: '单位名称不能为空' }],
@@ -143,7 +145,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getUnitMeasure(Number(props.id))
+  formData.value = await getUnitMeasure(props.id as number)
 }
 
 /** 提交表单 */

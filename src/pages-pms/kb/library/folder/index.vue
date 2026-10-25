@@ -92,6 +92,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeFolder } from '@/api/pms/kb/content/folder'
 import type { KnowledgeTreeNode } from '@/pages-pms/kb/utils/tree'
 import { onUnload } from '@dcloudio/uni-app'
@@ -135,7 +137,7 @@ const nodeActionVisible = ref(false) // 内容节点更多操作弹窗显示状�
 const currentNode = ref<KnowledgeTreeNode>() // 当前操作的内容节点
 const folderFormRef = ref<InstanceType<typeof FolderFormPopup>>() // 文件夹表单引用
 
-const folderId = computed(() => Number(props.id)) // 文件夹编号
+const folderId = computed(() => parseId(props.id) as number) // 文件夹编号
 const canManage = computed(() => canManageKnowledgeContent(folder.value?.currentUserLevel)) // 是否可管理协作权限和目录
 const canCreate = computed(() =>
   Boolean(folder.value && canEditKnowledgeContent(folder.value.currentUserLevel)),
@@ -193,7 +195,7 @@ function handleBack() {
 async function getPageData() {
   const [folderData, tree] = await Promise.all([
     getKnowledgeFolder(folderId.value, true),
-    getKnowledgeTree(Number(props.libraryId)),
+    getKnowledgeTree(props.libraryId),
   ])
   folder.value = folderData
   const treeData = [
@@ -260,7 +262,7 @@ function handleCreateSelect({ item: action }: { item: { name: string } }) {
     return
   }
   if (action.name === '新建文件夹') {
-    folderFormRef.value?.open('create', Number(props.libraryId), folderId.value)
+    folderFormRef.value?.open('create', parseId(props.libraryId) as number, folderId.value)
     return
   }
   uni.navigateTo({ url: `/pages-pms/kb/library/document/upload/index?libraryId=${props.libraryId}&folderId=${folderId.value}` })
@@ -280,7 +282,7 @@ async function handleNodeActionSelect({ item: action }: { item: { name: string }
   }
   if (action.name === '编辑' || action.name === '重命名') {
     if (node.kind === 'folder') {
-      folderFormRef.value?.open('update', Number(props.libraryId), node.entityId === folderId.value ? 0 : folderId.value, node.entityId)
+      folderFormRef.value?.open('update', parseId(props.libraryId) as number, node.entityId === folderId.value ? 0 : folderId.value, node.entityId)
     } else {
       uni.navigateTo({ url: `/pages-pms/kb/library/document/form/index?id=${node.entityId}` })
     }

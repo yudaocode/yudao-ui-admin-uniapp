@@ -175,7 +175,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const order = await getMovementOrder(Number(props.id))
+  const order = await getMovementOrder(props.id)
   formData.value = {
     ...order,
     details: normalizeDetails(order.details || []),

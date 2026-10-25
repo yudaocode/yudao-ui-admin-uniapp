@@ -31,6 +31,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
@@ -71,8 +73,8 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     await createTradeBrokerageUser({
-      userId: Number(formData.value.userId),
-      bindUserId: Number(formData.value.bindUserId),
+      userId: parseId(formData.value.userId) as number,
+      bindUserId: parseId(formData.value.bindUserId) as number,
     })
     toast.success('新增成功')
     uni.$emit('mall:brokerage-user:reload')

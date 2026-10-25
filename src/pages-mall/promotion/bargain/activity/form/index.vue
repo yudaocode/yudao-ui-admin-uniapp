@@ -148,7 +148,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionBargainActivity(Number(props.id))
+  const data = await getPromotionBargainActivity(props.id)
   formData.value = {
     ...data,
     bargainFirstPrice: fenToYuan(data.bargainFirstPrice),

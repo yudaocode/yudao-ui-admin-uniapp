@@ -168,7 +168,7 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    detail.value = await getPortalPerformanceAssessment(Number(props.id), Number(props.stageId))
+    detail.value = await getPortalPerformanceAssessment(props.id as number, props.stageId as number)
   } finally {
     loading.value = false
   }

@@ -87,7 +87,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getMailProvider(Number(props.id))
+  formData.value = await getMailProvider(props.id as unknown as number)
 }
 
 /** 编辑服务配置 */
@@ -110,7 +110,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMailProvider(Number(props.id))
+    await deleteMailProvider(props.id as unknown as number)
     toast.success('删除成功')
     handleBack()
   } finally {

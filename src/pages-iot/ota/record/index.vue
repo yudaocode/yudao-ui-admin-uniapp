@@ -129,8 +129,8 @@ function handleBack() {
 /** 查询状态统计 */
 async function getStatistics() {
   statistics.value = await getOtaTaskRecordStatusStatistics(
-    props.firmwareId ? Number(props.firmwareId) : undefined,
-    props.taskId ? Number(props.taskId) : undefined,
+    props.firmwareId || undefined,
+    props.taskId || undefined,
   )
 }
 
@@ -144,7 +144,7 @@ async function queryList(pageNo: number, pageSize: number) {
     const data = await getOtaTaskRecordPage({
       pageNo,
       pageSize,
-      taskId: props.taskId ? Number(props.taskId) : undefined,
+      taskId: props.taskId || undefined,
       status: currentStatus.value === -1 ? undefined : currentStatus.value,
     })
     pagingRef.value?.completeByTotal(data.list, data.total)

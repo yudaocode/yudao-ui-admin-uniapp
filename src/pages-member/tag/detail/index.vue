@@ -75,7 +75,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMemberTag(Number(props.id))
+    formData.value = await getMemberTag(props.id)
   } finally {
     toast.close()
   }
@@ -103,7 +103,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMemberTag(Number(props.id))
+    await deleteMemberTag(props.id)
     toast.success('删除成功')
     uni.$emit('member:tag:reload')
     delay(handleBack)

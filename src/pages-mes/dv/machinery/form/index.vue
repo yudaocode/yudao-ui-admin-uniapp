@@ -30,7 +30,7 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <MachineryRecordList v-if="props.id" :machinery-id="Number(props.id)" />
+      <MachineryRecordList v-if="props.id" :machinery-id="parseId(props.id) as number" />
       <view class="h-160rpx" />
     </scroll-view>
     <view class="yd-detail-footer">
@@ -44,6 +44,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -100,7 +102,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMachinery(Number(props.id))
+  formData.value = await getMachinery(props.id as number)
 }
 
 /** 生成设备编码 */

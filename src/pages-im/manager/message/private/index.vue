@@ -9,8 +9,8 @@
 
     <!-- 搜索组件 -->
     <SearchForm
-      :sender-id="props.senderId ? Number(props.senderId) : undefined"
-      :receiver-id="props.receiverId ? Number(props.receiverId) : undefined"
+      :sender-id="props.senderId ? parseId(props.senderId) : undefined"
+      :receiver-id="props.receiverId ? parseId(props.receiverId) : undefined"
       @search="handleQuery"
       @reset="handleReset"
     />
@@ -64,6 +64,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerPrivateMessageVO } from '@/api/im/manager/message/private'
 import { ref } from 'vue'
 import { getManagerPrivateMessagePage } from '@/api/im/manager/message/private'
@@ -89,8 +91,8 @@ definePage({
 const list = ref<ImManagerPrivateMessageVO[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({ // 查询参数
-  senderId: props.senderId ? Number(props.senderId) : undefined,
-  receiverId: props.receiverId ? Number(props.receiverId) : undefined,
+  senderId: props.senderId ? parseId(props.senderId) : undefined,
+  receiverId: props.receiverId ? parseId(props.receiverId) : undefined,
 })
 
 /** 返回上一页 */
@@ -121,8 +123,8 @@ function handleQuery(data?: Record<string, any>) {
 /** 重置按钮操作 */
 function handleReset() {
   handleQuery({
-    senderId: props.senderId ? Number(props.senderId) : undefined,
-    receiverId: props.receiverId ? Number(props.receiverId) : undefined,
+    senderId: props.senderId ? parseId(props.senderId) : undefined,
+    receiverId: props.receiverId ? parseId(props.receiverId) : undefined,
   })
 }
 

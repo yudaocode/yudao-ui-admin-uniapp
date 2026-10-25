@@ -34,6 +34,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Digest } from '@/api/fms/config/digest'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -86,7 +88,7 @@ async function getDetail() {
     return
   }
   const list = await getDigestList(accountSetId)
-  const digest = list.find(item => item.id === Number(props.id))
+  const digest = list.find(item => item.id === parseId(props.id))
   if (digest) {
     formData.value = digest
   }

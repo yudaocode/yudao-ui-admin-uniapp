@@ -136,11 +136,11 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const data = await getAnnouncement(Number(props.id))
+    const data = await getAnnouncement(props.id as unknown as number)
     formData.value = data
     // 接收人阅读未读公告时，同步阅读状态
     if (isReceived.value && !data.readStatus) {
-      await updateAnnouncementReadStatus(Number(props.id))
+      await updateAnnouncementReadStatus(props.id as unknown as number)
       data.readStatus = true
       uni.$emit('oa:announcement:reload')
     }
@@ -173,9 +173,9 @@ async function handleDelete() {
   try {
     // 接收视角仅移除自己的接收关系，不影响公告和其他接收人
     if (isReceived.value) {
-      await deleteReceivedAnnouncement(Number(props.id))
+      await deleteReceivedAnnouncement(props.id as unknown as number)
     } else {
-      await deleteAnnouncement(Number(props.id))
+      await deleteAnnouncement(props.id as unknown as number)
     }
     toast.success('删除成功')
     uni.$emit('oa:announcement:reload')
@@ -200,7 +200,7 @@ async function handleForward() {
   }
   forwarding.value = true
   try {
-    const count = await forwardAnnouncement(Number(props.id))
+    const count = await forwardAnnouncement(props.id as unknown as number)
     if (count > 0) {
       toast.success(`已转发给 ${count} 位下属`)
       if (formData.value) {

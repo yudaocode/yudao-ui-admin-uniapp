@@ -94,7 +94,7 @@ async function queryList(currentPageNo: number, currentPageSize: number) {
     const data = await getMaintenRecordPage({
       pageNo: currentPageNo,
       pageSize: currentPageSize,
-      machineryId: Number(props.machineryId),
+      machineryId: props.machineryId,
     })
     total.value = data.total
     pagingRef.value?.completeByTotal(data.list, data.total)

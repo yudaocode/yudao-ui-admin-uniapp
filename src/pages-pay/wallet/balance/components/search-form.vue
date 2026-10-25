@@ -50,6 +50,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -87,7 +89,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    userId: formData.userId ? Number(formData.userId) : undefined,
+    userId: formData.userId ? parseId(formData.userId) : undefined,
     userType: formData.userType === -1 ? undefined : formData.userType,
     createTime: formatDateRange(formData.createTime),
   })

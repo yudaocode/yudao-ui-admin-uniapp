@@ -127,6 +127,8 @@
 </template>
 
 <script lang="ts" setup>
+import { compareId, parseId } from '@/utils/id'
+
 import type { GroupMember, Message } from '../../../types'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getGroupMessageList } from '@/api/im/message/group'
@@ -202,7 +204,7 @@ const filterTabs = [ // 消息类型筛选
 ]
 
 const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 会话类型
-const targetId = computed(() => Number(props.targetId)) // 会话目标
+const targetId = computed(() => parseId(props.targetId) as number) // 会话目标
 const routeTitle = computed(() => props.title ? decodeURIComponent(props.title) : '聊天') // 路由会话名称
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
@@ -295,11 +297,11 @@ async function queryList(pageNo: number) {
       localStateLoaded = true
     }
     const response = await queryMessages(type, target, pageNo === 1 ? undefined : historyMaxId.value)
-    const raw = response.filter(item => item.id > clearBeforeMessageId.value
+    const raw = response.filter(item => compareId(item.id, clearBeforeMessageId.value) > 0
       && !deletedMessageKeys.value.has(`id:${item.id}`))
     historyMaxId.value = response.at(-1)?.id
     serverNoMore.value = response.length < PAGE_SIZE
-      || response.some(item => item.id <= clearBeforeMessageId.value)
+      || response.some(item => compareId(item.id, clearBeforeMessageId.value) <= 0)
     const messages = normalizeRecallMessages(raw)
     await pagingRef.value?.completeByNoMore(messages.filter(matchesFilter), serverNoMore.value)
   } catch {

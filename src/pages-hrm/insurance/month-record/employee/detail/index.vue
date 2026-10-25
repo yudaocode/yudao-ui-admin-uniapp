@@ -191,7 +191,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getInsuranceMonthEmployeeRecord(Number(props.id))
+  formData.value = await getInsuranceMonthEmployeeRecord(props.id)
 }
 
 /** 编辑参保方案 */

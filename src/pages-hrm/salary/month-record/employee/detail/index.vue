@@ -124,10 +124,10 @@ async function getDetail() {
     return
   }
   const [monthRecord, list] = await Promise.all([
-    getSalaryMonthRecord(Number(props.monthRecordId)),
+    getSalaryMonthRecord(props.monthRecordId),
     getSalaryMonthEmployeeRecordList({
-      monthRecordId: Number(props.monthRecordId),
-      employeeId: Number(props.employeeId),
+      monthRecordId: props.monthRecordId,
+      employeeId: props.employeeId,
     }),
   ])
   monthWritable.value = monthRecord.status !== HrmSalaryMonthStatus.HISTORY

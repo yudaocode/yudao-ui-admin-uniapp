@@ -40,6 +40,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -83,7 +85,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    conversationId: formData.conversationId ? Number(formData.conversationId) : undefined,
+    conversationId: formData.conversationId ? parseId(formData.conversationId) : undefined,
     content: formData.content || undefined,
     userId: formData.userId,
     createTime: formatDateRange(formData.createTime),

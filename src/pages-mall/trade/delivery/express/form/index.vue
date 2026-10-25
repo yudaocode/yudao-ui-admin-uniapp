@@ -108,7 +108,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDeliveryExpress(Number(props.id))
+  formData.value = await getDeliveryExpress(props.id)
 }
 
 /** 提交表单 */

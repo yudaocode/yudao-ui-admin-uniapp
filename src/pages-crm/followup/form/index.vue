@@ -47,6 +47,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Business } from '@/api/crm/business'
 import type { Contact } from '@/api/crm/contact'
@@ -72,7 +74,7 @@ definePage({
 })
 
 const toast = useToast()
-const bizId = computed(() => Number(props.bizId))
+const bizId = computed(() => parseId(props.bizId) as number)
 const bizType = computed(() => Number(props.bizType))
 const formLoading = ref(false) // 表单提交状态
 const formRef = ref<FormInstance>() // 表单组件引用

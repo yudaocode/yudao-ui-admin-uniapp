@@ -135,7 +135,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTradeBrokerageWithdraw(Number(props.id))
+    formData.value = await getTradeBrokerageWithdraw(props.id)
   } finally {
     toast.close()
   }
@@ -151,7 +151,7 @@ async function handleApprove() {
   }
   submitting.value = true
   try {
-    await approveTradeBrokerageWithdraw(Number(props.id))
+    await approveTradeBrokerageWithdraw(props.id)
     toast.success(isRetry ? '已重新发起转账' : '审核通过')
     uni.$emit('mall:brokerage-withdraw:reload')
     await getDetail()
@@ -168,7 +168,7 @@ async function handleReject() {
   }
   submitting.value = true
   try {
-    await rejectTradeBrokerageWithdraw({ id: Number(props.id), auditReason: auditReason.value })
+    await rejectTradeBrokerageWithdraw({ id: props.id, auditReason: auditReason.value })
     toast.success('驳回成功')
     rejectVisible.value = false
     uni.$emit('mall:brokerage-withdraw:reload')

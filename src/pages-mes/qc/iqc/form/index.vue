@@ -93,6 +93,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdItem } from '@/api/mes/md/item'
 import type { MdVendor } from '@/api/mes/md/vendor'
@@ -185,15 +187,15 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getIqc(Number(props.id))
+  formData.value = await getIqc(props.id as number)
 }
 
 /** 是否有待检任务参数 */
 function hasPendingInspectPreset() {
   return [
     toFiniteNumber(props.sourceDocType),
-    toFiniteNumber(props.sourceDocId),
-    toFiniteNumber(props.sourceLineId),
+    parseId(props.sourceDocId),
+    parseId(props.sourceLineId),
   ].every(value => value != null)
 }
 
@@ -205,12 +207,12 @@ function applyPendingInspectPreset() {
   const sourceDocCode = decodeUrlText(props.sourceDocCode)
   formData.value.name = sourceDocCode ? `${sourceDocCode} 来料检验单` : formData.value.name
   formData.value.sourceDocType = toFiniteNumber(props.sourceDocType)
-  formData.value.sourceDocId = toFiniteNumber(props.sourceDocId)
-  formData.value.sourceLineId = toFiniteNumber(props.sourceLineId)
+  formData.value.sourceDocId = parseId(props.sourceDocId)
+  formData.value.sourceLineId = parseId(props.sourceLineId)
   formData.value.sourceDocCode = sourceDocCode
-  formData.value.vendorId = toFiniteNumber(props.vendorId)
+  formData.value.vendorId = parseId(props.vendorId)
   formData.value.vendorNickname = decodeUrlText(props.vendorName)
-  formData.value.itemId = toFiniteNumber(props.itemId)
+  formData.value.itemId = parseId(props.itemId)
   formData.value.itemCode = decodeUrlText(props.itemCode)
   formData.value.itemName = decodeUrlText(props.itemName)
   formData.value.itemSpecification = decodeUrlText(props.itemSpecification)

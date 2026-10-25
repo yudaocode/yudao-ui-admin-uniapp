@@ -66,7 +66,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<BusinessStatusType>({ name: '', statuses: [] }) // 详情数据
 const deleting = ref(false) // 删除状态
-const statusId = computed(() => Number(props.id))
+const statusId = computed(() => props.id)
 
 /** 返回上一页 */
 function handleBack() {

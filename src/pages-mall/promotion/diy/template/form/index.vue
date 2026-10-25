@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -124,10 +126,10 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const detail = await getPromotionDiyTemplate(Number(props.id))
-  const property = await getPromotionDiyTemplateProperty(Number(props.id))
+  const detail = await getPromotionDiyTemplate(props.id)
+  const property = await getPromotionDiyTemplateProperty(props.id)
   formData.value = {
-    id: Number(props.id),
+    id: parseId(props.id) as number,
     name: detail.name,
     remark: detail.remark,
     previewPicUrls: detail.previewPicUrls || [],

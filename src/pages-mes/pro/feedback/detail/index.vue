@@ -173,7 +173,7 @@ async function getDetail() {
   tabType.value = 'basic'
   try {
     toast.loading('加载中...')
-    formData.value = await getFeedback(Number(props.id))
+    formData.value = await getFeedback(props.id as number)
   } finally {
     toast.close()
   }
@@ -238,7 +238,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteFeedback(Number(props.id))
+    await deleteFeedback(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:pro:feedback:reload')
     delay(handleBack)

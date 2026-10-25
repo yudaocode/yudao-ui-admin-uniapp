@@ -97,7 +97,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getAttendanceHoliday(Number(props.id))
+  formData.value = await getAttendanceHoliday(props.id)
 }
 
 /** 编辑 */
@@ -123,7 +123,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteAttendanceHoliday(Number(props.id))
+    await deleteAttendanceHoliday(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:attendance:holiday:reload')
     delay(handleBack)

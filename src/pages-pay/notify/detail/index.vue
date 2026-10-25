@@ -92,7 +92,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPayNotifyTaskDetail(Number(props.id))
+    formData.value = await getPayNotifyTaskDetail(props.id)
   } finally {
     toast.close()
   }

@@ -133,7 +133,7 @@
       ref="feedbackFormRef"
       v-model:visible="feedbackVisible"
       v-model:status="feedbackStatus"
-      :task-id="Number(props.id)"
+      :task-id="parseId(props.id) as number"
       :publisher="isPublisher"
       :options="feedbackStatusOptions"
       @success="handleFeedbackSuccess"
@@ -142,6 +142,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Task } from '@/api/oa/task'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -211,7 +213,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTask(Number(props.id))
+    formData.value = await getTask(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -240,9 +242,9 @@ async function handleDelete() {
   deleting.value = true
   try {
     if (isPublisher.value) {
-      await deleteTask(Number(props.id))
+      await deleteTask(props.id as unknown as number)
     } else {
-      await deleteReceivedTask(Number(props.id))
+      await deleteReceivedTask(props.id as unknown as number)
     }
     toast.success('删除成功')
     uni.$emit('oa:task:reload')

@@ -67,8 +67,8 @@
       <view v-if="props.id" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#e6f4ff] px-24rpx py-18rpx text-26rpx text-[#0958d9]">
         草稿方案可维护关联设备和保养项目；保存关联会立即写入，请谨慎操作。
       </view>
-      <MachineryList v-if="props.id" :plan-id="Number(props.id)" />
-      <SubjectList v-if="props.id" :plan-id="Number(props.id)" :type="formData.type" />
+      <MachineryList v-if="props.id" :plan-id="parseId(props.id) as number" />
+      <SubjectList v-if="props.id" :plan-id="parseId(props.id) as number" :type="formData.type" />
       <view class="h-160rpx" />
     </scroll-view>
 
@@ -84,6 +84,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -146,7 +148,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getCheckPlan(Number(props.id))
+  formData.value = await getCheckPlan(props.id as number)
 }
 
 /** 初始化页面数据 */
@@ -155,7 +157,7 @@ async function initPage() {
     formData.value = getDefaultFormData()
     return
   }
-  if (!formData.value.id || formData.value.id !== Number(props.id)) {
+  if (!formData.value.id || formData.value.id !== parseId(props.id)) {
     formData.value = getDefaultFormData()
     await getDetail()
   }

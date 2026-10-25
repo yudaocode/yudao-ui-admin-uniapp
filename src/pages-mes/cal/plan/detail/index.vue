@@ -44,13 +44,13 @@
 
     <!-- 班次 -->
     <scroll-view v-if="tabType === 'shifts' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <PlanShiftList :plan-id="Number(props.id)" :editable="false" :show-title="false" />
+      <PlanShiftList :plan-id="parseId(props.id) as number" :editable="false" :show-title="false" />
       <view class="h-48rpx" />
     </scroll-view>
 
     <!-- 班组 -->
     <scroll-view v-if="tabType === 'teams' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <PlanTeamList :plan-id="Number(props.id)" :editable="false" :show-title="false" />
+      <PlanTeamList :plan-id="parseId(props.id) as number" :editable="false" :show-title="false" />
       <view class="h-48rpx" />
     </scroll-view>
 
@@ -72,6 +72,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { CalPlan } from '@/api/mes/cal/plan'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -114,7 +116,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPlan(Number(props.id))
+    formData.value = await getPlan(props.id as number)
   } finally {
     toast.close()
   }
@@ -143,7 +145,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePlan(Number(props.id))
+    await deletePlan(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:cal:plan:reload')
     delay(handleBack)

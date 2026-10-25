@@ -1,3 +1,4 @@
+import { maxImId } from '@/pages-im/utils/pull'
 import type { ConversationDO } from '@/pages-im/utils/db'
 import type { ImGroupMessageRespVO } from '@/api/im/message/group'
 import type { ImPrivateMessageRespVO } from '@/api/im/message/private'
@@ -547,7 +548,7 @@ export function useMessageSender(options: {
   async function readActive(latestMessageId = 0) {
     const context = getSendTarget()
     const conversation = getConversation(context.conversationType, context.targetId)
-    const messageId = Math.max(latestMessageId, conversation?.lastMessageId || 0)
+    const messageId = maxImId(latestMessageId, conversation?.lastMessageId || 0)
     if (!messageId) {
       return
     }

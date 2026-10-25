@@ -137,7 +137,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionPointActivity(Number(props.id))
+  const data = await getPromotionPointActivity(props.id)
   formData.value = { ...data }
   if (data.products?.length) {
     spuId.value = data.products[0].spuId

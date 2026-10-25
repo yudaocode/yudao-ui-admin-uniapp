@@ -191,7 +191,7 @@ async function getList() {
   }
   loading.value = true
   try {
-    list.value = await getSubDeviceList(Number(props.gatewayId))
+    list.value = await getSubDeviceList(props.gatewayId as number)
   } finally {
     loading.value = false
   }
@@ -254,7 +254,7 @@ async function handleBind(item: Device) {
   }
   bindingId.value = item.id
   try {
-    await bindDeviceGateway({ gatewayId: Number(props.gatewayId), subIds: [item.id] })
+    await bindDeviceGateway({ gatewayId: props.gatewayId as number, subIds: [item.id] })
     toast.success('绑定成功')
     bindSelectedIds.value = bindSelectedIds.value.filter(id => id !== item.id)
     await getList()
@@ -272,7 +272,7 @@ async function handleBindBatch() {
   }
   bindingBatch.value = true
   try {
-    await bindDeviceGateway({ gatewayId: Number(props.gatewayId), subIds: bindSelectedIds.value })
+    await bindDeviceGateway({ gatewayId: props.gatewayId as number, subIds: bindSelectedIds.value })
     toast.success('绑定成功')
     bindSelectedIds.value = []
     bindVisible.value = false
@@ -294,7 +294,7 @@ async function handleUnbind(item: Device) {
   }
   unbindingId.value = item.id
   try {
-    await unbindDeviceGateway({ gatewayId: Number(props.gatewayId), subIds: [item.id] })
+    await unbindDeviceGateway({ gatewayId: props.gatewayId as number, subIds: [item.id] })
     toast.success('解绑成功')
     selectedIds.value = selectedIds.value.filter(id => id !== item.id)
     await getList()
@@ -315,7 +315,7 @@ async function handleUnbindBatch() {
   }
   unbindingBatch.value = true
   try {
-    await unbindDeviceGateway({ gatewayId: Number(props.gatewayId), subIds: [...selectedIds.value] })
+    await unbindDeviceGateway({ gatewayId: props.gatewayId as number, subIds: [...selectedIds.value] })
     toast.success('批量解绑成功')
     selectedIds.value = []
     await getList()

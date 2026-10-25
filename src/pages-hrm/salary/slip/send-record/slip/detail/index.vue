@@ -132,7 +132,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getSalarySlip(Number(props.id))
+  formData.value = await getSalarySlip(props.id)
   displayOptions.value = formData.value.options || []
 }
 

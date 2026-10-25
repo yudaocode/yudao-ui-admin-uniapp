@@ -195,7 +195,7 @@ const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: bool
 const listRef = ref<{ openAdd: () => void }>() // 当前关联列表引用
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
 const businessStatusFormRef = ref<InstanceType<typeof CrmBusinessStatusForm>>() // 变更商机状态引用
-const businessId = computed(() => Number(props.id))
+const businessId = computed(() => props.id)
 const totalProductPrice = computed(() => (Array.isArray(formData.value.products) ? formData.value.products : []).reduce((sum, row) => sum + Number(row.totalPrice || 0), 0)) // 产品总金额
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => ['contacts', 'contracts', 'followup', 'log'].includes(activeTab.value)) // 关系列表/跟进 tab 用 z-paging 固定高布局

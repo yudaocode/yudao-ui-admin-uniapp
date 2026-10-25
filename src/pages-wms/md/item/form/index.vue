@@ -194,7 +194,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const item = await getItem(Number(props.id))
+  const item = await getItem(props.id)
   formData.value = {
     ...item,
     skus: item.skus?.length ? item.skus.map(normalizeSkuForm) : [buildEmptySku()],

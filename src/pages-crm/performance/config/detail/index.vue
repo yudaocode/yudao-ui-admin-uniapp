@@ -83,7 +83,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<PerformanceConfig>({}) // 详情数据
 const deleting = ref(false) // 删除状态
-const configId = computed(() => Number(props.id))
+const configId = computed(() => props.id)
 const hasFooter = computed(() => {
   return hasAccessByCodes(['crm:performance-config:update']) || hasAccessByCodes(['crm:performance-config:delete'])
 })

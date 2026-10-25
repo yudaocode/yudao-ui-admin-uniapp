@@ -141,6 +141,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Product } from '@/api/iot/product/product'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -190,10 +192,10 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  const data = await getProduct(Number(props.id))
+  const data = await getProduct(props.id as number)
   if (data?.id) {
     try {
-      data.deviceCount = await getDeviceCount(Number(data.id))
+      data.deviceCount = await getDeviceCount(parseId(data.id) as number)
     } catch {
       data.deviceCount = 0 // 设备数量异常不影响产品详情展示
     }
@@ -244,7 +246,7 @@ async function handleToggleStatus() {
   }
   statusLoading.value = true
   try {
-    await updateProductStatus(Number(props.id), nextStatus)
+    await updateProductStatus(props.id as number, nextStatus)
     toast.success(`${actionName}成功`)
     uni.$emit('iot:product:reload')
     await getDetail()
@@ -265,7 +267,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProduct(Number(props.id))
+    await deleteProduct(props.id as number)
     toast.success('删除成功')
     uni.$emit('iot:product:reload')
     delay(handleBack)

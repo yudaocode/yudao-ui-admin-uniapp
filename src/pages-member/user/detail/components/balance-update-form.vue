@@ -106,7 +106,7 @@ async function loadUser() {
   }
   loading.value = true
   try {
-    const user = await getMemberUser(Number(props.userId))
+    const user = await getMemberUser(props.userId)
     const wallet = await getPayWallet({ userId: user.id || 0 })
     formData.value = {
       id: user.id,

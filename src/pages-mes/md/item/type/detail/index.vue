@@ -106,7 +106,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getItemType(Number(props.id))
+    formData.value = await getItemType(props.id as number)
   } finally {
     toast.close()
   }
@@ -147,7 +147,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteItemType(Number(props.id))
+    await deleteItemType(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:item:type:reload')
     delay(handleBack)

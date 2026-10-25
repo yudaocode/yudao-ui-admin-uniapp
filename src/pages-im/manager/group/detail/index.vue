@@ -139,6 +139,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerGroupMemberVO, ImManagerGroupVO } from '@/api/im/manager/group'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -190,7 +192,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const id = Number(props.id)
+  const id = parseId(props.id) as number
   formData.value = await getManagerGroup(id)
   members.value = await getManagerGroupMemberList(id)
 }
@@ -218,7 +220,7 @@ async function handleUnban() {
   }
   processing.value = true
   try {
-    await unbanManagerGroup(Number(props.id))
+    await unbanManagerGroup(parseId(props.id) as number)
     toast.success('解封成功')
     uni.$emit('im:manager:group:reload')
     await getDetail()
@@ -236,7 +238,7 @@ async function handleDissolve() {
   }
   processing.value = true
   try {
-    await dissolveManagerGroup(Number(props.id))
+    await dissolveManagerGroup(parseId(props.id) as number)
     toast.success('解散成功')
     uni.$emit('im:manager:group:reload')
     delay(handleBack)

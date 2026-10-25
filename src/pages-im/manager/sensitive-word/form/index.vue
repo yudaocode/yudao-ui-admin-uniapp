@@ -34,6 +34,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ImManagerSensitiveWordVO } from '@/api/im/manager/sensitiveword'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -81,7 +83,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getManagerSensitiveWord(Number(props.id))
+  formData.value = await getManagerSensitiveWord(parseId(props.id) as number)
 }
 
 /** 提交表单 */

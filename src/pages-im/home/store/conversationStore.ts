@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 // IM 会话列表：基于本地 DB 聚合会话（私聊 + 群聊、本地未读、离线与实时消息）
 // 会话由消息流在客户端聚合，不依赖服务端会话接口
 
@@ -32,7 +33,7 @@ import {
   isGroupQuit,
 } from '@/pages-im/utils/user'
 import { CONVERSATION_RECENT_FORWARD_MAX, MESSAGE_LOCAL_MAX_COUNT } from '@/pages-im/utils/config'
-import { runIncrementalPull } from '@/pages-im/utils/pull'
+import { maxImId, runIncrementalPull } from '@/pages-im/utils/pull'
 import {
   enqueueConversationBarrier,
   enqueueConversationWrite,
@@ -47,7 +48,7 @@ import { useMessageStore } from './messageStore'
 /** 本地消息保留顺序：服务端消息按 id，本地待发送消息排在其后并按时间排序 */
 function compareMessageRetentionOrder(left: MessageDO, right: MessageDO): number {
   if (left.id && right.id) {
-    return left.id - right.id
+    return compareId(left.id, right.id)
   }
   if (!!left.id !== !!right.id) {
     return left.id ? -1 : 1
@@ -58,7 +59,7 @@ function compareMessageRetentionOrder(left: MessageDO, right: MessageDO): number
 /** 会话摘要顺序：服务端消息按 id，混合本地消息时按发送时间 */
 function compareConversationSummaryOrder(left: MessageDO, right: MessageDO): number {
   if (left.id && right.id) {
-    return left.id - right.id
+    return compareId(left.id, right.id)
   }
   return left.sendTime - right.sendTime || compareMessageRetentionOrder(left, right)
 }
@@ -105,7 +106,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       if (!message.atUserIds?.includes(atUserId)) {
         return latest
       }
-      return !latest || (message.id || 0) > (latest.id || 0) ? message : latest
+      return !latest || compareId(message.id || 0, latest.id || 0) > 0 ? message : latest
     }, undefined)
   }
 
@@ -209,7 +210,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       const groupUnavailable = type === ImConversationType.GROUP
         && (isGroupQuit(group) || isRelationTerminated(clientConversationId))
       const hasNewActivity = !!old?.deleted && (
-        (!!last.id && last.id > (old.lastMessageId || 0))
+        (!!last.id && compareId(last.id, old.lastMessageId || 0) > 0)
         || (!last.id
           && last.clientMessageId !== old.lastClientMessageId
           && last.sendTime > (old.lastSendTime || 0))
@@ -223,7 +224,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
 
       const readMessageId = readMap.get(clientConversationId)?.messageId || 0
       const unreadMessages = list.filter(item => !item.selfSend
-        && (item.id || 0) > readMessageId
+        && compareId(item.id || 0, readMessageId) > 0
         && isNormalMessage(item.type)
         && item.status !== ImMessageStatus.RECALL)
       const atMessage = findLatestAtMessage(unreadMessages, db.userId)
@@ -294,7 +295,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
           : conversation.silent
       const terminal = terminalStates.get(conversation.clientConversationId)
       const summaryTerminated = !!terminal && (
-        (!!conversation.lastMessageId && conversation.lastMessageId <= terminal.clearBefore)
+        (!!conversation.lastMessageId && compareId(conversation.lastMessageId, terminal.clearBefore) <= 0)
         || (!!conversation.lastMessageId
           && terminal.deleted.has(`id:${conversation.lastMessageId}`))
         || (!!conversation.lastClientMessageId
@@ -467,7 +468,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
 
   /** 应用读位置到会话 */
   function applyReadToConversation(conversation: ConversationDO, messageId: number): boolean {
-    if (!conversation.lastMessageId || conversation.lastMessageId > messageId) {
+    if (!conversation.lastMessageId || compareId(conversation.lastMessageId, messageId) > 0) {
       return false
     }
     if (conversation.unreadCount === 0 && !conversation.atMe && !conversation.atAll) {
@@ -503,9 +504,9 @@ export const useConversationStore = defineStore('imConversationStore', () => {
         item.clientConversationId === conversation.clientConversationId)
       const maxIncomingMessageId = messages.reduce((maxId, message) =>
         !message.selfSend && message.id && isNormalMessage(message.type)
-          ? Math.max(maxId, message.id)
+          ? maxImId(maxId, message.id)
           : maxId, 0)
-      if (maxIncomingMessageId > 0 && maxIncomingMessageId <= record.messageId) {
+      if (maxIncomingMessageId > 0 && compareId(maxIncomingMessageId, record.messageId) <= 0) {
         conversation.unreadCount = 0
         conversation.atMe = false
         conversation.atAll = false
@@ -645,7 +646,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       conv.deleted = false
     }
     const isLatest = !conv.lastSendTime
-      || (!!appliedMessage.id && !!conv.lastMessageId && appliedMessage.id >= conv.lastMessageId)
+      || (!!appliedMessage.id && !!conv.lastMessageId && compareId(appliedMessage.id, conv.lastMessageId) >= 0)
       || ((!appliedMessage.id || !conv.lastMessageId) && appliedMessage.sendTime >= conv.lastSendTime)
     if (isLatest) {
       const senderDisplayName = deriveLastSenderDisplayName(
@@ -673,7 +674,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       && ccid !== activeClientConversationId.value
       && isNormalMessage(appliedMessage.type)
       && appliedMessage.status !== ImMessageStatus.RECALL
-      && (!appliedMessage.id || appliedMessage.id > (read?.messageId || 0))
+      && (!appliedMessage.id || compareId(appliedMessage.id, read?.messageId || 0) > 0)
     if (isUnread) {
       conv.unreadCount = (conv.unreadCount || 0) + 1
       if (appliedMessage.atUserIds?.includes(db.userId)) {
@@ -745,7 +746,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       ),
       db.getSetting<string[]>(recallSettingKey),
     ])
-    if (messageId <= (clearBefore || 0)) {
+    if (compareId(messageId, clearBefore || 0) <= 0) {
       return
     }
     await db.setSetting(
@@ -774,7 +775,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       db.get<ConversationReadDO>('conversationReads', clientConversationId),
     ])
     const unreadMessages = messages.filter(item => !item.selfSend
-      && (item.id || 0) > (read?.messageId || 0)
+      && compareId(item.id || 0, read?.messageId || 0) > 0
       && isNormalMessage(item.type)
       && item.status !== ImMessageStatus.RECALL)
     conversation.unreadCount = unreadMessages.length
@@ -897,7 +898,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       const clientConversationId = getClientConversationId(record.conversationType, record.targetId)
       const current = conversationReads.value[clientConversationId]
         || await db.get<ConversationReadDO>('conversationReads', clientConversationId)
-      const messageId = Math.max(current?.messageId || 0, record.messageId)
+      const messageId = maxImId(current?.messageId || 0, record.messageId)
       const conversationRead: ConversationReadDO = {
         clientConversationId,
         conversationType: record.conversationType,
@@ -910,19 +911,16 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       const conversation = conversations.value.find(item => item.clientConversationId === clientConversationId)
       const messages = await db.filter<MessageDO>('messages', item => item.clientConversationId === clientConversationId)
       if (conversation) {
-        conversation.reportedReadMessageId = Math.max(
-          conversation.reportedReadMessageId || 0,
-          record.messageId,
-        )
+        conversation.reportedReadMessageId = maxImId(conversation.reportedReadMessageId || 0, record.messageId)
         conversation.unreadCount = messages.filter(item => !item.selfSend
-          && (item.id || 0) > messageId
+          && compareId(item.id || 0, messageId) > 0
           && isNormalMessage(item.type)
           && item.status !== ImMessageStatus.RECALL).length
-        if (!conversation.atMessageId || conversation.atMessageId <= messageId) {
+        if (!conversation.atMessageId || compareId(conversation.atMessageId, messageId) <= 0) {
           conversation.atMe = false
           conversation.atMessageId = undefined
         }
-        if (!conversation.atAllMessageId || conversation.atAllMessageId <= messageId) {
+        if (!conversation.atAllMessageId || compareId(conversation.atAllMessageId, messageId) <= 0) {
           conversation.atAll = false
           conversation.atAllMessageId = undefined
         }
@@ -930,7 +928,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       if (record.conversationType === ImConversationType.CHANNEL) {
         const changedMessages = messages
           .filter(message => !!message.id
-            && message.id <= messageId
+            && compareId(message.id, messageId) <= 0
             && message.receiptStatus !== ImMessageReceiptStatus.DONE)
           .map(message => ({ ...message, receiptStatus: ImMessageReceiptStatus.DONE }))
         await db.bulkPut<MessageDO>('messages', changedMessages)
@@ -978,8 +976,8 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     }
     const current = conversationReads.value[clientConversationId]
       || await db.get<ConversationReadDO>('conversationReads', clientConversationId)
-    const nextMessageId = Math.max(current?.messageId || 0, messageId || target?.lastMessageId || 0)
-    if (nextMessageId > (current?.messageId || 0)) {
+    const nextMessageId = maxImId(current?.messageId || 0, messageId || target?.lastMessageId || 0)
+    if (compareId(nextMessageId, current?.messageId || 0) > 0) {
       const conversationRead: ConversationReadDO = {
         clientConversationId,
         conversationType: type,
@@ -1003,7 +1001,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
     if (!messageId) {
       return false
     }
-    return (getConversation(type, targetId)?.reportedReadMessageId || 0) >= messageId
+    return compareId(getConversation(type, targetId)?.reportedReadMessageId || 0, messageId) >= 0
   }
 
   /** 记录已经成功上报服务端的已读位置 */
@@ -1030,7 +1028,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       return
     }
     const conversation = getConversation(type, targetId)
-    if (!conversation || messageId <= (conversation.reportedReadMessageId || 0)) {
+    if (!conversation || compareId(messageId, conversation.reportedReadMessageId || 0) <= 0) {
       return
     }
     conversation.reportedReadMessageId = messageId
@@ -1332,7 +1330,7 @@ export const useConversationStore = defineStore('imConversationStore', () => {
       conversation.lastSenderDisplayName = undefined
     }
     const unreadMessages = messages.filter(item => !item.selfSend
-      && (item.id || 0) > (read?.messageId || 0)
+      && compareId(item.id || 0, read?.messageId || 0) > 0
       && isNormalMessage(item.type)
       && item.status !== ImMessageStatus.RECALL)
     const atMessage = findLatestAtMessage(unreadMessages, db.userId)

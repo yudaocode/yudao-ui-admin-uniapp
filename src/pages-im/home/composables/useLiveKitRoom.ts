@@ -1,3 +1,4 @@
+import { parseId } from '@/utils/id'
 // noinspection UnreachableCodeJS
 
 import type { Ref } from 'vue'
@@ -171,7 +172,7 @@ export function useLiveKitRoom(options: {
         if (!isCurrentRoom()) {
           return
         }
-        upsertParticipantTrack(track, Number(participant.identity), false)
+        upsertParticipantTrack(track, parseId(participant.identity) as number, false)
       })
       .on(RoomEvent.LocalTrackPublished, (publication) => {
         if (!isCurrentRoom()) {
@@ -180,7 +181,7 @@ export function useLiveKitRoom(options: {
         if (publication.track) {
           upsertParticipantTrack(
             publication.track,
-            Number(currentRoom.localParticipant.identity),
+            parseId(currentRoom.localParticipant.identity) as number,
             true,
           )
         }
@@ -190,7 +191,7 @@ export function useLiveKitRoom(options: {
           return
         }
         removeParticipantTrack(
-          Number(currentRoom.localParticipant.identity),
+          parseId(currentRoom.localParticipant.identity) as number,
           publication.track,
           publication.trackSid,
         )
@@ -199,25 +200,25 @@ export function useLiveKitRoom(options: {
         if (!isCurrentRoom()) {
           return
         }
-        removeParticipantTrack(Number(participant.identity), track, publication.trackSid)
+        removeParticipantTrack(parseId(participant.identity) as number, track, publication.trackSid)
       })
       .on(RoomEvent.TrackMuted, (publication, participant) => {
         if (!isCurrentRoom()) {
           return
         }
-        updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, true)
+        updateParticipantTrackMuted(parseId(participant.identity) as number, publication.trackSid, true)
       })
       .on(RoomEvent.TrackUnmuted, (publication, participant) => {
         if (!isCurrentRoom()) {
           return
         }
-        updateParticipantTrackMuted(Number(participant.identity), publication.trackSid, false)
+        updateParticipantTrackMuted(parseId(participant.identity) as number, publication.trackSid, false)
       })
       .on(RoomEvent.ParticipantConnected, (participant) => {
         if (!isCurrentRoom()) {
           return
         }
-        const userId = Number(participant.identity)
+        const userId = parseId(participant.identity)
         if (userId) {
           syncParticipant(userId, true)
         }
@@ -226,7 +227,7 @@ export function useLiveKitRoom(options: {
         if (!isCurrentRoom()) {
           return
         }
-        const userId = Number(participant.identity)
+        const userId = parseId(participant.identity)
         if (userId) {
           syncParticipant(userId, false)
           clearParticipantTracks(userId)
@@ -281,7 +282,7 @@ export function useLiveKitRoom(options: {
       currentRoom.remoteParticipants.forEach((participant) => {
         participant.trackPublications.forEach((publication) => {
           if (publication.track) {
-            upsertParticipantTrack(publication.track, Number(participant.identity), false)
+            upsertParticipantTrack(publication.track, parseId(participant.identity) as number, false)
           }
         })
       })

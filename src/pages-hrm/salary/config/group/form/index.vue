@@ -65,6 +65,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Dept } from '@/api/system/dept'
 import type { SalaryGroup } from '@/api/hrm/salary/config/group'
@@ -151,15 +153,15 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getSalaryGroup(Number(props.id))
+  formData.value = await getSalaryGroup(props.id)
   formData.value.deptIds = formData.value.deptIds || []
   formData.value.employeeIds = formData.value.employeeIds || []
 }
 
 /** 提交表单 */
 async function handleSubmit() {
-  formData.value.deptIds = (formData.value.deptIds || []).map(Number)
-  formData.value.employeeIds = (formData.value.employeeIds || []).map(Number)
+  formData.value.deptIds = (formData.value.deptIds || []).map(parseId).filter(isIdType)
+  formData.value.employeeIds = (formData.value.employeeIds || []).map(parseId).filter(isIdType)
 
   if (!formData.value.deptIds.length && !formData.value.employeeIds.length) {
     toast.error('适用部门和适用员工不能同时为空')

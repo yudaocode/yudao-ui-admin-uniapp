@@ -86,7 +86,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMerchant(Number(props.id))
+  formData.value = await getMerchant(props.id)
 }
 
 /** 编辑往来企业 */
@@ -112,7 +112,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteMerchant(Number(props.id))
+    await deleteMerchant(props.id)
     toast.success('删除成功')
     uni.$emit('wms:merchant:reload')
     delay(handleBack)

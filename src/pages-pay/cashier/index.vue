@@ -203,7 +203,7 @@ async function getDetail() {
     goReturnUrl('cancel')
     return
   }
-  const data = await getPayOrder(Number(props.id), true)
+  const data = await getPayOrder(props.id, true)
   if (!data) {
     toast.error('支付订单不存在，请检查')
     goReturnUrl('cancel')
@@ -259,7 +259,7 @@ async function submit0(channelCode: string) {
   currentChannelCode.value = channelCode
   try {
     const data = await submitPayOrder({
-      id: Number(props.id),
+      id: props.id,
       channelCode,
       returnUrl: getCurrentUrl(),
       ...buildSubmitParam(channelCode),
@@ -356,7 +356,7 @@ function createQueryInterval() {
     return
   }
   interval.value = setInterval(async () => {
-    const data = await getPayOrder(Number(props.id))
+    const data = await getPayOrder(props.id)
     if (data.status === PayOrderStatusEnum.SUCCESS.status) {
       clearQueryInterval()
       toast.success('支付成功')

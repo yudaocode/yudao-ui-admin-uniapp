@@ -24,6 +24,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Tag } from '@/api/mp/tag'
 import { computed, onMounted, ref } from 'vue'
@@ -55,7 +57,7 @@ const selectedLabel = computed(() =>
 
 /** 选择变化：归一为数字编号回传 */
 function handleChange(value: Array<boolean | number | string>) {
-  emit('update:modelValue', value.map(Number))
+  emit('update:modelValue', value.map(parseId).filter(isIdType))
 }
 
 /** 打开标签选择器 */

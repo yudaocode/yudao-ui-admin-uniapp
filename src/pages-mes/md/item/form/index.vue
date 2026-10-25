@@ -206,7 +206,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItem(Number(props.id))
+  formData.value = await getItem(props.id as number)
 }
 
 /** 分类选择确认：从 selectedNode 同步 itemOrProduct */

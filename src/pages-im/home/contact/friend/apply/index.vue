@@ -56,6 +56,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { storeToRefs } from 'pinia'
@@ -91,7 +93,7 @@ const hiddenUserIds = computed(() => userStore.userInfo.userId ? [userStore.user
 const existingFriendUserIds = computed(() => getActiveFriendList.value
   .map(friend => friend.friendUserId)) // 已添加好友编号
 const formData = ref({
-  toUserId: props.toUserId ? Number(props.toUserId) : undefined as number | undefined,
+  toUserId: props.toUserId ? parseId(props.toUserId) : undefined,
   displayName: '',
   applyContent: props.sourceExtra && userStore.userInfo.nickname
     ? `我是"${decodeURIComponent(props.sourceExtra)}"的${userStore.userInfo.nickname}`

@@ -33,6 +33,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Currency } from '@/api/fms/config/currency'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -84,7 +86,7 @@ async function getDetail() {
     return
   }
   const list = await getCurrencyList(accountSetId)
-  const currency = list.find(item => item.id === Number(props.id))
+  const currency = list.find(item => item.id === parseId(props.id))
   if (currency) {
     formData.value = currency
   }
@@ -114,7 +116,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteCurrency(accountSetId, Number(props.id))
+    await deleteCurrency(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:currency:reload')
     delay(handleBack)

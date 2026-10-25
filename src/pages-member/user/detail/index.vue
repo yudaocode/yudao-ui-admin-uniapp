@@ -168,6 +168,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MemberUser } from '@/api/member/user'
 import type { PayWallet } from '@/api/pay/wallet/balance'
 import { onUnload } from '@dcloudio/uni-app'
@@ -269,7 +271,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const userId = Number(props.id)
+    const userId = parseId(props.id) as number
     formData.value = await getMemberUser(userId)
     if (hasAccessByCodes(['pay:wallet:query'])) {
       walletData.value = await getPayWallet({ userId })

@@ -263,7 +263,7 @@ async function getDetail() {
   if (!props.id || isCreateMode.value) {
     return
   }
-  formData.value = await getAndonRecord(Number(props.id))
+  formData.value = await getAndonRecord(props.id as number)
 }
 
 /** 新增呼叫 */

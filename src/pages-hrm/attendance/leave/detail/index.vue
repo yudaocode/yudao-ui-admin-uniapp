@@ -88,7 +88,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAttendanceLeave(Number(props.id))
+  formData.value = await getAttendanceLeave(props.id)
 }
 
 /** 查看审批进度 */

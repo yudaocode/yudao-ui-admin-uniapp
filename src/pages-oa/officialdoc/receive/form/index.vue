@@ -213,7 +213,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getOfficialDocReceive(Number(props.id))
+  const data = await getOfficialDocReceive(props.id as unknown as number)
   formData.value = data
   receiveTime.value = data.receiveTime ? toTimestamp(data.receiveTime) : ''
   deadlineTime.value = data.deadlineTime ? toTimestamp(data.deadlineTime) : ''

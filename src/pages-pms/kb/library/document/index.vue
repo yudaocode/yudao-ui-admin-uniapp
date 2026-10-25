@@ -240,7 +240,7 @@ async function getDetail() {
     return
   }
   const [documentData, labels] = await Promise.all([
-    getKnowledgeDocument(Number(props.id), true),
+    getKnowledgeDocument(props.id, true),
     getKnowledgeDocumentLabelList(),
   ])
   document.value = documentData

@@ -20,6 +20,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { AccountSimple } from '@/api/mp/account'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -46,7 +48,7 @@ const selectedId = ref<number | string>('')
 const pickerRef = ref<SelectPickerInstance>() // 公众号选择器
 
 const selectedLabel = computed(() => {
-  const id = Number(selectedId.value)
+  const id = parseId(selectedId.value)
   return accountList.value.find(item => item.id === id)?.name || ''
 })
 
@@ -80,7 +82,7 @@ async function loadAccountList() {
 
 /** 确认选择 */
 function handleConfirm({ value }: { value: number | string }) {
-  const id = Number(value)
+  const id = parseId(value) as number
   const account = accountList.value.find(item => item.id === id)
   selectedId.value = id
   emit('update:modelValue', id)

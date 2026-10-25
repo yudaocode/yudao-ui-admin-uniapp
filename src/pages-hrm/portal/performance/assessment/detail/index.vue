@@ -242,6 +242,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type {
   PerformanceProcessRecord,
   PortalPerformanceAssessment,
@@ -306,7 +308,7 @@ const targetConfirmResultText = computed(() => {
 
 const handleStageId = computed(() => { // 当前处理阶段编号
   return props.stageId
-    ? Number(props.stageId)
+    ? parseId(props.stageId) as number
     : (detail.value.currentStage?.id || detail.value.currentReviewStage?.id)
 })
 
@@ -389,10 +391,10 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    const stageId = props.stageId ? Number(props.stageId) : undefined
+    const stageId = props.stageId ? parseId(props.stageId) : undefined
     const [assessmentData, records] = await Promise.all([
-      getPortalPerformanceAssessment(Number(props.id), stageId),
-      getPortalPerformanceAssessmentProcessRecordList(Number(props.id), stageId),
+      getPortalPerformanceAssessment(props.id as number, stageId),
+      getPortalPerformanceAssessmentProcessRecordList(props.id as number, stageId),
     ])
     detail.value = assessmentData
     recordList.value = records

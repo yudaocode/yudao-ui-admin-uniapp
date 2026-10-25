@@ -171,7 +171,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWorkOrder(Number(props.id))
+    formData.value = await getWorkOrder(props.id as number)
   } finally {
     toast.close()
   }
@@ -265,7 +265,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWorkOrder(Number(props.id))
+    await deleteWorkOrder(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:pro:workorder:reload')
     delay(handleBack)

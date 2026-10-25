@@ -88,6 +88,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerChannelMessageVO } from '@/api/im/manager/channel/message'
 import type { User } from '@/api/system/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -132,7 +134,7 @@ async function getDetail() {
   try {
     toast.loading('加载中...')
     const [message, users] = await Promise.all([
-      getManagerChannelMessage(Number(props.id)),
+      getManagerChannelMessage(parseId(props.id) as number),
       getSimpleUserList(),
     ])
     formData.value = message

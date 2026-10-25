@@ -31,7 +31,7 @@
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <RepairLineList v-if="props.id" :repair-id="Number(props.id)" readonly />
+      <RepairLineList v-if="props.id" :repair-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -86,6 +86,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DvRepair } from '@/api/mes/dv/repair'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -155,7 +157,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getRepair(Number(props.id))
+    formData.value = await getRepair(props.id as number)
   } finally {
     toast.close()
   }
@@ -186,7 +188,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRepair(Number(props.id))
+    await deleteRepair(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:dv:repair:reload')
     delay(handleBack)
@@ -210,7 +212,7 @@ async function handleSubmitRepair() {
   }
   submitting.value = true
   try {
-    await submitRepair(Number(props.id))
+    await submitRepair(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:repair:reload')
     await getDetail()

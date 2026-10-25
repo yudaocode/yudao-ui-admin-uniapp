@@ -257,6 +257,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WorkItem, WorkItemBoard } from '@/api/pms/pm/workitem'
 import type { WorkItemStatus } from '@/api/pms/pm/workitem/status'
 import { computed, ref } from 'vue'
@@ -473,7 +475,7 @@ function isWorkItemOverdue(item: WorkItem) {
 /** 收集投放区当前工作项编号顺序 */
 function collectBoardIds(el: Element) {
   return Array.from(el.querySelectorAll('[data-work-item-id]')).map(node =>
-    Number((node as HTMLElement).dataset.workItemId),
+    parseId((node as HTMLElement).dataset.workItemId) as number,
   )
 }
 
@@ -516,8 +518,8 @@ async function handleBoardDragEnd(event: {
   ) {
     return
   }
-  const toStatusId = Number((event.to as HTMLElement).dataset.statusId)
-  const workItemId = Number(event.item.dataset.workItemId)
+  const toStatusId = parseId((event.to as HTMLElement).dataset.statusId)
+  const workItemId = parseId(event.item.dataset.workItemId)
   if (!toStatusId || !workItemId) {
     return
   }

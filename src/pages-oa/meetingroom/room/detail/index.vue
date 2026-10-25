@@ -127,7 +127,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMeetingRoom(Number(props.id))
+    formData.value = await getMeetingRoom(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -167,7 +167,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMeetingRoom(Number(props.id))
+    await deleteMeetingRoom(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:meeting-room:reload')
     delay(handleBack)

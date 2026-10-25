@@ -148,6 +148,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PromotionKefuMessage } from '@/api/mall/promotion/kefu/message'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -179,9 +181,9 @@ definePage({
 const PAGE_SIZE = 10 // 单页消息数，与后端 LIMIT 对齐
 const TIME_GAP = 5 * 60 * 1000 // 时间分隔阈值：相邻消息间隔超 5 分钟时展示时间
 
-const conversationId = computed(() => props.id != null && props.id !== '' ? Number(props.id) : undefined) // 会话编号
+const conversationId = computed(() => props.id != null && props.id !== '' ? parseId(props.id) : undefined) // 会话编号
 const nickname = computed(() => props.nickname ? decodeURIComponent(String(props.nickname)) : '') // 会员昵称
-const receiverId = computed(() => props.userId != null && props.userId !== '' ? Number(props.userId) : undefined) // 接收者（会员）编号
+const receiverId = computed(() => props.userId != null && props.userId !== '' ? parseId(props.userId) : undefined) // 接收者（会员）编号
 
 const pagingRef = ref<any>() // z-paging 引用
 const messages = ref<PromotionKefuMessage[]>([]) // 消息列表（最新在前）

@@ -104,7 +104,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMemberSignInConfig(Number(props.id))
+  formData.value = await getMemberSignInConfig(props.id)
 }
 
 /** 提交表单 */

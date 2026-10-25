@@ -103,7 +103,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getPromotionArticleCategory(Number(props.id))
+  formData.value = await getPromotionArticleCategory(props.id)
 }
 
 /** 提交表单 */

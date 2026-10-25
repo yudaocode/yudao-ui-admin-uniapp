@@ -86,6 +86,7 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
 import type { Schedule } from '@/api/oa/schedule'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -115,7 +116,7 @@ const dialog = useDialog()
 const toast = useToast()
 const formData = ref<Schedule>() // 详情数据
 const deleting = ref(false) // 删除状态
-const isCreator = computed(() => Number(formData.value?.creator) === userStore.userInfo.userId) // 当前用户是否创建人
+const isCreator = computed(() => parseId(formData.value?.creator) === userStore.userInfo.userId) // 当前用户是否创建人
 
 /** 返回上一页 */
 function handleBack() {
@@ -129,13 +130,13 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const data = await getSchedule(Number(props.id))
+    const data = await getSchedule(props.id as unknown as number)
     formData.value = data
     // 本人是参与人且未读时，同步阅读状态并重拉详情，拿到阅读时间等最新数据
     const mine = data.participants?.find(item => item.userId === userStore.userInfo.userId)
     if (mine && !mine.readStatus) {
-      await updateScheduleReadStatus(Number(props.id))
-      formData.value = await getSchedule(Number(props.id))
+      await updateScheduleReadStatus(props.id as unknown as number)
+      formData.value = await getSchedule(props.id as unknown as number)
     }
   } finally {
     toast.close()
@@ -164,7 +165,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSchedule(Number(props.id))
+    await deleteSchedule(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:schedule:reload')
     delay(handleBack)

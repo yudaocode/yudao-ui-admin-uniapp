@@ -43,6 +43,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Device } from '@/api/iot/device/device'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -66,7 +68,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const list = ref<Device[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>({ productId: props.productId ? Number(props.productId) : undefined }) // 查询参数
+const queryParams = ref<Record<string, any>>({ productId: props.productId ? parseId(props.productId) : undefined }) // 查询参数
 const productMap = ref<Record<string, string>>({}) // 产品 ID→名称
 
 /** 返回上一页 */

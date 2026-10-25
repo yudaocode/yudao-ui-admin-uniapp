@@ -49,7 +49,7 @@ async function getList() {
   }
   loading.value = true
   try {
-    list.value = await getMemberAddressList({ userId: Number(props.userId) })
+    list.value = await getMemberAddressList({ userId: props.userId })
   } finally {
     loading.value = false
   }

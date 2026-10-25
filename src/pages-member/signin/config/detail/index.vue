@@ -82,7 +82,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMemberSignInConfig(Number(props.id))
+    formData.value = await getMemberSignInConfig(props.id)
   } finally {
     toast.close()
   }
@@ -110,7 +110,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMemberSignInConfig(Number(props.id))
+    await deleteMemberSignInConfig(props.id)
     toast.success('删除成功')
     uni.$emit('member:signin-config:reload')
     delay(handleBack)

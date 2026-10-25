@@ -102,7 +102,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProcessExpression(Number(props.id))
+  formData.value = await getProcessExpression(props.id)
 }
 
 /** 提交表单 */

@@ -124,7 +124,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getResignApply(Number(props.id))
+    formData.value = await getResignApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -152,7 +152,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitResignApply(Number(props.id))
+    await submitResignApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:resign:reload')
     delay(handleBack)

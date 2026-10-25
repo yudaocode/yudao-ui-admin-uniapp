@@ -48,6 +48,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -108,7 +110,7 @@ async function loadAuxiliaryType() {
     return
   }
   const typeList = await getAuxiliaryTypeList(accountSetId)
-  auxiliaryType.value = typeList.find(item => item.id === Number(props.auxiliaryTypeId))
+  auxiliaryType.value = typeList.find(item => item.id === parseId(props.auxiliaryTypeId))
 }
 
 /** 加载项目详情 */
@@ -120,7 +122,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getAuxiliaryItem(accountSetId, Number(props.id))
+  formData.value = await getAuxiliaryItem(accountSetId, props.id)
 }
 
 /** 编辑项目 */
@@ -150,7 +152,7 @@ async function handleStatusChange() {
   }
   statusUpdating.value = true
   try {
-    await updateAuxiliaryItemStatus(accountSetId, Number(props.id), status)
+    await updateAuxiliaryItemStatus(accountSetId, props.id, status)
     toast.success(status === CommonStatus.ENABLE ? '启用成功' : '停用成功')
     uni.$emit('fms:config:auxiliary:reload')
     await getDetail()
@@ -178,7 +180,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAuxiliaryItem(accountSetId, Number(props.id))
+    await deleteAuxiliaryItem(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:auxiliary:reload')
     delay(handleBack)

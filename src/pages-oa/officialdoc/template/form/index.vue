@@ -157,7 +157,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getOfficialDocTemplate(Number(props.id))
+  formData.value = await getOfficialDocTemplate(props.id as unknown as number)
 }
 
 /** 提交表单 */

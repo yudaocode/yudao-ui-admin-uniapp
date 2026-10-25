@@ -213,7 +213,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getDataSink(Number(props.id))
+  formData.value = await getDataSink(props.id)
 }
 
 /** 编辑数据目的 */
@@ -233,7 +233,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDataSink(Number(props.id))
+    await deleteDataSink(props.id)
     toast.success('删除成功')
     uni.$emit('iot:data-sink:reload')
     delay(handleBack)

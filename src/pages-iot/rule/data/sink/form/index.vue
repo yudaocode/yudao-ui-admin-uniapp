@@ -475,7 +475,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDataSink(Number(props.id))
+  formData.value = await getDataSink(props.id as number)
   formData.value.type = formData.value.type || IotDataSinkTypeEnum.HTTP
   formData.value.config = normalizeConfig(formData.value.type, formData.value.config)
   syncHttpConfigRows()

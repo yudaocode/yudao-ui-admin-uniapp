@@ -156,7 +156,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getRuleScene(Number(props.id))
+  formData.value = await getRuleScene(props.id as number)
 }
 
 /** 加载告警配置选项 */
@@ -183,7 +183,7 @@ async function handleToggleStatus() {
   }
   statusLoading.value = true
   try {
-    await updateRuleSceneStatus(Number(props.id), nextStatus)
+    await updateRuleSceneStatus(props.id as number, nextStatus)
     toast.success(`${actionName}成功`)
     uni.$emit('iot:scene-rule:reload')
     await getDetail()
@@ -204,7 +204,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRuleScene(Number(props.id))
+    await deleteRuleScene(props.id as number)
     toast.success('删除成功')
     uni.$emit('iot:scene-rule:reload')
     delay(handleBack)

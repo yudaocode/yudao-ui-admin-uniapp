@@ -93,10 +93,10 @@
       <view class="mt-24rpx px-24rpx text-28rpx text-[#333] font-semibold">
         异动记录
       </view>
-      <ChangeRecordList ref="changeRecordListRef" :employee-id="Number(props.id)" />
+      <ChangeRecordList ref="changeRecordListRef" :employee-id="parseId(props.id) as number" />
       <QuitInfoCard
         ref="quitInfoRef"
-        :employee-id="Number(props.id)"
+        :employee-id="parseId(props.id) as number"
         editable
         @edit="openQuit"
       />
@@ -136,37 +136,37 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData.createTime) || '-'" />
         <wd-cell title="备注" :value="formData.remark || '-'" />
       </wd-cell-group>
-      <EducationExperienceList :employee-id="Number(props.id)" />
-      <WorkExperienceList :employee-id="Number(props.id)" />
-      <CertificateList :employee-id="Number(props.id)" />
-      <TrainingExperienceList :employee-id="Number(props.id)" />
-      <ContactList :employee-id="Number(props.id)" />
+      <EducationExperienceList :employee-id="parseId(props.id) as number" />
+      <WorkExperienceList :employee-id="parseId(props.id) as number" />
+      <CertificateList :employee-id="parseId(props.id) as number" />
+      <TrainingExperienceList :employee-id="parseId(props.id) as number" />
+      <ContactList :employee-id="parseId(props.id) as number" />
     </view>
 
     <!-- 员工合同 -->
     <ContractList
       v-else-if="activeTab === 'contract'"
       ref="contractListRef"
-      :employee-id="Number(props.id)"
+      :employee-id="parseId(props.id) as number"
     />
 
     <!-- 工资社保 -->
     <SalaryCardInfo
       v-else-if="activeTab === 'salary'"
       ref="salaryCardRef"
-      :employee-id="Number(props.id)"
+      :employee-id="parseId(props.id) as number"
       :social-security-number="formData.socialSecurityNumber"
       :accumulation-fund-number="formData.accumulationFundNumber"
     />
 
     <!-- 材料附件 -->
-    <MaterialFiles v-else-if="activeTab === 'file'" :employee-id="Number(props.id)" />
+    <MaterialFiles v-else-if="activeTab === 'file'" :employee-id="parseId(props.id) as number" />
 
     <!-- 操作日志 -->
     <OperateLogList
       v-else-if="activeTab === 'log' && props.id"
       class="min-h-0 flex-1"
-      :biz-id="Number(props.id)"
+      :biz-id="parseId(props.id) as number"
       :biz-type="HrmBizType.EMPLOYEE"
     />
 
@@ -255,6 +255,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Employee } from '@/api/hrm/employee'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -407,7 +409,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getEmployee(Number(props.id))
+  formData.value = await getEmployee(props.id)
   changeRecordListRef.value?.getList()
   quitInfoRef.value?.getQuitInfo()
 }
@@ -485,7 +487,7 @@ async function handleCancelQuit() {
     return
   }
   await cancelEmployeeQuit({
-    employeeId: Number(props.id),
+    employeeId: props.id,
     reason,
   })
   toast.success('取消离职成功')
@@ -507,7 +509,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteEmployee(Number(props.id))
+    await deleteEmployee(props.id)
     toast.success('删除成功')
     handleBack()
   } finally {

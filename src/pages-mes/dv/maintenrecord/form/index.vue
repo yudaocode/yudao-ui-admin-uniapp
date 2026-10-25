@@ -66,7 +66,7 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <MaintenRecordLineList v-if="props.id" :record-id="Number(props.id)" />
+      <MaintenRecordLineList v-if="props.id" :record-id="parseId(props.id) as number" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -98,6 +98,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
@@ -179,7 +181,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMaintenRecord(Number(props.id))
+  formData.value = await getMaintenRecord(props.id as number)
 }
 
 /** 初始化页面数据 */
@@ -188,7 +190,7 @@ async function initPage() {
     formData.value = getDefaultFormData()
     return
   }
-  if (!formData.value.id || formData.value.id !== Number(props.id)) {
+  if (!formData.value.id || formData.value.id !== parseId(props.id)) {
     formData.value = getDefaultFormData()
     await getDetail()
   }
@@ -280,7 +282,7 @@ async function handleSubmitRecord() {
       status: undefined,
     }
     await updateMaintenRecord(data)
-    await submitMaintenRecord(Number(props.id))
+    await submitMaintenRecord(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:maintenrecord:reload')
     delay(handleBack)

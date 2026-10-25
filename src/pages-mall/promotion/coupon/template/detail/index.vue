@@ -110,7 +110,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionCouponTemplate(Number(props.id))
+    formData.value = await getPromotionCouponTemplate(props.id)
   } finally {
     toast.close()
   }
@@ -130,7 +130,7 @@ async function handleStatus(status: number) {
   }
   submitting.value = true
   try {
-    await updatePromotionCouponTemplateStatus({ id: Number(props.id), status })
+    await updatePromotionCouponTemplateStatus({ id: props.id, status })
     toast.success('操作成功')
     uni.$emit('mall:promotion-coupon-template:reload')
     await getDetail()
@@ -148,7 +148,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionCouponTemplate(Number(props.id))
+    await deletePromotionCouponTemplate(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-coupon-template:reload')
     delay(handleBack)

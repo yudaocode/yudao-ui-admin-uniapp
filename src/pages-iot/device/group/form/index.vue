@@ -78,7 +78,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDeviceGroup(Number(props.id))
+  formData.value = await getDeviceGroup(props.id)
 }
 
 /** 提交表单 */

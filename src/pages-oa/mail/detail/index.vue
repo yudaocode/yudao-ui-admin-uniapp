@@ -133,7 +133,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMailMessage(Number(props.id))
+  formData.value = await getMailMessage(props.id as unknown as number)
   if (!formData.value.readStatus) {
     try {
       await updateMailMessageRead(formData.value.id!, true)

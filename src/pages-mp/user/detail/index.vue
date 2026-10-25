@@ -94,7 +94,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getUser(Number(props.id))
+    formData.value = await getUser(props.id)
   } catch {
     formData.value = undefined
   } finally {

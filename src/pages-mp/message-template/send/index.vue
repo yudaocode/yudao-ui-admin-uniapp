@@ -60,6 +60,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MsgTemplate, MsgTemplateSend } from '@/api/mp/messageTemplate'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -82,7 +84,7 @@ definePage({
 })
 
 const toast = useToast()
-const accountId = computed(() => props.accountId ? Number(props.accountId) : undefined)
+const accountId = computed(() => props.accountId ? parseId(props.accountId) : undefined)
 const template = ref<MsgTemplate>() // 模板详情
 const templateParams = ref<string[]>([]) // 模板变量名
 const paramValues = reactive<Record<string, string>>({}) // 各参数填写值
@@ -90,7 +92,7 @@ const templateContent = computed(() => normalizeEscapedNewlines(template.value?.
 const templateTitle = computed(() => template.value?.title || '') // 模板标题展示文案
 const loading = ref(false) // 发送状态
 const formData = ref<MsgTemplateSend>({
-  id: props.id ? Number(props.id) : undefined,
+  id: props.id ? parseId(props.id) : undefined,
   userId: undefined!,
   data: {},
   url: '',
@@ -118,7 +120,7 @@ async function loadTemplate() {
   if (!props.id) {
     return
   }
-  const id = Number(props.id)
+  const id = parseId(props.id) as number
   template.value = await getMessageTemplate(id)
   const params = parseTemplateParams(normalizeEscapedNewlines(template.value.content || ''))
   templateParams.value = params
@@ -138,7 +140,7 @@ async function handleSubmit() {
     return
   }
 
-  const data: MsgTemplateSend = { ...formData.value, id: Number(props.id) }
+  const data: MsgTemplateSend = { ...formData.value, id: parseId(props.id) as number }
   // 按模板参数构建微信 data：{ 参数名: 参数值 }
   data.data = Object.fromEntries(templateParams.value.map(param => [param, paramValues[param] || '']))
   if (data.miniProgramAppId && data.miniProgramPagePath) {
@@ -160,7 +162,7 @@ async function handleSubmit() {
 
 /** 初始化 */
 onMounted(() => {
-  formData.value.id = props.id ? Number(props.id) : undefined
+  formData.value.id = props.id ? parseId(props.id) : undefined
   loadTemplate()
 })
 </script>

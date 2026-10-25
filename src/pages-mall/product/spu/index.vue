@@ -77,6 +77,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProductSpu } from '@/api/mall/product/spu'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -110,7 +112,7 @@ const pagingRef = ref<any>() // 分页组件引用
 const tabIndex = ref(0) // 当前 tab 下标
 const tabCounts = ref<Record<number, number>>({}) // 各 tab 商品数量（key 为 tabType）
 const queryParams = ref<Record<string, any>>({}) // 查询参数（搜索表单部分：name）
-const categoryId = ref<number | undefined>(props.categoryId ? Number(props.categoryId) : undefined) // 分类筛选（路由深链 + 搜索表单共用）
+const categoryId = ref<number | undefined>(props.categoryId ? parseId(props.categoryId) : undefined) // 分类筛选（路由深链 + 搜索表单共用）
 const tabType = computed(() => SPU_TABS[tabIndex.value].value) // 当前 tabType
 
 /** 返回上一页 */

@@ -188,7 +188,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getMeetingRoomBooking(Number(props.id))
+  const data = await getMeetingRoomBooking(props.id as unknown as number)
   formData.value = data
   selectedRoomName.value = data.roomName || ''
   selectedRoomLocation.value = data.roomLocation || ''

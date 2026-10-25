@@ -80,7 +80,7 @@
                 v-for="team in teamOptions"
                 :key="team.id"
                 class="mb-16rpx border border-[#edf0f5] rounded-12rpx p-20rpx"
-                :class="selectedTeamIds.includes(Number(team.id)) ? 'border-[#1677ff] bg-[#eef6ff]' : 'bg-white'"
+                :class="selectedTeamIds.includes(parseId(team.id) as number) ? 'border-[#1677ff] bg-[#eef6ff]' : 'bg-white'"
                 @click="toggleTeam(team)"
               >
                 <view class="text-30rpx text-[#333] font-semibold">
@@ -104,6 +104,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { CalTeamMember } from '@/api/mes/cal/team/member'
 import type { CalTeam } from '@/api/mes/cal/team'
 import type { CalPlanTeam } from '@/api/mes/cal/plan/team'

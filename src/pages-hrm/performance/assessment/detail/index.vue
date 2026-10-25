@@ -306,7 +306,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePerformanceArchiveRecords([Number(props.id)])
+    await deletePerformanceArchiveRecords([props.id as number])
     toast.success('删除成功')
     uni.$emit('hrm-performance-archive-refresh')
     handleBack()
@@ -358,12 +358,12 @@ async function getDetail() {
   }
   const [assessment, records] = isArchived.value
     ? await Promise.all([
-        getPerformanceAssessmentArchive(Number(props.id)),
-        getPerformanceAssessmentArchiveProcessRecordList(Number(props.id)),
+        getPerformanceAssessmentArchive(props.id as number),
+        getPerformanceAssessmentArchiveProcessRecordList(props.id as number),
       ])
     : await Promise.all([
-        getPerformanceAssessment(Number(props.id)),
-        getPerformanceAssessmentProcessRecordList(Number(props.id)),
+        getPerformanceAssessment(props.id as number),
+        getPerformanceAssessmentProcessRecordList(props.id as number),
       ])
   detail.value = assessment
   processRecordList.value = records || []

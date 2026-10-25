@@ -28,6 +28,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, ref } from 'vue'
 import { navigateBackPlus } from '@/utils'
@@ -48,7 +50,7 @@ definePage({
 })
 
 const activeTab = ref(props.tab === 'group' ? 1 : 0) // 当前申请类型
-const singleGroupId = computed(() => Number(props.groupId) || 0) // 指定群聊编号
+const singleGroupId = computed(() => parseId(props.groupId) || 0) // 指定群聊编号
 const navbarTitle = computed(() => singleGroupId.value
   ? '进群申请'
   : activeTab.value === 0 ? '新的朋友' : '加群申请') // 当前页面标题

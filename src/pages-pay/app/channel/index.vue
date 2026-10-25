@@ -146,7 +146,7 @@ async function loadChannels() {
   if (!props.appId || !hasAccessByCodes(['pay:channel:query'])) {
     return
   }
-  list.value = await getPayChannelList(Number(props.appId)) || []
+  list.value = await getPayChannelList(props.appId) || []
 }
 
 /** 初始化 */

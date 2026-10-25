@@ -196,7 +196,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getSupplyItem(Number(props.id))
+  formData.value = await getSupplyItem(props.id as unknown as number)
 }
 
 /** 提交表单 */

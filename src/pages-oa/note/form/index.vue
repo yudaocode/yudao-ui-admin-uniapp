@@ -73,6 +73,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Note } from '@/api/oa/note'
 import type { NoteCategory } from '@/api/oa/note/category'
@@ -105,7 +107,7 @@ const formData = ref<Partial<Note>>({
   id: undefined,
   type: OA_NOTE_TYPE.PRIVATE,
   priority: OA_PRIORITY.NORMAL,
-  categoryId: props.categoryId ? Number(props.categoryId) : undefined,
+  categoryId: props.categoryId ? parseId(props.categoryId) : undefined,
   title: '',
   content: '',
   fileUrls: [],
@@ -136,7 +138,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getNote(Number(props.id))
+  formData.value = await getNote(props.id as unknown as number)
 }
 
 /** 提交表单 */

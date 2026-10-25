@@ -153,7 +153,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getSubject(accountSetId, Number(props.id))
+  formData.value = await getSubject(accountSetId, props.id)
 }
 
 /** 编辑科目 */
@@ -190,7 +190,7 @@ async function handleStatusChange() {
   }
   statusUpdating.value = true
   try {
-    await updateSubjectStatus(accountSetId, [Number(props.id)], status)
+    await updateSubjectStatus(accountSetId, [props.id], status)
     toast.success(status === FmsSubjectStatus.ENABLED ? '启用成功' : '停用成功')
     uni.$emit('fms:config:subject:reload')
     await getDetail()
@@ -218,7 +218,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSubjectList(accountSetId, [Number(props.id)])
+    await deleteSubjectList(accountSetId, [props.id])
     toast.success('删除成功')
     uni.$emit('fms:config:subject:reload')
     delay(handleBack)

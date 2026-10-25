@@ -88,7 +88,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getOtaTask(Number(props.id))
+  formData.value = await getOtaTask(props.id)
 }
 
 /** 查看升级记录 */
@@ -108,7 +108,7 @@ async function handleCancel() {
   }
   canceling.value = true
   try {
-    await cancelOtaTask(Number(props.id))
+    await cancelOtaTask(props.id)
     toast.success('取消成功')
     uni.$emit('iot:ota-task:reload')
     await getDetail()

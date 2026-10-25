@@ -106,6 +106,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Dept } from '@/api/system/dept'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -159,7 +161,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const deptId = Number(props.id)
+  const deptId = parseId(props.id) as number
   const [deptData, deptList, userList, statisticsList] = await Promise.all([
     getDept(deptId),
     getSimpleDeptList(),

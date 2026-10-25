@@ -79,6 +79,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AccountSet, AccountSetInitializeReq } from '@/api/fms/config/account-set'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -177,7 +179,7 @@ onMounted(async () => {
   if (!props.id) {
     return
   }
-  formData.value.accountSetId = Number(props.id)
-  accountSet.value = await getAccountSet(Number(props.id))
+  formData.value.accountSetId = parseId(props.id) as number
+  accountSet.value = await getAccountSet(props.id)
 })
 </script>

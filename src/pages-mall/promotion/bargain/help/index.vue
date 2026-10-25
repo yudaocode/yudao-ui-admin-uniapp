@@ -47,6 +47,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PromotionBargainHelp } from '@/api/mall/promotion/bargain'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -77,7 +79,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const query: Record<string, any> = {}
     if (props.recordId != null && props.recordId !== '') {
-      query.recordId = Number(props.recordId)
+      query.recordId = parseId(props.recordId) as number
     }
     const data = await getPromotionBargainHelpPage({ ...query, pageNo, pageSize })
     pagingRef.value?.completeByTotal(data.list, data.total)

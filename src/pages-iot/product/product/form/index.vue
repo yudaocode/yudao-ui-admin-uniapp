@@ -168,7 +168,7 @@ async function getDetail() {
     generateProductKey()
     return
   }
-  formData.value = await getProduct(Number(props.id))
+  formData.value = await getProduct(props.id)
 }
 
 /** 提交表单 */

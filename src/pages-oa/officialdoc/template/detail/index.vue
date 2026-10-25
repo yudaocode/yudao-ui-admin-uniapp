@@ -97,7 +97,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getOfficialDocTemplate(Number(props.id))
+    formData.value = await getOfficialDocTemplate(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -125,7 +125,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteOfficialDocTemplate(Number(props.id))
+    await deleteOfficialDocTemplate(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:officialdoc-template:reload')
     delay(handleBack)

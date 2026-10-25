@@ -62,7 +62,7 @@ definePage({
 })
 
 const toast = useToast()
-const editId = computed(() => props.id ? Number(props.id) : undefined)
+const editId = computed(() => props.id || undefined)
 const getTitle = computed(() => editId.value ? '编辑固件' : '新增固件')
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<OtaFirmware>({

@@ -77,7 +77,7 @@ async function loadUser() {
   }
   loading.value = true
   try {
-    const user = await getMemberUser(Number(props.userId))
+    const user = await getMemberUser(props.userId)
     formData.value = {
       id: user.id,
       nickname: user.nickname,

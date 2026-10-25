@@ -60,6 +60,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ImManagerChannelVO } from '@/api/im/manager/channel'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -116,7 +118,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getManagerChannel(Number(props.id))
+  formData.value = await getManagerChannel(parseId(props.id) as number)
 }
 
 /** 提交表单 */

@@ -37,6 +37,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProductPropertyValue } from '@/api/mall/product/property'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -65,7 +67,7 @@ definePage({
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑属性值' : '新增属性值')
 const formLoading = ref(false) // 表单提交状态
-const lockedPropertyId = props.propertyId != null && props.propertyId !== '' ? Number(props.propertyId) : undefined // 从属性列表新增进入时，经路由透传并锁定，不允许自由选择
+const lockedPropertyId = props.propertyId != null && props.propertyId !== '' ? parseId(props.propertyId) : undefined // 从属性列表新增进入时，经路由透传并锁定，不允许自由选择
 const propertyLocked = computed(() => !props.id && lockedPropertyId != null)
 const formData = ref<ProductPropertyValue>({
   id: undefined,
@@ -89,7 +91,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProductPropertyValue(Number(props.id))
+  formData.value = await getProductPropertyValue(props.id)
 }
 
 /** 提交表单 */

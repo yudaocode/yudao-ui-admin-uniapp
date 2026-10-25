@@ -64,6 +64,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProductSpu } from '@/api/mall/product/spu'
 import { computed, ref, watch } from 'vue'
 import { getProductSpuDetailList } from '@/api/mall/product/spu'
@@ -110,7 +112,7 @@ const groups = computed<SpuGroup[]>(() => {
   const order: number[] = []
   const grouped: Record<number, Record<string, any>[]> = {}
   for (const product of props.products) {
-    const spuId = Number(product.spuId) || 0
+    const spuId = parseId(product.spuId) || 0
     if (!grouped[spuId]) {
       grouped[spuId] = []
       order.push(spuId)
@@ -121,7 +123,7 @@ const groups = computed<SpuGroup[]>(() => {
     const spu = spuMap.value[spuId]
     const skus = spu?.skus || []
     const rows: SkuRow[] = grouped[spuId].map((product) => {
-      const sku = skus.find(item => item.id === Number(product.skuId))
+      const sku = skus.find(item => item.id === parseId(product.skuId))
       return {
         skuId: product.skuId,
         skuName: sku?.name || (sku?.properties || []).map(p => p.valueName).filter(Boolean).join(' ') || (product.skuId != null ? `SKU #${product.skuId}` : ''),
@@ -157,7 +159,7 @@ function formatField(field: SpuSkuViewField, product: Record<string, any>) {
 
 /** 加载所有涉及的 SPU 详情（仅拉取未缓存的，按 ids 批量一次取） */
 async function loadSpus(list: Record<string, any>[]) {
-  const ids = Array.from(new Set(list.map(item => Number(item.spuId)).filter(Boolean)))
+  const ids = Array.from(new Set(list.map(item => parseId(item.spuId) as number).filter(Boolean)))
   const missing = ids.filter(id => !spuMap.value[id])
   if (!missing.length) {
     return

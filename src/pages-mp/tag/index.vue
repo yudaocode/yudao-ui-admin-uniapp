@@ -77,6 +77,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Tag } from '@/api/mp/tag'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -161,7 +163,7 @@ async function handleDelete(item: Tag) {
   } catch {
     return
   }
-  await deleteTag(Number(item.id))
+  await deleteTag(parseId(item.id) as number)
   toast.success('删除成功')
   reload()
 }

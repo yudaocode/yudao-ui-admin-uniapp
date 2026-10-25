@@ -101,7 +101,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionSeckillConfig(Number(props.id))
+  const data = await getPromotionSeckillConfig(props.id)
   formData.value = {
     ...data,
     startTime: trimTimeSeconds(data.startTime),

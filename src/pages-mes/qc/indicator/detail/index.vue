@@ -90,7 +90,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getIndicator(Number(props.id))
+    formData.value = await getIndicator(props.id as number)
     if (formData.value.resultType === MesQcResultValueTypeEnum.DICT) {
       dictTypeList.value = await getSimpleDictTypeList()
     }
@@ -137,7 +137,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteIndicator(Number(props.id))
+    await deleteIndicator(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:qc:indicator:reload')
     delay(handleBack)

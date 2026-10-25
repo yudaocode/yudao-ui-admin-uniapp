@@ -43,7 +43,7 @@
                   {{ item.nickname || `用户 ${item.id}` }}
                 </view>
                 <wd-tag type="primary" variant="plain">
-                  {{ item.bindUserId === Number(props.bindUserId) ? '一级' : '二级' }}
+                  {{ item.bindUserId === parseId(props.bindUserId) ? '一级' : '二级' }}
                 </wd-tag>
               </view>
               <view class="text-24rpx text-[#999]">
@@ -58,6 +58,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { TradeBrokerageUser } from '@/api/mall/trade/brokerage/user'
 import { ref, watch } from 'vue'
 import { getTradeBrokerageUserPage } from '@/api/mall/trade/brokerage/user'
@@ -81,7 +83,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getTradeBrokerageUserPage({
       ...queryParams.value,
-      bindUserId: Number(props.bindUserId),
+      bindUserId: props.bindUserId,
       pageNo,
       pageSize,
     })

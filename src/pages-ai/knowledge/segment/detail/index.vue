@@ -110,7 +110,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getKnowledgeSegment(Number(props.id))
+    formData.value = await getKnowledgeSegment(props.id)
   } finally {
     toast.close()
   }
@@ -155,7 +155,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteKnowledgeSegment(Number(props.id))
+    await deleteKnowledgeSegment(props.id)
     toast.success('删除成功')
     uni.$emit('ai:knowledge-segment:reload')
     delay(handleBack)

@@ -129,7 +129,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getLeaveApply(Number(props.id))
+    formData.value = await getLeaveApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -162,7 +162,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitLeaveApply(Number(props.id))
+    await submitLeaveApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:leave:reload')
     delay(handleBack)

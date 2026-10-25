@@ -185,7 +185,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const order = await getShipmentOrder(Number(props.id))
+  const order = await getShipmentOrder(props.id)
   formData.value = {
     ...order,
     details: normalizeDetails(order.details || []),

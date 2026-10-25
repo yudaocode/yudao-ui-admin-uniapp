@@ -283,7 +283,7 @@ async function getDetail() {
     applyPeriod(Date.now())
     return
   }
-  const data = await getWorkReport(Number(props.id))
+  const data = await getWorkReport(props.id as unknown as number)
   formData.value = data
   periodDate.value = data.startTime ? dayjs(data.startTime).valueOf() : ''
   startTime.value = data.startTime ? dayjs(data.startTime).startOf('day').valueOf() : ''

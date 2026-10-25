@@ -124,7 +124,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getDeliveryExpressTemplate(Number(props.id))
+  const data = await getDeliveryExpressTemplate(props.id)
   formData.value = {
     ...data,
     chargeMode: data.chargeMode ?? DeliveryExpressChargeModeEnum.COUNT,

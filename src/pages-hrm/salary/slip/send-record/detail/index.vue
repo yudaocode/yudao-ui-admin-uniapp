@@ -238,7 +238,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  record.value = await getSalarySlipSendRecord(Number(props.id))
+  record.value = await getSalarySlipSendRecord(props.id)
   reload()
 }
 
@@ -257,7 +257,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSalarySlipSendRecord(Number(props.id))
+    await deleteSalarySlipSendRecord(props.id)
     toast.success('删除成功')
     navigateBackPlus('/pages-hrm/salary/slip/send-record/index')
   } finally {

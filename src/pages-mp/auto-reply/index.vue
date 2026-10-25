@@ -96,6 +96,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { AutoReply } from '@/api/mp/autoReply'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -199,7 +201,7 @@ async function handleDelete(item: AutoReply) {
   } catch {
     return
   }
-  await deleteAutoReply(Number(item.id))
+  await deleteAutoReply(parseId(item.id) as number)
   toast.success('删除成功')
   reload()
 }

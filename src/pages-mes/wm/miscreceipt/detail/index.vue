@@ -27,7 +27,7 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <MiscReceiptLineList v-if="props.id" :receipt-id="Number(props.id)" readonly />
+      <MiscReceiptLineList v-if="props.id" :receipt-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -55,6 +55,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmMiscReceipt } from '@/api/mes/wm/miscreceipt'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -125,7 +127,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMiscReceipt(Number(props.id))
+    formData.value = await getMiscReceipt(props.id as number)
   } finally {
     toast.close()
   }
@@ -160,7 +162,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMiscReceipt(Number(props.id))
+    await deleteMiscReceipt(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:miscreceipt:reload')
     delay(handleBack)
@@ -184,7 +186,7 @@ async function handleSubmitReceipt() {
   }
   submitting.value = true
   try {
-    await submitMiscReceipt(Number(props.id))
+    await submitMiscReceipt(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:miscreceipt:reload')
     await getDetail()
@@ -208,7 +210,7 @@ async function handleCancelReceipt() {
   }
   canceling.value = true
   try {
-    await cancelMiscReceipt(Number(props.id))
+    await cancelMiscReceipt(props.id as number)
     toast.success('取消成功')
     uni.$emit('mes:wm:miscreceipt:reload')
     await getDetail()

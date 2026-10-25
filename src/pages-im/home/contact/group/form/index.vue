@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, isPositiveId, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, getCurrentInstance, nextTick, onMounted, ref } from 'vue'
@@ -114,8 +116,9 @@ const formSchema = createFormSchema({
 })
 const lockedMemberUserIds = computed(() => (props.memberUserIds || '') // 从好友资料进入时固定包含的成员
   .split(',')
-  .map(Number)
-  .filter(item => Number.isFinite(item) && item > 0))
+  .map(parseId)
+  .filter(isIdType)
+  .filter(isPositiveId))
 let generatedName = '' // 最近一次自动生成的群名
 
 /** 表单标题 */
@@ -143,7 +146,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id) as number
   const detail = await getGroup(groupId)
   if (detail.status !== CommonStatusEnum.ENABLE
     || detail.joinStatus !== CommonStatusEnum.ENABLE

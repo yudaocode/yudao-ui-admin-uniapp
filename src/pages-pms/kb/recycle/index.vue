@@ -155,6 +155,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeLibrary } from '@/api/pms/kb/library'
 import type {
   KnowledgeRecycle,
@@ -305,7 +307,7 @@ onMounted(async () => {
     tabIndex.value = 1
   }
   if (props.libraryId) {
-    contentLibraryId.value = Number(props.libraryId)
+    contentLibraryId.value = parseId(props.libraryId)
   } else {
     // 默认选中第一个可访问的知识库
     const page = await getKnowledgeLibraryPage({ pageNo: 1, pageSize: 1 })

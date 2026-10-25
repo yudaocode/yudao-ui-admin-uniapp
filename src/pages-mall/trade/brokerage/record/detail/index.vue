@@ -66,7 +66,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTradeBrokerageRecord(Number(props.id))
+    formData.value = await getTradeBrokerageRecord(props.id)
   } finally {
     toast.close()
   }

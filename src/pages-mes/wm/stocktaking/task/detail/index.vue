@@ -132,7 +132,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const currentId = computed(() => props.id ? props.id as number : undefined) // 当前详情编号
 const formData = ref<StockTakingTask>() // 详情数据
 const deleting = ref(false) // 删除状态
 const tabType = ref('basic') // 当前 tab 类型

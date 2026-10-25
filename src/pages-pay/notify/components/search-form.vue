@@ -54,6 +54,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -117,7 +119,7 @@ function handleSearch() {
   emit('search', {
     appId: formData.appId,
     type: formData.type,
-    dataId: formData.dataId ? Number(formData.dataId) : undefined,
+    dataId: formData.dataId ? parseId(formData.dataId) : undefined,
     status: formData.status,
     merchantOrderId: formData.merchantOrderId || undefined,
     merchantRefundId: formData.merchantRefundId || undefined,

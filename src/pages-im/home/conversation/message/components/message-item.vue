@@ -113,6 +113,8 @@
 </template>
 
 <script lang="ts" setup>
+import { compareId } from '@/utils/id'
+
 import type {
   CardMessage,
   MaterialMessage,
@@ -402,7 +404,7 @@ const statusText = computed(() => {
     if (!MESSAGE_PRIVATE_READ_ENABLED) {
       return ''
     }
-    if ((message.id && props.privateMaxReadMessageId && message.id <= props.privateMaxReadMessageId)
+    if ((message.id && props.privateMaxReadMessageId && compareId(message.id, props.privateMaxReadMessageId) <= 0)
       || message.receiptStatus === ImMessageReceiptStatus.DONE) {
       return '已读'
     }

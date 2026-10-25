@@ -120,7 +120,7 @@ const deleting = ref(false) // 删除状态
 const moreActionVisible = ref(false) // 业务操作菜单显示状态
 const teamCanQuit = ref(false) // 是否可退出团队
 const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: boolean, validateOwnerUser: boolean }>() // 团队成员引用（含权限校验）
-const planId = computed(() => Number(props.id))
+const planId = computed(() => props.id)
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => activeTab.value === 'log') // 操作日志 tab 用 z-paging 固定高布局
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）

@@ -70,7 +70,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPayWallet({ userId: Number(props.userId) })
+    formData.value = await getPayWallet({ userId: props.userId })
   } finally {
     toast.close()
   }

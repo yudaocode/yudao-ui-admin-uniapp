@@ -66,7 +66,7 @@ const formData = ref<Record<string, any>>({}) // 详情数据
 const parentName = ref('') // 父级分类名称
 const tabIndex = ref(0) // 当前详情分类下标
 const deleting = ref(false) // 删除状态
-const categoryId = computed(() => Number(props.id))
+const categoryId = computed(() => props.id)
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const formatParentId = computed(() => {
   if (formData.value.parentId === 0) {

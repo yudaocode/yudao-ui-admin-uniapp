@@ -32,6 +32,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 
@@ -62,7 +64,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    walletId: formData.walletId ? Number(formData.walletId) : undefined,
+    walletId: formData.walletId ? parseId(formData.walletId) : undefined,
   })
 }
 

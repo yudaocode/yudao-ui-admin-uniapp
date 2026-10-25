@@ -59,6 +59,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -105,9 +107,9 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getDeliveryPickUpStore(Number(props.id))
+    formData.value = await getDeliveryPickUpStore(parseId(props.id) as number)
     // 详情 get 返回 verifyUsers（用户对象），取 id 回显已绑定核销员
-    bindStaffIds.value = (formData.value.verifyUsers || []).map(u => Number(u.id)).filter(Boolean)
+    bindStaffIds.value = (formData.value.verifyUsers || []).map(u => parseId(u.id) as number).filter(Boolean)
   } finally {
     toast.close()
   }
@@ -130,7 +132,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDeliveryPickUpStore(Number(props.id))
+    await deleteDeliveryPickUpStore(parseId(props.id) as number)
     toast.success('删除成功')
     uni.$emit('mall:delivery-pick-up-store:reload')
     delay(handleBack)

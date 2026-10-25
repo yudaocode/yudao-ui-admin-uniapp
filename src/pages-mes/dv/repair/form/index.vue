@@ -114,7 +114,7 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <RepairLineList v-if="props.id" :repair-id="Number(props.id)" :readonly="isHeaderReadonly" />
+      <RepairLineList v-if="props.id" :repair-id="parseId(props.id) as number" :readonly="isHeaderReadonly" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -173,6 +173,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
 import type { DvRepair } from '@/api/mes/dv/repair'
@@ -283,7 +285,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getRepair(Number(props.id))
+  const data = await getRepair(props.id as number)
   formData.value = data
   acceptedUserName.value = data.acceptedUserNickname || ''
   confirmUserName.value = data.confirmUserNickname || ''
@@ -299,7 +301,7 @@ async function initPage() {
     confirmUserName.value = ''
     return
   }
-  if (oldId !== Number(props.id) || !formData.value.id) {
+  if (oldId !== parseId(props.id) || !formData.value.id) {
     formData.value = getDefaultFormData()
     await getDetail()
   }
@@ -389,7 +391,7 @@ async function handleSubmitRepair() {
   submitLoading.value = true
   try {
     await updateRepair(formData.value)
-    await submitRepair(Number(props.id))
+    await submitRepair(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:repair:reload')
     delay(handleBack)
@@ -418,7 +420,7 @@ async function handleConfirmRepair() {
   confirmLoading.value = true
   try {
     await confirmRepair({
-      id: Number(props.id),
+      id: props.id as number,
       finishDate: formData.value.finishDate,
     })
     toast.success('操作成功')
@@ -445,7 +447,7 @@ async function handleFinishRepair(result: number) {
   }
   finishLoading.value = true
   try {
-    await finishRepair(Number(props.id), result)
+    await finishRepair(props.id as number, result)
     toast.success(`验收${label}`)
     uni.$emit('mes:dv:repair:reload')
     delay(handleBack)

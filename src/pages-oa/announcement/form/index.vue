@@ -122,7 +122,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAnnouncement(Number(props.id))
+  formData.value = await getAnnouncement(props.id as unknown as number)
 }
 
 /** 提交表单 */

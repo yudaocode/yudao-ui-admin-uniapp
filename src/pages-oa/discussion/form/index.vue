@@ -196,7 +196,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getDiscussion(Number(props.id))
+  const data = await getDiscussion(props.id as unknown as number)
   formData.value = data
   voteStartTime.value = data.voteStartTime ? toTimestamp(data.voteStartTime) : ''
   voteEndTime.value = data.voteEndTime ? toTimestamp(data.voteEndTime) : ''

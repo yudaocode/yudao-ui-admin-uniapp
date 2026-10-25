@@ -195,7 +195,7 @@ async function getDetail() {
   }
   syncingPeriod = true
   try {
-    const data = await getPlan(Number(props.id))
+    const data = await getPlan(props.id as unknown as number)
     formData.value = { ...data, fileUrls: data.fileUrls ?? [] }
     startTime.value = data.startTime ? toTimestamp(data.startTime) : ''
     endTime.value = data.endTime ? toTimestamp(data.endTime) : ''

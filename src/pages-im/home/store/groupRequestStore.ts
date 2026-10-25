@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 import type { ImGroupRequestRespVO } from '@/api/im/group/request'
 import type { ImDbClient } from '@/pages-im/utils/db'
 import type { GroupRequestDO } from '../types'
@@ -49,7 +50,7 @@ export const useGroupRequestStore = defineStore('imGroupRequestStore', () => {
       }
       unhandledList.value = cached
         .filter(request => request.handleResult === ImGroupRequestHandleResult.UNHANDLED)
-        .sort((left, right) => right.id - left.id)
+        .sort((left, right) => compareId(right.id, left.id))
     } catch (error) {
       console.warn('[IM groupRequestStore] 本地加群申请缓存读取失败', error)
     }

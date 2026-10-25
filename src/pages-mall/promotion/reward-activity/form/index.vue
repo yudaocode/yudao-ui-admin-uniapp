@@ -163,6 +163,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { PromotionCouponTemplate } from '@/api/mall/promotion/coupon/coupon-template'
 import type { PromotionRewardActivity } from '@/api/mall/promotion/reward'
@@ -311,7 +313,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionRewardActivity(Number(props.id))
+  const data = await getPromotionRewardActivity(props.id)
   formData.value = {
     ...data,
     conditionType: data.conditionType ?? PromotionConditionTypeEnum.PRICE,
@@ -326,7 +328,7 @@ async function getDetail() {
       point: rule.point ?? 0,
       freeDelivery: !!rule.freeDelivery,
       coupons: Object.entries(rule.giveCouponTemplateCounts || {}).map(([templateId, count]) => ({
-        templateId: Number(templateId),
+        templateId: parseId(templateId) as number,
         count: Number(count) || 1,
       })),
     }))

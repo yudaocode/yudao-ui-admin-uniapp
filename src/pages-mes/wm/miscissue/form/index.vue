@@ -184,7 +184,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMiscIssue(Number(props.id))
+  formData.value = await getMiscIssue(props.id as number)
 }
 
 /** 打开出库日期选择 */

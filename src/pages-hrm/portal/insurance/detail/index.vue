@@ -184,7 +184,7 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    formData.value = await getPortalInsuranceRecord(Number(props.id))
+    formData.value = await getPortalInsuranceRecord(props.id)
   } finally {
     loading.value = false
   }

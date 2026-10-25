@@ -95,7 +95,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getBarcodeConfig(Number(props.id))
+    formData.value = await getBarcodeConfig(props.id as number)
   } finally {
     toast.close()
   }
@@ -126,7 +126,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteBarcodeConfig(Number(props.id))
+    await deleteBarcodeConfig(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:barcode:config:reload')
     delay(handleBack)

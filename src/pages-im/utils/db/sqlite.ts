@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 // IM 本地数据库：App SQLite 适配层
 // 使用 HTML5+ plus.sqlite，统一表保存各业务 store 的 JSON 记录
 // noinspection SqlNoDataSourceInspection
@@ -218,7 +219,7 @@ export class SqliteDbClient implements ImDbClient {
         return
       }
       const current = await this.getSetting<number>(key)
-      if (!this.opened || this.userId !== expectedUserId || value <= Number(current || 0)) {
+      if (!this.opened || this.userId !== expectedUserId || compareId(value, current) <= 0) {
         return
       }
       await this.setSetting(key, value)

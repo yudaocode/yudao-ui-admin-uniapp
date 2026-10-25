@@ -111,7 +111,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAccount(Number(props.id))
+  formData.value = await getAccount(props.id)
 }
 
 /** 编辑账号 */
@@ -137,7 +137,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAccount(Number(props.id))
+    await deleteAccount(props.id)
     toast.success('删除成功')
     uni.$emit('mp:account:reload')
     delay(handleBack)
@@ -168,7 +168,7 @@ async function handleGenerateQrCode() {
   } catch {
     return
   }
-  await generateAccountQrCode(Number(props.id))
+  await generateAccountQrCode(props.id)
   toast.success('生成成功')
   getDetail()
 }
@@ -186,7 +186,7 @@ async function handleClearQuota() {
   } catch {
     return
   }
-  await clearAccountQuota(Number(props.id))
+  await clearAccountQuota(props.id)
   toast.success('清空成功')
 }
 

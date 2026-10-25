@@ -68,7 +68,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getProductCategory(Number(props.id))
+  formData.value = await getProductCategory(props.id)
 }
 
 /** 编辑产品分类 */
@@ -88,7 +88,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductCategory(Number(props.id))
+    await deleteProductCategory(props.id)
     toast.success('删除成功')
     uni.$emit('iot:product-category:reload')
     delay(handleBack)

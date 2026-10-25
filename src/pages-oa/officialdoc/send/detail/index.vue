@@ -186,7 +186,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getOfficialDocSend(Number(props.id))
+    formData.value = await getOfficialDocSend(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -219,7 +219,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteOfficialDocSend(Number(props.id))
+    await deleteOfficialDocSend(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:officialdoc-send:reload')
     delay(handleBack)
@@ -243,7 +243,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitOfficialDocSend(Number(props.id))
+    await submitOfficialDocSend(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:officialdoc-send:reload')
     delay(handleBack)
@@ -267,7 +267,7 @@ async function handleCancel() {
   }
   cancelling.value = true
   try {
-    await cancelOfficialDocSend(Number(props.id))
+    await cancelOfficialDocSend(props.id as unknown as number)
     toast.success('撤销成功')
     uni.$emit('oa:officialdoc-send:reload')
     getDetail()

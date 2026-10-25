@@ -155,7 +155,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getShipmentOrder(Number(props.id))
+  formData.value = await getShipmentOrder(props.id)
 }
 
 /** 编辑出库单 */
@@ -181,7 +181,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteShipmentOrder(Number(props.id))
+    await deleteShipmentOrder(props.id)
     toast.success('删除成功')
     uni.$emit('wms:shipment-order:reload')
     delay(handleBack)
@@ -217,7 +217,7 @@ async function handleComplete() {
   }
   actionLoading.value = true
   try {
-    await completeShipmentOrder(Number(props.id))
+    await completeShipmentOrder(props.id)
     toast.success('出库成功')
     uni.$emit('wms:shipment-order:reload')
     await getDetail()
@@ -241,7 +241,7 @@ async function handleCancel() {
   }
   actionLoading.value = true
   try {
-    await cancelShipmentOrder(Number(props.id))
+    await cancelShipmentOrder(props.id)
     toast.success('作废成功')
     uni.$emit('wms:shipment-order:reload')
     await getDetail()

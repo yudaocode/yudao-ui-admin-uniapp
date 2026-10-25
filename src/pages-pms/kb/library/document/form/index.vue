@@ -57,6 +57,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import {
@@ -92,9 +94,9 @@ const getTitle = computed(() => props.id ? '编辑文档' : '新建文档')
 const formLoading = ref(false) // 表单提交状态
 const formData = ref({ // 表单数据
   id: undefined as number | undefined,
-  libraryId: Number(props.libraryId) || 0,
-  folderId: Number(props.folderId) || PmsKnowledgeRootId,
-  parentId: Number(props.parentId) || PmsKnowledgeRootId,
+  libraryId: parseId(props.libraryId) || 0,
+  folderId: parseId(props.folderId) || PmsKnowledgeRootId,
+  parentId: parseId(props.parentId) || PmsKnowledgeRootId,
   title: '',
   type: PmsKnowledgeDocumentType.RICH_TEXT as number,
   content: '',
@@ -120,7 +122,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const document = await getKnowledgeDocument(Number(props.id))
+  const document = await getKnowledgeDocument(props.id)
   formData.value = {
     ...formData.value,
     id: document.id,

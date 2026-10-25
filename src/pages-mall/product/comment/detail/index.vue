@@ -145,7 +145,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getProductComment(Number(props.id))
+    formData.value = await getProductComment(props.id)
   } finally {
     toast.close()
   }
@@ -173,7 +173,7 @@ async function handleSubmitReply() {
   }
   replying.value = true
   try {
-    await replyProductComment({ id: Number(props.id), replyContent: replyForm.value.replyContent })
+    await replyProductComment({ id: props.id, replyContent: replyForm.value.replyContent })
     toast.success('回复成功')
     replyVisible.value = false
     uni.$emit('mall:product-comment:reload')
@@ -196,7 +196,7 @@ async function handleToggleVisible() {
   }
   toggling.value = true
   try {
-    await updateProductCommentVisible({ id: Number(props.id), visible: nextVisible })
+    await updateProductCommentVisible({ id: props.id, visible: nextVisible })
     toast.success('操作成功')
     uni.$emit('mall:product-comment:reload')
     await getDetail()

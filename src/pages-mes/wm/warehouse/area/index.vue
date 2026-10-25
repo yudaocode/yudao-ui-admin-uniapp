@@ -47,6 +47,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmWarehouseArea } from '@/api/mes/wm/warehouse/area'
 import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
 import { onUnload } from '@dcloudio/uni-app'
@@ -75,7 +77,7 @@ const list = ref<WmWarehouseArea[]>([]) // 列表数据
 const pagingRef = ref<ZPagingRef<WmWarehouseArea>>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
 const currentLocation = ref<WmWarehouseLocation>() // 当前库区上下文
-const routeLocationId = computed(() => props.locationId ? Number(props.locationId) : undefined) // 路由库区编号
+const routeLocationId = computed(() => props.locationId ? parseId(props.locationId) : undefined) // 路由库区编号
 const barcodeDetailPopupRef = ref<InstanceType<typeof BarcodeDetailPopup>>() // 条码弹窗
 
 /** 返回上一页 */

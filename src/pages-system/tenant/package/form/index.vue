@@ -70,6 +70,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Menu } from '@/api/system/menu'
 import type { TenantPackage } from '@/api/system/tenant/package'
@@ -145,7 +147,7 @@ async function handleSubmit() {
     const halfCheckedKeys = menuTreeRef.value?.getHalfCheckedKeys() || [] // 获得半选中的父节点
     const data = {
       ...formData.value,
-      menuIds: Array.from(new Set([...checkedKeys, ...halfCheckedKeys])).map(Number),
+      menuIds: Array.from(new Set([...checkedKeys, ...halfCheckedKeys])).map(parseId).filter(isIdType),
     }
     if (props.id) {
       await updateTenantPackage(data)

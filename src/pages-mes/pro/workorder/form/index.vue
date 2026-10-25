@@ -84,6 +84,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdItem } from '@/api/mes/md/item'
 import type { ProWorkOrder } from '@/api/mes/pro/workorder'
@@ -100,7 +102,6 @@ import { getWorkOrderBom } from '@/api/mes/pro/workorder/bom'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, MesAutoCodeRuleCode, MesProWorkOrderSourceTypeEnum, MesProWorkOrderStatusEnum, MesProWorkOrderTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
-import { toFiniteNumber } from '@/utils/format'
 import { createFormSchema } from '@/utils/wot'
 import WorkOrderBomList from '../components/workorder-bom-list.vue'
 import WorkOrderItemList from '../components/workorder-item-list.vue'
@@ -160,7 +161,7 @@ function getDefaultFormData(): ProWorkOrder {
 async function getDetail() {
   formData.value = getDefaultFormData()
   parentWorkOrder.value = undefined
-  const parentId = toFiniteNumber(props.parentId)
+  const parentId = parseId(props.parentId)
   if (parentId && !props.id) {
     parentWorkOrder.value = await getWorkOrder(parentId)
     await applyChildWorkOrderPreset(parentWorkOrder.value)
@@ -169,7 +170,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWorkOrder(Number(props.id))
+  formData.value = await getWorkOrder(props.id as number)
 }
 
 /** 应用子工单预填 */
@@ -186,7 +187,7 @@ async function applyChildWorkOrderPreset(parent: ProWorkOrder) {
   }
 
   // 如果是从 BOM 行生成子工单，则预填产品和数量
-  const bomId = toFiniteNumber(props.bomId)
+  const bomId = parseId(props.bomId)
   if (bomId == null) {
     return
   }

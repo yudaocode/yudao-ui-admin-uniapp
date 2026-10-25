@@ -181,7 +181,7 @@ async function getList() {
     return
   }
   list.value = await getMeetingRoomBookingSchedule(
-    Number(props.roomId),
+    (props.roomId as unknown as number),
     dayjs(dates[0]).format('YYYY-MM-DD HH:mm:ss'),
     dayjs(dates[4]).endOf('day').format('YYYY-MM-DD HH:mm:ss'),
   )

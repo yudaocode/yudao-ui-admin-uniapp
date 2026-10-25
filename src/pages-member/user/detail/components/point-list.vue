@@ -75,7 +75,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getMemberPointRecordPage({
       ...queryParams.value,
-      userId: Number(props.userId),
+      userId: props.userId,
       pageNo,
       pageSize,
     })

@@ -125,7 +125,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getIndicator(Number(props.id))
+  formData.value = await getIndicator(props.id as number)
 }
 
 /** 生成检测项编码 */

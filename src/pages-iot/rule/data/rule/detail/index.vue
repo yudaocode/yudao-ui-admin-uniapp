@@ -80,7 +80,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getDataRule(Number(props.id))
+  formData.value = await getDataRule(props.id)
 }
 
 /** 编辑数据规则 */
@@ -100,7 +100,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDataRule(Number(props.id))
+    await deleteDataRule(props.id)
     toast.success('删除成功')
     uni.$emit('iot:data-rule:reload')
     delay(handleBack)

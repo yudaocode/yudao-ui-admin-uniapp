@@ -24,6 +24,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
@@ -52,7 +54,7 @@ const friendStore = useFriendStore()
 const silent = ref(false) // 消息免打扰
 const pinned = ref(false) // 是否置顶
 const pinPending = ref(false) // 置顶状态提交中
-const friendUserId = computed(() => Number(props.friendUserId)) // 好友编号
+const friendUserId = computed(() => parseId(props.friendUserId) as number) // 好友编号
 const friend = computed(() => friendStore.isActiveFriend(friendUserId.value)
   ? friendStore.getFriend(friendUserId.value)
   : undefined) // 当前有效好友资料

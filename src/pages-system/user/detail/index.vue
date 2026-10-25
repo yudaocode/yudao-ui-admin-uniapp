@@ -160,7 +160,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteUser(Number(props.id))
+    await deleteUser(props.id)
     toast.success('删除成功')
     uni.$emit('system:user:reload')
     delay(handleBack)
@@ -193,7 +193,7 @@ async function handleUpdateStatus() {
   }
 
   await updateUserStatus(
-    Number(props.id),
+    props.id,
     willEnable ? CommonStatusEnum.ENABLE : CommonStatusEnum.DISABLE,
   )
   toast.success(willEnable ? '开启成功' : '禁用成功')

@@ -348,7 +348,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const data = await getVoucher(currentAccountSetId, Number(props.id))
+    const data = await getVoucher(currentAccountSetId, props.id)
     detail.value = data
     formData.value = {
       id: data.id,

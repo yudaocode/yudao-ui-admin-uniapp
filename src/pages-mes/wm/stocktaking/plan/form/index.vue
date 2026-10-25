@@ -107,6 +107,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { StockTakingPlan } from '@/api/mes/wm/stocktaking/plan'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -131,7 +133,7 @@ definePage({
 })
 
 const toast = useToast()
-const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
+const routeId = computed(() => props.id ? parseId(props.id) : undefined) // 路由编号
 const currentId = ref<number>() // 当前编辑编号
 const getTitle = computed(() => currentId.value ? '编辑盘点方案' : '新增盘点方案')
 const formLoading = ref(false) // 表单提交状态

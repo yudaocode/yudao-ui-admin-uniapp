@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 import type { ImFriendRespVO } from '@/api/im/friend'
 import type { ImFriendRequestApplyReq, ImFriendRequestRespVO } from '@/api/im/friend/request'
 import type { ImDbClient } from '@/pages-im/utils/db'
@@ -100,7 +101,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       }
       if (cachedRequests.length > 0) {
         friendRequests.value = cachedRequests
-          .sort((left, right) => right.id - left.id)
+          .sort((left, right) => compareId(right.id, left.id))
         hasMoreFriendRequests.value = cachedRequests.length >= FRIEND_REQUEST_PAGE_SIZE
       }
     } catch (error) {
@@ -343,7 +344,7 @@ export const useFriendStore = defineStore('imFriendStore', () => {
     const task = (async () => {
       const db = await initDb()
       const rows = (await getMyFriendRequestList(FRIEND_REQUEST_PAGE_SIZE)).map(convertFriendRequest)
-      friendRequests.value = rows.sort((left, right) => right.id - left.id)
+      friendRequests.value = rows.sort((left, right) => compareId(right.id, left.id))
       hasMoreFriendRequests.value = rows.length === FRIEND_REQUEST_PAGE_SIZE
       saveFriendRequestList([...friendRequests.value], db)
       return friendRequests.value
@@ -416,10 +417,10 @@ export const useFriendStore = defineStore('imFriendStore', () => {
       return
     }
     const oldest = friendRequests.value[friendRequests.value.length - 1]
-    if (oldest && next.id < oldest.id) {
+    if (oldest && compareId(next.id, oldest.id) < 0) {
       return
     }
-    const insertIndex = friendRequests.value.findIndex(request => request.id < next.id)
+    const insertIndex = friendRequests.value.findIndex(request => compareId(request.id, next.id) < 0)
     if (insertIndex < 0) {
       friendRequests.value.push(next)
     } else {

@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -139,7 +141,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getDeliveryPickUpStore(Number(props.id))
+  const data = await getDeliveryPickUpStore(parseId(props.id) as number)
   formData.value = { ...data }
 }
 

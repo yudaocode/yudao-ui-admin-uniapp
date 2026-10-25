@@ -74,7 +74,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPayWalletRechargePackage(Number(props.id))
+    formData.value = await getPayWalletRechargePackage(props.id)
   } finally {
     toast.close()
   }
@@ -97,7 +97,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePayWalletRechargePackage(Number(props.id))
+    await deletePayWalletRechargePackage(props.id)
     toast.success('删除成功')
     uni.$emit('pay:recharge-package:reload')
     delay(handleBack)

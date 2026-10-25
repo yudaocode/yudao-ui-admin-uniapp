@@ -44,6 +44,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { User } from '@/api/system/user'
 import type { UserInfoRelation } from '../../../components/user/user-info.vue'
 import { onShow } from '@dcloudio/uni-app'
@@ -77,7 +79,7 @@ const callActions = [ // 通话方式菜单项
   { name: '视频通话', value: ImRtcCallMediaType.VIDEO },
 ]
 const { start: startRtcCall } = useImRtc()
-const friendUserId = computed(() => Number(props.friendUserId)) // 目标用户编号
+const friendUserId = computed(() => parseId(props.friendUserId) as number) // 目标用户编号
 const addSource = computed(() => Number(props.source || ImFriendAddSource.SEARCH)) // 添加来源
 const addSourceExtra = computed(() => { // 已解码的添加来源扩展信息
   if (!props.sourceExtra) {

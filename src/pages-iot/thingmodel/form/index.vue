@@ -114,6 +114,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Product } from '@/api/iot/product/product'
 import type { ThingModelData, ThingModelParam } from '@/api/iot/thingmodel'
@@ -161,7 +163,7 @@ const property = reactive<Record<string, any>>({
 }) // 属性配置
 const formData = ref<ThingModelData>({
   id: undefined,
-  productId: props.productId ? Number(props.productId) : undefined,
+  productId: props.productId ? parseId(props.productId) : undefined,
   type: IoTThingModelTypeEnum.PROPERTY,
   name: '',
   identifier: '',
@@ -205,7 +207,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getThingModel(Number(props.id))
+  formData.value = await getThingModel(props.id as number)
   const data = formData.value
   if (data.type === IoTThingModelTypeEnum.PROPERTY && data.property) {
     property.dataType = data.property.dataType || data.dataType || IoTDataSpecsDataTypeEnum.INT

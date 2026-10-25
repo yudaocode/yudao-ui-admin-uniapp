@@ -477,7 +477,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProjectTemplate(Number(props.id))
+  formData.value = await getProjectTemplate(props.id)
   previousProjectType.value = formData.value.projectType
 }
 

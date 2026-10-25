@@ -106,6 +106,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { MdItem } from '@/api/mes/md/item'
 import type { MdProductBom } from '@/api/mes/md/item/productBom'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -151,8 +153,8 @@ const editForm = ref<MdProductBom>({
 
 /** 获取物料编号 */
 function getItemId() {
-  const value = Number(props.itemId)
-  return Number.isFinite(value) && value > 0 ? value : undefined
+  const value = parseId(props.itemId)
+  return isPositiveId(value) ? value : undefined
 }
 
 /** 加载 BOM 列表 */

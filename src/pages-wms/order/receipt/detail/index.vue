@@ -155,7 +155,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getReceiptOrder(Number(props.id))
+  formData.value = await getReceiptOrder(props.id)
 }
 
 /** 编辑入库单 */
@@ -181,7 +181,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteReceiptOrder(Number(props.id))
+    await deleteReceiptOrder(props.id)
     toast.success('删除成功')
     uni.$emit('wms:receipt-order:reload')
     delay(handleBack)
@@ -217,7 +217,7 @@ async function handleComplete() {
   }
   actionLoading.value = true
   try {
-    await completeReceiptOrder(Number(props.id))
+    await completeReceiptOrder(props.id)
     toast.success('入库成功')
     uni.$emit('wms:receipt-order:reload')
     await getDetail()
@@ -241,7 +241,7 @@ async function handleCancel() {
   }
   actionLoading.value = true
   try {
-    await cancelReceiptOrder(Number(props.id))
+    await cancelReceiptOrder(props.id)
     toast.success('作废成功')
     uni.$emit('wms:receipt-order:reload')
     await getDetail()

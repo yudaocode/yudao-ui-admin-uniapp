@@ -112,7 +112,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getAndonRecord(Number(props.id))
+    formData.value = await getAndonRecord(props.id as number)
   } finally {
     toast.close()
   }
@@ -141,7 +141,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAndonRecord(Number(props.id))
+    await deleteAndonRecord(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:pro:andon:record:reload')
     delay(handleBack)

@@ -186,7 +186,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getKnowledgeContentPermission(Number(props.id))
+  const data = await getKnowledgeContentPermission(props.id)
   const [library, members] = await Promise.all([
     getKnowledgeLibrary(data.libraryId),
     getKnowledgeLibraryMemberList(data.libraryId),

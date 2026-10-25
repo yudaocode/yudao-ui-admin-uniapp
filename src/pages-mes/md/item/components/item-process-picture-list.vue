@@ -116,6 +116,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdProductSip } from '@/api/mes/md/item/productSip'
 import type { MdProductSop } from '@/api/mes/md/item/productSop'
@@ -179,8 +181,8 @@ const formSchema = createFormSchema({
 
 /** 获取物料编号 */
 function getItemId() {
-  const value = Number(props.itemId)
-  return Number.isFinite(value) && value > 0 ? value : undefined
+  const value = parseId(props.itemId)
+  return isPositiveId(value) ? value : undefined
 }
 
 /** 默认表单数据 */

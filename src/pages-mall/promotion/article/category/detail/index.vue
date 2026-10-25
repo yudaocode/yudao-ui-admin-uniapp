@@ -76,7 +76,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionArticleCategory(Number(props.id))
+    formData.value = await getPromotionArticleCategory(props.id)
   } finally {
     toast.close()
   }
@@ -99,7 +99,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionArticleCategory(Number(props.id))
+    await deletePromotionArticleCategory(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-article-category:reload')
     delay(handleBack)

@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdWorkstation } from '@/api/mes/md/workstation'
 import type { ProTask } from '@/api/mes/pro/task'
@@ -119,10 +121,10 @@ function getDefaultFormData(): ProTask {
 function getCreateFormData(): ProTask {
   return {
     ...getDefaultFormData(),
-    workOrderId: props.workOrderId ? Number(props.workOrderId) : undefined,
-    routeId: props.routeId ? Number(props.routeId) : undefined,
-    processId: props.processId ? Number(props.processId) : undefined,
-    itemId: props.itemId ? Number(props.itemId) : undefined,
+    workOrderId: props.workOrderId ? parseId(props.workOrderId) : undefined,
+    routeId: props.routeId ? parseId(props.routeId) : undefined,
+    processId: props.processId ? parseId(props.processId) : undefined,
+    itemId: props.itemId ? parseId(props.itemId) : undefined,
     colorCode: String(props.colorCode || '#00AEF3'),
   }
 }
@@ -153,7 +155,7 @@ async function getDetail() {
     calculateEndTime()
     return
   }
-  const detail = await getTask(Number(props.id))
+  const detail = await getTask(props.id as number)
   taskDetail.value = detail
   formData.value = {
     ...detail,

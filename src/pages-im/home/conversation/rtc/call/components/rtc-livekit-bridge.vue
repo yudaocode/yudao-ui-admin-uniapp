@@ -42,6 +42,7 @@ export default defineComponent({
 </script>
 
 <script module="livekit" lang="renderjs">
+import { parseId } from '@/utils/id'
 const AUDIO_HOST_ID = 'rtc-livekit-audio-host' // 远端音频元素容器
 const VIDEO_HOST_PREFIX = 'rtc-video-host-' // 与 rtc-call-participant-tile 的视频容器 id 保持一致
 const VIDEO_HOST_RETRY_FRAMES = 30 // 等待 Tile 视频容器渲染的最多帧数
@@ -193,13 +194,13 @@ export default {
         .on(RoomEvent.LocalTrackPublished, syncMedia)
         .on(RoomEvent.LocalTrackUnpublished, syncMedia)
         .on(RoomEvent.ParticipantConnected, (participant) => {
-          const userId = Number(participant.identity)
+          const userId = parseId(participant.identity)
           if (isCurrentRoom() && userId) {
             this.sendEvent({ type: 'participant', userId, joined: true })
           }
         })
         .on(RoomEvent.ParticipantDisconnected, (participant) => {
-          const userId = Number(participant.identity)
+          const userId = parseId(participant.identity)
           if (isCurrentRoom() && userId) {
             this.sendEvent({ type: 'participant', userId, joined: false })
             syncMedia()
@@ -339,7 +340,7 @@ export default {
       const localParticipant = room.localParticipant
       const roomParticipants = [localParticipant, ...room.remoteParticipants.values()]
       roomParticipants.forEach((participant) => {
-        const userId = Number(participant.identity)
+        const userId = parseId(participant.identity)
         const publications = Array.from(participant.trackPublications.values())
         if (!userId || !publications.some(item => item.track)) {
           return

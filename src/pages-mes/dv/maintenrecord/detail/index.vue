@@ -24,7 +24,7 @@
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <MaintenRecordLineList v-if="props.id" :record-id="Number(props.id)" readonly />
+      <MaintenRecordLineList v-if="props.id" :record-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -118,7 +120,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMaintenRecord(Number(props.id))
+    formData.value = await getMaintenRecord(props.id as number)
   } finally {
     toast.close()
   }
@@ -149,7 +151,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMaintenRecord(Number(props.id))
+    await deleteMaintenRecord(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:dv:maintenrecord:reload')
     delay(handleBack)
@@ -173,7 +175,7 @@ async function handleSubmitRecord() {
   }
   submitting.value = true
   try {
-    await submitMaintenRecord(Number(props.id))
+    await submitMaintenRecord(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:maintenrecord:reload')
     await getDetail()

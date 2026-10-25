@@ -296,7 +296,7 @@ async function getDetail() {
     return
   }
   detail.value = await getAttendanceMonthDetail({
-    employeeId: Number(props.employeeId),
+    employeeId: props.employeeId,
     year: Number(props.year),
     month: Number(props.month),
   })

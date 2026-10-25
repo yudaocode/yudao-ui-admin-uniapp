@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { PromotionCouponTemplate } from '@/api/mall/promotion/coupon/coupon-template'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
@@ -97,9 +99,9 @@ const pagingRef = ref<ZPagingRef<PromotionCouponTemplate>>() // 分页组件引�
 const sendingId = ref<number>() // 发送中的模板编号
 const targetUserIds = computed(() => { // 发券用户编号
   if (props.userIds?.length) {
-    return props.userIds.map(Number)
+    return props.userIds.map(parseId).filter(isIdType)
   }
-  return props.userId ? [Number(props.userId)] : []
+  return props.userId ? [parseId(props.userId) as number] : []
 })
 
 /** 金额分转元展示 */

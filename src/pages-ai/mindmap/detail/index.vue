@@ -83,7 +83,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMindMap(Number(props.id))
+    formData.value = await getMindMap(props.id)
   } finally {
     toast.close()
   }
@@ -104,7 +104,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMindMap(Number(props.id))
+    await deleteMindMap(props.id)
     toast.success('删除成功')
     uni.$emit('ai:mind-map:reload')
     delay(handleBack)

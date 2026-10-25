@@ -172,7 +172,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getContact(Number(props.id))
+  formData.value = await getContact(props.id as unknown as number)
 }
 
 /** 提交表单 */

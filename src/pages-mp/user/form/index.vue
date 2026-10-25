@@ -72,7 +72,7 @@ async function getDetail() {
     return
   }
   try {
-    formData.value = await getUser(Number(props.id))
+    formData.value = await getUser(props.id)
     formData.value.tagIds = formData.value.tagIds || []
   } catch {
     // 请求层已提示错误，保留默认表单
@@ -88,7 +88,7 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     await updateUser({
-      id: Number(props.id),
+      id: props.id,
       nickname: formData.value.nickname,
       remark: formData.value.remark,
       tagIds: formData.value.tagIds,

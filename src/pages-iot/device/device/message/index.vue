@@ -172,7 +172,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getDeviceMessagePage({
       ...queryParams.value,
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId,
       pageNo,
       pageSize,
     })

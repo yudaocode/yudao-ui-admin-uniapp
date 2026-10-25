@@ -121,7 +121,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getCard(Number(props.id))
+  formData.value = await getCard(props.id as number)
   originalFormData.value = JSON.stringify(formData.value)
 }
 

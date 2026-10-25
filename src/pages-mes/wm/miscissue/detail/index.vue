@@ -27,7 +27,7 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <MiscIssueLineList v-if="props.id" :issue-id="Number(props.id)" readonly />
+      <MiscIssueLineList v-if="props.id" :issue-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -55,6 +55,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmMiscIssue } from '@/api/mes/wm/miscissue'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -125,7 +127,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMiscIssue(Number(props.id))
+    formData.value = await getMiscIssue(props.id as number)
   } finally {
     toast.close()
   }
@@ -160,7 +162,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMiscIssue(Number(props.id))
+    await deleteMiscIssue(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:miscissue:reload')
     delay(handleBack)
@@ -184,7 +186,7 @@ async function handleSubmitIssue() {
   }
   submitting.value = true
   try {
-    await submitMiscIssue(Number(props.id))
+    await submitMiscIssue(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:miscissue:reload')
     await getDetail()
@@ -208,7 +210,7 @@ async function handleCancelIssue() {
   }
   canceling.value = true
   try {
-    await cancelMiscIssue(Number(props.id))
+    await cancelMiscIssue(props.id as number)
     toast.success('取消成功')
     uni.$emit('mes:wm:miscissue:reload')
     await getDetail()

@@ -140,7 +140,7 @@ async function getDetail() {
     toast.loading('加载中...')
     loading.value = true
     try {
-      formData.value = await getWorkOrder(Number(props.id))
+      formData.value = await getWorkOrder(props.id as number)
       routeProcessList.value = []
       currentRouteId.value = 0
       // 如果工单有产品编号，则加载该产品的工艺路线工序列表

@@ -101,6 +101,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DataRule } from '@/api/iot/rule/data/rule'
 import type { DataSink } from '@/api/iot/rule/data/sink'
@@ -157,7 +159,7 @@ watch(
   (items) => {
     items.forEach((item) => {
       if (shouldShowIdentifierSelect(item) && item.productId) {
-        loadThingModel(Number(item.productId))
+        loadThingModel(parseId(item.productId) as number)
       }
     })
   },
@@ -174,11 +176,11 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDataRule(Number(props.id))
+  formData.value = await getDataRule(props.id as number)
   sourceConfigs.value = [...(formData.value.sourceConfigs || [])]
   sourceConfigs.value.forEach((item) => {
     if (shouldShowIdentifierSelect(item) && item.productId) {
-      loadThingModel(Number(item.productId))
+      loadThingModel(parseId(item.productId) as number)
     }
   })
 }
@@ -209,7 +211,7 @@ function handleSourceProductChange(item: any) {
 function handleSourceMethodChange(item: any) {
   item.identifier = undefined
   if (shouldShowIdentifierSelect(item) && item.productId) {
-    loadThingModel(Number(item.productId))
+    loadThingModel(parseId(item.productId) as number)
   }
 }
 

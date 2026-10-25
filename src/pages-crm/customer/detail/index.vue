@@ -196,7 +196,7 @@ const distributeVisible = ref(false) // 分配弹窗显示状态
 const distributeFormRef = ref<FormInstance>() // 分配表单引用
 const distributeFormData = ref({ ownerUserId: undefined as number | undefined }) // 分配表单数据
 const distributeFormSchema = createFormSchema({ ownerUserId: [{ required: true, message: '负责人不能为空' }] })
-const customerId = computed(() => Number(props.id))
+const customerId = computed(() => props.id)
 const activeTabConfig = computed(() => tabs[tabIndex.value])
 const activeTab = computed(() => activeTabConfig.value.key)
 const isPagingTab = computed(() => ['contacts', 'businesses', 'contracts', 'plans', 'receivables', 'followup', 'log'].includes(activeTab.value)) // 关系列表/跟进 tab 用 z-paging 固定高布局

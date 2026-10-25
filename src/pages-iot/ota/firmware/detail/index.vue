@@ -195,7 +195,7 @@ function handleBack() {
 /** 加载固件详情 */
 async function getDetail() {
   if (props.id && !deleting.value) {
-    formData.value = await getOtaFirmware(Number(props.id))
+    formData.value = await getOtaFirmware(props.id)
   }
 }
 
@@ -204,7 +204,7 @@ async function getStatistics() {
   if (!props.id) {
     return
   }
-  statistics.value = await getOtaTaskRecordStatusStatistics(Number(props.id))
+  statistics.value = await getOtaTaskRecordStatusStatistics(props.id)
 }
 
 /** 获取统计数量 */
@@ -261,7 +261,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteOtaFirmware(Number(props.id))
+    await deleteOtaFirmware(props.id)
     toast.success('删除成功')
     uni.$emit('iot:ota-firmware:reload')
     delay(handleBack)

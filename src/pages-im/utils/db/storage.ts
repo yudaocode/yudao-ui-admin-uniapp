@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 // IM 本地数据库：微信小程序 storage 适配层
 // messages 按「会话 + 分页」分片，限制单 Key 体积并按页淘汰历史消息
 
@@ -362,7 +363,7 @@ export class StorageDbClient implements ImDbClient {
     const mapKey = this.storeKey('settings')
     const map = this.readMap(mapKey)
     const current = map[key] as SettingDO<number> | undefined
-    if (value <= Number(current?.value || 0)) {
+    if (compareId(value, current?.value) <= 0) {
       return
     }
     map[key] = { key, value, updateTime: Date.now() }

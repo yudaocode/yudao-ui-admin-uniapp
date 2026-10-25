@@ -70,6 +70,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MsgTemplate } from '@/api/mp/messageTemplate'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -164,7 +166,7 @@ async function handleDelete(item: MsgTemplate) {
   } catch {
     return
   }
-  await deleteMessageTemplate(Number(item.id))
+  await deleteMessageTemplate(parseId(item.id) as number)
   toast.success('删除成功')
   getList()
 }

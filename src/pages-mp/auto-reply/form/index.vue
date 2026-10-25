@@ -216,7 +216,7 @@ const requestMessageTypes = ['text', 'image', 'voice', 'video', 'shortvideo', 'l
 const responseMessageTypes = ['text', 'image', 'voice', 'video', 'news', 'music']
 const toast = useToast()
 const { uploading, chooseAndUpload } = useMaterialUpload()
-const accountId = computed(() => props.accountId ? Number(props.accountId) : undefined)
+const accountId = computed(() => props.accountId || undefined)
 const replyType = computed(() => props.type ? Number(props.type) : MpAutoReplyTypeEnum.KEYWORD)
 const getTitle = computed(() => props.id ? '编辑自动回复' : '新增自动回复')
 const formLoading = ref(false) // 表单提交状态
@@ -299,7 +299,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAutoReply(Number(props.id))
+  formData.value = await getAutoReply(props.id)
   formData.value.responseArticles = formData.value.responseArticles || []
 }
 
@@ -383,7 +383,7 @@ async function handleSubmit() {
 
   // 表单提交
   const data: AutoReply = { ...formData.value }
-  data.id = props.id ? Number(props.id) : data.id
+  data.id = props.id ? props.id : data.id
   if (!props.id) {
     data.accountId = accountId.value
     data.type = replyType.value

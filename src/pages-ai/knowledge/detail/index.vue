@@ -92,7 +92,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getKnowledge(Number(props.id))
+    formData.value = await getKnowledge(props.id)
   } finally {
     toast.close()
   }
@@ -135,7 +135,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteKnowledge(Number(props.id))
+    await deleteKnowledge(props.id)
     toast.success('删除成功')
     uni.$emit('ai:knowledge:reload')
     delay(handleBack)

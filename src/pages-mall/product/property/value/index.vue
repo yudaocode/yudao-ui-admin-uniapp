@@ -57,6 +57,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProductPropertyValue } from '@/api/mall/product/property'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -80,7 +82,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const list = ref<ProductPropertyValue[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const scopedPropertyId = props.propertyId != null && props.propertyId !== '' ? Number(props.propertyId) : undefined // 路由透传的属性编号（限定作用域），undefined 表示展示全部
+const scopedPropertyId = props.propertyId != null && props.propertyId !== '' ? parseId(props.propertyId) : undefined // 路由透传的属性编号（限定作用域），undefined 表示展示全部
 const queryParams = ref<Record<string, any>>(scopedPropertyId != null ? { propertyId: scopedPropertyId } : {}) // 查询参数
 const propertyNameMap = ref<Record<number, string>>({}) // 属性编号到名称映射，用于回显所属属性名
 const navbarTitle = computed(() => scopedPropertyId != null ? (propertyNameMap.value[scopedPropertyId] || '属性值') : '属性值') // 限定属性时标题显示属性名

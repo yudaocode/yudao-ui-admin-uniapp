@@ -256,6 +256,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Employee } from '@/api/hrm/employee'
 import type { RecruitCandidate } from '@/api/hrm/recruit/candidate'
 import { computed, onMounted, ref } from 'vue'
@@ -532,7 +534,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const employee = await getEmployee(Number(props.id))
+  const employee = await getEmployee(props.id)
   formData.value = employee
   birthdayPicker.value = employee.birthday ? Number(employee.birthday) : ''
   entryTimePicker.value = employee.entryTime ? Number(employee.entryTime) : ''
@@ -583,7 +585,7 @@ async function handleSubmit() {
     } else if (formMode.value === 'candidate') {
       await convertRecruitCandidateToEmployee({
         ...submitData,
-        candidateId: Number(formData.value.candidateId),
+        candidateId: parseId(formData.value.candidateId) as number,
       })
       toast.success('已转为员工')
       uni.$emit('hrm:recruit:candidate:reload')
@@ -612,7 +614,7 @@ onMounted(async () => {
     await loadCreateFieldConfig()
   }
   if (formMode.value === 'candidate' && props.candidateId) {
-    const candidate = await getRecruitCandidate(Number(props.candidateId))
+    const candidate = await getRecruitCandidate(props.candidateId as number)
     fillFromCandidate(candidate)
     return
   }

@@ -49,6 +49,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -84,7 +86,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    bindUserId: formData.bindUserId ? Number(formData.bindUserId) : undefined,
+    bindUserId: formData.bindUserId ? parseId(formData.bindUserId) : undefined,
     brokerageEnabled: formData.brokerageEnabled === -1 ? undefined : formData.brokerageEnabled,
     createTime: formatDateRange(formData.createTime),
   })

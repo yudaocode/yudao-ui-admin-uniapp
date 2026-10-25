@@ -59,6 +59,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerPrivateMessageVO } from '@/api/im/manager/message/private'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -96,7 +98,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getManagerPrivateMessage(Number(props.id))
+    formData.value = await getManagerPrivateMessage(parseId(props.id) as number)
   } finally {
     toast.close()
   }

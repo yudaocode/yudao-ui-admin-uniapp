@@ -123,6 +123,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DvCheckRecord } from '@/api/mes/dv/checkrecord'
 import type { DvMaintenRecord } from '@/api/mes/dv/maintenrecord'
 import type { DvRepair } from '@/api/mes/dv/repair'
@@ -138,7 +140,7 @@ const props = defineProps<{
   machineryId?: number | string
 }>()
 
-const currentMachineryId = computed(() => Number(props.machineryId || 0))
+const currentMachineryId = computed(() => parseId(props.machineryId || 0) as number)
 const checkLoading = ref(false) // 点检记录加载状态
 const maintenLoading = ref(false) // 保养记录加载状态
 const repairLoading = ref(false) // 维修记录加载状态

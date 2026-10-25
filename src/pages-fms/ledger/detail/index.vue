@@ -107,6 +107,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { LedgerDetail, LedgerDetailSubject } from '@/api/fms/ledger'
 import { FmsLedgerRowType, getLedgerDetailList, getLedgerDetailSubjectList } from '@/api/fms/ledger'
 import { useAccess } from '@/hooks/useAccess'
@@ -236,7 +238,7 @@ async function initialize() {
   if (accountSetId !== fmsStore.accountSet?.id) {
     return // 候选返回时账套已切换，丢弃本次初始化
   }
-  const drillSubjectId = props.subjectId ? Number(props.subjectId) : undefined
+  const drillSubjectId = props.subjectId ? parseId(props.subjectId) : undefined
   initials.subjectId = drillSubjectId && subjects.value.some(item => item.id === drillSubjectId)
     ? drillSubjectId
     : subjectOptions.value[0]?.value

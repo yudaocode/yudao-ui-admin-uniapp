@@ -145,7 +145,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getMailAccount(Number(props.id))
+  const data = await getMailAccount(props.id as unknown as number)
   formData.value = { ...data, password: '' }
 }
 

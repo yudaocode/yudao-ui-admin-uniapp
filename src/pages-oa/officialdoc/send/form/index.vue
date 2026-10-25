@@ -153,6 +153,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { OfficialDocSend } from '@/api/oa/officialdoc/send'
 import type { OfficialDocTemplate } from '@/api/oa/officialdoc/template'
@@ -226,7 +228,7 @@ async function handleTemplateChange() {
   if (!formData.value.templateId) {
     return
   }
-  const template = await getOfficialDocTemplate(Number(formData.value.templateId))
+  const template = await getOfficialDocTemplate(parseId(formData.value.templateId) as number)
   formData.value.noPrefix = template.noPrefix || ''
 }
 
@@ -235,7 +237,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getOfficialDocSend(Number(props.id))
+  const data = await getOfficialDocSend(props.id as unknown as number)
   formData.value = data
   issueTime.value = data.issueTime ? toTimestamp(data.issueTime) : ''
 }

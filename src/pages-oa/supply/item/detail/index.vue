@@ -44,7 +44,7 @@
     </view>
 
     <StockForm
-      :id="Number(props.id)"
+      :id="parseId(props.id) as number"
       ref="stockFormRef"
       v-model="stockInVisible"
       :item-name="formData?.name"
@@ -80,6 +80,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { SupplyItem } from '@/api/oa/supply/item'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -123,7 +125,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getSupplyItem(Number(props.id))
+    formData.value = await getSupplyItem(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -163,7 +165,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSupplyItem(Number(props.id))
+    await deleteSupplyItem(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:supply-item:reload')
     delay(handleBack)

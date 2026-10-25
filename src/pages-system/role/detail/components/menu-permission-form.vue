@@ -44,6 +44,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { Role } from '@/api/system/role'
 import type { Menu } from '@/api/system/menu'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -123,8 +125,8 @@ async function handleConfirm() {
   loading.value = true
   try {
     const menuIds = [
-      ...menuTreeRef.value.getCheckedKeys(false).map(Number),
-      ...menuTreeRef.value.getHalfCheckedKeys().map(Number),
+      ...menuTreeRef.value.getCheckedKeys(false).map(parseId).filter(isIdType),
+      ...menuTreeRef.value.getHalfCheckedKeys().map(parseId).filter(isIdType),
     ]
     await assignRoleMenu({
       roleId: props.role.id,

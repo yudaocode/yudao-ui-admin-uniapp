@@ -481,7 +481,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const detail = await getFeedback(Number(props.id))
+  const detail = await getFeedback(props.id as number)
   formData.value = detail
   await loadCheckFlag(detail.routeId, detail.processId)
   originalFormData.value = JSON.stringify(getSubmitData())

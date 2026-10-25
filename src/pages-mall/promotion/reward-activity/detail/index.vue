@@ -62,6 +62,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PromotionCouponTemplate } from '@/api/mall/promotion/coupon/coupon-template'
 import type { PromotionRewardActivity, PromotionRewardRule } from '@/api/mall/promotion/reward'
 import { onUnload } from '@dcloudio/uni-app'
@@ -115,7 +117,7 @@ function formatLimit(limit?: number) {
 /** 规则赠送的优惠券（模板编号 + 数量）数组 */
 function couponCounts(rule: PromotionRewardRule) {
   return Object.entries(rule.giveCouponTemplateCounts || {}).map(([templateId, count]) => ({
-    templateId: Number(templateId),
+    templateId: parseId(templateId) as number,
     count: Number(count) || 0,
   }))
 }
@@ -132,7 +134,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionRewardActivity(Number(props.id))
+    formData.value = await getPromotionRewardActivity(props.id)
   } finally {
     toast.close()
   }
@@ -152,7 +154,7 @@ async function handleClose() {
   }
   closing.value = true
   try {
-    await closePromotionRewardActivity(Number(props.id))
+    await closePromotionRewardActivity(props.id)
     toast.success('关闭成功')
     uni.$emit('mall:promotion-reward-activity:reload')
     await getDetail()
@@ -170,7 +172,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionRewardActivity(Number(props.id))
+    await deletePromotionRewardActivity(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-reward-activity:reload')
     delay(handleBack)
@@ -183,7 +185,7 @@ async function handleDelete() {
 async function loadCouponTemplates() {
   const templateIds = new Set<number>()
   formData.value.rules?.forEach((rule) => {
-    Object.keys(rule.giveCouponTemplateCounts || {}).forEach(id => templateIds.add(Number(id)))
+    Object.keys(rule.giveCouponTemplateCounts || {}).forEach(id => templateIds.add(parseId(id) as number))
   })
   couponTemplates.value = templateIds.size
     ? await getPromotionCouponTemplateList(Array.from(templateIds))

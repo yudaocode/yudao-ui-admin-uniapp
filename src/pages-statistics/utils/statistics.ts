@@ -263,6 +263,6 @@ export function buildFunnelOption(items: StatisticsFunnelItem[], name = '转化�
 
 /** 获取默认部门编号（统计页按部门过滤用） */
 export function getDefaultDeptId(userInfo: Record<string, any> | undefined) {
-  const deptId = Number(userInfo?.deptId)
+  const deptId = userInfo?.deptId
   return deptId > 0 ? deptId : undefined
 }

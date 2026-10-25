@@ -187,7 +187,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getRecruitCandidate(Number(props.id))
+  const data = await getRecruitCandidate(props.id)
   formData.value = {
     ...data,
     resumeUrls: data.resumeUrls ?? [],

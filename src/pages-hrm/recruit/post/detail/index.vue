@@ -111,7 +111,7 @@
     <OperateLogList
       v-else-if="activeTab === 'log' && props.id"
       class="min-h-0 flex-1"
-      :biz-id="Number(props.id)"
+      :biz-id="parseId(props.id) as number"
       :biz-type="HrmBizType.RECRUIT_POST"
     />
 
@@ -153,6 +153,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { RecruitPost } from '@/api/hrm/recruit/post'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -217,7 +219,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getRecruitPost(Number(props.id))
+  formData.value = await getRecruitPost(props.id)
 }
 
 /** 编辑招聘职位 */
@@ -232,7 +234,7 @@ function handleStop() {
   if (!props.id) {
     return
   }
-  statusFormRef.value?.open(Number(props.id), formData.value.postName)
+  statusFormRef.value?.open(parseId(props.id) as number, formData.value.postName)
 }
 
 /** 状态变更成功 */
@@ -257,7 +259,7 @@ async function handleRestart() {
   statusLoading.value = true
   try {
     await updateRecruitPostStatus({
-      id: Number(props.id),
+      id: props.id,
       status: HrmRecruitPostStatus.RECRUITING,
     })
     toast.success('重新招聘成功')

@@ -13,6 +13,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { onMounted, ref } from 'vue'
 import { getSimplePromotionArticleCategoryList } from '@/api/mall/promotion/article-category'
 
@@ -40,6 +42,6 @@ const options = ref<{ label: string, value: number }[]>([]) // 文章分类选�
 /** 加载文章分类列表（回显需要据此解析分类名称） */
 onMounted(async () => {
   const list = await getSimplePromotionArticleCategoryList()
-  options.value = list.map(item => ({ label: item.name || String(item.id), value: Number(item.id) }))
+  options.value = list.map(item => ({ label: item.name || String(item.id), value: parseId(item.id) as number }))
 })
 </script>

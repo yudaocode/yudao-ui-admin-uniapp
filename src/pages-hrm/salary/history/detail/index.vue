@@ -151,7 +151,7 @@ async function getDetail() {
     handleBack()
     return
   }
-  const data = await getSalaryMonthRecord(Number(props.id))
+  const data = await getSalaryMonthRecord(props.id)
   if (!data || data.status !== HrmSalaryMonthStatus.HISTORY) {
     toast.warning('历史工资表不存在')
     handleBack()

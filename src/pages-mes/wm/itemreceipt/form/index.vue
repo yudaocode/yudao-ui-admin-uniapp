@@ -131,6 +131,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { WmArrivalNotice } from '@/api/mes/wm/arrivalnotice'
 import type { WmItemReceipt } from '@/api/mes/wm/itemreceipt'
@@ -163,7 +165,7 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const routeNoticeId = computed(() => (props.noticeId === undefined || props.noticeId === '' ? undefined : Number(props.noticeId))) // 路由到货通知编号
+const routeNoticeId = computed(() => (props.noticeId === undefined || props.noticeId === '' ? undefined : parseId(props.noticeId))) // 路由到货通知编号
 const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const getTitle = computed(() => {
   if (routeMode.value === 'stock') {
@@ -220,7 +222,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItemReceipt(Number(props.id))
+  formData.value = await getItemReceipt(props.id as number)
 }
 
 /** 按到货通知预填新增表单 */

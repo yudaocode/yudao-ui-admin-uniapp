@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerRtcCallVO, ImManagerRtcParticipantVO } from '@/api/im/manager/rtc'
 import { onMounted, ref } from 'vue'
 import { getManagerRtcCall, getManagerRtcCallParticipantList } from '@/api/im/manager/rtc'
@@ -99,7 +101,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const id = Number(props.id)
+  const id = parseId(props.id) as number
   const [callData, participantList] = await Promise.all([
     getManagerRtcCall(id),
     getManagerRtcCallParticipantList(id),

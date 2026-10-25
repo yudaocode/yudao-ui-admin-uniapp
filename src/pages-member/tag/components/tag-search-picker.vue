@@ -14,6 +14,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { YdSearchPickerExpose } from '@/components/yudao-ui'
 import type { MemberTag } from '@/api/member/tag'
 import { onMounted, ref } from 'vue'
@@ -37,7 +39,7 @@ const options = ref<MemberTag[]>([]) // 用户标签选项
 
 /** 更新用户标签编号 */
 function handleUpdate(value?: number[]) {
-  emit('update:modelValue', Array.isArray(value) ? value.map(Number) : [])
+  emit('update:modelValue', Array.isArray(value) ? value.map(parseId).filter(isIdType) : [])
 }
 
 /** 格式化用户标签编号 */

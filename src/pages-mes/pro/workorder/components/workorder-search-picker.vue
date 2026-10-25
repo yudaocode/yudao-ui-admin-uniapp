@@ -31,6 +31,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProWorkOrder } from '@/api/mes/pro/workorder'
 import { computed, ref, watch } from 'vue'
 import { getWorkOrder } from '@/api/mes/pro/workorder'
@@ -92,7 +94,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  if (selectedItem.value?.id === Number(id)) {
+  if (selectedItem.value?.id === parseId(id)) {
     return selectedItem.value.code || selectedItem.value.name || String(id)
   }
   return String(id)

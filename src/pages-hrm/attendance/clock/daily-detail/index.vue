@@ -131,7 +131,7 @@ async function getDetail() {
   loading.value = true
   try {
     detail.value = await getAttendanceDailyDetail({
-      employeeId: Number(props.employeeId),
+      employeeId: props.employeeId,
       attendanceTime: formatDateStartTime(String(props.attendanceDate)),
     })
   } finally {

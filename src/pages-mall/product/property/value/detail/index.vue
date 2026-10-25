@@ -79,7 +79,7 @@ async function getDetail() {
     toast.loading('加载中...')
     // 同时加载属性精简列表以解析所属属性名
     const [detail, properties] = await Promise.all([
-      getProductPropertyValue(Number(props.id)),
+      getProductPropertyValue(props.id),
       getSimpleProductPropertyList(),
     ])
     const map: Record<number, string> = {}
@@ -112,7 +112,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductPropertyValue(Number(props.id))
+    await deleteProductPropertyValue(props.id)
     toast.success('删除成功')
     uni.$emit('mall:product-property-value:reload')
     delay(handleBack)

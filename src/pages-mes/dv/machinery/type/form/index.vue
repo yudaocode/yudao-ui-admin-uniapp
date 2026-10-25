@@ -57,6 +57,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvMachineryType } from '@/api/mes/dv/machinery/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -87,7 +89,7 @@ type MachineryTypeTreeNode = Omit<DvMachineryType, 'children'> & {
 }
 const formData = ref<DvMachineryType>({
   id: undefined,
-  parentId: props.parentId ? Number(props.parentId) : 0,
+  parentId: props.parentId ? parseId(props.parentId) as number : 0,
   code: '',
   name: '',
   sort: 0,
@@ -116,7 +118,7 @@ function handleBack() {
 /** 构建类型树节点 */
 function buildTreeNodes(nodes: MachineryTypeTreeNode[], parentDisabled = false): MachineryTypeTreeNode[] {
   return nodes.map((node) => {
-    const disabled = parentDisabled || (!!props.id && node.id === Number(props.id))
+    const disabled = parentDisabled || (!!props.id && node.id === parseId(props.id))
     return {
       ...node,
       disabled,
@@ -130,7 +132,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getMachineryType(Number(props.id))
+  const data = await getMachineryType(props.id as number)
   formData.value = {
     id: data.id,
     parentId: data.parentId,

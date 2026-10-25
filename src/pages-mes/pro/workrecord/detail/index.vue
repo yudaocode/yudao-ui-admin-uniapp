@@ -57,7 +57,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWorkRecordLog(Number(props.id))
+    formData.value = await getWorkRecordLog(props.id as number)
   } finally {
     toast.close()
   }

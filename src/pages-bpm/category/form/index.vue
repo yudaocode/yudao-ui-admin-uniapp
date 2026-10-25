@@ -120,7 +120,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getCategory(Number(props.id))
+  formData.value = await getCategory(props.id)
 }
 
 /** 提交表单 */

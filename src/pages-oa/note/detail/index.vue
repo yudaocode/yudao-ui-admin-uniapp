@@ -168,7 +168,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const data = await getNote(Number(props.id))
+    const data = await getNote(props.id as unknown as number)
     formData.value = data
     shareUserIds.value = data.receiverUserIds || []
   } finally {
@@ -187,7 +187,7 @@ async function handleFavorite() {
     return
   }
   const favorite = !formData.value.favorite
-  await updateNoteFavorite(Number(props.id), favorite)
+  await updateNoteFavorite(props.id as unknown as number, favorite)
   formData.value.favorite = favorite
   toast.success(favorite ? '收藏成功' : '已取消收藏')
   uni.$emit('oa:note:reload')
@@ -205,7 +205,7 @@ async function handleShareConfirm() {
   if (!props.id) {
     return
   }
-  await updateNoteShare(Number(props.id), shareUserIds.value)
+  await updateNoteShare(props.id as unknown as number, shareUserIds.value)
   toast.success('共享设置已保存')
   uni.$emit('oa:note:reload')
   getDetail()
@@ -235,9 +235,9 @@ async function handleDelete() {
   try {
     // 接收视角仅移除本人的接收关系，不影响笔记和其他接收人
     if (scene.value === 'received') {
-      await deleteReceivedNote(Number(props.id))
+      await deleteReceivedNote(props.id as unknown as number)
     } else {
-      await deleteNote(Number(props.id))
+      await deleteNote(props.id as unknown as number)
     }
     toast.success('删除成功')
     uni.$emit('oa:note:reload')

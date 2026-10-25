@@ -81,6 +81,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { TradeBrokerageUser } from '@/api/mall/trade/brokerage/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -151,7 +153,7 @@ async function handleEnabledChange(item: TradeBrokerageUser) {
     return
   }
   try {
-    await updateTradeBrokerageUserEnabled({ id: Number(item.id), enabled })
+    await updateTradeBrokerageUserEnabled({ id: parseId(item.id) as number, enabled })
     item.brokerageEnabled = enabled
     toast.success('修改成功')
   } catch {}

@@ -77,7 +77,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getApiKey(Number(props.id))
+    formData.value = await getApiKey(props.id)
   } finally {
     toast.close()
   }
@@ -105,7 +105,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteApiKey(Number(props.id))
+    await deleteApiKey(props.id)
     toast.success('删除成功')
     uni.$emit('ai:api-key:reload')
     delay(handleBack)

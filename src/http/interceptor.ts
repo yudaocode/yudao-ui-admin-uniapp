@@ -3,6 +3,7 @@ import type { CustomRequestOptions } from '@/http/types'
 import { useTokenStore, useUserStore } from '@/store'
 import { getEnvBaseUrl } from '@/utils'
 import { ApiEncrypt } from '@/utils/encrypt'
+import { isPositiveId } from '@/utils/id'
 import { stringifyQuery } from './tools/queryString'
 
 // 请求基准地址
@@ -68,12 +69,20 @@ const httpInterceptor = {
     }
 
     // 4. 添加租户标识
-    if (tenantEnable && tenantEnable === 'true') {
+    const isTenantLookup = ['/system/tenant/simple-list', '/system/tenant/get-by-website', '/system/tenant/get-id-by-name']
+      .some(url => options.url.split('?')[0].endsWith(url))
+    if (tenantEnable && tenantEnable === 'true' && !isTenantLookup) {
       const tenantId = useUserStore().tenantId
+      if (tenantId != null && !isPositiveId(tenantId)) {
+        throw new Error('请选择有效租户')
+      }
       if (tenantId) {
         options.header['tenant-id'] = tenantId
       }
       const visitTenantId = useUserStore().visitTenantId
+      if (token && visitTenantId != null && !isPositiveId(visitTenantId)) {
+        throw new Error('请选择有效访问租户')
+      }
       if (token && visitTenantId) {
         options.header['visit-tenant-id'] = visitTenantId
       }

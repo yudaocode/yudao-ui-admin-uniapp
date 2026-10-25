@@ -110,7 +110,7 @@ async function getDetail() {
   try {
     toast.loading('加载中...')
     const [detail, units] = await Promise.all([
-      getUnitMeasure(Number(props.id)),
+      getUnitMeasure(props.id as number),
       getUnitMeasureSimpleList(),
     ])
     formData.value = detail
@@ -143,7 +143,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteUnitMeasure(Number(props.id))
+    await deleteUnitMeasure(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:unitmeasure:reload')
     delay(handleBack)

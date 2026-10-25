@@ -166,6 +166,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { User } from '@/api/system/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -426,7 +428,7 @@ function handleSend() {
   // 1.1 构建消息内容
   const messageContent = JSON.stringify({
     text: sendText.value,
-    toUserId: sendUserId.value === 'all' ? undefined : Number(sendUserId.value),
+    toUserId: sendUserId.value === 'all' ? undefined : parseId(sendUserId.value),
   })
   // 1.2 构建完整消息
   const jsonMessage = JSON.stringify({

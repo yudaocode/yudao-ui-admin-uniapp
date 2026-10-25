@@ -114,7 +114,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getSalaryTaxRule(Number(props.id))
+  formData.value = await getSalaryTaxRule(props.id)
 }
 
 /** 编辑 */
@@ -140,7 +140,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteSalaryTaxRule(Number(props.id))
+    await deleteSalaryTaxRule(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:salary:tax-rule:reload')
     delay(handleBack)

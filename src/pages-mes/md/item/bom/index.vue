@@ -99,6 +99,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdProductBom } from '@/api/mes/md/item/productBom'
 import type { MdItem } from '@/api/mes/md/item'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -127,7 +129,7 @@ const isEdit = computed(() => props.mode === 'edit') // 是否编辑模式
 const canCreate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:create']))
 const canUpdate = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:update']))
 const canDelete = computed(() => isEdit.value && hasAccessByCodes(['mes:md-item:delete']))
-const itemId = computed(() => Number(props.itemId) || 0) // 当前物料编号
+const itemId = computed(() => parseId(props.itemId) || 0) // 当前物料编号
 const bomList = ref<MdProductBom[]>([]) // BOM 列表
 const loading = ref(false) // 列表加载状态
 const deletingId = ref<number>() // 正在删除的 BOM 编号

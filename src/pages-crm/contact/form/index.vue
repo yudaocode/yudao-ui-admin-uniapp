@@ -62,6 +62,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Contact } from '@/api/crm/contact'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -141,25 +143,25 @@ async function getDetail() {
     }
     // 路由参数预填（客户、负责人、直属上级）
     if (props.customerId) {
-      formData.value.customerId = Number(props.customerId)
+      formData.value.customerId = parseId(props.customerId)
     }
     if (props.ownerUserId) {
-      formData.value.ownerUserId = Number(props.ownerUserId)
+      formData.value.ownerUserId = parseId(props.ownerUserId)
     }
     if (props.parentId) {
-      formData.value.parentId = Number(props.parentId)
+      formData.value.parentId = parseId(props.parentId)
     }
     if (props.businessId) {
-      formData.value.businessId = Number(props.businessId)
+      formData.value.businessId = parseId(props.businessId)
     }
     return
   }
-  formData.value = await getContact(Number(props.id))
+  formData.value = await getContact(props.id)
 }
 
 /** 直属上级候选排除自身（编辑态不能把自己设为上级） */
 function parentFilter(raw: Record<string, any>) {
-  return Number(raw.id) !== Number(formData.value.id)
+  return parseId(raw.id) !== parseId(formData.value.id)
 }
 
 /** 提交表单 */

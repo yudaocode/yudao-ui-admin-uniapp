@@ -124,7 +124,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getTool(Number(props.id))
+  formData.value = await getTool(props.id as number)
   if (formData.value.toolTypeId) {
     selectedToolType.value = await getToolType(formData.value.toolTypeId)
   }

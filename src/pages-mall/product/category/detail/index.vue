@@ -88,7 +88,7 @@ async function getDetail() {
     toast.loading('加载中...')
     // 同时加载分类列表以解析上级分类名
     const [detail, all] = await Promise.all([
-      getProductCategory(Number(props.id)),
+      getProductCategory(props.id),
       getProductCategoryList({}),
     ])
     const map: Record<number, string> = {}
@@ -121,7 +121,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductCategory(Number(props.id))
+    await deleteProductCategory(props.id)
     toast.success('删除成功')
     uni.$emit('mall:product-category:reload')
     delay(handleBack)

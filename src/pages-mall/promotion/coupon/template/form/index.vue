@@ -196,7 +196,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionCouponTemplate(Number(props.id))
+  const data = await getPromotionCouponTemplate(props.id)
   formData.value = {
     ...data,
     productScopeValues: data.productScopeValues || [],

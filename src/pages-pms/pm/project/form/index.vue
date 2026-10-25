@@ -159,7 +159,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const project = await getProject(Number(props.id))
+  const project = await getProject(props.id)
   formData.value = project
   // 后端返回日期字符串，转毫秒时间戳供 picker 回显（Number('YYYY-MM-DD HH:mm:ss') 为 NaN）
   startTime.value = project.startTime ? toTimestamp(project.startTime) : ''

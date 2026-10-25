@@ -111,6 +111,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdItem } from '@/api/mes/md/item'
 import type { ProRouteProduct } from '@/api/mes/pro/route/product'
@@ -240,7 +242,7 @@ async function handleSubmit() {
     const data: ProRouteProduct = {
       ...formData.value,
       routeId: props.routeId,
-      itemId: Number(formData.value.itemId),
+      itemId: parseId(formData.value.itemId) as number,
     }
     if (formType.value === 'create') {
       await createRouteProduct(data)

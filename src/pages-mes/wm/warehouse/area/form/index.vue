@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { WmWarehouseArea } from '@/api/mes/wm/warehouse/area'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -95,8 +97,8 @@ definePage({
 
 const toast = useToast()
 const getTitle = computed(() => props.id ? '编辑库位' : '新增库位')
-const routeWarehouseId = computed(() => props.warehouseId ? Number(props.warehouseId) : undefined) // 路由仓库编号
-const routeLocationId = computed(() => props.locationId ? Number(props.locationId) : undefined) // 路由库区编号
+const routeWarehouseId = computed(() => props.warehouseId ? parseId(props.warehouseId) : undefined) // 路由仓库编号
+const routeLocationId = computed(() => props.locationId ? parseId(props.locationId) : undefined) // 路由库区编号
 const formLoading = ref(false) // 表单提交状态
 const codeLoading = ref(false) // 编码生成状态
 const formData = ref<WmWarehouseArea>({
@@ -155,7 +157,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWarehouseArea(Number(props.id))
+  formData.value = await getWarehouseArea(props.id as number)
 }
 
 /** 应用路由上下文 */

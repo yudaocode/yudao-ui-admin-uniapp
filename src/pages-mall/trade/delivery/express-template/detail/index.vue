@@ -137,7 +137,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getDeliveryExpressTemplate(Number(props.id))
+    formData.value = await getDeliveryExpressTemplate(props.id)
   } finally {
     toast.close()
   }
@@ -160,7 +160,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDeliveryExpressTemplate(Number(props.id))
+    await deleteDeliveryExpressTemplate(props.id)
     toast.success('删除成功')
     uni.$emit('mall:delivery-express-template:reload')
     delay(handleBack)

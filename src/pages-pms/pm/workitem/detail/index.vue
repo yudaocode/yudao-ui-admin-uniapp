@@ -517,7 +517,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const workItem = await getWorkItem(Number(props.id))
+  const workItem = await getWorkItem(props.id)
   const project = await getProject(workItem.projectId)
   formData.value = workItem
   projectType.value = project.type

@@ -41,6 +41,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerSensitiveWordVO } from '@/api/im/manager/sensitiveword'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -81,7 +83,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getManagerSensitiveWord(Number(props.id))
+    formData.value = await getManagerSensitiveWord(parseId(props.id) as number)
   } finally {
     toast.close()
   }
@@ -110,7 +112,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteManagerSensitiveWord(Number(props.id))
+    await deleteManagerSensitiveWord(parseId(props.id) as number)
     toast.success('删除成功')
     uni.$emit('im:manager:sensitive-word:reload')
     delay(handleBack)

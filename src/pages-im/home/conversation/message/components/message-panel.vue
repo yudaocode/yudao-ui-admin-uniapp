@@ -200,6 +200,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MessageDO } from '@/pages-im/utils/db'
 import type { Message } from '../../../types'
 import type { QuoteMessage } from '@/pages-im/utils/message'
@@ -682,21 +684,21 @@ function onImEvent(data: { conversationType?: number, contentType?: number, payl
   }
   const payload = data.payload
   const eventTargetId = conversationType.value === ImConversationType.GROUP
-    ? Number(payload.groupId)
+    ? parseId(payload.groupId) as number
     : conversationType.value === ImConversationType.CHANNEL
-      ? Number(payload.channelId)
-      : Number(payload.senderId === userStore.userInfo.userId ? payload.receiverId : payload.senderId)
+      ? parseId(payload.channelId) as number
+      : parseId(payload.senderId === userStore.userInfo.userId ? payload.receiverId : payload.senderId) as number
   if (eventTargetId && eventTargetId !== targetId.value) {
     return
   }
   if (data.contentType === ImMessageType.RECALL) {
-    const messageId = parseRecallMessageId(payload.content) || Number(payload.messageId)
+    const messageId = parseRecallMessageId(payload.content) || (parseId(payload.messageId) as number)
     markMessageRecalled(messageId)
   } else if (data.contentType === ImMessageType.RECEIPT && conversationType.value === ImConversationType.PRIVATE) {
     return
   } else if (data.contentType === ImMessageType.RECEIPT) {
     updateMessageReceipt(
-      Number(payload.messageId || payload.id),
+      parseId(payload.messageId || payload.id) as number,
       payload.readCount,
       payload.receiptStatus,
     )

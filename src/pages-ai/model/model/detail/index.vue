@@ -86,7 +86,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getModel(Number(props.id))
+    formData.value = await getModel(props.id)
   } finally {
     toast.close()
   }
@@ -114,7 +114,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteModel(Number(props.id))
+    await deleteModel(props.id)
     toast.success('删除成功')
     uni.$emit('ai:model:reload')
     delay(handleBack)

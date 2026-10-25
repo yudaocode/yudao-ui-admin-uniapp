@@ -127,7 +127,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTemplate(Number(props.id))
+    formData.value = await getTemplate(props.id as number)
   } finally {
     toast.close()
   }
@@ -156,7 +156,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteTemplate(Number(props.id))
+    await deleteTemplate(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:qc:template:reload')
     delay(handleBack)

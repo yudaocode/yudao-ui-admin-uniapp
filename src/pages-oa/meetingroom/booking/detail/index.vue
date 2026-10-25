@@ -185,7 +185,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMeetingRoomBooking(Number(props.id))
+    formData.value = await getMeetingRoomBooking(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -226,7 +226,7 @@ function handleDelete() {
     return
   }
   confirmThen('确定要删除该会议室预定吗？', async () => {
-    await deleteMeetingRoomBooking(Number(props.id))
+    await deleteMeetingRoomBooking(props.id as unknown as number)
     delay(handleBack)
   }, '删除成功')
 }
@@ -237,7 +237,7 @@ function handleSubmitApply() {
     return
   }
   confirmThen('确定要提交审批吗？', async () => {
-    await submitMeetingRoomBooking(Number(props.id))
+    await submitMeetingRoomBooking(props.id as unknown as number)
     delay(handleBack)
   }, '提交成功')
 }
@@ -247,7 +247,7 @@ function handleCancel() {
   if (!props.id) {
     return
   }
-  confirmThen('确定要取消该会议室预定吗？', () => cancelMeetingRoomBooking(Number(props.id)), '取消成功')
+  confirmThen('确定要取消该会议室预定吗？', () => cancelMeetingRoomBooking(props.id as unknown as number), '取消成功')
 }
 
 /** 开始使用 */
@@ -255,7 +255,7 @@ function handleStart() {
   if (!props.id) {
     return
   }
-  confirmThen('确定要开始使用该会议室吗？', () => startMeetingRoomBooking(Number(props.id)), '已开始使用')
+  confirmThen('确定要开始使用该会议室吗？', () => startMeetingRoomBooking(props.id as unknown as number), '已开始使用')
 }
 
 /** 完成使用 */
@@ -263,7 +263,7 @@ function handleFinish() {
   if (!props.id) {
     return
   }
-  confirmThen('确定要完成使用该会议室吗？', () => finishMeetingRoomBooking(Number(props.id)), '已完成使用')
+  confirmThen('确定要完成使用该会议室吗？', () => finishMeetingRoomBooking(props.id as unknown as number), '已完成使用')
 }
 
 /** 查看审批进度 */

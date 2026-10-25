@@ -117,7 +117,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMaterialStock(Number(props.id))
+    formData.value = await getMaterialStock(props.id as number)
   } finally {
     toast.close()
   }

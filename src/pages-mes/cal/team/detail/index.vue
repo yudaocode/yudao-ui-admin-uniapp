@@ -22,7 +22,7 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <TeamMemberList v-if="props.id" :team-id="Number(props.id)" />
+      <TeamMemberList v-if="props.id" :team-id="parseId(props.id) as number" />
       <view class="h-160rpx" />
     </scroll-view>
 
@@ -52,6 +52,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { CalTeam } from '@/api/mes/cal/team'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -91,7 +93,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getTeam(Number(props.id))
+    formData.value = await getTeam(props.id as number)
   } finally {
     toast.close()
   }
@@ -120,7 +122,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteTeam(Number(props.id))
+    await deleteTeam(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:cal:team:reload')
     delay(handleBack)

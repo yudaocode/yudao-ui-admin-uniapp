@@ -119,7 +119,7 @@ const toast = useToast()
 const formData = ref<WmPackage>() // 详情数据
 const deleting = ref(false) // 删除状态
 const finishLoading = ref(false) // 完成状态
-const packageId = computed(() => props.id ? Number(props.id) : undefined)
+const packageId = computed(() => props.id ? props.id as number : undefined)
 const tabType = ref('basic') // 当前 tab 类型
 const canUpdate = computed(() => {
   return formData.value?.status === MesWmPackageStatusEnum.PREPARE && hasAccessByCodes(['mes:wm-package:update'])

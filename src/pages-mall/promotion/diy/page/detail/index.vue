@@ -99,8 +99,8 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const detail = await getPromotionDiyPage(Number(props.id))
-    const property = await getPromotionDiyPageProperty(Number(props.id))
+    const detail = await getPromotionDiyPage(props.id)
+    const property = await getPromotionDiyPageProperty(props.id)
     formData.value = { ...detail, property: property.property ?? detail.property }
   } finally {
     toast.close()
@@ -124,7 +124,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionDiyPage(Number(props.id))
+    await deletePromotionDiyPage(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-diy-page:reload')
     delay(handleBack)

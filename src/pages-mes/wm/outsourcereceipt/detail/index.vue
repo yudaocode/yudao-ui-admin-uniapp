@@ -106,7 +106,7 @@ const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
 const formData = ref<WmOutsourceReceipt>() // 详情数据
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前详情编号
+const currentId = computed(() => props.id ? props.id as number : undefined) // 当前详情编号
 const deleting = ref(false) // 删除状态
 const submitting = ref(false) // 提交状态
 const canceling = ref(false) // 取消状态

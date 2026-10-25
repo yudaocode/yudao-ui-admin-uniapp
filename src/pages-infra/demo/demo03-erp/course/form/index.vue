@@ -36,6 +36,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Demo03Course } from '@/api/infra/demo/demo03/erp'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -93,7 +95,7 @@ async function handleSubmit() {
   try {
     const data: Demo03Course = {
       ...formData.value,
-      studentId: Number(props.studentId) || formData.value.studentId,
+      studentId: parseId(props.studentId) || formData.value.studentId,
       score: formData.value.score != null ? Number(formData.value.score) : undefined,
     }
     if (props.id) {

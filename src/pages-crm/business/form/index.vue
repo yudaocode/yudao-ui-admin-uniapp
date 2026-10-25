@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Business } from '@/api/crm/business'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -133,12 +135,12 @@ function applyQueryDefaults() {
   }
   const query = currRoute().query
   if (query.customerId) {
-    formData.value.customerId = Number(query.customerId)
+    formData.value.customerId = parseId(query.customerId)
     customerLocked.value = true // 带入客户后锁定，避免改客户
   }
   // 从联系人详情「新增商机」进入时透传 contactId，提交时后端自动关联联系人；同时锁定客户避免跨客户关联
   if (query.contactId) {
-    formData.value.contactId = Number(query.contactId)
+    formData.value.contactId = parseId(query.contactId)
     customerLocked.value = true
   }
 }
@@ -153,7 +155,7 @@ async function getDetail() {
     }
     return
   }
-  const data = await getBusiness(Number(props.id))
+  const data = await getBusiness(props.id)
   formData.value = { ...data, products: Array.isArray(data.products) ? data.products : [] }
 }
 

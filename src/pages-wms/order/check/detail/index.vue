@@ -160,7 +160,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getCheckOrder(Number(props.id))
+  formData.value = await getCheckOrder(props.id)
 }
 
 /** 获取单据盈亏金额 */
@@ -209,7 +209,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteCheckOrder(Number(props.id))
+    await deleteCheckOrder(props.id)
     toast.success('删除成功')
     uni.$emit('wms:check-order:reload')
     delay(handleBack)
@@ -245,7 +245,7 @@ async function handleComplete() {
   }
   actionLoading.value = true
   try {
-    await completeCheckOrder(Number(props.id))
+    await completeCheckOrder(props.id)
     toast.success('盘库成功')
     uni.$emit('wms:check-order:reload')
     await getDetail()
@@ -269,7 +269,7 @@ async function handleCancel() {
   }
   actionLoading.value = true
   try {
-    await cancelCheckOrder(Number(props.id))
+    await cancelCheckOrder(props.id)
     toast.success('作废成功')
     uni.$emit('wms:check-order:reload')
     await getDetail()

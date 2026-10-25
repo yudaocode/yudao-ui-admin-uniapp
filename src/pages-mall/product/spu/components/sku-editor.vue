@@ -277,8 +277,8 @@ async function handleCreateProperty() {
   const id = await createProductProperty({ name })
   newPropertyName.value = ''
   specPickerVisible.value = false
-  specs.value.push({ propertyId: Number(id), propertyName: name, allValues: [], selectedValueIds: [], newValueName: '' })
-  propertyList.value.push({ id: Number(id), name }) // 同步到属性列表，避免重复新建
+  specs.value.push({ propertyId: id, propertyName: name, allValues: [], selectedValueIds: [], newValueName: '' })
+  propertyList.value.push({ id, name }) // 同步到属性列表，避免重复新建
 }
 
 /** 手动新建属性值（创建后加入该规格并默认选中） */
@@ -288,8 +288,8 @@ async function handleCreateValue(spec: SpecItem) {
     return
   }
   const id = await createProductPropertyValue({ propertyId: spec.propertyId, name })
-  spec.allValues.push({ id: Number(id), name })
-  spec.selectedValueIds.push(Number(id))
+  spec.allValues.push({ id, name })
+  spec.selectedValueIds.push(id)
   spec.newValueName = ''
 }
 

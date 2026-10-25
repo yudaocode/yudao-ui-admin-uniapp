@@ -311,7 +311,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const toast = useToast()
 const dialog = useDialog()
-const detailId = computed(() => props.id != null && props.id !== '' ? Number(props.id) : undefined) // 订单编号（路由透传）
+const detailId = computed(() => props.id != null && props.id !== '' ? props.id : undefined) // 订单编号（路由透传）
 const formData = ref<TradeOrder>() // 订单详情
 const expressTracks = ref<Record<string, any>[]>([]) // 物流轨迹
 const areaTree = ref<any[]>([]) // 地区树（修改地址用）
@@ -468,7 +468,7 @@ async function handlePickUp() {
   }
   submitting.value = true
   try {
-    await pickUpTradeOrder(Number(detailId.value))
+    await pickUpTradeOrder(detailId.value)
     await afterSubmit()
   } finally {
     submitting.value = false

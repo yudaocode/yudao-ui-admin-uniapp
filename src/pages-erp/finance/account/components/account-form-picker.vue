@@ -24,6 +24,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Account } from '@/api/erp/finance/account'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -85,7 +87,7 @@ function applyDefaultSelectedAccount() {
 
 /** 选择确认 */
 function handleConfirm({ value }: { value?: number | string | null }) {
-  const accountId = value ? Number(value) : undefined
+  const accountId = value ? parseId(value) : undefined
   const account = accountList.value.find(item => item.id === accountId)
   emit('update:modelValue', accountId)
   emit('confirm', account)
@@ -94,7 +96,7 @@ function handleConfirm({ value }: { value?: number | string | null }) {
 
 /** 格式化结算账户 */
 function format(value?: number | string) {
-  const accountId = arguments.length > 0 ? Number(value) : Number(selectedId.value)
+  const accountId = arguments.length > 0 ? parseId(value) : parseId(selectedId.value)
   return accountList.value.find(item => item.id === accountId)?.name || ''
 }
 

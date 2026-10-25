@@ -112,6 +112,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdWorkstation } from '@/api/mes/md/workstation'
 import type { ProTask } from '@/api/mes/pro/task'
@@ -333,15 +335,15 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getIpqc(Number(props.id))
+  formData.value = await getIpqc(props.id as number)
 }
 
 /** 是否有待检任务参数 */
 function hasPendingInspectPreset() {
   return [
     toFiniteNumber(props.sourceDocType),
-    toFiniteNumber(props.sourceDocId),
-    toFiniteNumber(props.sourceLineId),
+    parseId(props.sourceDocId),
+    parseId(props.sourceLineId),
   ].every(value => value != null)
 }
 
@@ -353,23 +355,23 @@ function applyPendingInspectPreset() {
   const sourceDocCode = decodeUrlText(props.sourceDocCode)
   formData.value.name = sourceDocCode ? `${sourceDocCode} 过程检验单` : formData.value.name
   formData.value.sourceDocType = toFiniteNumber(props.sourceDocType)
-  formData.value.sourceDocId = toFiniteNumber(props.sourceDocId)
-  formData.value.sourceLineId = toFiniteNumber(props.sourceLineId)
+  formData.value.sourceDocId = parseId(props.sourceDocId)
+  formData.value.sourceLineId = parseId(props.sourceLineId)
   formData.value.sourceDocCode = sourceDocCode
-  formData.value.itemId = toFiniteNumber(props.itemId)
+  formData.value.itemId = parseId(props.itemId)
   formData.value.itemCode = decodeUrlText(props.itemCode)
   formData.value.itemName = decodeUrlText(props.itemName)
   formData.value.itemSpecification = decodeUrlText(props.itemSpecification)
   formData.value.unitName = decodeUrlText(props.unitName)
-  formData.value.workOrderId = toFiniteNumber(props.workOrderId)
+  formData.value.workOrderId = parseId(props.workOrderId)
   formData.value.workOrderCode = decodeUrlText(props.workOrderCode)
   formData.value.workOrderName = decodeUrlText(props.workOrderName)
-  formData.value.workstationId = toFiniteNumber(props.workstationId)
+  formData.value.workstationId = parseId(props.workstationId)
   formData.value.workstationCode = decodeUrlText(props.workstationCode)
   formData.value.workstationName = decodeUrlText(props.workstationName)
-  formData.value.processId = toFiniteNumber(props.processId)
+  formData.value.processId = parseId(props.processId)
   formData.value.processName = decodeUrlText(props.processName)
-  formData.value.taskId = toFiniteNumber(props.taskId)
+  formData.value.taskId = parseId(props.taskId)
   formData.value.taskCode = decodeUrlText(props.taskCode)
   formData.value.checkQuantity = toFiniteNumber(props.quantity) ?? 0
   formData.value.inspectDate = toFiniteNumber(props.recordTime) ?? decodeUrlText(props.recordTime)

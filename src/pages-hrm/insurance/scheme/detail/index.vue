@@ -195,7 +195,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getInsuranceScheme(Number(props.id))
+  formData.value = await getInsuranceScheme(props.id)
 }
 
 /** 获得项目金额 */
@@ -237,7 +237,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteInsuranceScheme(Number(props.id))
+    await deleteInsuranceScheme(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:insurance:scheme:reload')
     delay(handleBack)

@@ -133,7 +133,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getItemReceipt(Number(props.id))
+    formData.value = await getItemReceipt(props.id as number)
   } finally {
     toast.close()
   }
@@ -184,7 +184,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteItemReceipt(Number(props.id))
+    await deleteItemReceipt(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:itemreceipt:reload')
     delay(handleBack)
@@ -208,7 +208,7 @@ async function handleSubmitReceipt() {
   }
   submitting.value = true
   try {
-    await submitItemReceipt(Number(props.id))
+    await submitItemReceipt(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:itemreceipt:reload')
     await getDetail()
@@ -232,7 +232,7 @@ async function handleCancelReceipt() {
   }
   canceling.value = true
   try {
-    await cancelItemReceipt(Number(props.id))
+    await cancelItemReceipt(props.id as number)
     toast.success('取消成功')
     uni.$emit('mes:wm:itemreceipt:reload')
     await getDetail()

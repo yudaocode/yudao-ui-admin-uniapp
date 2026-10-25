@@ -35,6 +35,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { ref } from 'vue'
@@ -82,7 +84,7 @@ async function handleSubmit() {
 
   formLoading.value = true
   try {
-    await banManagerGroup({ id: Number(props.id), reason: formData.value.reason })
+    await banManagerGroup({ id: parseId(props.id) as number, reason: formData.value.reason })
     toast.success('封禁成功')
     uni.$emit('im:manager:group:reload')
     delay(handleBack)

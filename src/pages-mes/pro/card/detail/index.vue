@@ -102,7 +102,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getCard(Number(props.id))
+    formData.value = await getCard(props.id as number)
   } finally {
     toast.close()
   }

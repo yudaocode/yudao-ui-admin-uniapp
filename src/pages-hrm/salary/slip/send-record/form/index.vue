@@ -139,7 +139,7 @@ async function queryList(pageNo: number, pageSize: number) {
     const data = await getSalarySlipSendEmployeePage({
       pageNo,
       pageSize,
-      monthRecordId: Number(props.monthRecordId),
+      monthRecordId: props.monthRecordId,
       sent: queryParams.value.sent,
     })
     pagingRef.value?.completeByTotal(data.list, data.total)
@@ -180,7 +180,7 @@ async function handleSubmit(all: boolean) {
   formLoading.value = true
   try {
     await sendSalarySlip({
-      monthRecordId: Number(props.monthRecordId),
+      monthRecordId: props.monthRecordId as number,
       hideEmpty: hideEmpty.value,
       options: selectedTemplate.value.options,
       all,

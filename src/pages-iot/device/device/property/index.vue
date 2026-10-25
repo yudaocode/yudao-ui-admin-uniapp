@@ -315,7 +315,7 @@ async function getList() {
   }
   loading.value = true
   try {
-    allList.value = await getLatestDeviceProperties({ deviceId: Number(props.deviceId) })
+    allList.value = await getLatestDeviceProperties({ deviceId: props.deviceId as number })
     handleFilter()
   } finally {
     loading.value = false
@@ -363,7 +363,7 @@ async function handleHistory(item: IotDevicePropertyDetailResp) {
   historyLoading.value = true
   try {
     historyList.value = await getHistoryDevicePropertyList({
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId as number,
       identifier: item.identifier,
       times: getDefaultTimes(),
     })
@@ -390,7 +390,7 @@ async function loadThingModelList() {
   if (!props.deviceId || thingModelList.value.length > 0) {
     return
   }
-  const device = await getDevice(Number(props.deviceId))
+  const device = await getDevice(props.deviceId as number)
   if (!device?.productId) {
     return
   }
@@ -408,7 +408,7 @@ async function queryEventList(pageNo: number, pageSize: number) {
     const data = await getDeviceMessagePairPage({
       ...eventQueryParams.value,
       times: formatDateRange(eventQueryParams.value.times),
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId,
       method: IotDeviceMessageMethodEnum.EVENT_POST.method,
       pageNo,
       pageSize,
@@ -430,7 +430,7 @@ async function queryServiceList(pageNo: number, pageSize: number) {
     const data = await getDeviceMessagePairPage({
       ...serviceQueryParams.value,
       times: formatDateRange(serviceQueryParams.value.times),
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId,
       method: IotDeviceMessageMethodEnum.SERVICE_INVOKE.method,
       pageNo,
       pageSize,

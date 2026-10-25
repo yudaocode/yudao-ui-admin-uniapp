@@ -88,7 +88,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getPromotionCouponPage({
       ...queryParams.value,
-      userIds: Number(props.userId),
+      userIds: props.userId,
       pageNo,
       pageSize,
     })

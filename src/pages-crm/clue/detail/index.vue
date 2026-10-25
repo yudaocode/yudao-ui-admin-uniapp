@@ -148,7 +148,7 @@ const teamCanQuit = ref(false) // 是否可退出团队
 const followupRef = ref<{ openAdd: () => void }>() // 跟进记录引用
 const teamRef = ref<{ openAdd: () => void, quit: () => void, validateWrite: boolean, validateOwnerUser: boolean }>() // 团队成员引用（含权限校验）
 const transferFormRef = ref<InstanceType<typeof CrmTransferForm>>() // 转移表单引用
-const clueId = computed(() => Number(props.id))
+const clueId = computed(() => props.id)
 const activeTab = computed(() => tabs[tabIndex.value].key)
 const isPagingTab = computed(() => ['followup', 'log'].includes(activeTab.value)) // 跟进/操作日志 tab 用 z-paging 固定高布局
 const validateWrite = computed(() => teamRef.value?.validateWrite ?? false) // 读写权限（负责人或读写成员）

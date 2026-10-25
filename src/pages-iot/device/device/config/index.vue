@@ -159,7 +159,7 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    deviceData.value = await getDevice(Number(props.deviceId))
+    deviceData.value = await getDevice(props.deviceId)
     configText.value = formatJson(deviceData.value.config, '{}')
     originalConfigText.value = configText.value
     isEditing.value = false
@@ -208,7 +208,7 @@ async function handleSave() {
   }
   saving.value = true
   try {
-    await updateDevice({ id: Number(props.deviceId), config: JSON.stringify(config) } as Device)
+    await updateDevice({ id: props.deviceId, config: JSON.stringify(config) } as Device)
     toast.success('保存成功')
     await getDetail()
   } finally {
@@ -233,7 +233,7 @@ async function handlePush() {
   pushing.value = true
   try {
     await sendDeviceMessage({
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId,
       method: IotDeviceMessageMethodEnum.CONFIG_PUSH.method,
       params: config,
     })

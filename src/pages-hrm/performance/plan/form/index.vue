@@ -376,7 +376,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPerformancePlan(Number(props.id))
+  const data = await getPerformancePlan(props.id as number)
   if (
     !viewMode.value
     && data.status !== HrmPerformancePlanStatus.DRAFT

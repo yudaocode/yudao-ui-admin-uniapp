@@ -121,6 +121,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MailMessage } from '@/api/oa/mail'
 import { computed, onMounted, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -161,7 +163,7 @@ const contentText = ref('') // 本次输入的正文纯文本
 const quoteContent = ref('') // 回复或转发引用的原文 HTML
 const newFiles = ref<File[]>([]) // 本次新增附件，仅 H5 支持
 const formData = ref<Partial<MailMessage>>({
-  accountId: props.accountId ? Number(props.accountId) : undefined,
+  accountId: props.accountId ? parseId(props.accountId) : undefined,
   recipients: [],
   ccs: [],
   subject: '',
@@ -317,7 +319,7 @@ async function handleDelete() {
 onMounted(async () => {
   // 回复、转发或草稿：获取写信预填数据
   if (props.id && props.mode && props.mode !== OA_MAIL_COMPOSE_MODE.NEW) {
-    const data = await getMailMessageCompose(Number(props.id), props.mode)
+    const data = await getMailMessageCompose(props.id as unknown as number, props.mode)
     if (props.mode === OA_MAIL_COMPOSE_MODE.DRAFT) {
       // 草稿：原正文回填为可编辑纯文本，不作为只读引用
       contentText.value = htmlToEditableText(data.content || '')

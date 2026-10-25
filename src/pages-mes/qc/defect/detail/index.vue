@@ -86,7 +86,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getDefect(Number(props.id))
+    formData.value = await getDefect(props.id as number)
   } finally {
     toast.close()
   }
@@ -115,7 +115,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDefect(Number(props.id))
+    await deleteDefect(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:qc:defect:reload')
     delay(handleBack)

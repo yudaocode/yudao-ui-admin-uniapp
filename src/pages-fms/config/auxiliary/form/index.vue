@@ -36,6 +36,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -88,7 +90,7 @@ async function getDetail() {
     return
   }
   const list = await getAuxiliaryTypeList(accountSetId)
-  const auxiliaryType = list.find(item => item.id === Number(props.id))
+  const auxiliaryType = list.find(item => item.id === parseId(props.id))
   if (auxiliaryType) {
     formData.value = auxiliaryType
   }

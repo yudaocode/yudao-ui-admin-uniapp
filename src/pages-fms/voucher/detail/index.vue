@@ -227,7 +227,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getVoucher(accountSetId, Number(props.id))
+  formData.value = await getVoucher(accountSetId, props.id)
 }
 
 /** 编辑凭证 */
@@ -252,9 +252,9 @@ async function handleReview(approve: boolean) {
   reviewing.value = true
   try {
     if (approve) {
-      await reviewVoucher(accountSetId, [Number(props.id)])
+      await reviewVoucher(accountSetId, [props.id])
     } else {
-      await cancelReviewVoucher(accountSetId, [Number(props.id)])
+      await cancelReviewVoucher(accountSetId, [props.id])
     }
     toast.success('操作成功')
     uni.$emit('fms:voucher:reload')
@@ -280,7 +280,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteVoucher(accountSetId, Number(props.id))
+    await deleteVoucher(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:voucher:reload')
     delay(handleBack)

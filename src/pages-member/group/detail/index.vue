@@ -80,7 +80,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMemberGroup(Number(props.id))
+    formData.value = await getMemberGroup(props.id)
   } finally {
     toast.close()
   }
@@ -108,7 +108,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMemberGroup(Number(props.id))
+    await deleteMemberGroup(props.id)
     toast.success('删除成功')
     uni.$emit('member:group:reload')
     delay(handleBack)

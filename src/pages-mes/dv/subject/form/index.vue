@@ -129,7 +129,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getSubject(Number(props.id))
+  formData.value = await getSubject(props.id as number)
 }
 
 /** 生成项目编码 */

@@ -75,7 +75,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWarehouse(Number(props.id))
+  formData.value = await getWarehouse(props.id)
 }
 
 /** 编辑仓库 */
@@ -101,7 +101,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteWarehouse(Number(props.id))
+    await deleteWarehouse(props.id)
     toast.success('删除成功')
     uni.$emit('wms:warehouse:reload')
     delay(handleBack)

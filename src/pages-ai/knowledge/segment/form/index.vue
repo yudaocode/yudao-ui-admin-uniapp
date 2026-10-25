@@ -44,6 +44,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { KnowledgeSegment } from '@/api/ai/knowledge/segment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -94,10 +96,10 @@ function handleBack() {
 async function getDetail() {
   // 新增时，预填来自 query 的文档编号
   if (!props.id) {
-    formData.value.documentId = props.documentId ? Number(props.documentId) : undefined
+    formData.value.documentId = props.documentId ? parseId(props.documentId) : undefined
     return
   }
-  formData.value = await getKnowledgeSegment(Number(props.id))
+  formData.value = await getKnowledgeSegment(props.id)
 }
 
 /** 提交表单 */

@@ -125,7 +125,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getResignApply(Number(props.id))
+  formData.value = await getResignApply(props.id as unknown as number)
 }
 
 /** 提交表单：保存为草稿，提交审批在详情页操作 */

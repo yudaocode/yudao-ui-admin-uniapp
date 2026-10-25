@@ -33,6 +33,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Dept } from '@/api/system/dept'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleDeptList } from '@/api/system/dept'
@@ -82,12 +84,12 @@ let loadingPromise: Promise<void> | undefined // 部门列表加载请求
 
 /** 更新部门编号 */
 function handleUpdate(value: number | undefined) {
-  emit('update:modelValue', value == null ? undefined : Number(value))
+  emit('update:modelValue', value == null ? undefined : parseId(value))
 }
 
 /** 部门变更 */
 function handleChange(value: number | undefined) {
-  emit('change', value == null ? undefined : Number(value))
+  emit('change', value == null ? undefined : parseId(value))
 }
 
 /** 清空部门 */
@@ -103,7 +105,7 @@ function format(value?: number) {
   if (deptId == null) {
     return ''
   }
-  return findDeptName(deptOptions.value, Number(deptId))
+  return findDeptName(deptOptions.value, parseId(deptId) as number)
 }
 
 /** 查询部门名称 */

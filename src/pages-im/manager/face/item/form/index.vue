@@ -69,6 +69,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ImManagerFacePackItemVO } from '@/api/im/manager/face/item'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -100,7 +102,7 @@ const getTitle = computed(() => props.id ? '编辑表情' : '新增表情') // �
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<ImManagerFacePackItemVO>({
   id: undefined,
-  packId: Number(props.packId || 0),
+  packId: parseId(props.packId || 0) as number,
   url: '',
   name: '',
   width: 120,
@@ -155,7 +157,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getManagerFacePackItem(Number(props.id))
+  formData.value = await getManagerFacePackItem(parseId(props.id) as number)
 }
 
 /** 提交表单 */

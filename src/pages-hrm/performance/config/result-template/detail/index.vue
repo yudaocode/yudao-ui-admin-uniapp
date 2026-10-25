@@ -123,7 +123,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getPerformanceResultTemplate(Number(props.id))
+  formData.value = await getPerformanceResultTemplate(props.id)
 }
 
 /** 编辑 */
@@ -149,7 +149,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deletePerformanceResultTemplate(Number(props.id))
+    await deletePerformanceResultTemplate(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:performance:result-template:reload')
     delay(handleBack)

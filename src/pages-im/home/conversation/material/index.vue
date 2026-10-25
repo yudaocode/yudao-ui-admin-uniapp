@@ -49,6 +49,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImChannelMaterialRespVO } from '@/api/im/channel/material'
 import { onMounted, ref } from 'vue'
 import { getChannelMaterial } from '@/api/im/channel/material'
@@ -76,7 +78,7 @@ const detail = ref<ImChannelMaterialRespVO>() // 频道素材详情
 /** 返回聊天页 */
 function handleBack() {
   const type = Number(props.type)
-  const targetId = Number(props.targetId)
+  const targetId = parseId(props.targetId)
   const fallbackUrl = type && targetId
     ? buildConversationMessageUrl({ type, targetId })
     : detail.value?.channelId
@@ -92,7 +94,7 @@ async function getDetail() {
   }
   loading.value = true
   try {
-    detail.value = await getChannelMaterial(Number(props.id))
+    detail.value = await getChannelMaterial(parseId(props.id) as number)
   } finally {
     loading.value = false
   }

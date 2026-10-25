@@ -227,6 +227,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { WmMaterialStock } from '@/api/mes/wm/materialstock'
 import type { WmTransferDetail } from '@/api/mes/wm/transfer/detail'
@@ -351,7 +353,7 @@ async function getList() {
     const entries = await Promise.all(lineList
       .filter(line => line.id)
       .map(async (line): Promise<[number, WmTransferDetail[]]> => {
-        const lineId = Number(line.id)
+        const lineId = parseId(line.id) as number
         const details = await getTransferDetailListByLineId(lineId)
         return [lineId, details]
       }))

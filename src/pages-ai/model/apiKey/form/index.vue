@@ -109,7 +109,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getApiKey(Number(props.id))
+  formData.value = await getApiKey(props.id)
 }
 
 /** 提交表单 */

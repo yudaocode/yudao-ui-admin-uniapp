@@ -173,7 +173,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getVendor(Number(props.id))
+  formData.value = await getVendor(props.id as number)
 }
 
 /** 生成供应商编码 */

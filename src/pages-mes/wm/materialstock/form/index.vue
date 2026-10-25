@@ -96,7 +96,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMaterialStock(Number(props.id))
+  formData.value = await getMaterialStock(props.id as number)
   frozen.value = formData.value.frozen
 }
 

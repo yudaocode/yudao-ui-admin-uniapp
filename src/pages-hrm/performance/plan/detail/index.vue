@@ -169,7 +169,7 @@
     <OperateLogList
       v-else-if="activeTab === 'operateLog' && props.id"
       class="min-h-0 flex-1"
-      :biz-id="Number(props.id)"
+      :biz-id="parseId(props.id) as number"
       :biz-type="HrmBizType.PERFORMANCE_PLAN"
     />
 
@@ -181,7 +181,7 @@
             v-if="hasAccessByCodes(['hrm:performance:plan:update'])"
             class="flex-1"
             variant="plain"
-            @click="addEmployeeFormRef?.open(Number(props.id))"
+            @click="addEmployeeFormRef?.open(parseId(props.id) as number)"
           >
             添加员工
           </wd-button>
@@ -259,6 +259,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PerformanceAssessment, PerformanceStageCount } from '@/api/hrm/performance/assessment'
 import type { PerformancePlan } from '@/api/hrm/performance/plan'
 import { onShow } from '@dcloudio/uni-app'
@@ -390,7 +392,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  plan.value = await getPerformancePlan(Number(props.id))
+  plan.value = await getPerformancePlan(props.id as number)
 }
 
 /** 加载参评员工统计 */
@@ -399,8 +401,8 @@ async function loadEmployeeStatistics() {
     return
   }
   const [stageCounts, levelCounts] = await Promise.all([
-    getPerformancePlanStageCount(Number(props.id)),
-    getPerformancePlanLevelCount(Number(props.id)),
+    getPerformancePlanStageCount(props.id as number),
+    getPerformancePlanLevelCount(props.id as number),
   ])
   stageCountList.value = stageCounts || []
   levelList.value = (levelCounts || [])
@@ -417,7 +419,7 @@ async function queryEmployeeList(pageNo: number, pageSize: number) {
   try {
     const data = await getPerformanceAssessmentPage({
       ...employeeQuery.value,
-      planId: Number(props.id),
+      planId: props.id,
       pageNo,
       pageSize,
     })
@@ -502,7 +504,7 @@ async function handleRemoveEmployees() {
     return
   }
   await removePerformancePlanEmployees({
-    planId: Number(props.id),
+    planId: props.id as number,
     employeeIds: selectedEmployeeIds.value,
   })
   toast.success('参评员工移除成功')
@@ -530,15 +532,15 @@ async function handleAction(action: 'start' | 'open' | 'interview' | 'archive' |
     return
   }
   if (action === 'start') {
-    await startPerformancePlan(Number(props.id))
+    await startPerformancePlan(props.id as number)
   } else if (action === 'open') {
-    await openPerformancePlanScoring(Number(props.id))
+    await openPerformancePlanScoring(props.id as number)
   } else if (action === 'interview') {
-    await startPerformancePlanInterview(Number(props.id))
+    await startPerformancePlanInterview(props.id as number)
   } else if (action === 'archive') {
-    await archivePerformancePlan(Number(props.id))
+    await archivePerformancePlan(props.id as number)
   } else {
-    await terminatePerformancePlan(Number(props.id))
+    await terminatePerformancePlan(props.id as number)
   }
   toast.success('操作成功')
   uni.$emit('hrm-performance-plan-refresh')
@@ -562,7 +564,7 @@ async function handleDelete() {
   } catch {
     return
   }
-  await deletePerformancePlan(Number(props.id))
+  await deletePerformancePlan(props.id as number)
   toast.success('删除成功')
   uni.$emit('hrm-performance-plan-refresh')
   handleBack()

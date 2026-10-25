@@ -131,7 +131,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getCustomerLimitConfig(Number(props.id))
+  formData.value = await getCustomerLimitConfig(props.id)
 }
 
 /** 提交表单 */

@@ -80,6 +80,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Subject } from '@/api/fms/config/subject'
 import type { VoucherTemplate } from '@/api/fms/config/voucher-template'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -138,7 +140,7 @@ async function getDetail() {
     getSubjectList(accountSetId),
   ])
   subjects.value = subjectList
-  const template = list.find(item => item.id === Number(props.id))
+  const template = list.find(item => item.id === parseId(props.id))
   if (template) {
     formData.value = template
   }
@@ -168,7 +170,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteVoucherTemplate(accountSetId, Number(props.id))
+    await deleteVoucherTemplate(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:voucher-template:reload')
     delay(handleBack)

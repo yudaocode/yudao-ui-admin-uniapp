@@ -260,7 +260,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getTravelApply(Number(props.id))
+  const data = await getTravelApply(props.id as unknown as number)
   formData.value = data
   startTime.value = data.startTime ? toTimestamp(data.startTime) : ''
   endTime.value = data.endTime ? toTimestamp(data.endTime) : ''

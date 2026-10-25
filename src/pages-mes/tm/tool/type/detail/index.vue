@@ -76,7 +76,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getToolType(Number(props.id))
+    formData.value = await getToolType(props.id as number)
   } finally {
     toast.close()
   }
@@ -113,7 +113,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteToolType(Number(props.id))
+    await deleteToolType(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:tm:tool-type:reload')
     delay(handleBack)

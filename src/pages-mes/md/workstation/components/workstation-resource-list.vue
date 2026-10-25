@@ -217,6 +217,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Post } from '@/api/system/post'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
@@ -337,8 +339,8 @@ function shouldShow(type: ResourceType) {
 
 /** 工作站编号 */
 function getWorkstationId() {
-  const workstationId = Number(props.workstationId)
-  return Number.isFinite(workstationId) && workstationId > 0 ? workstationId : undefined
+  const workstationId = parseId(props.workstationId)
+  return isPositiveId(workstationId) ? workstationId : undefined
 }
 
 /** 默认表单数据 */
@@ -456,8 +458,8 @@ function handleToolTypeChange(toolType?: { id?: number, name?: string }) {
 
 /** 确认岗位选择 */
 function handlePostConfirm(value?: number | string) {
-  const postId = Number(value)
-  if (!Number.isFinite(postId)) {
+  const postId = parseId(value)
+  if (postId === undefined) {
     return
   }
   const option = postOptions.value.find(item => item.id === postId)

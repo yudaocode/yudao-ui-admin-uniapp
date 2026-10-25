@@ -58,6 +58,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PayWalletTransaction } from '@/api/pay/wallet/transaction'
 import { ref } from 'vue'
 import { getPayWalletTransactionPage } from '@/api/pay/wallet/transaction'
@@ -79,7 +81,7 @@ definePage({
 
 const list = ref<PayWalletTransaction[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const queryParams = ref<Record<string, any>>(props.walletId ? { walletId: Number(props.walletId) } : {}) // 查询参数
+const queryParams = ref<Record<string, any>>(props.walletId ? { walletId: parseId(props.walletId) } : {}) // 查询参数
 
 /** 返回上一页 */
 function handleBack() {

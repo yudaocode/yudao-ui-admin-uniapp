@@ -1,3 +1,4 @@
+import { parseId } from '@/utils/id'
 import { useUserStore } from '@/store/user'
 import type {
   Conversation,
@@ -343,7 +344,7 @@ export function parseMessage<T>(content?: string): T | null {
 
 /** 解析撤回信号中的原消息编号 */
 export function parseRecallMessageId(content?: string): number {
-  return Number(parseMessage<{ messageId?: number }>(content)?.messageId || 0)
+  return parseId(parseMessage<{ messageId?: number }>(content)?.messageId || 0) ?? 0
 }
 
 /** 序列化消息内容 */

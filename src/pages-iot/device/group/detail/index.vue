@@ -79,7 +79,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getDeviceGroup(Number(props.id))
+  formData.value = await getDeviceGroup(props.id)
 }
 
 /** 编辑设备分组 */
@@ -99,7 +99,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDeviceGroup(Number(props.id))
+    await deleteDeviceGroup(props.id)
     toast.success('删除成功')
     uni.$emit('iot:device-group:reload')
     delay(handleBack)

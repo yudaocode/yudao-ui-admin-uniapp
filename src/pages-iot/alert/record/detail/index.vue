@@ -91,7 +91,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAlertRecord(Number(props.id))
+  formData.value = await getAlertRecord(props.id)
   productName.value = formData.value.productName || ''
   deviceName.value = formData.value.deviceName || ''
   // 记录仅返回产品/设备 ID，单独解析名称
@@ -111,7 +111,7 @@ async function handleProcess() {
   }
   processing.value = true
   try {
-    await processAlertRecord(Number(props.id), processRemark.value)
+    await processAlertRecord(props.id, processRemark.value)
     toast.success('处理成功')
     processVisible.value = false
     uni.$emit('iot:alert-record:reload')

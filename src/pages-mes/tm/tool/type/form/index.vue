@@ -101,7 +101,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getToolType(Number(props.id))
+  formData.value = await getToolType(props.id as number)
 }
 
 /** 生成工具类型编码 */

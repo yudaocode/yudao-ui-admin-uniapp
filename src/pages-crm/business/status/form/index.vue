@@ -191,7 +191,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getBusinessStatus(Number(props.id))
+  const data = await getBusinessStatus(props.id)
   formData.value = {
     ...data,
     statuses: data.statuses?.length ? data.statuses : [{ name: '', percent: undefined }],

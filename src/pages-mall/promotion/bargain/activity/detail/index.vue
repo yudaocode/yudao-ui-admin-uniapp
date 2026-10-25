@@ -118,7 +118,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionBargainActivity(Number(props.id))
+    formData.value = await getPromotionBargainActivity(props.id)
   } finally {
     toast.close()
   }
@@ -138,7 +138,7 @@ async function handleClose() {
   }
   closing.value = true
   try {
-    await closePromotionBargainActivity(Number(props.id))
+    await closePromotionBargainActivity(props.id)
     toast.success('关闭成功')
     uni.$emit('mall:promotion-bargain-activity:reload')
     await getDetail()
@@ -156,7 +156,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionBargainActivity(Number(props.id))
+    await deletePromotionBargainActivity(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-bargain-activity:reload')
     delay(handleBack)

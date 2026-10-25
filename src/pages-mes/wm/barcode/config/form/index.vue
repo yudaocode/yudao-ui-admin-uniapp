@@ -127,7 +127,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getBarcodeConfig(Number(props.id))
+  formData.value = await getBarcodeConfig(props.id as number)
 }
 
 /** 提交表单 */

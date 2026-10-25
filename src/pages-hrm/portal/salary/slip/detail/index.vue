@@ -141,7 +141,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const slip = await getSalarySlip(Number(props.id))
+  const slip = await getSalarySlip(props.id)
   formData.value = slip
   displayOptions.value = slip.options || []
   if (slip.readStatus === 0) {

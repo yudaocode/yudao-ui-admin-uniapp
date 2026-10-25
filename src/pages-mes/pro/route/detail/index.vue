@@ -117,7 +117,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getRoute(Number(props.id))
+    formData.value = await getRoute(props.id as number)
   } finally {
     toast.close()
   }
@@ -147,7 +147,7 @@ async function handleStatusChange() {
   } catch {
     return
   }
-  await updateRouteStatus(Number(props.id), nextStatus)
+  await updateRouteStatus(props.id as number, nextStatus)
   toast.success(`${action}成功`)
   uni.$emit('mes:pro:route:reload')
   await getDetail()
@@ -169,7 +169,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteRoute(Number(props.id))
+    await deleteRoute(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:pro:route:reload')
     delay(handleBack)

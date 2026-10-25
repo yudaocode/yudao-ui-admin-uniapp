@@ -87,6 +87,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { MdItemType } from '@/api/mes/md/item/type'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -113,7 +115,7 @@ const formLoading = ref(false) // 表单提交状态
 const codeLoading = ref(false) // 编码生成状态
 const formData = ref<MdItemType>({
   id: undefined,
-  parentId: props.parentId ? Number(props.parentId) : 0,
+  parentId: props.parentId ? parseId(props.parentId) as number : 0,
   code: '',
   name: '',
   itemOrProduct: 'ITEM',
@@ -148,7 +150,7 @@ function handleBack() {
 /** 构建分类树节点 */
 function buildTreeNodes(nodes: ItemTypeTreeNode[], parentDisabled = false): ItemTypeTreeNode[] {
   return nodes.map((node) => {
-    const disabled = parentDisabled || (!!props.id && node.id === Number(props.id))
+    const disabled = parentDisabled || (!!props.id && node.id === parseId(props.id))
     return {
       ...node,
       disabled,
@@ -162,7 +164,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItemType(Number(props.id))
+  formData.value = await getItemType(props.id as number)
 }
 
 /** 自动生成分类编码 */

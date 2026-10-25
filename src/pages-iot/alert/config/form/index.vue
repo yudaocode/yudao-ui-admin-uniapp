@@ -151,7 +151,7 @@ function handleBack() {
 
 /** 加载告警配置详情 */
 async function getDetail() {
-  formData.value = await getAlertConfig(Number(props.id))
+  formData.value = await getAlertConfig(props.id as number)
 }
 
 /** 加载表单选项 */

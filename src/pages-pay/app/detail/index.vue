@@ -100,7 +100,7 @@ async function handleToggleStatus() {
   }
   statusChanging.value = true
   try {
-    await updatePayAppStatus({ id: Number(props.id), status: next })
+    await updatePayAppStatus({ id: props.id, status: next })
     toast.success('操作成功')
     uni.$emit('pay:app:reload')
     await getDetail()
@@ -116,7 +116,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPayApp(Number(props.id))
+    formData.value = await getPayApp(props.id)
   } finally {
     toast.close()
   }
@@ -144,7 +144,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePayApp(Number(props.id))
+    await deletePayApp(props.id)
     toast.success('删除成功')
     uni.$emit('pay:app:reload')
     delay(handleBack)

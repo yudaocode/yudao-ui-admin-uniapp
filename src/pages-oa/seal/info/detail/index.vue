@@ -102,7 +102,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getSeal(Number(props.id))
+    formData.value = await getSeal(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -130,7 +130,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSeal(Number(props.id))
+    await deleteSeal(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:seal:reload')
     delay(handleBack)

@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdVendor } from '@/api/mes/md/vendor'
 import { computed, ref, watch } from 'vue'
 import { getVendor } from '@/api/mes/md/vendor'
@@ -85,7 +87,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  if (selectedItem.value?.id === Number(id)) {
+  if (selectedItem.value?.id === parseId(id)) {
     return selectedItem.value.code || selectedItem.value.nickname || selectedItem.value.name || String(id)
   }
   return String(id)

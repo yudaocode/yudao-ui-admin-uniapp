@@ -76,6 +76,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ThingModelData } from '@/api/iot/thingmodel'
 import { onUnload } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -97,10 +99,10 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const list = ref<ThingModelData[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
-const defaultProductId = props.productId ? Number(props.productId) : undefined // 入口预置产品
+const defaultProductId = props.productId ? parseId(props.productId) : undefined // 入口预置产品
 const queryParams = ref<Record<string, any>>({ productId: defaultProductId || -1 }) // 查询参数
-const canCreate = computed(() => Number(queryParams.value.productId) > 0) // 是否允许新增功能
-const showTsl = computed(() => Number(queryParams.value.productId) > 0 && hasAccessByCodes(['iot:thing-model:query'])) // 是否展示 TSL 入口
+const canCreate = computed(() => (parseId(queryParams.value.productId) as number) > 0) // 是否允许新增功能
+const showTsl = computed(() => (parseId(queryParams.value.productId) as number) > 0 && hasAccessByCodes(['iot:thing-model:query'])) // 是否展示 TSL 入口
 const tslVisible = ref(false) // TSL 弹窗显示状态
 const tslJson = ref('') // TSL JSON 文本
 
@@ -155,7 +157,7 @@ function getThingModelDataTypeLabel(item: ThingModelData) {
 
 /** 查看物模型 TSL */
 async function handleTsl() {
-  const productId = Number(queryParams.value.productId)
+  const productId = parseId(queryParams.value.productId) as number
   if (!(productId > 0)) {
     return
   }

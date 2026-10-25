@@ -94,7 +94,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionSeckillConfig(Number(props.id))
+    formData.value = await getPromotionSeckillConfig(props.id)
   } finally {
     toast.close()
   }
@@ -115,7 +115,7 @@ async function handleToggle() {
   }
   submitting.value = true
   try {
-    await updatePromotionSeckillConfigStatus({ id: Number(props.id), status })
+    await updatePromotionSeckillConfigStatus({ id: props.id, status })
     toast.success('切换成功')
     uni.$emit('mall:promotion-seckill-config:reload')
     await getDetail()
@@ -133,7 +133,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionSeckillConfig(Number(props.id))
+    await deletePromotionSeckillConfig(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-seckill-config:reload')
     delay(handleBack)

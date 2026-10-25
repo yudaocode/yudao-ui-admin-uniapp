@@ -66,7 +66,7 @@
           </wd-form-item>
         </wd-cell-group>
       </wd-form>
-      <CheckRecordLineList v-if="props.id" :record-id="Number(props.id)" />
+      <CheckRecordLineList v-if="props.id" :record-id="parseId(props.id) as number" />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -93,6 +93,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
@@ -174,7 +176,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getCheckRecord(Number(props.id))
+  formData.value = await getCheckRecord(props.id as number)
 }
 
 /** 初始化页面数据 */
@@ -183,7 +185,7 @@ async function initPage() {
     formData.value = getDefaultFormData()
     return
   }
-  if (!formData.value.id || formData.value.id !== Number(props.id)) {
+  if (!formData.value.id || formData.value.id !== parseId(props.id)) {
     formData.value = getDefaultFormData()
     await getDetail()
   }
@@ -275,7 +277,7 @@ async function handleSubmitRecord() {
       status: undefined,
     }
     await updateCheckRecord(data)
-    await submitCheckRecord(Number(props.id))
+    await submitCheckRecord(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:checkrecord:reload')
     delay(handleBack)

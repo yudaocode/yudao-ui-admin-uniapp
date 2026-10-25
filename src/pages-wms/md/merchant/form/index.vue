@@ -135,7 +135,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMerchant(Number(props.id))
+  formData.value = await getMerchant(props.id)
 }
 
 /** 提交表单 */

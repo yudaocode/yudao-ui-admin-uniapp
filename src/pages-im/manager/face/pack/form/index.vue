@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ImManagerFacePackVO } from '@/api/im/manager/face/pack'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -102,7 +104,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getManagerFacePack(Number(props.id))
+  formData.value = await getManagerFacePack(parseId(props.id) as number)
 }
 
 /** 提交表单 */

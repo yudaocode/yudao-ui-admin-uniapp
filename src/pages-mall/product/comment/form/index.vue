@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ProductSku, ProductSpu } from '@/api/mall/product/spu'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -107,7 +109,7 @@ const formRef = ref<FormInstance>() // 表单组件引用
 /** SKU 选项：以「规格名 / 属性值」展示 */
 const skuOptions = computed(() => skuList.value.map(sku => ({
   label: sku.name || (sku.properties?.map(p => p.valueName).filter(Boolean).join(' ')) || `规格 #${sku.id}`,
-  value: Number(sku.id),
+  value: parseId(sku.id) as number,
 })))
 
 /** 返回上一页 */
@@ -124,7 +126,7 @@ async function handleSpuConfirm(spu?: ProductSpu) {
   }
   try {
     toast.loading('加载规格...')
-    const detail = await getProductSpu(Number(spu.id))
+    const detail = await getProductSpu(spu.id)
     skuList.value = detail.skus || []
   } finally {
     toast.close()

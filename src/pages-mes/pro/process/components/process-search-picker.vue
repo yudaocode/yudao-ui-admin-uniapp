@@ -27,6 +27,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProProcess } from '@/api/mes/pro/process'
 import { computed, ref, watch } from 'vue'
 import { getProcess } from '@/api/mes/pro/process'
@@ -83,7 +85,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  if (selectedItem.value?.id === Number(id)) {
+  if (selectedItem.value?.id === parseId(id)) {
     return selectedItem.value.code || selectedItem.value.name || String(id)
   }
   return String(id)

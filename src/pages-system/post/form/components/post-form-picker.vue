@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { Post } from '@/api/system/post'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -66,7 +68,7 @@ function handleOpen() {
 }
 
 function handleChange(value: Array<boolean | number | string>) {
-  emit('update:modelValue', value.map(Number))
+  emit('update:modelValue', value.map(parseId).filter(isIdType))
 }
 
 onMounted(() => {

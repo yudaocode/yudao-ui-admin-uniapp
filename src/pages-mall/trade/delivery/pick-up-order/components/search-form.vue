@@ -69,6 +69,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref, watch } from 'vue'
 import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
@@ -131,7 +133,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     no: formData.no || undefined,
-    userId: formData.userId ? Number(formData.userId) : undefined,
+    userId: formData.userId ? parseId(formData.userId) : undefined,
     userNickname: formData.userNickname || undefined,
     userMobile: formData.userMobile || undefined,
     status: formData.status === -1 ? undefined : formData.status,

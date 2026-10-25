@@ -89,7 +89,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  project.value = await getProject(Number(props.id))
+  project.value = await getProject(props.id)
   const index = tabs.findIndex(tab => tab.key === props.tabs)
   if (index >= 0) {
     tabIndex.value = index

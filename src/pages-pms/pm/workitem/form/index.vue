@@ -271,6 +271,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { WorkItem } from '@/api/pms/pm/workitem'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -353,7 +355,7 @@ function handleBack() {
 async function getDetail() {
   if (props.id) {
     // 修改场景通过工作项详情确定项目和事项类型
-    const workItem = await getWorkItem(Number(props.id))
+    const workItem = await getWorkItem(props.id)
     projectId.value = workItem.projectId
     type.value = workItem.type
     projectType.value = (await getProject(workItem.projectId)).type
@@ -368,12 +370,12 @@ async function getDetail() {
     return
   }
   // 新建场景由业务入口提供项目和事项类型
-  projectId.value = Number(props.projectId)
+  projectId.value = parseId(props.projectId) as number
   projectType.value = Number(props.projectType)
   type.value = Number(props.type)
   formData.value = getDefaultFormData()
   formData.value.iterationId = props.iterationId
-    ? Number(props.iterationId)
+    ? parseId(props.iterationId)
     : undefined
 }
 

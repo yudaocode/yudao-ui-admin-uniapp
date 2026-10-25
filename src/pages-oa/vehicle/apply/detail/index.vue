@@ -162,7 +162,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getVehicleApply(Number(props.id))
+    formData.value = await getVehicleApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -195,7 +195,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteVehicleApply(Number(props.id))
+    await deleteVehicleApply(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:vehicle-apply:reload')
     delay(handleBack)
@@ -219,7 +219,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitVehicleApply(Number(props.id))
+    await submitVehicleApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:vehicle-apply:reload')
     delay(handleBack)
@@ -243,7 +243,7 @@ async function handleCancel() {
   }
   cancelling.value = true
   try {
-    await cancelVehicleApply(Number(props.id))
+    await cancelVehicleApply(props.id as unknown as number)
     toast.success('取消成功')
     uni.$emit('oa:vehicle-apply:reload')
     getDetail()

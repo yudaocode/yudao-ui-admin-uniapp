@@ -98,7 +98,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getMailAccount(Number(props.id))
+  formData.value = await getMailAccount(props.id as unknown as number)
   const providers = await getSimpleMailProviderList()
   providerName.value = providers.find(item => item.id === formData.value?.providerId)?.name || ''
 }
@@ -116,11 +116,11 @@ async function handleMoreAction({ item }: { item: { value: string } }) {
   operating.value = true
   try {
     if (item.value === 'default') {
-      await updateMailAccountDefault(Number(props.id))
+      await updateMailAccountDefault(props.id as unknown as number)
       toast.success('设置成功')
       await getDetail()
     } else if (item.value === 'test') {
-      const result = await testMailAccountConnection(Number(props.id))
+      const result = await testMailAccountConnection(props.id as unknown as number)
       if (result.imap && result.smtp) {
         toast.success('连接成功')
       } else if (result.imap || result.smtp) {
@@ -149,7 +149,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMailAccount(Number(props.id))
+    await deleteMailAccount(props.id as unknown as number)
     toast.success('移除成功')
     handleBack()
   } finally {

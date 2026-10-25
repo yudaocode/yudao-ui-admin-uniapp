@@ -116,7 +116,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMemberLevel(Number(props.id))
+  formData.value = await getMemberLevel(props.id)
 }
 
 /** 提交表单 */

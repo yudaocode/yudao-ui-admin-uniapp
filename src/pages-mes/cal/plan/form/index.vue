@@ -38,8 +38,8 @@
       <view v-if="props.id" class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
         新增排班计划会自动生成默认班次。确认计划前，请检查班次和班组数量；确认后不可再编辑。
       </view>
-      <PlanShiftList v-if="props.id" :plan-id="Number(props.id)" :editable="isPrepare" />
-      <PlanTeamList v-if="props.id" :plan-id="Number(props.id)" :editable="isPrepare" />
+      <PlanShiftList v-if="props.id" :plan-id="parseId(props.id) as number" :editable="isPrepare" />
+      <PlanTeamList v-if="props.id" :plan-id="parseId(props.id) as number" :editable="isPrepare" />
       <view v-else class="mx-24rpx mt-24rpx rounded-12rpx bg-[#fff7e6] p-20rpx text-26rpx text-[#8a5a00]">
         保存排班计划后，可继续维护班次和班组。
       </view>
@@ -61,6 +61,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { CalPlan } from '@/api/mes/cal/plan'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -134,7 +136,7 @@ async function getDetail() {
     formData.value = getDefaultFormData()
     return
   }
-  formData.value = await getPlan(Number(props.id))
+  formData.value = await getPlan(props.id as number)
 }
 
 /** 生成排班计划编码 */
@@ -206,7 +208,7 @@ async function handleConfirm() {
       shiftMethod,
       shiftCount: shiftMethod === MesCalShiftMethodEnum.DAY ? formData.value.shiftCount : undefined,
     })
-    await confirmPlan(Number(props.id))
+    await confirmPlan(props.id as number)
     toast.success('确认成功')
     uni.$emit('mes:cal:plan:reload')
     delay(handleBack)

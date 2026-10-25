@@ -140,7 +140,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPlan(Number(props.id))
+    formData.value = await getPlan(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -173,7 +173,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePlan(Number(props.id))
+    await deletePlan(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:plan:reload')
     delay(handleBack)

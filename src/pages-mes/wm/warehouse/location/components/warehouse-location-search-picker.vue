@@ -12,6 +12,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmWarehouseLocation } from '@/api/mes/wm/warehouse/location'
 import { computed, ref, watch } from 'vue'
 import { getWarehouseLocationSimpleList } from '@/api/mes/wm/warehouse/location'
@@ -57,7 +59,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  return options.value.find(item => item.id === Number(id))?.name || String(id)
+  return options.value.find(item => item.id === parseId(id))?.name || String(id)
 }
 
 /** 同步仓库变化 */

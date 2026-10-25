@@ -148,7 +148,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getMailProvider(Number(props.id))
+  formData.value = await getMailProvider(props.id as unknown as number)
 }
 
 /** 提交表单 */

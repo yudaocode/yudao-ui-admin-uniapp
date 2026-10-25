@@ -123,6 +123,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Dept } from '@/api/system/dept'
 import type { SalaryEmployeeInfoUpdateListReq } from '@/api/hrm/salary/employee-info'
@@ -224,8 +226,8 @@ async function handleSubmit() {
   if (formData.value.effectTime) {
     formData.value.effectTime = dayjs(formData.value.effectTime).startOf('day').valueOf()
   }
-  formData.value.deptIds = (formData.value.deptIds || []).map(Number)
-  formData.value.employeeIds = (formData.value.employeeIds || []).map(Number)
+  formData.value.deptIds = (formData.value.deptIds || []).map(parseId).filter(isIdType)
+  formData.value.employeeIds = (formData.value.employeeIds || []).map(parseId).filter(isIdType)
   formData.value.salaryOptions = (formData.value.salaryOptions || []).map(item => ({
     ...item,
     value: Number(item.value || 0),

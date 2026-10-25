@@ -77,6 +77,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { NotifyTemplate } from '@/api/system/notify/template'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref, watch } from 'vue'
@@ -128,7 +130,7 @@ const sendFormSchema = createFormSchema(() => {
 })
 const sendFormRef = ref<any>()
 const adminUserId = computed<number | undefined>({
-  get: () => typeof sendFormData.value.userId === 'number' ? sendFormData.value.userId : undefined,
+  get: () => parseId(sendFormData.value.userId) as number,
   set: (value) => {
     sendFormData.value.userId = value
   },
@@ -168,7 +170,7 @@ async function handleSendSubmit() {
   sendLoading.value = true
   try {
     await sendNotify({
-      userId: Number(sendFormData.value.userId),
+      userId: parseId(sendFormData.value.userId) as number,
       userType: sendFormData.value.userType,
       templateCode: props.template?.code || '',
       templateParams: sendFormData.value.templateParams,

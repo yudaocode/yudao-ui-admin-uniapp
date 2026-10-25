@@ -100,7 +100,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWrite(Number(props.id))
+    formData.value = await getWrite(props.id)
   } finally {
     toast.close()
   }
@@ -121,7 +121,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWrite(Number(props.id))
+    await deleteWrite(props.id)
     toast.success('删除成功')
     uni.$emit('ai:write:reload')
     delay(handleBack)

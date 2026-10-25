@@ -27,6 +27,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdWorkstation } from '@/api/mes/md/workstation'
 import { computed, ref, watch } from 'vue'
 import { getWorkstation } from '@/api/mes/md/workstation'
@@ -85,7 +87,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  if (selectedItem.value?.id === Number(id)) {
+  if (selectedItem.value?.id === parseId(id)) {
     return selectedItem.value.code || selectedItem.value.name || String(id)
   }
   return String(id)

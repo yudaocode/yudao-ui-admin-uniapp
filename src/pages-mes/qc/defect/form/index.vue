@@ -86,7 +86,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getDefect(Number(props.id))
+  formData.value = await getDefect(props.id as number)
 }
 
 /** 生成缺陷编码 */

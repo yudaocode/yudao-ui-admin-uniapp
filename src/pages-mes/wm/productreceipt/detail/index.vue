@@ -26,7 +26,7 @@
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
 
-      <ProductReceiptLineList v-if="props.id" :receipt-id="Number(props.id)" readonly />
+      <ProductReceiptLineList v-if="props.id" :receipt-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -57,6 +57,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmProductReceipt } from '@/api/mes/wm/productreceipt'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -135,7 +137,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getProductReceipt(Number(props.id))
+    formData.value = await getProductReceipt(props.id as number)
   } finally {
     toast.close()
   }
@@ -177,7 +179,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductReceipt(Number(props.id))
+    await deleteProductReceipt(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:productreceipt:reload')
     delay(handleBack)
@@ -201,7 +203,7 @@ async function handleSubmitReceipt() {
   }
   submitting.value = true
   try {
-    await submitProductReceipt(Number(props.id))
+    await submitProductReceipt(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:productreceipt:reload')
     await getDetail()
@@ -225,7 +227,7 @@ async function handleCancelReceipt() {
   }
   canceling.value = true
   try {
-    await cancelProductReceipt(Number(props.id))
+    await cancelProductReceipt(props.id as number)
     toast.success('取消成功')
     uni.$emit('mes:wm:productreceipt:reload')
     await getDetail()

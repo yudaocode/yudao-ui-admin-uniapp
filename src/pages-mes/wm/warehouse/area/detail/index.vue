@@ -88,7 +88,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWarehouseArea(Number(props.id))
+    formData.value = await getWarehouseArea(props.id as number)
   } finally {
     toast.close()
   }
@@ -124,7 +124,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWarehouseArea(Number(props.id))
+    await deleteWarehouseArea(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:warehouse-area:reload')
     delay(handleBack)

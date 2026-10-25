@@ -16,6 +16,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import { getAuxiliaryItemSimpleList } from '@/api/fms/config/auxiliary/item'
@@ -65,7 +67,7 @@ async function open(typeId: number, typeName: string) {
 
 /** 选择确认 */
 function handleConfirm({ value }: { value?: number | string | null }) {
-  const itemId = value ? Number(value) : undefined
+  const itemId = value ? parseId(value) : undefined
   const item = options.value.find(option => option.id === itemId)
   if (!currentTypeId.value || !item) {
     return

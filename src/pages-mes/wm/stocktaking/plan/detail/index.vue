@@ -94,7 +94,7 @@ const toast = useToast()
 const formData = ref<StockTakingPlan>() // 详情数据
 const deleting = ref(false) // 删除状态
 const statusLoading = ref(false) // 状态操作状态
-const planId = computed(() => props.id ? Number(props.id) : undefined)
+const planId = computed(() => props.id ? props.id as number : undefined)
 const canUpdate = computed(() => {
   return formData.value?.status === CommonStatusEnum.DISABLE && hasAccessByCodes(['mes:wm-stock-taking-plan:update'])
 })

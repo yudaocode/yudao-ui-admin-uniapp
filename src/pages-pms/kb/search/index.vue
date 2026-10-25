@@ -97,6 +97,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeDocument } from '@/api/pms/kb/content/document'
 import { computed, reactive, ref } from 'vue'
 import { getKnowledgeDocumentSearchPage } from '@/api/pms/kb/content/document'
@@ -126,7 +128,7 @@ const list = ref<KnowledgeDocument[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用
 const formData = reactive({
   keyword: undefined as string | undefined,
-  libraryId: props.libraryId ? Number(props.libraryId) : undefined as number | undefined,
+  libraryId: props.libraryId ? parseId(props.libraryId) : undefined,
   creatorUserId: undefined as number | undefined,
   updateTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -179,7 +181,7 @@ function handleSearch() {
 /** 重置按钮操作 */
 function handleReset() {
   formData.keyword = undefined
-  formData.libraryId = props.libraryId ? Number(props.libraryId) : undefined
+  formData.libraryId = props.libraryId ? parseId(props.libraryId) : undefined
   formData.creatorUserId = undefined
   formData.updateTime = [undefined, undefined]
   libraryName.value = ''

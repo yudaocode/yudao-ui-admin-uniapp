@@ -14,6 +14,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ItemCategory } from '@/api/wms/md/item/category'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleItemCategoryList } from '@/api/wms/md/item/category'
@@ -58,7 +60,7 @@ const options = computed<ItemCategoryTreeItem[]>(() => { // 商品分类树形�
 
 /** 更新商品分类编号 */
 function handleUpdate(value?: number | string) {
-  emit('update:modelValue', value == null ? (props.showRoot ? 0 : undefined) : Number(value))
+  emit('update:modelValue', value == null ? (props.showRoot ? 0 : undefined) : parseId(value) as number)
 }
 
 /** 初始化 */

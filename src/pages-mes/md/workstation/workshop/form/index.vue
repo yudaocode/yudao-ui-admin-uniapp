@@ -103,7 +103,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWorkshop(Number(props.id))
+  formData.value = await getWorkshop(props.id as number)
 }
 
 /** 生成车间编码 */

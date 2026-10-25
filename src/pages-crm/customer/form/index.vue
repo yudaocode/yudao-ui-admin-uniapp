@@ -125,7 +125,7 @@ async function getDetail() {
     }
     return
   }
-  formData.value = await getCustomer(Number(props.id))
+  formData.value = await getCustomer(props.id)
 }
 
 /** 提交表单 */

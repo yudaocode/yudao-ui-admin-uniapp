@@ -109,7 +109,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWorkflow(Number(props.id))
+  formData.value = await getWorkflow(props.id)
 }
 
 /** 提交表单 */

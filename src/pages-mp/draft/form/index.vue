@@ -116,6 +116,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { NewsItem } from '@/api/mp/draft'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -139,7 +141,7 @@ definePage({
 })
 
 const toast = useToast()
-const accountId = computed(() => props.accountId ? Number(props.accountId) : undefined)
+const accountId = computed(() => props.accountId ? parseId(props.accountId) : undefined)
 const mediaId = computed(() => props.mediaId || '')
 const getTitle = computed(() => mediaId.value ? '编辑公众号草稿' : '新增公众号草稿')
 const isCreating = computed(() => !mediaId.value) // 仅新建态可增删图文（编辑走 updateDraft 按 index 改写，增删会保存失败/微信端残留）

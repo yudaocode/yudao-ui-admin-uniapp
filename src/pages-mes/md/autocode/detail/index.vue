@@ -110,7 +110,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getAutoCodeRule(Number(props.id))
+    formData.value = await getAutoCodeRule(props.id as number)
   } finally {
     toast.close()
   }
@@ -141,7 +141,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAutoCodeRule(Number(props.id))
+    await deleteAutoCodeRule(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:autocode:reload')
     delay(handleBack)

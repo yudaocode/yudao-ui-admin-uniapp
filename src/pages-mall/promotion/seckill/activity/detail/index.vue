@@ -102,7 +102,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionSeckillActivity(Number(props.id))
+    formData.value = await getPromotionSeckillActivity(props.id)
   } finally {
     toast.close()
   }
@@ -122,7 +122,7 @@ async function handleClose() {
   }
   closing.value = true
   try {
-    await closePromotionSeckillActivity(Number(props.id))
+    await closePromotionSeckillActivity(props.id)
     toast.success('关闭成功')
     uni.$emit('mall:promotion-seckill-activity:reload')
     await getDetail()
@@ -140,7 +140,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionSeckillActivity(Number(props.id))
+    await deletePromotionSeckillActivity(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-seckill-activity:reload')
     delay(handleBack)

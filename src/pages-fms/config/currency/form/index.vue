@@ -54,6 +54,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Currency } from '@/api/fms/config/currency'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -114,7 +116,7 @@ async function getDetail() {
     return
   }
   const list = await getCurrencyList(accountSetId)
-  const currency = list.find(item => item.id === Number(props.id))
+  const currency = list.find(item => item.id === parseId(props.id))
   if (currency) {
     formData.value = currency
   }

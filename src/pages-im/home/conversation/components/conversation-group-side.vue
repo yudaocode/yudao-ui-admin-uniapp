@@ -149,6 +149,8 @@
 </template>
 
 <script lang="ts" setup>
+import { compareId, isIdType, parseId } from '@/utils/id'
+
 import type { Group, GroupMember } from '../../types'
 import { toGroupCardTarget } from '@/pages-im/utils/message'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -224,7 +226,7 @@ const currentMembers = computed(() => members.value.filter( // 当前有效群�
 ).sort((left, right) => {
   const leftRole = left.role ?? ImGroupMemberRole.NORMAL
   const rightRole = right.role ?? ImGroupMemberRole.NORMAL
-  return leftRole !== rightRole ? leftRole - rightRole : left.userId - right.userId
+  return leftRole !== rightRole ? leftRole - rightRole : compareId(left.userId, right.userId)
 }))
 const currentMember = computed(() => currentMembers.value.find(item => item.userId === userStore.userInfo.userId))
 const currentMemberUserIds = computed(() => currentMembers.value.map(item => item.userId)) // 当前群成员编号
@@ -246,14 +248,14 @@ const removableMembers = computed(() => currentMembers.value.filter(canManageMem
 const myGroupNick = computed(() => currentMember.value?.displayUserName || '')
 const myGroupRemark = computed(() => formData.value?.groupRemark || '') // 群聊备注
 const groupCard = computed(() => toGroupCardTarget({ // 群名片
-  id: Number(props.id),
+  id: parseId(props.id) as number,
   name: formData.value?.name || '群聊',
   showImage: formData.value?.avatar,
   memberCount: currentMembers.value.length,
 }))
 
 /** 获取指定群会话 */
-function getConversation(groupId = Number(props.id)) {
+function getConversation(groupId = parseId(props.id) as number) {
   return conversationStore.getConversation(ImConversationType.GROUP, groupId)
 }
 
@@ -318,7 +320,7 @@ function editGroupInfo() {
 
 /** 编辑我在本群的昵称 */
 async function editMyNick() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   if (!groupId || isQuitGroupDetail.value) {
     return
   }
@@ -340,7 +342,7 @@ async function editMyNick() {
 
 /** 编辑仅自己可见的群聊备注 */
 async function editGroupRemark() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   if (!groupId || isQuitGroupDetail.value) {
     return
   }
@@ -370,7 +372,7 @@ function goHistory() {
 
 /** 清空当前群的本地聊天记录 */
 async function clearHistory() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   if (!groupId) {
     return
   }
@@ -403,7 +405,7 @@ function openOwnerTransferPicker() {
 
 /** 全员禁言切换 */
 async function onMuteAllChange() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const nextMutedAll = mutedAll.value
   if (!groupId || isQuitGroupDetail.value) {
     mutedAll.value = !!formData.value?.mutedAll
@@ -418,7 +420,7 @@ async function onMuteAllChange() {
 
 /** 进群审批切换 */
 async function onJoinApprovalChange() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const nextJoinApproval = joinApproval.value
   if (!groupId || isQuitGroupDetail.value) {
     joinApproval.value = !!formData.value?.joinApproval
@@ -433,7 +435,7 @@ async function onJoinApprovalChange() {
 
 /** 群免打扰切换 */
 async function onSilentChange() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const nextSilent = mySilent.value
   if (!groupId || isQuitGroupDetail.value) {
     mySilent.value = !!formData.value?.silent
@@ -449,7 +451,7 @@ async function onSilentChange() {
 /** 切换群聊置顶 */
 async function onPinnedChange() {
   const nextPinned = pinned.value
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const group = formData.value ? { ...formData.value } : undefined
   if (!groupId || !group || isQuitGroupDetail.value) {
     pinned.value = !!getConversation()?.top
@@ -485,7 +487,7 @@ async function onPinnedChange() {
 
 /** 退出群聊 */
 async function handleQuit() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const groupName = formData.value?.name || ''
   if (!groupId) {
     return
@@ -502,7 +504,7 @@ async function handleQuit() {
 
 /** 解散群聊 */
 async function handleDissolve() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   const groupName = formData.value?.name || ''
   if (!groupId) {
     return
@@ -546,7 +548,7 @@ async function loadDetail(groupId: number) {
 
 /** 加载详情 */
 async function getDetail() {
-  const groupId = Number(props.id)
+  const groupId = parseId(props.id)
   if (!groupId) {
     return
   }
@@ -566,7 +568,7 @@ watch(
 
 /** 账号、群聊或显示状态变化时刷新群资料 */
 watch(
-  () => [props.active !== false, Number(props.id)] as const,
+  () => [props.active !== false, parseId(props.id) as number] as const,
   ([active, groupId], previous) => {
     const previousGroupId = previous?.[1]
     if (previous && previousGroupId !== groupId) {
@@ -602,17 +604,17 @@ function handleImEvent(data: { conversationType?: number, contentType?: number, 
   if (data.conversationType !== ImConversationType.GROUP || !data.contentType || !data.payload) {
     return
   }
-  const groupId = Number(data.payload.groupId)
-  if (!groupId || groupId !== Number(props.id)) {
+  const groupId = parseId(data.payload.groupId)
+  if (!groupId || groupId !== parseId(props.id)) {
     return
   }
   const content = parseGroupEventContent(data.payload)
   const userId = useUserStore().userInfo.userId
   const removedSelf = data.contentType === ImMessageType.GROUP_DISSOLVE
     || (data.contentType === ImMessageType.GROUP_MEMBER_QUIT
-      && Number(content.operatorUserId || data.payload.operatorUserId) === userId)
+      && parseId(content.operatorUserId || data.payload.operatorUserId) === userId)
     || (data.contentType === ImMessageType.GROUP_MEMBER_KICK
-      && (content.memberUserIds || data.payload.memberUserIds || []).map(Number).includes(userId))
+      && (content.memberUserIds || data.payload.memberUserIds || []).map(parseId).filter(isIdType).includes(userId))
   if (removedSelf) {
     groupRelationInvalid.value = true
     memberDetailLoaded.value = false

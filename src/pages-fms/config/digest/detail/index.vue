@@ -30,6 +30,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Digest } from '@/api/fms/config/digest'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -76,7 +78,7 @@ async function getDetail() {
     return
   }
   const list = await getDigestList(accountSetId)
-  const digest = list.find(item => item.id === Number(props.id))
+  const digest = list.find(item => item.id === parseId(props.id))
   if (digest) {
     formData.value = digest
   }
@@ -106,7 +108,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDigest(accountSetId, Number(props.id))
+    await deleteDigest(accountSetId, props.id)
     toast.success('删除成功')
     uni.$emit('fms:config:digest:reload')
     delay(handleBack)

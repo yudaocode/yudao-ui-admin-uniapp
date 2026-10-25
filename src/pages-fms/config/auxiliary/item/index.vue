@@ -94,6 +94,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { onUnload } from '@dcloudio/uni-app'
@@ -142,7 +144,7 @@ async function loadAuxiliaryType() {
     return
   }
   const typeList = await getAuxiliaryTypeList(accountSetId)
-  auxiliaryType.value = typeList.find(item => item.id === Number(props.auxiliaryTypeId))
+  auxiliaryType.value = typeList.find(item => item.id === parseId(props.auxiliaryTypeId))
 }
 
 /** 查询项目列表 */
@@ -155,7 +157,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getAuxiliaryItemPage({
       accountSetId,
-      auxiliaryTypeId: Number(props.auxiliaryTypeId),
+      auxiliaryTypeId: props.auxiliaryTypeId,
       ...queryParams.value,
       pageNo,
       pageSize,

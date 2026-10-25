@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeDocument, KnowledgeDocumentTreeNode } from '@/api/pms/kb/content/document'
 import type { KnowledgeFolder, KnowledgeFolderTreeNode, KnowledgeTree } from '@/api/pms/kb/content/folder'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -202,7 +204,7 @@ function findFolder(folders: KnowledgeFolderTreeNode[], id: number): KnowledgeFo
 
 /** 判断是否为源文件夹或其子文件夹 */
 function isSourceFolderOrDescendant(targetId: number) {
-  const sourceFolder = findFolder(targetTree.value?.folders || [], Number(props.id))
+  const sourceFolder = findFolder(targetTree.value?.folders || [], parseId(props.id) as number)
   return sourceFolder ? containsFolder(sourceFolder, targetId) : false
 }
 
@@ -222,7 +224,7 @@ function isSourceDocumentOrDescendant(targetId: number) {
     ...(targetTree.value?.documents || []),
     ...(targetTree.value?.folders.flatMap(folder => collectFolderDocuments(folder)) || []),
   ]
-  const sourceDocument = findDocument(documents, Number(props.id))
+  const sourceDocument = findDocument(documents, parseId(props.id) as number)
   return sourceDocument ? containsDocument(sourceDocument, targetId) : false
 }
 
@@ -279,7 +281,7 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    const contentId = Number(props.id)
+    const contentId = parseId(props.id) as number
     if (isFolder.value) {
       if (formData.targetLibraryId === sourceLibraryId.value && target.entityId === sourceParentId.value) {
         toast.warning('内容已在当前目录')
@@ -323,10 +325,10 @@ onMounted(async () => {
   }
   let content: KnowledgeFolder | KnowledgeDocument
   if (isFolder.value) {
-    content = await getKnowledgeFolder(Number(props.id))
+    content = await getKnowledgeFolder(props.id)
     sourceFolderId.value = PmsKnowledgeRootId
   } else {
-    content = await getKnowledgeDocument(Number(props.id))
+    content = await getKnowledgeDocument(props.id)
     sourceFolderId.value = (content as KnowledgeDocument).folderId
   }
   contentTitle.value = content.title

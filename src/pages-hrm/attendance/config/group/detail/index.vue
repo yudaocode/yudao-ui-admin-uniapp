@@ -266,7 +266,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getAttendanceGroup(Number(props.id))
+  formData.value = await getAttendanceGroup(props.id)
 }
 
 /** 编辑 */
@@ -292,7 +292,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteAttendanceGroup(Number(props.id))
+    await deleteAttendanceGroup(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:attendance:group:reload')
     delay(handleBack)

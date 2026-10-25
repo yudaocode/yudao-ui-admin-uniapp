@@ -76,7 +76,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPayTransfer(Number(props.id))
+    formData.value = await getPayTransfer(props.id)
   } finally {
     toast.close()
   }

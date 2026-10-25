@@ -56,6 +56,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { ItemCategory } from '@/api/wms/md/item/category'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -85,7 +87,7 @@ const getTitle = computed(() => props.id ? '编辑商品分类' : '新增商品�
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<ItemCategory>({
   id: undefined,
-  parentId: props.parentId ? Number(props.parentId) : 0,
+  parentId: props.parentId ? parseId(props.parentId) as number : 0,
   code: '',
   name: '',
   sort: 0,
@@ -110,7 +112,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItemCategory(Number(props.id))
+  formData.value = await getItemCategory(props.id)
 }
 
 /** 提交表单 */

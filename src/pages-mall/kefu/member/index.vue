@@ -151,6 +151,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PageParam } from '@/http/types'
 import type { MemberUser } from '@/api/member/user'
 import type { PayWallet } from '@/api/pay/wallet/balance'
@@ -175,7 +177,7 @@ definePage({
   },
 })
 
-const userId = computed(() => props.userId != null && props.userId !== '' ? Number(props.userId) : undefined) // 会员编号
+const userId = computed(() => props.userId != null && props.userId !== '' ? parseId(props.userId) : undefined) // 会员编号
 const activeTab = ref(0) // 当前 tab
 
 const member = ref<MemberUser>({}) // 会员信息

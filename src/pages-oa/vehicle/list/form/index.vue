@@ -218,7 +218,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getVehicle(Number(props.id))
+  const data = await getVehicle(props.id as unknown as number)
   formData.value = data
   compulsoryTime.value = data.compulsoryInsuranceExpireTime ? toTimestamp(data.compulsoryInsuranceExpireTime) : ''
   commercialTime.value = data.commercialInsuranceExpireTime ? toTimestamp(data.commercialInsuranceExpireTime) : ''

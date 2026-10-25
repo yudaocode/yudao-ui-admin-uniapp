@@ -109,7 +109,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAccountSet(Number(props.id))
+  formData.value = await getAccountSet(props.id)
 }
 
 /** 编辑账套 */

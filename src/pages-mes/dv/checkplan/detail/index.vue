@@ -44,13 +44,13 @@
 
     <!-- 设备清单 -->
     <scroll-view v-if="tabType === 'machinery' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <MachineryList :plan-id="Number(props.id)" readonly :show-title="false" />
+      <MachineryList :plan-id="parseId(props.id) as number" readonly :show-title="false" />
       <view class="h-48rpx" />
     </scroll-view>
 
     <!-- 项目清单 -->
     <scroll-view v-if="tabType === 'subjects' && props.id" class="min-h-0 flex-1" scroll-y scroll-with-animation>
-      <SubjectList :plan-id="Number(props.id)" :type="formData?.type" readonly :show-title="false" />
+      <SubjectList :plan-id="parseId(props.id) as number" :type="formData?.type" readonly :show-title="false" />
       <view class="h-48rpx" />
     </scroll-view>
 
@@ -87,6 +87,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DvCheckPlan } from '@/api/mes/dv/checkplan'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -149,7 +151,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getCheckPlan(Number(props.id))
+    formData.value = await getCheckPlan(props.id as number)
   } finally {
     toast.close()
   }
@@ -180,7 +182,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteCheckPlan(Number(props.id))
+    await deleteCheckPlan(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:dv:checkplan:reload')
     delay(handleBack)
@@ -202,7 +204,7 @@ async function handleEnable() {
   } catch {
     return
   }
-  await enableCheckPlan(Number(props.id))
+  await enableCheckPlan(props.id as number)
   toast.success('启用成功')
   uni.$emit('mes:dv:checkplan:reload')
   await getDetail()
@@ -221,7 +223,7 @@ async function handleDisable() {
   } catch {
     return
   }
-  await disableCheckPlan(Number(props.id))
+  await disableCheckPlan(props.id as number)
   toast.success('停用成功')
   uni.$emit('mes:dv:checkplan:reload')
   await getDetail()

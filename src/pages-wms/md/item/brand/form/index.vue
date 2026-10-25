@@ -80,7 +80,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getItemBrand(Number(props.id))
+  formData.value = await getItemBrand(props.id)
 }
 
 /** 提交表单 */

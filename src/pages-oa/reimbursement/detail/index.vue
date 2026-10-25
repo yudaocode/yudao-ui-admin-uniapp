@@ -156,7 +156,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getReimbursement(Number(props.id))
+    formData.value = await getReimbursement(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -189,7 +189,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitReimbursement(Number(props.id))
+    await submitReimbursement(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:reimbursement:reload')
     delay(handleBack)

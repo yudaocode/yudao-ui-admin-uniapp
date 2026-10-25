@@ -59,6 +59,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerFacePackItemVO } from '@/api/im/manager/face/item'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getManagerFacePackItemPage } from '@/api/im/manager/face/item'
@@ -82,7 +84,7 @@ async function queryList(pageNo: number, pageSize: number) {
   }
   try {
     const data = await getManagerFacePackItemPage({
-      packId: Number(props.packId),
+      packId: parseId(props.packId) as number,
       pageNo,
       pageSize,
     })

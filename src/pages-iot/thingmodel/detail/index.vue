@@ -219,7 +219,7 @@ function handleBack() {
 /** 加载物模型详情 */
 async function getDetail() {
   if (props.id && !deleting.value) {
-    formData.value = await getThingModel(Number(props.id))
+    formData.value = await getThingModel(props.id as number)
   }
 }
 
@@ -240,7 +240,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteThingModel(Number(props.id))
+    await deleteThingModel(props.id as number)
     toast.success('删除成功')
     uni.$emit('iot:thingmodel:reload')
     delay(handleBack)

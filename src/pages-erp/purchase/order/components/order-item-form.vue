@@ -140,7 +140,7 @@ async function handleProductConfirm(index: number, productId?: number | string) 
     item.productPrice = product.purchasePrice
   }
   if (productId) {
-    item.stockCount = await getStockCount(Number(productId))
+    item.stockCount = await getStockCount(productId as number)
   }
 }
 

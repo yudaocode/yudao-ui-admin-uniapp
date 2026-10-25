@@ -99,7 +99,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getChatConversation(Number(props.id))
+    formData.value = await getChatConversation(props.id)
   } finally {
     toast.close()
   }
@@ -130,7 +130,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteChatConversationByAdmin(Number(props.id))
+    await deleteChatConversationByAdmin(props.id)
     toast.success('删除成功')
     uni.$emit('ai:chat-conversation:reload')
     delay(handleBack)

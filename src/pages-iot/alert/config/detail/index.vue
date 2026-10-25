@@ -90,7 +90,7 @@ function handleBack() {
 /** 加载告警配置详情 */
 async function getDetail() {
   if (props.id && !deleting.value) {
-    formData.value = await getAlertConfig(Number(props.id))
+    formData.value = await getAlertConfig(props.id)
   }
 }
 
@@ -116,7 +116,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAlertConfig(Number(props.id))
+    await deleteAlertConfig(props.id)
     toast.success('删除成功')
     uni.$emit('iot:alert-config:reload')
     delay(handleBack)

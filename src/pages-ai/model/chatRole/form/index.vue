@@ -141,7 +141,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getChatRole(Number(props.id))
+  formData.value = await getChatRole(props.id)
 }
 
 /** 提交表单 */

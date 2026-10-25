@@ -100,7 +100,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getRoute(Number(props.id))
+  formData.value = await getRoute(props.id as number)
 }
 
 /** 生成工艺路线编码 */

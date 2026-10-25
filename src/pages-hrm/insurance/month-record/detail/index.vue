@@ -183,6 +183,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { InsuranceMonthRecord } from '@/api/hrm/insurance/month-record'
 import type { InsuranceMonthEmployeeRecord } from '@/api/hrm/insurance/month-record/employee'
 import { onUnload } from '@dcloudio/uni-app'
@@ -239,7 +241,7 @@ const batchFormRef = ref<InstanceType<typeof BatchEmployeeForm>>() // 批量调�
 const editable = computed(() => monthRecord.value.status === HrmInsuranceMonthStatus.UNARCHIVED)
 const canDelete = computed(() => { // 仅最近未归档月表可删
   return !!props.id
-    && Number(props.id) === latestRecordId.value
+    && parseId(props.id) === latestRecordId.value
     && editable.value
     && hasAccessByCodes(['hrm:insurance:month-record:delete'])
 })
@@ -298,7 +300,7 @@ async function getMonthRecord() {
     return
   }
   const [detail, latest] = await Promise.all([
-    getInsuranceMonthRecord(Number(props.id)),
+    getInsuranceMonthRecord(props.id),
     getLastInsuranceMonthRecord(),
   ])
   monthRecord.value = detail
@@ -320,7 +322,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteInsuranceMonthRecord(Number(props.id))
+    await deleteInsuranceMonthRecord(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:insurance:month-record:reload')
     navigateBackPlus('/pages-hrm/insurance/month-record/index')
@@ -338,7 +340,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getInsuranceMonthEmployeeRecordPage({
       ...queryParams.value,
-      monthRecordId: Number(props.id),
+      monthRecordId: props.id,
       status: activeStatus.value,
       pageNo,
       pageSize,
@@ -406,7 +408,7 @@ function handleAddEmployee() {
   if (!props.id) {
     return
   }
-  addEmployeeFormRef.value?.open(Number(props.id))
+  addEmployeeFormRef.value?.open(parseId(props.id) as number)
 }
 
 /** 批量操作 */

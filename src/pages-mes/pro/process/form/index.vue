@@ -92,7 +92,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProcess(Number(props.id))
+  formData.value = await getProcess(props.id as number)
 }
 
 /** 生成工序编码 */

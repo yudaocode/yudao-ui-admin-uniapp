@@ -103,7 +103,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMemberLevel(Number(props.id))
+    formData.value = await getMemberLevel(props.id)
   } finally {
     toast.close()
   }
@@ -131,7 +131,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMemberLevel(Number(props.id))
+    await deleteMemberLevel(props.id)
     toast.success('删除成功')
     uni.$emit('member:level:reload')
     delay(handleBack)

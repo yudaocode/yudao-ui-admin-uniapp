@@ -59,6 +59,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -169,7 +171,7 @@ async function getDetail() {
   }
   formData.value = {
     id: undefined,
-    appId: Number(props.appId),
+    appId: parseId(props.appId) as number,
     code: props.code,
     status: CommonStatusEnum.ENABLE,
     feeRate: 0,
@@ -178,7 +180,7 @@ async function getDetail() {
   }
   formLoading.value = true
   try {
-    const data = await getPayChannel(Number(props.appId), props.code)
+    const data = await getPayChannel(props.appId, props.code)
     if (!data?.id) {
       return
     }
@@ -210,7 +212,7 @@ async function handleSubmit() {
   try {
     const data = {
       ...formData.value,
-      appId: Number(props.appId),
+      appId: parseId(props.appId) as number,
       code: props.code,
       config: JSON.stringify(formData.value.config),
     }

@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { VoucherWord } from '@/api/fms/config/voucher-word'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -106,7 +108,7 @@ async function getDetail() {
     return
   }
   const list = await getVoucherWordList(accountSetId)
-  const voucherWord = list.find(item => item.id === Number(props.id))
+  const voucherWord = list.find(item => item.id === parseId(props.id))
   if (voucherWord) {
     formData.value = voucherWord
   }

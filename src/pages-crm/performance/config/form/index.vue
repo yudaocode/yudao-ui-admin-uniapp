@@ -169,7 +169,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPerformanceConfig(Number(props.id))
+  const data = await getPerformanceConfig(props.id)
   formData.value = {
     ...formData.value,
     ...data,

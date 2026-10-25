@@ -260,6 +260,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Device } from '@/api/iot/device/device'
 import type { DeviceModbusConfig } from '@/api/iot/device/modbus/config'
@@ -387,7 +389,7 @@ const registerAddressHex = computed(() => { // 寄存器地址十六进制显示
 /** 构造连接配置默认值 */
 function buildDefaultConfig(): DeviceModbusConfig {
   return {
-    deviceId: Number(props.deviceId),
+    deviceId: parseId(props.deviceId) as number,
     ip: '',
     port: 502,
     slaveId: 1,
@@ -402,7 +404,7 @@ function buildDefaultConfig(): DeviceModbusConfig {
 /** 构造点位默认值 */
 function buildDefaultPoint(): DeviceModbusPoint {
   return {
-    deviceId: Number(props.deviceId),
+    deviceId: parseId(props.deviceId) as number,
     thingModelId: undefined,
     identifier: '',
     name: '',
@@ -427,12 +429,12 @@ async function getDetail() {
   if (!props.deviceId) {
     return
   }
-  deviceData.value = await getDevice(Number(props.deviceId))
+  deviceData.value = await getDevice(props.deviceId)
   if (deviceData.value.productId) {
-    productData.value = await getProduct(Number(deviceData.value.productId))
+    productData.value = await getProduct(parseId(deviceData.value.productId) as number)
     thingModelList.value = await getThingModelList({ productId: deviceData.value.productId })
   }
-  modbusConfig.value = await getModbusConfig(Number(props.deviceId))
+  modbusConfig.value = await getModbusConfig(props.deviceId)
 }
 
 /** 查询点位列表 */
@@ -444,7 +446,7 @@ async function queryPointList(pageNo: number, pageSize: number) {
   try {
     const data = await getModbusPointPage({
       ...queryParams.value,
-      deviceId: Number(props.deviceId),
+      deviceId: props.deviceId,
       pageNo,
       pageSize,
     })
@@ -502,11 +504,11 @@ async function handleConfigSubmit() {
 
   configLoading.value = true
   try {
-    const data = { ...configFormData.value, deviceId: Number(props.deviceId) }
+    const data = { ...configFormData.value, deviceId: parseId(props.deviceId) as number }
     await saveModbusConfig(data)
     toast.success('保存成功')
     configVisible.value = false
-    modbusConfig.value = await getModbusConfig(Number(props.deviceId))
+    modbusConfig.value = await getModbusConfig(props.deviceId)
   } finally {
     configLoading.value = false
   }
@@ -552,7 +554,7 @@ async function handlePointSubmit() {
 
   pointLoading.value = true
   try {
-    const data = { ...pointFormData.value, deviceId: Number(props.deviceId) }
+    const data = { ...pointFormData.value, deviceId: parseId(props.deviceId) as number }
     if (data.id) {
       await updateModbusPoint(data)
       toast.success('更新成功')

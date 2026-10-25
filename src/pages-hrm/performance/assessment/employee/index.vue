@@ -113,6 +113,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type {
   PerformanceArchiveEmployee,
   PerformanceAssessment,
@@ -151,7 +153,7 @@ const queryParams = ref<Record<string, any>>({}) // 查询参数
 const selectedIds = ref<number[]>([]) // 选中的考核编号
 const canSelect = computed(() => hasAccessByCodes(['hrm:performance:archive:delete'])) // 可批量删除
 const employee = ref<PerformanceArchiveEmployee>({
-  employeeId: Number(props.employeeId) || 0,
+  employeeId: parseId(props.employeeId) || 0,
   employeeName: '',
   assessmentCount: 0,
 }) // 员工摘要
@@ -208,7 +210,7 @@ async function queryList(pageNo: number, pageSize: number) {
   try {
     const data = await getPerformanceAssessmentArchivePage({
       ...queryParams.value,
-      employeeId: Number(props.employeeId),
+      employeeId: props.employeeId,
       pageNo,
       pageSize,
     })
@@ -267,7 +269,7 @@ async function handleDelete(ids: number[]) {
   try {
     const data = await getPerformanceAssessmentArchivePage({
       ...queryParams.value,
-      employeeId: Number(props.employeeId),
+      employeeId: props.employeeId,
       pageNo: 1,
       pageSize: 1,
     })

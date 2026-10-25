@@ -141,7 +141,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getArrivalNotice(Number(props.id))
+    formData.value = await getArrivalNotice(props.id as number)
   } finally {
     toast.close()
   }
@@ -172,7 +172,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteArrivalNotice(Number(props.id))
+    await deleteArrivalNotice(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:arrivalnotice:reload')
     delay(handleBack)
@@ -196,7 +196,7 @@ async function handleSubmitNotice() {
   }
   submitting.value = true
   try {
-    await submitArrivalNotice(Number(props.id))
+    await submitArrivalNotice(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:arrivalnotice:reload')
     await getDetail()

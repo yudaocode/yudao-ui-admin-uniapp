@@ -12,6 +12,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { WmWarehouse } from '@/api/mes/wm/warehouse'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getWarehouseSimpleList } from '@/api/mes/wm/warehouse'
@@ -53,7 +55,7 @@ function format(id?: number | string) {
   if (id == null || id === '') {
     return ''
   }
-  return options.value.find(item => item.id === Number(id))?.name || String(id)
+  return options.value.find(item => item.id === parseId(id))?.name || String(id)
 }
 
 /** 同步外部绑定值 */

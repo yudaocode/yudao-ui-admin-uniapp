@@ -82,7 +82,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getPerformanceResultTemplate(Number(props.id))
+  formData.value = await getPerformanceResultTemplate(props.id)
 }
 
 /** 提交表单 */

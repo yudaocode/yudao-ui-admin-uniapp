@@ -16,6 +16,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { MemberTag } from '@/api/member/tag'
 import { onMounted, ref } from 'vue'
 import { getSimpleMemberTagList } from '@/api/member/tag'
@@ -51,7 +53,7 @@ async function loadOptions() {
 
 /** 更新用户标签编号 */
 function handleUpdate(value?: number[]) {
-  emit('update:modelValue', Array.isArray(value) ? value.map(Number) : [])
+  emit('update:modelValue', Array.isArray(value) ? value.map(parseId).filter(isIdType) : [])
 }
 
 /** 初始化 */

@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 import type { ConversationDO, ConversationReadDO, ImDbClient, MessageDO } from '@/pages-im/utils/db'
 import type { Message } from '../types'
 import type { ImChannelMessageRespVO } from '@/api/im/message/channel'
@@ -27,7 +28,7 @@ import {
   parseRecallMessageId,
   serializeMessage,
 } from '@/pages-im/utils/message'
-import { runMinIdPull } from '@/pages-im/utils/pull'
+import { maxImId, runMinIdPull } from '@/pages-im/utils/pull'
 import {
   enqueueConversationWrite,
   enqueueConversationWrites,
@@ -129,11 +130,11 @@ export const useMessageStore = defineStore('imMessageStore', () => {
       return
     }
     if (conversationType === ImConversationType.PRIVATE) {
-      privateMessageMaxId.value = Math.max(privateMessageMaxId.value, messageId)
+      privateMessageMaxId.value = maxImId(privateMessageMaxId.value, messageId)
     } else if (conversationType === ImConversationType.GROUP) {
-      groupMessageMaxId.value = Math.max(groupMessageMaxId.value, messageId)
+      groupMessageMaxId.value = maxImId(groupMessageMaxId.value, messageId)
     } else if (conversationType === ImConversationType.CHANNEL) {
-      channelMessageMaxId.value = Math.max(channelMessageMaxId.value, messageId)
+      channelMessageMaxId.value = maxImId(channelMessageMaxId.value, messageId)
     }
   }
 
@@ -183,7 +184,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
     }
     const nextMaxReadId = maxReadId || 0
     const current = getPrivateReadMaxId(peerId)
-    if (current !== undefined && nextMaxReadId <= current) {
+    if (current !== undefined && compareId(nextMaxReadId, current) <= 0) {
       return current
     }
     privateReadMaxIds.value = { ...privateReadMaxIds.value, [peerId]: nextMaxReadId }
@@ -369,7 +370,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
             }
             const mapped = mapper(signal, currentUserId)
             const terminal = await getTerminal(mapped.clientConversationId)
-            if (messageId <= terminal.clearBefore || terminal.deleted.has(`id:${messageId}`)) {
+            if (compareId(messageId, terminal.clearBefore) <= 0 || terminal.deleted.has(`id:${messageId}`)) {
               continue
             }
             terminal.recalled.add(`id:${messageId}`)
@@ -570,10 +571,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
       'messages',
       item => item.clientConversationId === clientConversationId,
     )
-    const clearBeforeMessageId = Math.max(
-      conversation?.lastMessageId || 0,
-      ...messages.map(item => item.id || 0),
-    )
+    const clearBeforeMessageId = maxImId(conversation?.lastMessageId || 0, ...messages.map(item => item.id || 0))
     const deletedSettingKey
       = `${StorageKeys.settings.conversationDeletedMessagesPrefix}${clientConversationId}`
     const oldDeletedKeys = (await db.getSetting<string[]>(deletedSettingKey)) || []
@@ -686,7 +684,7 @@ export const useMessageStore = defineStore('imMessageStore', () => {
       changed = messages
         .filter(message => message.selfSend
           && !!message.id
-          && message.id <= options.privateReadMaxId!
+          && compareId(message.id, options.privateReadMaxId!) <= 0
           && message.receiptStatus === ImMessageReceiptStatus.PENDING)
         .map(message => ({ ...message, receiptStatus: ImMessageReceiptStatus.DONE }))
     } else if (options.conversationType === ImConversationType.GROUP && options.groupMessageId) {

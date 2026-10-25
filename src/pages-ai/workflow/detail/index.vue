@@ -112,7 +112,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWorkflow(Number(props.id))
+    formData.value = await getWorkflow(props.id)
   } finally {
     toast.close()
   }
@@ -140,7 +140,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWorkflow(Number(props.id))
+    await deleteWorkflow(props.id)
     toast.success('删除成功')
     uni.$emit('ai:workflow:reload')
     delay(handleBack)

@@ -169,7 +169,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getSealApply(Number(props.id))
+    formData.value = await getSealApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -202,7 +202,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteSealApply(Number(props.id))
+    await deleteSealApply(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:seal-apply:reload')
     delay(handleBack)
@@ -226,7 +226,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitSealApply(Number(props.id))
+    await submitSealApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:seal-apply:reload')
     delay(handleBack)
@@ -250,7 +250,7 @@ async function handleCancel() {
   }
   cancelling.value = true
   try {
-    await cancelSealApply(Number(props.id))
+    await cancelSealApply(props.id as unknown as number)
     toast.success('撤销成功')
     uni.$emit('oa:seal-apply:reload')
     getDetail()

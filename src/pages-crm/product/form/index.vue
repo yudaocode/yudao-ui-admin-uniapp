@@ -41,6 +41,7 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Product } from '@/api/crm/product'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -102,7 +103,7 @@ function applyQueryDefaults() {
     if (value === undefined || value === '') {
       return
     }
-    ;(formData.value as Record<string, any>)[key] = numericProps.includes(key) ? Number(value) : value
+    ;(formData.value as Record<string, any>)[key] = ['categoryId', 'ownerUserId'].includes(key) ? parseId(value) : numericProps.includes(key) ? Number(value) : value
   })
 }
 
@@ -116,7 +117,7 @@ async function getDetail() {
     }
     return
   }
-  formData.value = await getProduct(Number(props.id))
+  formData.value = await getProduct(props.id)
 }
 
 /** 提交表单 */

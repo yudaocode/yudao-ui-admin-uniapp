@@ -187,7 +187,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getVehicleReturn(Number(props.id))
+  const data = await getVehicleReturn(props.id as unknown as number)
   formData.value = data
   selectedApplyLabel.value = `${data.applyNo || `用车申请 #${data.applyId}`}（${data.vehicleNo || '-'}）`
   actualStartTime.value = data.actualStartTime ? toTimestamp(data.actualStartTime) : ''
@@ -199,7 +199,7 @@ async function initFromApply() {
   if (props.id || !props.applyId) {
     return
   }
-  const apply = await getVehicleApply(Number(props.applyId))
+  const apply = await getVehicleApply(props.applyId as unknown as number)
   formData.value.applyId = apply.id
   selectedApplyLabel.value = `${apply.no || `用车申请 #${apply.id}`}（${apply.vehicleNo || '-'}）`
   actualStartTime.value = apply.startTime ? toTimestamp(apply.startTime) : ''

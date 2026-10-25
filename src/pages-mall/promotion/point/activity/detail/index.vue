@@ -99,7 +99,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getPromotionPointActivity(Number(props.id))
+    formData.value = await getPromotionPointActivity(props.id)
   } finally {
     toast.close()
   }
@@ -119,7 +119,7 @@ async function handleClose() {
   }
   closing.value = true
   try {
-    await closePromotionPointActivity(Number(props.id))
+    await closePromotionPointActivity(props.id)
     toast.success('关闭成功')
     uni.$emit('mall:promotion-point-activity:reload')
     await getDetail()
@@ -137,7 +137,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deletePromotionPointActivity(Number(props.id))
+    await deletePromotionPointActivity(props.id)
     toast.success('删除成功')
     uni.$emit('mall:promotion-point-activity:reload')
     delay(handleBack)

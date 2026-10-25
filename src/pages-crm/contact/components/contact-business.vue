@@ -51,6 +51,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -90,11 +92,11 @@ async function loadList() {
 
 /** 关联商机 */
 async function handleAdd(business?: Business) {
-  const businessId = Number(business?.id)
+  const businessId = parseId(business?.id)
   if (!businessId) {
     return
   }
-  if (list.value.some(item => Number(item.id) === businessId)) {
+  if (list.value.some(item => parseId(item.id) === businessId)) {
     toast.show('该商机已关联')
     return
   }
@@ -113,7 +115,7 @@ async function handleRemove(business: Record<string, any>) {
   } catch {
     return
   }
-  await deleteContactBusinessList({ contactId: props.contactId, businessIds: [Number(business.id)] })
+  await deleteContactBusinessList({ contactId: props.contactId, businessIds: [business.id] })
   toast.success('解除成功')
   await loadList()
 }

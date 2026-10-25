@@ -92,7 +92,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getTool(Number(props.id))
+  formData.value = await getTool(props.id)
 }
 
 /** 提交表单 */

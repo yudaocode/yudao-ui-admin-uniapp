@@ -153,7 +153,7 @@ async function getDetail() {
     return
   }
   const [detail] = await Promise.all([
-    getSalaryChangeTemplate(Number(props.id)),
+    getSalaryChangeTemplate(props.id),
     loadOptions(false),
   ])
   formData.value = detail

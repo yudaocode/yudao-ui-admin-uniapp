@@ -70,6 +70,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { reactive, ref } from 'vue'
 import { searchKnowledgeSegment } from '@/api/ai/knowledge/segment'
@@ -92,7 +94,7 @@ const toast = useToast()
 const retrievalLoading = ref(false) // 召回测试状态
 const retrievalSegments = ref<any[]>([]) // 召回结果
 const retrievalForm = reactive({
-  knowledgeId: props.knowledgeId ? Number(props.knowledgeId) : undefined,
+  knowledgeId: props.knowledgeId ? parseId(props.knowledgeId) : undefined,
   content: '',
   topK: 10,
   similarityThreshold: 0.5,

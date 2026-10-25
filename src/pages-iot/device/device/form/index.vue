@@ -179,7 +179,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = normalizeFormData(await getDevice(Number(props.id)))
+  formData.value = normalizeFormData(await getDevice(props.id))
 }
 
 /** 提交表单 */

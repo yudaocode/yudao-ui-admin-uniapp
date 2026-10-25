@@ -119,6 +119,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdProductSop } from '@/api/mes/md/item/productSop'
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -192,7 +194,7 @@ async function queryList(pageNo: number, pageSize: number) {
   }
   try {
     const data = await getProductSopPage({
-      itemId: Number(props.itemId),
+      itemId: props.itemId,
       pageNo,
       pageSize,
     })
@@ -222,7 +224,7 @@ function openForm(type: 'create' | 'update', sop?: MdProductSop) {
         remark: sop.remark || '',
       }
     : {
-        itemId: Number(props.itemId) || 0,
+        itemId: parseId(props.itemId) || 0,
         sort: 0,
         title: '',
         processId: undefined,

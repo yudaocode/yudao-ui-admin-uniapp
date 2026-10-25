@@ -64,7 +64,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getJobLog(Number(props.id))
+    formData.value = await getJobLog(props.id)
   } finally {
     toast.close()
   }

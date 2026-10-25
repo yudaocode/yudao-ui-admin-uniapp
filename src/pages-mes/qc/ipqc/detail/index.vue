@@ -159,7 +159,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getIpqc(Number(props.id))
+    formData.value = await getIpqc(props.id as number)
   } finally {
     toast.close()
   }
@@ -188,7 +188,7 @@ async function handleFinish() {
   }
   finishing.value = true
   try {
-    await finishIpqc(Number(props.id))
+    await finishIpqc(props.id as number)
     toast.success('完成成功')
     uni.$emit('mes:qc:ipqc:reload')
     await getDetail()
@@ -212,7 +212,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteIpqc(Number(props.id))
+    await deleteIpqc(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:qc:ipqc:reload')
     delay(handleBack)

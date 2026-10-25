@@ -15,6 +15,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Dept } from '@/api/system/dept'
 import { computed, onMounted, ref } from 'vue'
 import { getSimpleDeptList } from '@/api/system/dept'
@@ -75,7 +77,7 @@ function handleChange(value: number | string | undefined) {
 
 /** 标准化部门编号 */
 function normalizeDeptId(value: number | string | undefined) {
-  return value == null ? undefined : Number(value)
+  return value == null ? undefined : parseId(value)
 }
 
 /** 加载部门选项 */

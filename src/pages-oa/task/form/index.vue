@@ -174,7 +174,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getTask(Number(props.id))
+  const data = await getTask(props.id as unknown as number)
   formData.value = {
     ...data,
     receiverUserIds: data.receivers?.map(item => item.userId) ?? [],

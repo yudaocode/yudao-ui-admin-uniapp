@@ -89,6 +89,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { QcPendingInspect } from '@/api/mes/qc/pendinginspect'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -151,7 +153,7 @@ function getInitialQuery(): Record<string, any> {
   return {
     sourceDocCode: props.sourceDocCode,
     qcType: (props.qcType === undefined || props.qcType === '' ? undefined : Number(props.qcType)),
-    itemId: (props.itemId === undefined || props.itemId === '' ? undefined : Number(props.itemId)),
+    itemId: (props.itemId === undefined || props.itemId === '' ? undefined : parseId(props.itemId)),
   }
 }
 

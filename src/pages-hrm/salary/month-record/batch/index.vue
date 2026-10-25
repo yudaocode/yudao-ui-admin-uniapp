@@ -95,13 +95,13 @@ async function queryList() {
   }
   try {
     const data = await getSalaryMonthEmployeeRecordList({
-      monthRecordId: Number(props.monthRecordId),
+      monthRecordId: props.monthRecordId,
       employeeChangeType: props.employeeChangeType != null
         ? Number(props.employeeChangeType)
         : HrmSalaryEmployeeChangeType.ALL,
       employeeName: props.employeeName || undefined,
       jobNumber: props.jobNumber || undefined,
-      deptId: props.deptId != null && props.deptId !== '' ? Number(props.deptId) : undefined,
+      deptId: props.deptId != null && props.deptId !== '' ? props.deptId : undefined,
     })
     list.value = data
     pagingRef.value?.completeByTotal(data, data.length)

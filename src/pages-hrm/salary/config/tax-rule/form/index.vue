@@ -158,7 +158,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getSalaryTaxRule(Number(props.id))
+  formData.value = await getSalaryTaxRule(props.id)
 }
 
 /** 切换个税类型 */

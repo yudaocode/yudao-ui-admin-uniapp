@@ -58,6 +58,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -123,11 +125,11 @@ function openAdd() {
 /** 关联既有联系人 */
 async function handleAddBusinessContact(contact?: Contact) {
   const businessId = props.businessId
-  const contactId = Number(contact?.id)
+  const contactId = parseId(contact?.id)
   if (!businessId || !contactId) {
     return
   }
-  if (list.value.some(item => Number(item.id) === contactId)) {
+  if (list.value.some(item => parseId(item.id) === contactId)) {
     toast.show('该联系人已关联')
     return
   }
@@ -147,7 +149,7 @@ async function handleRemoveBusinessContact(item: Record<string, any>) {
   } catch {
     return
   }
-  await deleteContactBusinessList2({ businessId, contactIds: [Number(item.id)] })
+  await deleteContactBusinessList2({ businessId, contactIds: [item.id] })
   toast.success('解除成功')
   reload()
 }

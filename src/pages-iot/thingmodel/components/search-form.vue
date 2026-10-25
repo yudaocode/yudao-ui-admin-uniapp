@@ -45,6 +45,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -58,9 +60,9 @@ const emit = defineEmits<{
 }>()
 const visible = ref(false) // 搜索弹窗显示状态
 const productPickerRef = ref<InstanceType<typeof ProductSearchPicker>>() // 产品选择器
-const defaultProductId = props.defaultProductId ? Number(props.defaultProductId) : undefined // 入口预置产品
+const defaultProductId = props.defaultProductId ? parseId(props.defaultProductId) : undefined // 入口预置产品
 const formData = reactive({
-  productId: defaultProductId as number | undefined,
+  productId: defaultProductId,
   identifier: undefined as string | undefined,
   name: undefined as string | undefined,
   type: undefined as number | undefined,

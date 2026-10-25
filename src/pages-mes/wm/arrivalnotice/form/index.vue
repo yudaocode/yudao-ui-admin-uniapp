@@ -185,7 +185,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getArrivalNotice(Number(props.id))
+  formData.value = await getArrivalNotice(props.id as number)
 }
 
 /** 供应商变更 */
@@ -265,7 +265,7 @@ async function handleSubmitNotice() {
   submitLoading.value = true
   try {
     await updateArrivalNotice(formData.value)
-    await submitArrivalNotice(Number(props.id))
+    await submitArrivalNotice(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:wm:arrivalnotice:reload')
     delay(handleBack)

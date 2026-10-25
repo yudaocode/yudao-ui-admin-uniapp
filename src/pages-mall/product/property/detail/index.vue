@@ -66,7 +66,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getProductProperty(Number(props.id))
+    formData.value = await getProductProperty(props.id)
   } finally {
     toast.close()
   }
@@ -89,7 +89,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductProperty(Number(props.id))
+    await deleteProductProperty(props.id)
     toast.success('删除成功')
     uni.$emit('mall:product-property:reload')
     delay(handleBack)

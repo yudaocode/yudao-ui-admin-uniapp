@@ -126,6 +126,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Device, IotDeviceAuthInfo } from '@/api/iot/device/device'
 import type { Product } from '@/api/iot/product/product'
 import { onShow } from '@dcloudio/uni-app'
@@ -204,9 +206,9 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getDevice(Number(props.id))
+  formData.value = await getDevice(props.id)
   if (formData.value.productId) {
-    productData.value = await getProduct(Number(formData.value.productId))
+    productData.value = await getProduct(parseId(formData.value.productId) as number)
   }
 }
 
@@ -222,7 +224,7 @@ async function handleAuthInfo() {
   }
   authLoading.value = true
   try {
-    authInfo.value = await getDeviceAuthInfo(Number(props.id))
+    authInfo.value = await getDeviceAuthInfo(props.id)
     authPasswordVisible.value = false
     authVisible.value = true
   } finally {
@@ -313,7 +315,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDevice(Number(props.id))
+    await deleteDevice(props.id)
     toast.success('删除成功')
     uni.$emit('iot:device:reload')
     delay(handleBack)

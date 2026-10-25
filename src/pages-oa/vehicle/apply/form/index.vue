@@ -180,7 +180,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getVehicleApply(Number(props.id))
+  const data = await getVehicleApply(props.id as unknown as number)
   formData.value = data
   selectedVehicleNo.value = data.vehicleNo || ''
   startTime.value = data.startTime ? toTimestamp(data.startTime) : ''

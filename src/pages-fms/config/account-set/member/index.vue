@@ -130,7 +130,7 @@ async function getList() {
   if (!props.id) {
     return
   }
-  memberList.value = await getAccountUserList(Number(props.id))
+  memberList.value = await getAccountUserList(props.id)
 }
 
 /** 添加成员确认（默认查看者，可在列表中调整级别） */
@@ -162,7 +162,7 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     await updateAccountUserList({
-      accountSetId: Number(props.id),
+      accountSetId: props.id,
       members: memberList.value.map(member => ({
         userId: member.userId,
         level: member.level,

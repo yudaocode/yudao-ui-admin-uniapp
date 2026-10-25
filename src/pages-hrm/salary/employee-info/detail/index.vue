@@ -134,7 +134,7 @@
     <ChangeRecordList
       v-else-if="activeTab === 'records'"
       ref="changeRecordListRef"
-      :employee-id="Number(props.id)"
+      :employee-id="parseId(props.id) as number"
       @change="getDetail"
       @edit="openSetSalary"
     />
@@ -154,6 +154,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Employee } from '@/api/hrm/employee'
 import type { SalaryChangeRecord } from '@/api/hrm/salary/change-record'
 import type { SalaryEmployeeInfo } from '@/api/hrm/salary/employee-info'
@@ -201,8 +203,8 @@ async function getDetail() {
     return
   }
   const [employeeData, salaryEmployeeData] = await Promise.all([
-    getEmployee(Number(props.id)),
-    getSalaryEmployeeInfo(Number(props.id)),
+    getEmployee(props.id),
+    getSalaryEmployeeInfo(props.id),
   ])
   employee.value = employeeData
   salaryEmployee.value = salaryEmployeeData || {}

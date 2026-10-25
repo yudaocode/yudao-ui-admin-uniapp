@@ -166,7 +166,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProcessListener(Number(props.id))
+  formData.value = await getProcessListener(props.id)
 }
 
 /** 提交表单 */

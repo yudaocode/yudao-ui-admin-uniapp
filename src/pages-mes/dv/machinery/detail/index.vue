@@ -115,7 +115,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMachinery(Number(props.id))
+    formData.value = await getMachinery(props.id as number)
   } finally {
     toast.close()
   }
@@ -154,7 +154,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteMachinery(Number(props.id))
+    await deleteMachinery(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:dv:machinery:reload')
     delay(handleBack)

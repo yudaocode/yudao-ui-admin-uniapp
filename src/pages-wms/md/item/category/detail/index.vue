@@ -88,7 +88,7 @@ async function getDetail() {
     return
   }
   const [detail, categories] = await Promise.all([
-    getItemCategory(Number(props.id)),
+    getItemCategory(props.id),
     getSimpleItemCategoryList(),
   ])
   formData.value = detail
@@ -118,7 +118,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteItemCategory(Number(props.id))
+    await deleteItemCategory(props.id)
     toast.success('删除成功')
     uni.$emit('wms:item-category:reload')
     delay(handleBack)

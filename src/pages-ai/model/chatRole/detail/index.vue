@@ -84,7 +84,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getChatRole(Number(props.id))
+    formData.value = await getChatRole(props.id)
   } finally {
     toast.close()
   }
@@ -112,7 +112,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteChatRole(Number(props.id))
+    await deleteChatRole(props.id)
     toast.success('删除成功')
     uni.$emit('ai:chat-role:reload')
     delay(handleBack)

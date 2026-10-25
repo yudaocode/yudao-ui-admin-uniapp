@@ -89,7 +89,7 @@ async function getDetail() {
   try {
     toast.loading('加载中...')
     const [data, users] = await Promise.all([
-      getWarehouse(Number(props.id)),
+      getWarehouse(props.id as number),
       getSimpleUserList(),
     ])
     const chargeUser = users.find(user => user.id === data.chargeUserId)
@@ -137,7 +137,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWarehouse(Number(props.id))
+    await deleteWarehouse(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:wm:warehouse:reload')
     delay(handleBack)

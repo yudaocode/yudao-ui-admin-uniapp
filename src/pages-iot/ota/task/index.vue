@@ -65,6 +65,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { OtaTask } from '@/api/iot/ota/task'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
@@ -88,8 +90,8 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const firmwareId = props.firmwareId ? Number(props.firmwareId) : undefined // 入口预置固件
-const productId = props.productId ? Number(props.productId) : undefined // 入口预置产品
+const firmwareId = props.firmwareId ? parseId(props.firmwareId) : undefined // 入口预置固件
+const productId = props.productId ? parseId(props.productId) : undefined // 入口预置产品
 const getTitle = firmwareId ? '固件升级任务' : 'OTA 任务'
 const list = ref<OtaTask[]>([]) // 列表数据
 const pagingRef = ref<any>() // 分页组件引用

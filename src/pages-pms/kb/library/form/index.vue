@@ -196,7 +196,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const library = await getKnowledgeLibrary(Number(props.id))
+  const library = await getKnowledgeLibrary(props.id)
   formData.value = {
     ...library,
     adminUserIds: [],

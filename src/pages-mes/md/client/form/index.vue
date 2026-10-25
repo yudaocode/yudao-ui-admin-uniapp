@@ -162,7 +162,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getClient(Number(props.id))
+  formData.value = await getClient(props.id as number)
 }
 
 /** 生成客户编码 */

@@ -133,7 +133,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const data = await getWorkstation(Number(props.id))
+    const data = await getWorkstation(props.id as number)
     const [workshops, processes, warehouses, locations, areas] = await Promise.all([
       getWorkshopSimpleList(),
       getProcessSimpleList(),
@@ -187,7 +187,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWorkstation(Number(props.id))
+    await deleteWorkstation(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:workstation:reload')
     delay(handleBack)

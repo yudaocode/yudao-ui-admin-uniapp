@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { SocialLoginPurpose } from '@/utils/social-login'
 import { computed, ref } from 'vue'
 import { AUTH_THIRD_LOGIN_NOT_BIND_CODE } from '@/api/login'
@@ -115,8 +117,8 @@ async function handleSocialCallback(options: Record<string, any>) {
     || state !== context.state
     || (callbackPurpose && callbackPurpose !== context.purpose)
     || (callbackSocialType && Number(callbackSocialType) !== context.socialType)
-    || (callbackTenantId && Number(callbackTenantId) !== context.tenantId)
-    || (tenantEnabled && !context.tenantId)
+    || (callbackTenantId && parseId(callbackTenantId) !== context.tenantId)
+    || (tenantEnabled && !isPositiveId(context.tenantId))
   ) {
     status.value = 'failed'
     message.value = '授权回调已失效或不匹配，请重新发起授权'

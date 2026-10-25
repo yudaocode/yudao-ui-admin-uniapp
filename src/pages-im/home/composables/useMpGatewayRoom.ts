@@ -1,3 +1,4 @@
+import { parseId } from '@/utils/id'
 import type { InjectionKey, Ref } from 'vue'
 import type { RtcConnectFailedReason, RtcMediaState, RtcParticipantTracks } from './useLiveKitRoom'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -126,7 +127,7 @@ function parseView(data: unknown): MpGatewayView | undefined {
     publishing: value.publishing,
     error: typeof value.error === 'string' ? value.error : null,
     remotes: value.remotes
-      .filter(item => item && Number.isInteger(item.userId) && item.userId > 0)
+      .filter(item => item && parseId(item.userId) !== undefined && item.userId > 0)
       .map((item) => {
         const ready = item.ready === true && typeof item.playUrl === 'string' && item.playUrl.startsWith('rtmp://')
         const state = REMOTE_STATES.has(item.state) ? item.state : 'failed'

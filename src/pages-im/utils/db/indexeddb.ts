@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 // IM 本地数据库：H5 IndexedDB 适配层
 // 仅在 H5 端打包（见 ../db.ts 的条件编译导入）
 
@@ -188,7 +189,7 @@ export class IndexedDbClient implements ImDbClient {
     const tx = this.rawDb().transaction(['settings'], 'readwrite')
     const store = tx.objectStore('settings')
     const current = await toPromise<SettingDO<number> | undefined>(store.get(key))
-    if (value > Number(current?.value || 0)) {
+    if (compareId(value, current?.value) > 0) {
       store.put({ key, value, updateTime: Date.now() } satisfies SettingDO<number>)
     }
     await transactionDone(tx)

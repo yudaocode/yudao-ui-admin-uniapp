@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Device } from '@/api/iot/device/device'
 import type { OtaFirmware } from '@/api/iot/ota/firmware'
@@ -96,8 +98,8 @@ definePage({
 })
 
 const toast = useToast()
-const firmwareId = props.firmwareId ? Number(props.firmwareId) : undefined // 入口预置固件
-const productId = props.productId ? Number(props.productId) : undefined // 入口预置产品
+const firmwareId = props.firmwareId ? parseId(props.firmwareId) : undefined // 入口预置固件
+const productId = props.productId ? parseId(props.productId) : undefined // 入口预置产品
 const formLoading = ref(false) // 表单提交状态
 const selectedFirmware = ref<OtaFirmware>() // 当前选中的固件
 const deviceOptions = ref<Device[]>([]) // 设备选项

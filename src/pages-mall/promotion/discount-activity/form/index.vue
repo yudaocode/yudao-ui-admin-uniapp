@@ -140,7 +140,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getPromotionDiscountActivity(Number(props.id))
+  const data = await getPromotionDiscountActivity(props.id)
   formData.value = {
     ...data,
   }

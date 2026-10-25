@@ -123,6 +123,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Discussion } from '@/api/oa/discussion'
 import { onShow } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
@@ -161,7 +163,7 @@ const deleting = ref(false) // 删除状态
 const replyListRef = ref<any>() // 回复楼层引用
 const likePopupVisible = ref(false) // 点赞人名单弹窗状态
 const isManageScene = computed(() => props.scene === 'manage') // 是否讨论管理场景
-const isOwner = computed(() => formData.value?.userId === Number(userStore.userInfo?.userId)) // 是否本人发布
+const isOwner = computed(() => formData.value?.userId === parseId(userStore.userInfo?.userId)) // 是否本人发布
 const isSuperAdmin = computed(() => userStore.roles?.includes('super_admin')) // 是否为超级管理员
 const canEdit = computed(() => isManageScene.value && isOwner.value && hasAccessByCodes(['oa:discussion:update'])) // 仅本人发布可修改
 const canDelete = computed(() =>
@@ -182,7 +184,7 @@ async function getDetail(visit = false) {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getDiscussion(Number(props.id), visit)
+  formData.value = await getDiscussion(props.id as unknown as number, visit)
 }
 
 /** 点赞或取消点赞 */
@@ -230,7 +232,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDiscussion(Number(props.id))
+    await deleteDiscussion(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:discussion:reload')
     handleBack()

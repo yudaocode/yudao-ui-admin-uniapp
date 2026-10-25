@@ -49,7 +49,7 @@
           </wd-form-item>
           <ProjectMemberFormPicker
             v-model="formData.ownerUserId"
-            :project-id="Number(props.projectId)"
+            :project-id="parseId(props.projectId) as number"
             label="负责人"
             prop="ownerUserId"
             clearable
@@ -78,6 +78,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Iteration } from '@/api/pms/pm/iteration'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -108,7 +110,7 @@ const startTimeVisible = ref(false) // 开始时间选择器显示状态
 const endTimeVisible = ref(false) // 结束时间选择器显示状态
 const formData = ref<Iteration>({ // 表单数据
   id: undefined,
-  projectId: Number(props.projectId),
+  projectId: parseId(props.projectId) as number,
   name: '',
 })
 const formSchema = createFormSchema({
@@ -126,7 +128,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const iteration = await getIteration(Number(props.id))
+  const iteration = await getIteration(props.id)
   formData.value = iteration
   // 后端返回日期字符串，转毫秒时间戳供 picker 回显
   startTime.value = iteration.startTime ? toTimestamp(iteration.startTime) : ''

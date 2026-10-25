@@ -122,7 +122,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getPromotionBanner(Number(props.id))
+  formData.value = await getPromotionBanner(props.id)
 }
 
 /** 提交表单 */

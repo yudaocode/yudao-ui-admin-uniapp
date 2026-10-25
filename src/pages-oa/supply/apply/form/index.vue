@@ -209,7 +209,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getSupplyApply(Number(props.id))
+  const data = await getSupplyApply(props.id as unknown as number)
   formData.value = data
   applyTime.value = data.applyTime ? toTimestamp(data.applyTime) : ''
   items.value = (data.items || []).map(row => ({

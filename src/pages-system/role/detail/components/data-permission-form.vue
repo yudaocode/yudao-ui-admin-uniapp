@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isIdType, parseId } from '@/utils/id'
+
 import type { Role } from '@/api/system/role'
 import type { Dept } from '@/api/system/dept'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -175,7 +177,7 @@ async function handleConfirm() {
   loading.value = true
   try {
     const dataScopeDeptIds = formData.value.dataScope === SystemDataScopeEnum.DEPT_CUSTOM
-      ? deptTreeRef.value.getCheckedKeys(false).map(Number)
+      ? deptTreeRef.value.getCheckedKeys(false).map(parseId).filter(isIdType)
       : []
     await assignRoleDataScope({
       roleId: props.role.id,

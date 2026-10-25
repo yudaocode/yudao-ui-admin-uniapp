@@ -117,7 +117,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getRegularApply(Number(props.id))
+    formData.value = await getRegularApply(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -145,7 +145,7 @@ async function handleSubmitApply() {
   }
   submitting.value = true
   try {
-    await submitRegularApply(Number(props.id))
+    await submitRegularApply(props.id as unknown as number)
     toast.success('提交成功')
     uni.$emit('oa:regular:reload')
     delay(handleBack)

@@ -132,6 +132,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { SalaryOption, SalaryOptionValue } from '@/api/hrm/salary/config/option'
 import type { SalaryChangeTemplate } from '@/api/hrm/salary/config/change-template'
@@ -391,12 +393,12 @@ async function loadSalaryEmployee() {
 
 /** 加载编辑记录 */
 async function loadRecord() {
-  const record = await getSalaryChangeRecord(Number(props.recordId))
+  const record = await getSalaryChangeRecord(props.recordId)
   beforeTotal.value = record.beforeTotal || 0
   probationBeforeTotal.value = record.probationBeforeTotal || 0
   formData.value = {
     id: record.id,
-    employeeId: record.employeeId || (props.employeeId ? Number(props.employeeId) : undefined),
+    employeeId: record.employeeId || (props.employeeId ? parseId(props.employeeId) : undefined),
     recordType: record.recordType,
     changeReason: record.changeReason,
     effectTime: record.effectTime,
@@ -458,7 +460,7 @@ async function init() {
     return
   }
   if (props.employeeId) {
-    formData.value.employeeId = Number(props.employeeId)
+    formData.value.employeeId = parseId(props.employeeId) as number
     await loadSalaryEmployee()
     return
   }

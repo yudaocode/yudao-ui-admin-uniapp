@@ -18,6 +18,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { TenantVO } from '@/api/login'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -45,9 +47,9 @@ const tenantLoading = ref(false) // 租户信息初始化状态
 
 const tenantId = computed(
   () =>
-    props.preferredTenantId
-    || userStore.tenantId
-    || Number(import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT_ID)
+    parseId(props.preferredTenantId
+      ?? userStore.tenantId
+      ?? import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT_ID)
     || undefined,
 ) // 当前选中的租户
 const tenantPickerValue = computed(() => tenantId.value !== undefined ? [tenantId.value] : []) // Wot Picker 使用数组值
@@ -64,6 +66,9 @@ async function fetchTenantList() {
     const list = await getTenantSimpleList()
     tenantList.value = list || []
 
+    if (userStore.tenantId != null && !isPositiveId(userStore.tenantId)) {
+      return
+    }
     // 2. 确定选中的租户：授权指定租户 > 域名/appId > store 中的租户 > 列表第一个
     const websiteTenant = await websiteTenantPromise
     let selectedTenantId: number | null = props.preferredTenantId || null
@@ -81,7 +86,7 @@ async function fetchTenantList() {
     }
 
     // 3. 设置选中的租户
-    if (selectedTenantId && selectedTenantId !== userStore.tenantId) {
+    if (isPositiveId(selectedTenantId) && selectedTenantId !== userStore.tenantId) {
       userStore.setTenantId(selectedTenantId)
     }
   } catch (error) {
@@ -130,8 +135,9 @@ async function fetchTenantByWebsite(): Promise<TenantVO | null> {
 
 /** 切换当前租户 */
 function handleTenantConfirm(value?: number | string) {
-  if (value !== undefined && value !== '') {
-    userStore.setTenantId(Number(value))
+  const id = parseId(value)
+  if (isPositiveId(id)) {
+    userStore.setTenantId(id)
   }
 }
 
@@ -144,7 +150,7 @@ function validate(): boolean {
     toast.info('租户信息加载中，请稍后再试')
     return false
   }
-  if (!tenantId.value) {
+  if (!isPositiveId(tenantId.value)) {
     toast.warning('请选择租户')
     return false
   }
@@ -156,7 +162,7 @@ function validate(): boolean {
 
 /** 页面加载时获取租户列表 */
 onMounted(() => {
-  if (tenantEnabled.value && tenantId.value && tenantId.value !== userStore.tenantId) {
+  if (tenantEnabled.value && isPositiveId(tenantId.value) && tenantId.value !== userStore.tenantId) {
     userStore.setTenantId(tenantId.value)
   }
   fetchTenantList()

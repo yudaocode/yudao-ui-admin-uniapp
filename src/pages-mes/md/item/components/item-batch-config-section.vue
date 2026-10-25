@@ -139,6 +139,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import type { MdItemBatchConfig } from '@/api/mes/md/item/batchConfig'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -164,8 +166,8 @@ const formData = ref<MdItemBatchConfig>(defaultForm()) // 批次属性配置
 
 /** 获取物料编号 */
 function getItemId() {
-  const itemId = Number(props.itemId)
-  return Number.isFinite(itemId) && itemId > 0 ? itemId : undefined
+  const itemId = parseId(props.itemId)
+  return isPositiveId(itemId) ? itemId : undefined
 }
 
 /** 默认批次属性 */
@@ -260,7 +262,7 @@ async function handleSave() {
   try {
     await saveBatchConfig(formData.value)
     toast.success('保存成功')
-    formData.value = hydrateConfig(await getBatchConfigByItemId(Number(props.itemId)))
+    formData.value = hydrateConfig(await getBatchConfigByItemId(props.itemId as number))
     loadConfig()
   } finally {
     saving.value = false

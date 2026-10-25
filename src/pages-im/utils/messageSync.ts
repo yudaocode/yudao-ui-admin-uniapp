@@ -1,3 +1,4 @@
+import { compareId } from '@/utils/id'
 import { ImMessageStatus, ImMessageType } from '@/pages-im/utils/constants'
 
 /** 消息状态优先级；高优先级终态不可被普通消息覆盖 */
@@ -136,7 +137,7 @@ export function isMessageTerminated(
   clearBefore: number,
   deletedKeys: ReadonlySet<string>,
 ): boolean {
-  return (!!message.id && message.id <= clearBefore)
+  return (!!message.id && compareId(message.id, clearBefore) <= 0)
     || (!!message.id && deletedKeys.has(`id:${message.id}`))
     || deletedKeys.has(`client:${message.clientMessageId}`)
 }

@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, onMounted, ref } from 'vue'
 import { navigateBackPlus } from '@/utils'
 import JobList from './components/job-list.vue'
@@ -65,7 +67,7 @@ onMounted(() => {
   if (props.tab === 'log') {
     tabIndex.value = 1
     if (props.jobId) {
-      selectedJobId.value = Number(props.jobId)
+      selectedJobId.value = parseId(props.jobId)
     }
   }
 })

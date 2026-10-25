@@ -1,3 +1,4 @@
+import { compareId, isPositiveId } from '@/utils/id'
 import type { Ref } from 'vue'
 import type { MessageDO } from '@/pages-im/utils/db'
 import type { Message } from '../types'
@@ -72,7 +73,7 @@ export function useMessageList(options: {
         5000,
       )
       return stored
-        .filter(item => !maxId || (item.id || 0) < maxId)
+        .filter(item => !maxId || compareId(item.id || 0, maxId) < 0)
         .slice(-limit)
         .map(buildMessageFromDO)
     }
@@ -105,8 +106,8 @@ export function useMessageList(options: {
       )
       const messages = normalizeMessages(normalizeRecallMessages(response))
         .filter(item => !isLocallyDeleted(item))
-      const nextHistoryId = Math.min(...response.map(item => item.id || Number.MAX_SAFE_INTEGER))
-      if (Number.isFinite(nextHistoryId)) {
+      const nextHistoryId = getMinMessageId(response)
+      if (nextHistoryId !== undefined) {
         historyMaxId.value = nextHistoryId
       }
       const mergedMessages = normalizeMessages([...messageList.value, ...messages])
@@ -144,25 +145,24 @@ export function useMessageList(options: {
       const firstResponse = await queryMessages(conversationType, targetId, maxId, pageSize)
       let rawResponses = [...firstResponse]
       let responseCount = firstResponse.length
-      let reachedClearBoundary = firstResponse.some(item => item.id <= clearBeforeMessageId.value)
-      let data = firstResponse.filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
+      let reachedClearBoundary = firstResponse.some(item => compareId(item.id, clearBeforeMessageId.value) <= 0)
+      let data = firstResponse.filter(item => compareId(item.id, clearBeforeMessageId.value) > 0 && !isLocallyDeleted(item))
       const locateMessageId = requestedLocateMessageId
         || options.getLocateMessageId()
         || options.getMentionMessageId()
       if (isFirstPage && locateMessageId && !locateConsumed) {
         locateConsumed = true
         for (let guard = 0; guard < 50 && !data.some(item => item.id === locateMessageId); guard++) {
-          const nextMaxId = Math.min(...rawResponses.map(item => item.id || Number.MAX_SAFE_INTEGER))
-          if (!Number.isFinite(nextMaxId) || nextMaxId === Number.MAX_SAFE_INTEGER
-            || responseCount < pageSize || reachedClearBoundary) {
+          const nextMaxId = getMinMessageId(rawResponses)
+          if (nextMaxId === undefined || responseCount < pageSize || reachedClearBoundary) {
             break
           }
           const earlierResponse = await queryMessages(conversationType, targetId, nextMaxId, pageSize)
           const earlier = earlierResponse
-            .filter(item => item.id > clearBeforeMessageId.value && !isLocallyDeleted(item))
+            .filter(item => compareId(item.id, clearBeforeMessageId.value) > 0 && !isLocallyDeleted(item))
           rawResponses = [...rawResponses, ...earlierResponse]
           responseCount = earlierResponse.length
-          reachedClearBoundary ||= earlierResponse.some(item => item.id <= clearBeforeMessageId.value)
+          reachedClearBoundary ||= earlierResponse.some(item => compareId(item.id, clearBeforeMessageId.value) <= 0)
           data = [...data, ...earlier]
           if (earlierResponse.length < pageSize || reachedClearBoundary) {
             break
@@ -185,8 +185,8 @@ export function useMessageList(options: {
           .filter((message, index, rows) =>
             rows.findIndex(item => isSameConversationMessage(item, message)) === index)
       }
-      const nextHistoryId = Math.min(...rawResponses.map(item => item.id || Number.MAX_SAFE_INTEGER))
-      if (Number.isFinite(nextHistoryId)) {
+      const nextHistoryId = getMinMessageId(rawResponses)
+      if (nextHistoryId !== undefined) {
         historyMaxId.value = nextHistoryId
       }
       await options.pagingRef.value?.completeByNoMore(
@@ -201,7 +201,7 @@ export function useMessageList(options: {
           pageSize,
         ))
           .map(buildMessageFromDO)
-          .filter(item => (!item.id || item.id > clearBeforeMessageId.value) && !isLocallyDeleted(item))
+          .filter(item => (!item.id || compareId(item.id, clearBeforeMessageId.value) > 0) && !isLocallyDeleted(item))
         await options.pagingRef.value?.complete(
           normalizeMessages(normalizeRecallMessages(cachedMessages)),
         )
@@ -316,7 +316,7 @@ export function useMessageList(options: {
   function normalizeMessages(data: Message[]) {
     return [...data].sort((left, right) => {
       if (left.id && right.id) {
-        return right.id - left.id
+        return compareId(right.id, left.id)
       }
       return toTimestamp(right.sendTime) - toTimestamp(left.sendTime)
     })
@@ -527,6 +527,11 @@ export function useMessageList(options: {
     removeDeletedMessages,
     resetAfterConversationClear,
   }
+}
+
+/** 获取最早的服务端消息编号；本地占位没有编号，不参与历史游标 */
+function getMinMessageId(items: { id?: number }[]) {
+  return items.map(item => item.id).filter(isPositiveId).sort(compareId)[0]
 }
 
 /** 转换为归一化撤回消息 */

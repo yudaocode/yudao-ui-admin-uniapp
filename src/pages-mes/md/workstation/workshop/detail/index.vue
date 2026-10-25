@@ -114,7 +114,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getWorkshop(Number(props.id))
+    formData.value = await getWorkshop(props.id as number)
   } finally {
     toast.close()
   }
@@ -153,7 +153,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteWorkshop(Number(props.id))
+    await deleteWorkshop(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:workshop:reload')
     delay(handleBack)

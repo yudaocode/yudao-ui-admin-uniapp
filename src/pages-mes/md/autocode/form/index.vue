@@ -171,7 +171,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAutoCodeRule(Number(props.id))
+  formData.value = await getAutoCodeRule(props.id as number)
 }
 
 /** 提交表单 */

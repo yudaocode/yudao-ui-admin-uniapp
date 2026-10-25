@@ -174,7 +174,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getKnowledgeLibraryTemplate(Number(props.id))
+  formData.value = await getKnowledgeLibraryTemplate(props.id)
 }
 
 /** 新增模板文档 */

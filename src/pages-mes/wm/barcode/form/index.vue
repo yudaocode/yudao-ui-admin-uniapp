@@ -132,6 +132,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { DvMachinery } from '@/api/mes/dv/machinery'
 import type { MdClient } from '@/api/mes/md/client'
@@ -199,7 +201,7 @@ interface BarcodeFormData {
 }
 
 const toast = useToast()
-const currentId = computed(() => props.id ? Number(props.id) : undefined) // 当前条码编号
+const currentId = computed(() => props.id ? parseId(props.id) : undefined) // 当前条码编号
 const formLoading = ref(false) // 表单提交状态
 const loadingDetail = ref(false) // 详情加载状态
 const formRef = ref<FormInstance>() // 表单组件引用
@@ -592,7 +594,7 @@ async function getDetail() {
 function buildSubmitData(): WmBarcode {
   const data: WmBarcode = {
     bizType: Number(formData.value.bizType),
-    bizId: Number(formData.value.bizId),
+    bizId: parseId(formData.value.bizId) as number,
     bizCode: formData.value.bizCode,
     bizName: formData.value.bizName || undefined,
     content: formData.value.content || undefined,

@@ -95,7 +95,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getWarehouse(Number(props.id))
+  formData.value = await getWarehouse(props.id)
 }
 
 /** 提交表单 */

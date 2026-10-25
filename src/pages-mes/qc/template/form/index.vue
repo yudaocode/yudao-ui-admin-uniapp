@@ -125,7 +125,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getTemplate(Number(props.id))
+  formData.value = await getTemplate(props.id as number)
 }
 
 /** 生成方案编号 */

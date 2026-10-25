@@ -76,6 +76,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ClosingScheme } from '@/api/fms/closing/scheme'
 import type { Subject } from '@/api/fms/config/subject'
 import type { VoucherWord } from '@/api/fms/config/voucher-word'
@@ -173,7 +175,7 @@ async function getDetail() {
   ])
   subjects.value = subjectList
   voucherWords.value = wordList
-  const scheme = list.find(item => item.id === Number(props.id))
+  const scheme = list.find(item => item.id === parseId(props.id))
   if (scheme) {
     formData.value = scheme
   }

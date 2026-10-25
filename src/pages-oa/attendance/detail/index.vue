@@ -130,7 +130,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getAttendance(Number(props.id))
+    formData.value = await getAttendance(props.id as unknown as number)
   } finally {
     toast.close()
   }
@@ -155,7 +155,7 @@ async function handleSubmitEdit() {
   updating.value = true
   try {
     await updateAttendance({
-      id: Number(props.id),
+      id: props.id as unknown as number,
       status: editStatus.value,
       remark: editRemark.value.trim() || undefined,
     })
@@ -182,7 +182,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteAttendance(Number(props.id))
+    await deleteAttendance(props.id as unknown as number)
     toast.success('删除成功')
     uni.$emit('oa:attendance:reload')
     delay(handleBack)

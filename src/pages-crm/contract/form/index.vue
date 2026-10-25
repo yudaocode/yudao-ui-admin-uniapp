@@ -71,6 +71,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Business } from '@/api/crm/business'
 import type { Contract } from '@/api/crm/contract'
@@ -171,10 +173,10 @@ function applyQueryDefaults() {
   }
   const query = currRoute().query
   if (query.customerId) {
-    formData.value.customerId = Number(query.customerId)
+    formData.value.customerId = parseId(query.customerId)
   }
   if (query.businessId) {
-    formData.value.businessId = Number(query.businessId)
+    formData.value.businessId = parseId(query.businessId)
   }
 }
 
@@ -188,7 +190,7 @@ async function getDetail() {
     }
     return
   }
-  const data = await getContract(Number(props.id))
+  const data = await getContract(props.id)
   formData.value = { ...formData.value, ...data }
   if (!Array.isArray(formData.value.products)) {
     formData.value.products = []

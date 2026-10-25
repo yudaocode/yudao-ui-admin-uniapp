@@ -55,6 +55,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Contract } from '@/api/crm/contract'
 import type { Receivable } from '@/api/crm/receivable'
@@ -156,7 +158,7 @@ function applyQueryDefaults() {
   numericKeys.forEach((key) => {
     const value = query[key]
     if (value !== undefined && value !== '') {
-      (formData.value as Record<string, any>)[key] = Number(value)
+      (formData.value as Record<string, any>)[key] = key.endsWith('Id') ? parseId(value) : Number(value)
     }
   })
 }
@@ -173,7 +175,7 @@ async function getDetail() {
     }
     return
   }
-  formData.value = await getReceivable(Number(props.id))
+  formData.value = await getReceivable(props.id)
 }
 
 /** 提交表单 */

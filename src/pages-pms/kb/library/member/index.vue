@@ -134,7 +134,7 @@ function handleBack() {
 
 /** 查询知识库成员列表 */
 async function getList() {
-  const data = await getKnowledgeLibraryMemberList(Number(props.libraryId))
+  const data = await getKnowledgeLibraryMemberList(props.libraryId)
   memberList.value = data.map(member => ({
     ...member,
     identityType: member.userId ? 'user' : 'dept',
@@ -174,7 +174,7 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     await updateKnowledgeLibraryMemberList({
-      libraryId: Number(props.libraryId),
+      libraryId: props.libraryId,
       members: editableMembers.map(item => ({
         userId: item.identityType === 'user' ? item.userId : undefined,
         deptId: item.identityType === 'dept' ? item.deptId : undefined,

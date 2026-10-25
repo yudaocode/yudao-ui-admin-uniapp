@@ -98,7 +98,7 @@ async function getDetail() {
     return
   }
   try {
-    formData.value = await getAccount(Number(props.id))
+    formData.value = await getAccount(props.id)
   } catch {
     // 请求层已提示错误，保留默认表单
   }
@@ -114,7 +114,7 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     if (props.id) {
-      await updateAccount({ ...formData.value, id: Number(props.id) })
+      await updateAccount({ ...formData.value, id: props.id })
       toast.success('修改成功')
     } else {
       await createAccount(formData.value)

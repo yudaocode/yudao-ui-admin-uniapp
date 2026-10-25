@@ -24,7 +24,7 @@
         </wd-cell>
         <wd-cell title="备注" :value="formData?.remark || '-'" />
       </wd-cell-group>
-      <CheckRecordLineList v-if="props.id" :record-id="Number(props.id)" readonly />
+      <CheckRecordLineList v-if="props.id" :record-id="parseId(props.id) as number" readonly />
       <view class="h-180rpx" />
     </scroll-view>
 
@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { DvCheckRecord } from '@/api/mes/dv/checkrecord'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -118,7 +120,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getCheckRecord(Number(props.id))
+    formData.value = await getCheckRecord(props.id as number)
   } finally {
     toast.close()
   }
@@ -149,7 +151,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteCheckRecord(Number(props.id))
+    await deleteCheckRecord(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:dv:checkrecord:reload')
     delay(handleBack)
@@ -173,7 +175,7 @@ async function handleSubmitRecord() {
   }
   submitting.value = true
   try {
-    await submitCheckRecord(Number(props.id))
+    await submitCheckRecord(props.id as number)
     toast.success('提交成功')
     uni.$emit('mes:dv:checkrecord:reload')
     await getDetail()

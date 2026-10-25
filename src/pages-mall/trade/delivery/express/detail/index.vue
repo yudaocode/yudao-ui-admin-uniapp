@@ -76,7 +76,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getDeliveryExpress(Number(props.id))
+    formData.value = await getDeliveryExpress(props.id)
   } finally {
     toast.close()
   }
@@ -99,7 +99,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteDeliveryExpress(Number(props.id))
+    await deleteDeliveryExpress(props.id)
     toast.success('删除成功')
     uni.$emit('mall:delivery-express:reload')
     delay(handleBack)

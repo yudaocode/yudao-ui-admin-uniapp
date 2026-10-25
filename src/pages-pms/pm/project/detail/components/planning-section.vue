@@ -357,6 +357,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { Iteration } from '@/api/pms/pm/iteration'
 import type { WorkItem } from '@/api/pms/pm/workitem'
 import { computed, reactive, ref } from 'vue'
@@ -561,7 +563,7 @@ async function getWorkItemList(params: {
 /** 收集投放区当前工作项编号顺序 */
 function collectPlanningIds(el: Element) {
   return Array.from(el.querySelectorAll('[data-work-item-id]')).map(node =>
-    Number((node as HTMLElement).dataset.workItemId),
+    parseId((node as HTMLElement).dataset.workItemId) as number,
   )
 }
 
@@ -604,9 +606,9 @@ async function handlePlanningDragEnd(event: {
   ) {
     return
   }
-  const workItemId = Number(event.item.dataset.workItemId)
+  const workItemId = parseId(event.item.dataset.workItemId)
   const rawIterationId = (event.to as HTMLElement).dataset.iterationId
-  const targetIterationId = rawIterationId ? Number(rawIterationId) : undefined
+  const targetIterationId = rawIterationId ? parseId(rawIterationId) : undefined
   if (!workItemId) {
     return
   }

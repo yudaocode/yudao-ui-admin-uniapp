@@ -49,7 +49,7 @@ definePage({
 })
 
 const toast = useToast()
-const accountId = computed(() => props.accountId ? Number(props.accountId) : undefined)
+const accountId = computed(() => props.accountId || undefined)
 const getTitle = computed(() => props.id ? '编辑公众号标签' : '新增公众号标签')
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<Tag>({
@@ -73,7 +73,7 @@ async function getDetail() {
     return
   }
   try {
-    formData.value = await getTag(Number(props.id))
+    formData.value = await getTag(props.id)
   } catch {
     // 请求层已提示错误，保留默认表单
   }
@@ -89,7 +89,7 @@ async function handleSubmit() {
   formLoading.value = true
   try {
     if (props.id) {
-      await updateTag({ ...formData.value, id: Number(props.id), accountId: accountId.value })
+      await updateTag({ ...formData.value, id: props.id, accountId: accountId.value })
       toast.success('修改成功')
     } else {
       await createTag({ ...formData.value, accountId: accountId.value })

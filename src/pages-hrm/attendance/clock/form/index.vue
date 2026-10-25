@@ -196,7 +196,7 @@ async function getDetail() {
   }
   formLoading.value = true
   try {
-    const data = await getAttendanceClock(Number(props.id))
+    const data = await getAttendanceClock(props.id)
     formData.value = {
       id: data.id,
       employeeId: data.employeeId,

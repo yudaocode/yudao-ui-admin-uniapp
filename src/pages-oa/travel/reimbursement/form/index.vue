@@ -273,7 +273,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getTravelReimbursement(Number(props.id))
+  const data = await getTravelReimbursement(props.id as unknown as number)
   formData.value = data
   selectedApplyNo.value = data.travelApplyNo || ''
   startTime.value = data.startTime ? toTimestamp(data.startTime) : ''

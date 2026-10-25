@@ -15,6 +15,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { ImConversationType } from '@/pages-im/utils/constants'
@@ -37,7 +39,7 @@ definePage({
 
 const active = ref(true) // 页面是否显示
 const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 会话类型
-const targetId = computed(() => Number(props.targetId)) // 会话目标编号
+const targetId = computed(() => parseId(props.targetId) as number) // 会话目标编号
 
 /** 返回上一页 */
 function handleBack() {

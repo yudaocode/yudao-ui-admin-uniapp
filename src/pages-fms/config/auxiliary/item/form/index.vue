@@ -67,6 +67,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
@@ -125,7 +127,7 @@ async function loadAuxiliaryType() {
     return
   }
   const typeList = await getAuxiliaryTypeList(accountSetId)
-  auxiliaryType.value = typeList.find(item => item.id === Number(props.auxiliaryTypeId))
+  auxiliaryType.value = typeList.find(item => item.id === parseId(props.auxiliaryTypeId))
 }
 
 /** 加载项目详情 */
@@ -137,7 +139,7 @@ async function getDetail() {
   if (!accountSetId) {
     return
   }
-  formData.value = await getAuxiliaryItem(accountSetId, Number(props.id))
+  formData.value = await getAuxiliaryItem(accountSetId, props.id)
 }
 
 /** 提交表单 */
@@ -172,7 +174,7 @@ async function handleSubmit() {
 onMounted(async () => {
   await fmsStore.loadAccountSetList()
   formData.value.accountSetId = fmsStore.accountSet?.id || 0
-  formData.value.auxiliaryTypeId = Number(props.auxiliaryTypeId) || 0
+  formData.value.auxiliaryTypeId = parseId(props.auxiliaryTypeId) || 0
   await loadAuxiliaryType()
   await getDetail()
 })

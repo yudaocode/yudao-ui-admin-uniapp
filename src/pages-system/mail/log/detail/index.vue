@@ -98,7 +98,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getMailLog(Number(props.id))
+    formData.value = await getMailLog(props.id)
   } finally {
     toast.close()
   }

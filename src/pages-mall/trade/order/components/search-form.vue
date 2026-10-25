@@ -112,6 +112,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import { computed, reactive, ref } from 'vue'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
@@ -188,7 +190,7 @@ function handleSearch() {
   visible.value = false
   emit('search', {
     no: formData.no || undefined,
-    userId: formData.userId ? Number(formData.userId) : undefined,
+    userId: formData.userId ? parseId(formData.userId) : undefined,
     userNickname: formData.userNickname || undefined,
     userMobile: formData.userMobile || undefined,
     status: formData.status === -1 ? undefined : formData.status,

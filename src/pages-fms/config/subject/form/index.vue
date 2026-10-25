@@ -156,6 +156,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import type { Currency } from '@/api/fms/config/currency'
@@ -200,14 +202,14 @@ definePage({
 const toast = useToast()
 const dialog = useDialog()
 const fmsStore = useFmsStore()
-const getTitle = computed(() => props.id ? '编辑科目' : (Number(props.parentId) ? '新建下级科目' : '新增科目'))
+const getTitle = computed(() => props.id ? '编辑科目' : (parseId(props.parentId) ? '新建下级科目' : '新增科目'))
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<Subject>({ // 表单数据
   id: undefined,
   accountSetId: 0,
   code: '',
   name: '',
-  parentId: Number(props.parentId) || FMS_SUBJECT_PARENT_ID_ROOT,
+  parentId: parseId(props.parentId) || FMS_SUBJECT_PARENT_ID_ROOT,
   type: Number(props.type) || FmsSubjectType.ASSET,
   category: undefined as unknown as number,
   balanceDirection: FmsDebitCreditDirection.DEBIT,
@@ -389,8 +391,8 @@ async function getDetail() {
     return
   }
   const [subject, usage] = await Promise.all([
-    getSubject(accountSetId, Number(props.id)),
-    getSubjectUsage(accountSetId, Number(props.id)),
+    getSubject(accountSetId, props.id),
+    getSubjectUsage(accountSetId, props.id),
   ])
   formData.value = subject
   subjectUsage.value = usage

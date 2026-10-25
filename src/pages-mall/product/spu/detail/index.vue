@@ -176,6 +176,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProductSpu } from '@/api/mall/product/spu'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -227,9 +229,9 @@ async function loadOptions() {
     getSimpleProductBrandList(),
     getSimpleDeliveryExpressTemplateList(),
   ])
-  categoryNameMap.value = Object.fromEntries(categories.map(item => [Number(item.id), item.name || String(item.id)]))
-  brandNameMap.value = Object.fromEntries(brands.map(item => [Number(item.id), item.name || String(item.id)]))
-  templateNameMap.value = Object.fromEntries(templates.map(item => [Number(item.id), item.name || String(item.id)]))
+  categoryNameMap.value = Object.fromEntries(categories.map(item => [parseId(item.id) as number, item.name || String(item.id)]))
+  brandNameMap.value = Object.fromEntries(brands.map(item => [parseId(item.id) as number, item.name || String(item.id)]))
+  templateNameMap.value = Object.fromEntries(templates.map(item => [parseId(item.id) as number, item.name || String(item.id)]))
 }
 
 /** 加载详情 */
@@ -239,7 +241,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getProductSpu(Number(props.id))
+    formData.value = await getProductSpu(props.id)
   } finally {
     toast.close()
   }
@@ -263,7 +265,7 @@ async function handleStatusChange(status: number) {
   }
   statusChanging.value = true
   try {
-    await updateProductSpuStatus({ id: Number(props.id), status })
+    await updateProductSpuStatus({ id: props.id, status })
     toast.success(`${text}成功`)
     uni.$emit('mall:product-spu:reload')
     await getDetail()
@@ -284,7 +286,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteProductSpu(Number(props.id))
+    await deleteProductSpu(props.id)
     toast.success('删除成功')
     uni.$emit('mall:product-spu:reload')
     delay(handleBack)

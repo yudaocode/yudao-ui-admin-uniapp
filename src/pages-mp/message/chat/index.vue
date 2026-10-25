@@ -233,6 +233,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MpArticle, MpMessage, MpMessageSend } from '@/api/mp/message'
 import type { MpUser } from '@/api/mp/user'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -264,8 +266,8 @@ definePage({
 const toast = useToast()
 const { uploading, chooseAndUpload } = useMaterialUpload()
 const PAGE_SIZE = 14 // 每页消息数
-const userId = computed(() => props.userId ? Number(props.userId) : undefined) // 粉丝编号
-const routeAccountId = computed(() => props.accountId ? Number(props.accountId) : undefined) // 路由公众号编号
+const userId = computed(() => props.userId ? parseId(props.userId) : undefined) // 粉丝编号
+const routeAccountId = computed(() => props.accountId ? parseId(props.accountId) : undefined) // 路由公众号编号
 const routeOpenid = computed(() => props.openid || '') // 路由 OpenID
 const accountId = ref<number>() // 当前公众号编号
 const userInfo = reactive<MpUser>({ // 粉丝信息

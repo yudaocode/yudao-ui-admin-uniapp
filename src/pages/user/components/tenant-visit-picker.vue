@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { SelectPickerInstance } from '@wot-ui/ui/components/wd-select-picker/types'
 import type { TenantVO } from '@/api/login'
 import { computed, onMounted, ref } from 'vue'
@@ -66,7 +68,7 @@ function handleConfirm({ value }: { value: number | string }) {
   if (loading.value) {
     return
   }
-  const tenant = tenantList.value.find(item => item.id === Number(value))
+  const tenant = tenantList.value.find(item => item.id === parseId(value))
   if (tenant) {
     emit('confirm', tenant)
   }

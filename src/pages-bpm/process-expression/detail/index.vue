@@ -84,7 +84,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getProcessExpression(Number(props.id))
+    formData.value = await getProcessExpression(props.id)
   } finally {
     toast.close()
   }
@@ -113,7 +113,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteProcessExpression(Number(props.id))
+    await deleteProcessExpression(props.id)
     toast.success('删除成功')
     uni.$emit('bpm:process-expression:reload')
     delay(handleBack)

@@ -192,7 +192,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getRuleScene(Number(props.id))
+  const data = await getRuleScene(props.id as number)
   formData.value = {
     ...data,
     triggers: data.triggers?.length ? data.triggers : [createTrigger()],

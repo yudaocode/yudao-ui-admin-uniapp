@@ -1,3 +1,4 @@
+import { isPositiveId } from '@/utils/id'
 import { getSocialAuthRedirect } from '@/api/login'
 import { SOCIAL_LOGIN_PAGE } from '@/router/config'
 
@@ -43,6 +44,8 @@ const SOCIAL_LOGIN_CONTEXT_TTL = 10 * 60 * 1000 // 授权上下文有效期
 export async function startH5SocialAuth(options: StartH5SocialAuthOptions) {
   // #ifdef H5
   clearSocialLoginContext()
+  if (import.meta.env.VITE_APP_TENANT_ENABLE === 'true' && !isPositiveId(options.tenantId))
+    return false
   const callbackUrl = new URL(import.meta.env.VITE_APP_PUBLIC_BASE || '/', window.location.origin)
   const contextQuery = [
     `purpose=${options.purpose}`,

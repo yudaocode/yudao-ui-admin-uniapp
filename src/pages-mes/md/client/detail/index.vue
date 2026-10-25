@@ -107,7 +107,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getClient(Number(props.id))
+    formData.value = await getClient(props.id as number)
   } finally {
     toast.close()
   }
@@ -133,7 +133,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteClient(Number(props.id))
+    await deleteClient(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:md:client:reload')
     delay(handleBack)

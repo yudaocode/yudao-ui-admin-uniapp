@@ -110,7 +110,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getKnowledge(Number(props.id))
+  formData.value = await getKnowledge(props.id)
 }
 
 /** 提交表单 */

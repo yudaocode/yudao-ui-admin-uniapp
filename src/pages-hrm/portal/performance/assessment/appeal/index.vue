@@ -66,6 +66,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { PerformanceAssessmentStage } from '@/api/hrm/performance/assessment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
@@ -138,9 +140,9 @@ async function getDetail() {
     return
   }
   loading.value = true
-  formData.value.assessmentId = Number(props.id)
+  formData.value.assessmentId = parseId(props.id) as number
   try {
-    const assessment = await getPortalPerformanceAssessment(Number(props.id))
+    const assessment = await getPortalPerformanceAssessment(props.id as number)
     completedReviewStages.value = (assessment.reviewStages || []).filter(
       stage => stage.id != null && stage.status === HrmPerformanceAssessmentStageStatus.PROCESSED,
     )

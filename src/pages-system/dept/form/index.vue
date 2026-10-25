@@ -75,6 +75,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { Dept } from '@/api/system/dept'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -103,7 +105,7 @@ const formLoading = ref(false) // 表单提交状态
 const formData = ref<Omit<Dept, 'parentId'> & { parentId?: number }>({
   id: undefined,
   name: '',
-  parentId: Number(props.parentId) || undefined,
+  parentId: parseId(props.parentId) || undefined,
   sort: 0,
   status: CommonStatusEnum.ENABLE,
   leaderUserId: undefined,

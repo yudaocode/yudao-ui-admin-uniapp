@@ -56,6 +56,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerGroupMessageVO } from '@/api/im/manager/message/group'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
@@ -103,7 +105,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getManagerGroupMessage(Number(props.id))
+    formData.value = await getManagerGroupMessage(parseId(props.id) as number)
   } finally {
     toast.close()
   }

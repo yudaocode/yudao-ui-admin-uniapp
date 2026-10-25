@@ -10,6 +10,8 @@
 </template>
 
 <script lang="ts" setup>
+import { isPositiveId, parseId } from '@/utils/id'
+
 import { onHide, onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -34,10 +36,10 @@ const toast = useToast()
 const active = ref(false) // 页面是否可见
 const invalidTargetPrompted = ref(false) // 是否已经提示无效会话参数
 const conversationType = computed(() => Number(props.type || ImConversationType.PRIVATE)) // 会话类型
-const targetId = computed(() => Number(props.targetId)) // 会话目标编号
-const isTargetValid = computed(() => Number.isFinite(targetId.value) && targetId.value > 0) // 会话目标是否有效
-const locateMessageId = computed(() => props.locateMessageId ? Number(props.locateMessageId) : undefined) // 定位消息编号
-const mentionMessageId = computed(() => props.mentionMessageId ? Number(props.mentionMessageId) : undefined) // @ 消息编号
+const targetId = computed(() => parseId(props.targetId) as number) // 会话目标编号
+const isTargetValid = computed(() => isPositiveId(targetId.value)) // 会话目标是否有效
+const locateMessageId = computed(() => props.locateMessageId ? parseId(props.locateMessageId) : undefined) // 定位消息编号
+const mentionMessageId = computed(() => props.mentionMessageId ? parseId(props.mentionMessageId) : undefined) // @ 消息编号
 
 /** 进入页面 */
 onShow(() => {

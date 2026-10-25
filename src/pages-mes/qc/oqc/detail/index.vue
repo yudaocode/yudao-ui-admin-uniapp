@@ -149,7 +149,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getOqc(Number(props.id))
+    formData.value = await getOqc(props.id as number)
   } finally {
     toast.close()
   }
@@ -178,7 +178,7 @@ async function handleFinish() {
   }
   finishing.value = true
   try {
-    await finishOqc(Number(props.id))
+    await finishOqc(props.id as number)
     toast.success('完成成功')
     uni.$emit('mes:qc:oqc:reload')
     await getDetail()
@@ -202,7 +202,7 @@ async function handleDelete() {
   }
   deleting.value = true
   try {
-    await deleteOqc(Number(props.id))
+    await deleteOqc(props.id as number)
     toast.success('删除成功')
     uni.$emit('mes:qc:oqc:reload')
     delay(handleBack)

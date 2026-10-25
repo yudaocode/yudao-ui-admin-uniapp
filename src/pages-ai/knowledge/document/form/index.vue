@@ -149,6 +149,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeDocument } from '@/api/ai/knowledge/document'
 import type { KnowledgeSegment } from '@/api/ai/knowledge/segment'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
@@ -207,7 +209,7 @@ let pollingStopped = true // 是否停止处理进度轮询
 let pollingCount = 0 // 当前轮询次数
 const maxPollingCount = 200 // 最长轮询约十分钟
 const formData = ref<DocumentFormData>({
-  knowledgeId: props.knowledgeId ? Number(props.knowledgeId) : undefined,
+  knowledgeId: props.knowledgeId ? parseId(props.knowledgeId) : undefined,
   segmentMaxTokens: 500,
   list: [],
 }) // 文档处理数据
@@ -277,7 +279,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    const document: KnowledgeDocument = await getKnowledgeDocument(Number(props.id))
+    const document: KnowledgeDocument = await getKnowledgeDocument(props.id)
     formData.value = {
       knowledgeId: document.knowledgeId,
       segmentMaxTokens: document.segmentMaxTokens || 500,
@@ -334,13 +336,13 @@ async function handleSave() {
   try {
     if (props.id) {
       await updateKnowledgeDocument({
-        id: Number(props.id),
+        id: props.id,
         name: currentFile.value.name,
         segmentMaxTokens: formData.value.segmentMaxTokens,
       })
     } else {
       const ids = await createKnowledgeDocumentList({
-        knowledgeId: Number(formData.value.knowledgeId),
+        knowledgeId: parseId(formData.value.knowledgeId) as number,
         segmentMaxTokens: formData.value.segmentMaxTokens,
         list: formData.value.list.map(file => ({
           name: file.name,

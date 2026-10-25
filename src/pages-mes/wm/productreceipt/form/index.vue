@@ -221,7 +221,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getProductReceipt(Number(props.id))
+  formData.value = await getProductReceipt(props.id as number)
 }
 
 /** 打开入库日期选择 */

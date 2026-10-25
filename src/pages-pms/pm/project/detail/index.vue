@@ -178,7 +178,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  project.value = await getProject(Number(props.id))
+  project.value = await getProject(props.id)
   // 初始化页签：路由指定页签有效时使用，否则默认任务页
   const requested = props.tabs
   const index = availableTabs.value.findIndex(tab => tab.key === requested)

@@ -118,7 +118,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getAttendanceClock(Number(props.id))
+  formData.value = await getAttendanceClock(props.id)
 }
 
 /** 编辑打卡记录 */
@@ -144,7 +144,7 @@ async function handleDelete() {
 
   deleting.value = true
   try {
-    await deleteAttendanceClock(Number(props.id))
+    await deleteAttendanceClock(props.id)
     toast.success('删除成功')
     uni.$emit('hrm:attendance:clock:reload')
     delay(handleBack)

@@ -110,7 +110,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getRecruitChannel(Number(props.id))
+  formData.value = await getRecruitChannel(props.id)
 }
 
 /** 编辑招聘渠道 */
@@ -137,7 +137,7 @@ async function handleUpdateStatus() {
   }
 
   await updateRecruitChannelStatus({
-    id: Number(props.id),
+    id: props.id,
     status: willEnable ? CommonStatusEnum.ENABLE : CommonStatusEnum.DISABLE,
   })
   toast.success(`${text}成功`)

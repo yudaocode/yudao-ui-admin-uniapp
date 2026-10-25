@@ -193,6 +193,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { MdClient } from '@/api/mes/md/client'
 import type { MdUnitMeasure } from '@/api/mes/md/unitmeasure'
 import type { WmPackage } from '@/api/mes/wm/packages'
@@ -227,7 +229,7 @@ definePage({
 
 const dialog = useDialog()
 const toast = useToast()
-const routeId = computed(() => props.id ? Number(props.id) : undefined) // 路由编号
+const routeId = computed(() => props.id ? parseId(props.id) : undefined) // 路由编号
 const routeMode = computed(() => String(props.mode || '')) // 路由模式
 const currentId = ref<number>() // 当前编辑编号
 const currentMode = ref<string>() // 当前操作模式

@@ -19,7 +19,7 @@
     <ConversationList v-if="tabIndex === 0" />
     <MessageList
       v-else
-      :conversation-id="props.conversationId ? Number(props.conversationId) : undefined"
+      :conversation-id="props.conversationId || undefined"
     />
   </view>
 </template>

@@ -54,6 +54,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ImManagerChannelVO } from '@/api/im/manager/channel'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -94,7 +96,7 @@ async function getDetail() {
   }
   try {
     toast.loading('加载中...')
-    formData.value = await getManagerChannel(Number(props.id))
+    formData.value = await getManagerChannel(parseId(props.id) as number)
   } finally {
     toast.close()
   }
@@ -123,7 +125,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteManagerChannel(Number(props.id))
+    await deleteManagerChannel(parseId(props.id) as number)
     toast.success('删除成功')
     uni.$emit('im:manager:channel:reload')
     delay(handleBack)

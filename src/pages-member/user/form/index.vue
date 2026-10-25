@@ -179,7 +179,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getMemberUser(Number(props.id))
+  const data = await getMemberUser(props.id)
   formData.value = {
     ...data,
     birthday: data.birthday || '',

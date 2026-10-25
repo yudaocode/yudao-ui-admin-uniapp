@@ -107,7 +107,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getAttendanceHoliday(Number(props.id))
+  formData.value = await getAttendanceHoliday(props.id)
   datePicker.value = formData.value.date ? Number(formData.value.date) : ''
 }
 

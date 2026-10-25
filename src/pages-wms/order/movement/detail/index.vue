@@ -150,7 +150,7 @@ async function getDetail() {
   if (!props.id || deleting.value) {
     return
   }
-  formData.value = await getMovementOrder(Number(props.id))
+  formData.value = await getMovementOrder(props.id)
 }
 
 /** 编辑移库单 */
@@ -176,7 +176,7 @@ async function handleDelete() {
   // 执行删除
   deleting.value = true
   try {
-    await deleteMovementOrder(Number(props.id))
+    await deleteMovementOrder(props.id)
     toast.success('删除成功')
     uni.$emit('wms:movement-order:reload')
     delay(handleBack)
@@ -212,7 +212,7 @@ async function handleComplete() {
   }
   actionLoading.value = true
   try {
-    await completeMovementOrder(Number(props.id))
+    await completeMovementOrder(props.id)
     toast.success('移库成功')
     uni.$emit('wms:movement-order:reload')
     await getDetail()
@@ -236,7 +236,7 @@ async function handleCancel() {
   }
   actionLoading.value = true
   try {
-    await cancelMovementOrder(Number(props.id))
+    await cancelMovementOrder(props.id)
     toast.success('作废成功')
     uni.$emit('wms:movement-order:reload')
     await getDetail()

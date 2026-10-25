@@ -32,6 +32,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { ProTask, ProTaskGantt } from '@/api/mes/pro/task'
 import { onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
@@ -131,7 +133,7 @@ async function handleSave() {
     // 保存前重新拉取任务状态，避免拖拽期间任务已完成或取消
     const checkedChanges = await Promise.all(changes.map(async change => ({
       change,
-      task: await getTask(Number(change.id)),
+      task: await getTask(parseId(change.id) as number),
     })))
     const updates = checkedChanges.filter(({ task }) => {
       return task?.id

@@ -111,6 +111,8 @@
 </template>
 
 <script lang="ts" setup>
+import { parseId } from '@/utils/id'
+
 import type { KnowledgeTree } from '@/api/pms/kb/content/folder'
 import type { KnowledgeInteractionItem } from '@/api/pms/kb/interaction/favorite'
 import type { KnowledgeLibrary } from '@/api/pms/kb/library'
@@ -160,7 +162,7 @@ const nodeActionVisible = ref(false) // 目录节点更多操作弹窗显示状�
 const currentNode = ref<KnowledgeTreeNode>() // 当前操作的目录节点
 const folderFormRef = ref<InstanceType<typeof FolderFormPopup>>() // 文件夹表单引用
 
-const libraryId = computed(() => Number(props.libraryId)) // 知识库编号
+const libraryId = computed(() => parseId(props.libraryId) as number) // 知识库编号
 const treeData = computed<KnowledgeTreeNode[]>(() => {
   if (!tree.value) {
     return []

@@ -152,7 +152,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getSchedule(Number(props.id))
+  const data = await getSchedule(props.id as unknown as number)
   formData.value = data
   startTime.value = data.startTime ? toTimestamp(data.startTime) : ''
   endTime.value = data.endTime ? toTimestamp(data.endTime) : ''

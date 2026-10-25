@@ -309,7 +309,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getLeave(Number(props.id))
+  const data = await getLeave(props.id as number)
   formData.value.type = data.type
   formData.value.reason = data.reason
   formData.value.startTime = data.startTime

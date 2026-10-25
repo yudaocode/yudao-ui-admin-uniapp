@@ -246,7 +246,7 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  const data = await getSealApply(Number(props.id))
+  const data = await getSealApply(props.id as unknown as number)
   formData.value = data
   selectedSealName.value = data.sealName || ''
   expectedUseTime.value = data.expectedUseTime ? toTimestamp(data.expectedUseTime) : ''
