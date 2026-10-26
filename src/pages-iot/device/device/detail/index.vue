@@ -187,6 +187,9 @@ const moreActions = computed(() => { // 更多操作
     { name: '模拟设备', value: 'simulator' },
     { name: '设备配置', value: 'config' },
   ]
+  if (hasAccessByCodes(['iot:device:shadow-query'])) {
+    actions.push({ name: '设备影子', value: 'shadow' })
+  }
   if (isGateway.value) {
     actions.push({ name: '子设备管理', value: 'sub-device' })
   }
@@ -252,6 +255,11 @@ function handleConfig() {
   uni.navigateTo({ url: `/pages-iot/device/device/config/index?deviceId=${props.id}` })
 }
 
+/** 查看设备影子 */
+function handleShadow() {
+  uni.navigateTo({ url: `/pages-iot/device/device/shadow/index?deviceId=${props.id}` })
+}
+
 /** 查看子设备 */
 function handleSubDevice() {
   uni.navigateTo({ url: `/pages-iot/device/device/sub-device/index?gatewayId=${props.id}` })
@@ -282,6 +290,9 @@ function handleMoreAction({ item }: { item: { value: string } }) {
       break
     case 'config':
       handleConfig()
+      break
+    case 'shadow':
+      handleShadow()
       break
     case 'sub-device':
       handleSubDevice()

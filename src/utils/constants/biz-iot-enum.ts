@@ -51,6 +51,7 @@ export const IotDeviceMessageMethodEnum = {
   CONFIG_PUSH: { method: 'thing.config.push', name: '配置推送', upstream: false },
   OTA_UPGRADE: { method: 'thing.ota.upgrade', name: 'OTA 固件信息推送', upstream: false },
   OTA_PROGRESS: { method: 'thing.ota.progress', name: 'OTA 升级进度上报', upstream: true },
+  SHADOW_UPDATE: { method: 'thing.shadow.update', name: '设备影子更新', upstream: true },
 } as const
 
 /** IoT 产品物模型访问模式枚举 */
