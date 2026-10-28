@@ -17,6 +17,10 @@ const PC_TO_MOBILE_PATH_MAP: Record<string, string> = {
   '/crm/contract/detail': '/pages-crm/contract/detail/index',
   // CRM 回款审批（跨分包，仅详情，跳转）
   '/crm/receivable/detail': '/pages-crm/receivable/detail/index',
+  // OA 公文发文审批（跨分包，仅详情，跳转）
+  '/oa/officialdoc/send/detail': '/pages-oa/officialdoc/send/detail/index',
+  // OA 公文收文审批（跨分包，仅详情，跳转）
+  '/oa/officialdoc/receive/detail': '/pages-oa/officialdoc/receive/detail/index',
 }
 
 /**
