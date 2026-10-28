@@ -88,6 +88,7 @@ export interface IotDeviceMessage {
   data?: any
   code?: number
   msg?: string
+  raw?: string // 与设备实际收发的原始帧（Base64），平台自动附带
 }
 
 /** IoT 设备消息对 */

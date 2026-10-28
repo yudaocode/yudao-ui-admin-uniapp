@@ -15,11 +15,12 @@
       <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
         <wd-tab title="上行指令" />
         <wd-tab title="下行指令" />
+        <wd-tab v-if="canRawSend" title="raw 下发" />
       </wd-tabs>
     </view>
 
     <!-- 指令类型 -->
-    <view class="p-24rpx pb-0">
+    <view v-if="tabType !== 'raw'" class="p-24rpx pb-0">
       <wd-radio-group v-if="tabType === 'upstream'" v-model="upstreamMethod" type="button">
         <wd-radio :name="IotDeviceMessageMethodEnum.PROPERTY_POST.method" :value="IotDeviceMessageMethodEnum.PROPERTY_POST.method">
           属性上报
@@ -44,6 +45,35 @@
     <!-- 调试内容 -->
     <scroll-view scroll-y class="box-border min-h-0 w-full flex-1 p-24rpx pb-180rpx">
       <wd-loading v-if="loading" />
+
+      <view v-else-if="tabType === 'raw'">
+        <!-- raw 下发 -->
+        <view class="rounded-12rpx bg-white p-24rpx shadow-sm">
+          <view class="mb-12rpx text-30rpx text-[#333] font-semibold">
+            透传下发
+          </view>
+          <view v-if="!rawSupported" class="mb-16rpx">
+            <wd-notice-bar type="warning" wrapable :scrollable="false" text="HTTP / CoAP 产品不支持 raw 下发" />
+          </view>
+          <view class="mb-16rpx text-24rpx text-[#999]">
+            {{ rawPayloadHint }}
+          </view>
+          <view class="rounded-8rpx bg-[#f7f8fa] p-8rpx">
+            <wd-textarea
+              v-model="rawHex"
+              placeholder="载荷 HEX，空格可选，例如 AA 01 00 DC"
+              :disabled="!rawSupported"
+              custom-textarea-class="!h-200rpx !font-mono !text-24rpx"
+            />
+          </view>
+          <view class="mt-16rpx text-24rpx text-[#999]">
+            将真实发送给设备。不提供 raw 上报的模拟，验证脚本请用产品「数据解析 → 调试」。
+          </view>
+          <wd-button class="mt-24rpx" block type="primary" :loading="sending" :disabled="!rawSupported" @click="handleRawPush">
+            发送
+          </wd-button>
+        </view>
+      </view>
 
       <view v-else-if="showPropertyPanel">
         <!-- 属性调试 -->
@@ -156,11 +186,24 @@
 
 <script lang="ts" setup>
 import type { Device } from '@/api/iot/device/device'
+import type { Product } from '@/api/iot/product/product'
 import type { ThingModelData } from '@/api/iot/thingmodel'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { getDevice, sendDeviceMessage } from '@/api/iot/device/device'
+import { getProduct, ProtocolTypeEnum } from '@/api/iot/product/product'
 import { getThingModelList } from '@/api/iot/thingmodel'
+import { useAccess } from '@/hooks/useAccess'
+import {
+  hexToBase64,
+  IotRawMessageMethodEnum,
+  MODBUS_PDU_MAX_BYTES,
+  MODBUS_PDU_MIN_BYTES,
+  MODBUS_WRITE_FUNCTION_CODES,
+  parseHex,
+  RAW_PAYLOAD_MAX_BYTES,
+} from '@/pages-iot/utils/raw'
 import { DeviceStateEnum, IotDeviceMessageMethodEnum, IoTThingModelTypeEnum } from '@/utils/constants'
 import { navigateBackPlus } from '@/utils'
 
@@ -173,8 +216,10 @@ definePage({
   },
 })
 
+const { hasAccessByCodes } = useAccess()
 const toast = useToast()
-const tabTypes = ['upstream', 'downstream'] as const
+const dialog = useDialog()
+const tabTypes = ['upstream', 'downstream', 'raw'] as const
 const tabIndex = ref(0) // 当前调试模式
 const tabType = computed(() => tabTypes[tabIndex.value])
 const upstreamMethod = ref<string>(IotDeviceMessageMethodEnum.PROPERTY_POST.method) // 上行方法
@@ -183,6 +228,11 @@ const loading = ref(false) // 页面加载状态
 const sending = ref(false) // 批量发送状态
 const sendingKey = ref<string>() // 单项发送标识符
 const deviceData = ref<Device>() // 设备详情
+const productData = ref<Product>() // 产品详情，raw 下发按协议校验
+const rawHex = ref('') // raw 下发载荷 HEX
+const canRawSend = computed(() => { // 是否有 raw 下发权限：需要同时拥有消息发送、透传下发权限（hasAccessByCodes 为任一匹配，需分别判断）
+  return hasAccessByCodes(['iot:device:message-send']) && hasAccessByCodes(['iot:device:message-raw-send'])
+})
 const thingModelList = ref<ThingModelData[]>([]) // 物模型列表
 const formData = ref<Record<string, string>>({}) // 调试参数
 const propertyList = computed(() => getFilteredThingModelList(IoTThingModelTypeEnum.PROPERTY))
@@ -193,6 +243,18 @@ const showPropertyPanel = computed(() => {
     || (tabType.value === 'downstream' && downstreamMethod.value === IotDeviceMessageMethodEnum.PROPERTY_SET.method)
 })
 const propertySendText = computed(() => tabType.value === 'upstream' ? '发送属性上报' : '发送属性设置') // 属性调试主操作
+const isModbusProduct = computed(() => { // 是否 Modbus 产品
+  return [ProtocolTypeEnum.MODBUS_TCP_CLIENT, ProtocolTypeEnum.MODBUS_TCP_SERVER].includes(productData.value?.protocolType as ProtocolTypeEnum)
+})
+const rawSupported = computed(() => { // 是否支持 raw 下发，HTTP / CoAP 不支持
+  return ![ProtocolTypeEnum.HTTP, ProtocolTypeEnum.COAP].includes(productData.value?.protocolType as ProtocolTypeEnum)
+})
+const rawPayloadHint = computed(() => { // raw 下发载荷说明
+  if (isModbusProduct.value) {
+    return `Modbus 产品填写 PDU（功能码 + 数据，不含从站地址和 CRC），${MODBUS_PDU_MIN_BYTES}~${MODBUS_PDU_MAX_BYTES} 字节；写功能码 05/06/0F/10 需要二次确认`
+  }
+  return `载荷 1~${RAW_PAYLOAD_MAX_BYTES} 字节`
+})
 
 /** 返回上一页 */
 function handleBack() {
@@ -339,6 +401,50 @@ async function handleServiceInvoke(item: ThingModelData) {
   }
 }
 
+/** raw 下发：确认后发送；Modbus 写操作需要二次确认 */
+async function handleRawPush() {
+  if (!canRawSend.value || !rawSupported.value || sending.value) {
+    return
+  }
+  const hex = parseHex(rawHex.value)
+  if (!hex) {
+    toast.warning('请输入合法的 HEX 载荷')
+    return
+  }
+  const length = hex.length / 2
+  const minBytes = isModbusProduct.value ? MODBUS_PDU_MIN_BYTES : 1
+  const maxBytes = isModbusProduct.value ? MODBUS_PDU_MAX_BYTES : RAW_PAYLOAD_MAX_BYTES
+  if (length < minBytes || length > maxBytes) {
+    toast.warning(`载荷需为 ${minBytes}~${maxBytes} 字节，当前 ${length} 字节`)
+    return
+  }
+  try {
+    await dialog.confirm({ title: '提示', msg: `将真实发送给设备（${length} 字节），确定发送吗？` })
+  } catch {
+    return
+  }
+  // Modbus 写功能码：展示功能码和寄存器地址，再次确认
+  const functionCode = Number.parseInt(hex.slice(0, 2), 16)
+  if (isModbusProduct.value && MODBUS_WRITE_FUNCTION_CODES.includes(functionCode)) {
+    const addressHex = hex.slice(2, 6).toUpperCase()
+    try {
+      await dialog.confirm({
+        title: 'Modbus 写操作',
+        msg: `功能码 0x${hex.slice(0, 2).toUpperCase()}，寄存器地址 ${Number.parseInt(addressHex, 16)}（0x${addressHex}），将写入设备，确定继续吗？`,
+      })
+    } catch {
+      return
+    }
+  }
+  sending.value = true
+  try {
+    await sendMessage(IotRawMessageMethodEnum.RAW_PUSH.method, { payload: hexToBase64(hex) })
+    toast.success('发送成功')
+  } finally {
+    sending.value = false
+  }
+}
+
 /** 加载设备和物模型 */
 async function getDetail() {
   if (!props.deviceId) {
@@ -349,6 +455,10 @@ async function getDetail() {
     deviceData.value = await getDevice(props.deviceId as number)
     if (deviceData.value.productId) {
       thingModelList.value = await getThingModelList({ productId: deviceData.value.productId })
+      // raw 下发需要按产品协议校验载荷
+      if (canRawSend.value) {
+        productData.value = await getProduct(deviceData.value.productId)
+      }
     }
   } finally {
     loading.value = false

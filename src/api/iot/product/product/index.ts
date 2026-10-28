@@ -21,6 +21,49 @@ export interface Product {
   serializeType?: string
   deviceCount?: number
   createTime?: Date
+  scriptContent?: string // 数据解析脚本
+  scriptEnabled?: boolean // 数据解析脚本是否启用
+}
+
+/** IoT 产品数据解析脚本更新请求：只更新提交的字段 */
+export interface ProductScriptUpdateReq {
+  id: number
+  scriptContent?: string
+  scriptEnabled?: boolean
+}
+
+/** IoT 产品数据解析脚本调试请求 */
+export interface ProductScriptDebugReq {
+  id: number
+  scriptContent: string
+  direction: 'decode' | 'encode'
+  inputHex?: string
+  message?: {
+    method: string
+    requestId?: string
+    params?: any
+  }
+}
+
+/** IoT 产品数据解析脚本调试结果 */
+export interface ProductScriptDebugResp {
+  success: boolean
+  durationMs: number
+  message?: { // 上行解码得到的消息；为空表示没有业务消息
+    method: string
+    requestId?: string
+    params?: any
+    code?: number
+    msg?: string
+    data?: any
+  } | null
+  standard?: boolean
+  outputHex?: string
+  error?: {
+    type: 'ERROR' | 'TIMEOUT' | 'REJECTED' | 'OUTPUT_INVALID' | 'ENCODE_EMPTY'
+    message: string
+    line?: number
+  }
 }
 
 /** IoT 产品设备类型枚举 */
@@ -82,6 +125,16 @@ export function updateProductStatus(id: number, status: number) {
 /** 获取产品精简列表 */
 export function getSimpleProductList(deviceType?: number) {
   return http.get<Product[]>('/iot/product/simple-list', { deviceType })
+}
+
+/** 更新产品数据解析脚本 */
+export function updateProductScript(data: ProductScriptUpdateReq) {
+  return http.put<boolean>('/iot/product/update-script', data)
+}
+
+/** 调试产品数据解析脚本 */
+export function debugProductScript(data: ProductScriptDebugReq) {
+  return http.post<ProductScriptDebugResp>('/iot/product/debug-script', data)
 }
 
 /** 根据 ProductKey 获取产品信息 */

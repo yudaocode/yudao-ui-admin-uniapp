@@ -3,8 +3,16 @@
     <!-- 顶部导航栏 -->
     <wd-navbar title="产品详情" left-arrow placeholder safe-area-inset-top fixed @click-left="handleBack" />
 
+    <!-- 详情页签 -->
+    <view class="bg-white">
+      <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
+        <wd-tab title="产品信息" />
+        <wd-tab title="数据解析" />
+      </wd-tabs>
+    </view>
+
     <!-- 详情内容 -->
-    <view>
+    <view v-show="tabIndex === 0">
       <wd-cell-group border>
         <wd-cell title="产品图标">
           <wd-img
@@ -100,8 +108,13 @@
       </wd-cell-group>
     </view>
 
+    <!-- 数据解析 -->
+    <view v-if="formData" v-show="tabIndex === 1">
+      <ScriptSection :product="formData" @refresh="getDetail" />
+    </view>
+
     <!-- 底部操作按钮 -->
-    <view class="yd-detail-footer">
+    <view v-show="tabIndex === 0" class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button class="flex-1" type="info" @click="handleThingModel">
           物模型
@@ -154,6 +167,7 @@ import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE, ProductStatusEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import ScriptSection from '../components/script-section.vue'
 
 const props = defineProps<{ id?: number | string }>()
 
@@ -171,6 +185,7 @@ const formData = ref<Product>() // 详情数据
 const deleting = ref(false) // 删除状态
 const statusLoading = ref(false) // 状态变更状态
 const secretVisible = ref(false) // 产品密钥显示状态
+const tabIndex = ref(0) // 当前页签：产品信息 / 数据解析
 const isPublished = computed(() => formData.value?.status === ProductStatusEnum.PUBLISHED) // 是否已发布
 const showNetType = computed(() => {
   return [DeviceTypeEnum.DEVICE, DeviceTypeEnum.GATEWAY].includes(formData.value?.deviceType as number)
@@ -185,6 +200,11 @@ const productSecretText = computed(() => {
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus('/pages-iot/product/product/index')
+}
+
+/** Tab 切换 */
+function handleTabChange({ index }: { index: number }) {
+  tabIndex.value = index
 }
 
 /** 加载产品详情 */

@@ -43,6 +43,12 @@
           :columns="replyOptions"
           all-option
         />
+        <yd-search-picker
+          v-model="formData.raw"
+          label="原始帧"
+          :columns="rawOptions"
+          all-option
+        />
         <view class="yd-search-form-item">
           <view class="yd-search-form-label">
             标识符
@@ -78,7 +84,7 @@
         <view v-for="item in list" :key="item.id || item.requestId" class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm">
           <view class="mb-16rpx flex items-center justify-between gap-16rpx">
             <view class="min-w-0 flex-1 text-30rpx text-[#333] font-semibold">
-              {{ getDeviceMessageMethodLabel(item.method) || item.method || '-' }}
+              {{ getMethodLabel(item.method) || item.method || '-' }}
             </view>
             <view class="shrink-0 rounded-6rpx px-12rpx py-4rpx text-24rpx" :class="item.upstream ? 'bg-[#e6f4ff] text-[#1677ff]' : 'bg-[#f6ffed] text-[#52c41a]'">
               {{ item.upstream ? '上行' : '下行' }}
@@ -93,6 +99,18 @@
           <view class="mb-12rpx break-all rounded-8rpx bg-[#f7f8fa] p-16rpx text-24rpx text-[#666]">
             {{ formatPayload(item) }}
           </view>
+          <!-- 原始帧：与设备实际收发的原始字节，没有时不展示 -->
+          <view v-if="item.raw" class="mb-12rpx">
+            <view class="mb-8rpx flex items-center justify-between gap-16rpx">
+              <text class="text-24rpx text-[#999]">原始帧（HEX）</text>
+              <wd-button size="small" type="primary" variant="plain" @click="handleCopyRaw(item.raw)">
+                复制
+              </wd-button>
+            </view>
+            <view class="break-all rounded-8rpx bg-[#f7f8fa] p-16rpx font-mono text-24rpx text-[#666]">
+              {{ formatRawPreview(item.raw) }}
+            </view>
+          </view>
           <view class="text-24rpx text-[#999]">
             {{ formatDateTime(item.ts || item.reportTime) || '-' }}
           </view>
@@ -104,8 +122,10 @@
 
 <script lang="ts" setup>
 import type { IotDeviceMessage } from '@/api/iot/device/device'
+import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { getDeviceMessagePage } from '@/api/iot/device/device'
+import { base64ToHex, getRawMethodLabel, IotRawMessageMethodEnum } from '@/pages-iot/utils/raw'
 import { getDeviceMessageMethodLabel, getDeviceMessageMethodOptions } from '@/utils/constants'
 import { getTopPopupModalStyle, getTopPopupStyle, navigateBackPlus } from '@/utils'
 import { formatDateRange, formatDateTime } from '@/utils/date'
@@ -119,6 +139,9 @@ definePage({
   },
 })
 
+const RAW_PREVIEW_MAX_BYTES = 64 // 列表中原始帧最多展示的字节数
+
+const toast = useToast()
 const list = ref<IotDeviceMessage[]>([]) // 消息列表
 const pagingRef = ref<any>() // 分页组件引用
 const visible = ref(false) // 搜索弹窗显示状态
@@ -129,10 +152,14 @@ const formData = reactive({
   method: undefined as string | undefined,
   upstream: undefined as boolean | undefined,
   reply: undefined as boolean | undefined,
+  raw: undefined as boolean | undefined,
   identifier: undefined as string | undefined,
   times: [undefined, undefined] as [any, any],
 }) // 搜索表单数据
-const methodOptions = getDeviceMessageMethodOptions()
+const methodOptions = [
+  ...getDeviceMessageMethodOptions(),
+  ...Object.values(IotRawMessageMethodEnum).map(item => ({ label: item.name, value: item.method })),
+] // 消息方法，含原始透传方法
 const directionOptions = [
   { label: '上行', value: true },
   { label: '下行', value: false },
@@ -141,16 +168,23 @@ const replyOptions = [
   { label: '是', value: true },
   { label: '否', value: false },
 ] // 回复状态
+const rawOptions = [
+  { label: '有原始帧', value: true },
+  { label: '无原始帧', value: false },
+] // 原始帧：有 / 无
 const placeholder = computed(() => { // 搜索条件文案
   const conditions: string[] = []
   if (formData.method) {
-    conditions.push(`方法:${getDeviceMessageMethodLabel(formData.method)}`)
+    conditions.push(`方法:${getMethodLabel(formData.method)}`)
   }
   if (formData.upstream !== undefined) {
     conditions.push(formData.upstream ? '方向:上行' : '方向:下行')
   }
   if (formData.reply !== undefined) {
     conditions.push(formData.reply ? '回复:是' : '回复:否')
+  }
+  if (formData.raw !== undefined) {
+    conditions.push(formData.raw ? '原始帧:有' : '原始帧:无')
   }
   if (formData.identifier) {
     conditions.push(`标识符:${formData.identifier}`)
@@ -193,6 +227,37 @@ function formatPayload(item: IotDeviceMessage) {
   return item.params ? JSON.stringify(item.params) : '-'
 }
 
+/** 获取消息方法名称 */
+function getMethodLabel(method?: string) {
+  return getRawMethodLabel(method) || getDeviceMessageMethodLabel(method)
+}
+
+/** 原始帧（Base64）转 HEX 展示；无法解析时原样展示 */
+function formatRaw(raw: string) {
+  return base64ToHex(raw) || raw
+}
+
+/** 列表中的原始帧展示：超过 RAW_PREVIEW_MAX_BYTES 字节时只展示前一段（复制仍复制完整 HEX） */
+function formatRawPreview(raw: string) {
+  const hex = base64ToHex(raw)
+  if (!hex) {
+    return raw
+  }
+  const bytes = hex.split(' ')
+  if (bytes.length <= RAW_PREVIEW_MAX_BYTES) {
+    return hex
+  }
+  return `${bytes.slice(0, RAW_PREVIEW_MAX_BYTES).join(' ')} …（共 ${bytes.length} 字节）`
+}
+
+/** 复制原始帧的 HEX */
+function handleCopyRaw(raw: string) {
+  uni.setClipboardData({
+    data: formatRaw(raw),
+    success: () => toast.success('复制成功'),
+  })
+}
+
 /** 搜索按钮操作 */
 function handleSearch() {
   visible.value = false
@@ -200,6 +265,7 @@ function handleSearch() {
     method: formData.method,
     upstream: formData.upstream,
     reply: formData.reply,
+    raw: formData.raw,
     identifier: formData.identifier || undefined,
     times: formatDateRange(formData.times),
   }
@@ -211,6 +277,7 @@ function handleReset() {
   formData.method = undefined
   formData.upstream = undefined
   formData.reply = undefined
+  formData.raw = undefined
   formData.identifier = undefined
   formData.times = [undefined, undefined]
   visible.value = false
