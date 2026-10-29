@@ -8,7 +8,7 @@
     :columns="options"
     :placeholder="placeholder"
     :disabled="disabled"
-    @update:model-value="value => emit('update:modelValue', Number(value))"
+    @update:model-value="value => emit('update:modelValue', parseId(value))"
   />
 </template>
 
