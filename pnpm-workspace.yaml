@@ -1,0 +1,16 @@
+packages:
+  - .
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': false
+  '@uni-helper/unocss-preset-uni': true
+  core-js: false
+  esbuild: true
+  less: false
+  protobufjs: false
+  vue-demi: false
+
+overrides:
+  bin-wrapper: npm:bin-wrapper-china
+  unconfig: 7.3.2
