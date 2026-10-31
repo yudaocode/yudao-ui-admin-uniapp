@@ -5,7 +5,7 @@ import { useTokenStore } from '@/store/token'
 import { getLastPage, isDoubleTokenMode } from '@/utils'
 import { ApiEncrypt } from '@/utils/encrypt'
 import { toLoginPage } from '@/utils/toLoginPage'
-import { ResultEnum } from './tools/enum'
+import { ResultEnum, ShowMessage } from './tools/enum'
 
 // 刷新 token 状态管理
 let refreshing = false // 防止重复刷新 token 标识
@@ -93,7 +93,7 @@ export function http<T>(options: CustomRequestOptions) {
           }
         }
 
-        const { code } = responseData
+        const code = responseData?.code // 空响应体也需进入后续 401 / 状态码处理
         // 检查是否是401错误（包括HTTP状态码401或业务码401）
         const isTokenExpired = res.statusCode === 401 || code === 401
 
@@ -174,6 +174,15 @@ export function http<T>(options: CustomRequestOptions) {
           if (options.original) {
             return resolve(responseData as unknown as T)
           }
+          // 空响应或非对象响应，无法读取业务码，拒绝原始响应
+          if (responseData === null || typeof responseData !== 'object') {
+            !options.hideErrorToast
+            && uni.showToast({
+              icon: 'none',
+              title: '请求错误',
+            })
+            return reject(res)
+          }
           // 处理业务逻辑错误
           if (code !== ResultEnum.Success0 && code !== ResultEnum.Success200) {
             // add by 芋艿：后端返回的 msg 提示
@@ -195,13 +204,14 @@ export function http<T>(options: CustomRequestOptions) {
         !options.hideErrorToast
         && uni.showToast({
           icon: 'none',
-          title: (res.data as any).msg || '请求错误',
+          title: responseData?.msg || responseData?.message || ShowMessage(res.statusCode),
         })
         reject(res)
       },
       // 响应失败
       fail(err) {
-        uni.showToast({
+        !options.hideErrorToast
+        && uni.showToast({
           icon: 'none',
           title: '网络错误，换个网络试试',
         })

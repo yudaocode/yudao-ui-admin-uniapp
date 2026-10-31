@@ -34,6 +34,7 @@ export interface FormCreateFetchOption {
   data?: Record<string, any>
   headers?: Record<string, any>
   header?: Record<string, any>
+  hideErrorToast?: boolean // 仅作用于内置请求；静默时由调用方负责失败反馈
   key?: string
   method?: string
   onError?: (error: unknown, rule?: FormCreateRule, api?: FormCreateApi) => void

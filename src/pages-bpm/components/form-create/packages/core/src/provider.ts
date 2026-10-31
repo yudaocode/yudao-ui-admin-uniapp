@@ -147,6 +147,7 @@ export async function fetchProviderData(
       return fetchProviderData({
         ...globalData,
         parse: normalized.parse ?? globalData.parse,
+        hideErrorToast: normalized.hideErrorToast ?? globalData.hideErrorToast,
       }, context, rule, fetchOptions)
     }
     const data = getProviderData(`$globalData.${normalized.key}`, context)
@@ -168,7 +169,7 @@ export async function fetchProviderData(
     : http<any>({
         data,
         header: normalized.header || normalized.headers,
-        hideErrorToast: true,
+        hideErrorToast: normalized.hideErrorToast,
         method: method as UniApp.RequestOptions['method'],
         query,
         returnRawResponse: fetchOptions.rawResponse,

@@ -32,7 +32,13 @@ export default function useRequest<T, P = undefined>(
   const data = ref<T | undefined>(options.initialData) as Ref<T | undefined>
   const run = async (args?: P) => {
     loading.value = true
-    return func(args)
+    let request: Promise<T>
+    try {
+      request = func(args)
+    } catch (err) {
+      request = Promise.reject(err) // 同步抛错转为 rejected Promise，复用下方统一的 error / loading 处理
+    }
+    return request
       .then((res) => {
         data.value = res
         error.value = false
@@ -48,7 +54,8 @@ export default function useRequest<T, P = undefined>(
   }
 
   if (options.immediate) {
-    (run as (args: P) => Promise<T | undefined>)({} as P)
+    // 自动执行的失败（含 func 同步抛错）已记录到 error 并结束 loading，这里消费拒绝，避免 unhandledRejection
+    (run as (args: P) => Promise<T | undefined>)({} as P).catch(() => {})
   }
   return { loading, error, data, run }
 }
