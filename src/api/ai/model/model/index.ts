@@ -14,6 +14,7 @@ export interface AiModel {
   temperature?: number
   maxTokens?: number
   maxContexts?: number
+  inputModalities?: string[] // 输入模态数组
   createTime?: string
 }
 

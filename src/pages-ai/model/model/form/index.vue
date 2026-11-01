@@ -50,6 +50,18 @@
             <wd-form-item title="上下文" title-width="200rpx" prop="maxContexts">
               <wd-input-number v-model="formData.maxContexts" :min="0" :max="20" />
             </wd-form-item>
+            <wd-form-item title="输入能力" title-width="200rpx" prop="inputModalities">
+              <wd-checkbox-group v-model="formData.inputModalities" inline>
+                <wd-checkbox
+                  v-for="item in AI_MODEL_INPUT_MODALITY_OPTIONS"
+                  :key="item.value"
+                  :name="item.value"
+                  :disabled="item.disabled"
+                >
+                  {{ item.label }}
+                </wd-checkbox>
+              </wd-checkbox-group>
+            </wd-form-item>
           </template>
           <wd-form-item title="状态" title-width="200rpx" prop="status" center>
             <wd-radio-group v-model="formData.status" type="button">
@@ -88,7 +100,7 @@ import { computed, onMounted, ref } from 'vue'
 import { createModel, getModel, updateModel } from '@/api/ai/model/model'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
-import { AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
+import { AI_MODEL_INPUT_MODALITY_OPTIONS, AiModelInputModalityEnum, AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import ApiKeyFormPicker from '../../apiKey/components/api-key-form-picker.vue'
 
@@ -117,6 +129,7 @@ const formData = ref<AiModel>({
   temperature: 0.7,
   maxTokens: 4096,
   maxContexts: 10,
+  inputModalities: [AiModelInputModalityEnum.TEXT],
 }) // 表单数据
 const formSchema = createFormSchema({
   platform: [{ required: true, message: '平台不能为空' }],
@@ -142,7 +155,19 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getModel(props.id)
+  const data = await getModel(props.id)
+  // 编辑时保留已配置的 image、video，并补上必选的 text
+  data.inputModalities = mergeTextModality(data.inputModalities)
+  formData.value = data
+}
+
+/** 合并必选的 text 输入模态，保留其它已配置的值 */
+function mergeTextModality(modalities?: string[]) {
+  const result = [...(modalities || [])]
+  if (!result.includes(AiModelInputModalityEnum.TEXT)) {
+    result.unshift(AiModelInputModalityEnum.TEXT)
+  }
+  return result
 }
 
 /** 提交表单 */
@@ -160,6 +185,7 @@ async function handleSubmit() {
       delete data.temperature
       delete data.maxTokens
       delete data.maxContexts
+      delete data.inputModalities
     }
     if (props.id) {
       await updateModel(data)

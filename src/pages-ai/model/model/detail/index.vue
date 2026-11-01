@@ -25,6 +25,7 @@
           <wd-cell title="温度参数" :value="formData.temperature ?? '-'" />
           <wd-cell title="Token 数" :value="formData.maxTokens ?? '-'" />
           <wd-cell title="上下文数量" :value="formData.maxContexts ?? '-'" />
+          <wd-cell title="输入能力" :value="formData.inputModalities?.join(', ') || '-'" />
         </template>
         <wd-cell title="状态">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="formData?.status" />
