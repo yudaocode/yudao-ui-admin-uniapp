@@ -42,6 +42,13 @@
           <view class="mt-8rpx text-24rpx text-[#999]">
             携带上下文：{{ item.useContext ? '是' : '否' }}
           </view>
+          <!-- Token 用量：助手消息展示业务快照 -->
+          <view v-if="item.type === AiChatMessageTypeEnum.ASSISTANT" class="mt-8rpx text-24rpx text-[#666]">
+            输入 {{ formatAiTokens(item.inputTokens) }} / 输出 {{ formatAiTokens(item.outputTokens) }} / 合计 {{ formatAiTokens(item.totalTokens) }}
+          </view>
+          <view v-if="item.requestId" class="mt-8rpx truncate text-22rpx text-[#999]">
+            请求编号：{{ item.requestId }}
+          </view>
           <view class="mt-8rpx text-22rpx text-[#999]">
             {{ formatDateTime(item.createTime) }}
           </view>
@@ -57,6 +64,7 @@ import type { User } from '@/api/system/user'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getChatMessagePage } from '@/api/ai/chat/message'
 import { getSimpleUserList } from '@/api/system/user'
+import { AiChatMessageTypeEnum, formatAiTokens } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import MessageSearchForm from './message-search-form.vue'
 

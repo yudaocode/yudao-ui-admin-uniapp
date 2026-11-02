@@ -15,7 +15,20 @@ export interface AiModel {
   maxTokens?: number
   maxContexts?: number
   inputModalities?: string[] // 输入模态数组
+  reasoningConfig?: AiModelReasoningConfig // 思考配置；表单不编辑，修改时随详情原样提交
   createTime?: string
+}
+
+/** AI 模型的思考配置 */
+export interface AiModelReasoningConfig {
+  levels: AiModelReasoningLevel[] // 档位数组，从低到高；为空表示清空
+  defaultLevel?: string // 默认档位
+}
+
+/** AI 模型的思考档位 */
+export interface AiModelReasoningLevel {
+  level: string // 档位值
+  options: Record<string, unknown> // 思考参数
 }
 
 /** 查询模型分页 */

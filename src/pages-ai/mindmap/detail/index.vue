@@ -22,6 +22,15 @@
           </wd-cell-group>
         </view>
 
+        <!-- Token 用量 -->
+        <view v-if="formData" class="mt-24rpx">
+          <TokenUsage
+            :input-tokens="formData.inputTokens"
+            :output-tokens="formData.outputTokens"
+            :total-tokens="formData.totalTokens"
+          />
+        </view>
+
         <view class="mt-24rpx rounded-16rpx bg-white p-24rpx shadow-sm">
           <view class="mb-20rpx text-30rpx text-[#222] font-semibold">
             思维导图
@@ -50,6 +59,7 @@ import type { MindMap } from '@/api/ai/mindmap'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { deleteMindMap, getMindMap } from '@/api/ai/mindmap'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
 import YdMindMap from '@/pages-ai/components/yd-mind-map/yd-mind-map.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

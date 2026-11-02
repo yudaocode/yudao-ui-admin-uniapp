@@ -10,6 +10,14 @@
         </view>
         <wd-loading v-if="writing" size="30rpx" />
       </view>
+      <view v-if="writing || usage" class="mb-20rpx">
+        <TokenUsage
+          :input-tokens="usage?.inputTokens"
+          :output-tokens="usage?.outputTokens"
+          :total-tokens="usage?.totalTokens"
+          :pending="writing"
+        />
+      </view>
       <wd-textarea
         v-model="content"
         auto-height
@@ -33,8 +41,12 @@
 </template>
 
 <script lang="ts" setup>
+import type { AiWriteGenerateResp } from '@/api/ai/write'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
+
 defineProps<{
   writing: boolean
+  usage?: Pick<AiWriteGenerateResp, 'inputTokens' | 'outputTokens' | 'totalTokens'> // 本次生成的 Token 快照；未真实生成为空，不展示用量
 }>()
 const content = defineModel<string>('content', { default: '' })
 </script>

@@ -41,6 +41,9 @@
               <text v-else>-</text>
             </wd-cell>
             <wd-cell title="模型" :value="formData?.model || '-'" />
+            <wd-cell title="输入 Token" :value="formatAiTokens(formData?.inputTokens)" />
+            <wd-cell title="输出 Token" :value="formatAiTokens(formData?.outputTokens)" />
+            <wd-cell title="合计 Token" :value="formatAiTokens(formData?.totalTokens)" />
             <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
           </wd-cell-group>
         </view>
@@ -80,7 +83,7 @@ import { deleteWrite, getWrite } from '@/api/ai/write'
 import { getSimpleUserList } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { DICT_TYPE, formatAiTokens } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{

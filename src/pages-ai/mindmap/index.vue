@@ -17,7 +17,7 @@
 
     <!-- 当前生成 -->
     <view v-show="tabIndex === 0" class="min-h-0 flex flex-1 flex-col">
-      <MindmapResult :content="generatedContent" :generating="isGenerating" />
+      <MindmapResult :content="generatedContent" :generating="isGenerating" :usage="tokenUsage" />
       <MindmapInputPanel
         ref="inputRef"
         :model-value="formData"
@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AiMindMapGenerateReq } from '@/api/ai/mindmap'
+import type { AiMindMapGenerateReq, AiMindMapGenerateResp } from '@/api/ai/mindmap'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnmounted, reactive, ref } from 'vue'
 import { generateMindMap } from '@/api/ai/mindmap'
@@ -59,6 +59,7 @@ const tabIndex = ref(0)
 const inputRef = ref<MindmapInputPanelExpose>() // 输入组件引用
 const generatedContent = ref('') // 生成结果
 const isGenerating = ref(false) // 生成状态
+const tokenUsage = ref<Pick<AiMindMapGenerateResp, 'inputTokens' | 'outputTokens' | 'totalTokens'>>() // 本次生成的 Token 最新快照；示例或未生成为空
 const streamController = ref<AbortController>() // 流式请求控制器
 const formData = reactive<AiMindMapGenerateReq>({
   prompt: '',
@@ -79,6 +80,7 @@ async function handleSubmit() {
     return
   }
   generatedContent.value = ''
+  tokenUsage.value = undefined
   isGenerating.value = true
   streamController.value = createSseController()
   void generateMindMap({
@@ -86,8 +88,18 @@ async function handleSubmit() {
     ctrl: streamController.value,
     onMessage: (res) => {
       const data = parseStreamData(res.data)
-      if (data !== undefined) {
+      if (data === undefined) {
+        return
+      }
+      if (typeof data === 'string') { // 非 JSON 帧按原样追加
         generatedContent.value += data
+        return
+      }
+      generatedContent.value += data.content || ''
+      tokenUsage.value = { // 按最新快照赋值，仅用量尾帧 content 为空也要更新
+        inputTokens: data.inputTokens,
+        outputTokens: data.outputTokens,
+        totalTokens: data.totalTokens,
       }
     },
     onError: (error) => {
@@ -113,10 +125,11 @@ function stopStream() {
 function handleReset() {
   formData.prompt = ''
   generatedContent.value = ''
+  tokenUsage.value = undefined
 }
 
 /** 解析流式消息 */
-function parseStreamData(raw: string) {
+function parseStreamData(raw: string): AiMindMapGenerateResp | string | undefined {
   try {
     const result = JSON.parse(raw)
     if (result.code !== 0) {

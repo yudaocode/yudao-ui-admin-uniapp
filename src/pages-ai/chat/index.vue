@@ -43,6 +43,8 @@
         v-model:attachment-urls="attachmentUrls"
         v-model:enable-context="enableContext"
         v-model:enable-web-search="enableWebSearch"
+        v-model:reasoning-selected-level="reasoningSelectedLevel"
+        :reasoning-levels="reasoningLevels"
         :in-progress="conversationInProgress"
         @send="handleSend"
         @stop="stopStream"
@@ -104,7 +106,7 @@ import type { ChatMessage } from '@/api/ai/chat/message'
 import type { ChatRole } from '@/api/ai/model/chatRole'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   createChatConversationMy,
   deleteChatConversationMy,
@@ -121,6 +123,7 @@ import {
 } from '@/api/ai/chat/message'
 import { createSseController } from '@/http/sse'
 import { navigateBackPlus } from '@/utils'
+import { AiChatMessageTypeEnum } from '@/utils/constants'
 import ChatInput from './components/chat-input.vue'
 import ChatMessageList from './components/chat-message-list.vue'
 import ConversationDrawer from './components/conversation-drawer.vue'
@@ -154,6 +157,8 @@ const prompt = ref('') // 输入内容
 const attachmentUrls = ref<string[]>([]) // 待发送附件
 const enableContext = ref(true) // 是否启用上下文
 const enableWebSearch = ref(false) // 是否启用联网搜索
+const reasoningSelectedLevel = ref<string>() // 选中的思考档位，只用于本次发送，不持久化
+const reasoningLevels = computed(() => (activeConversation.value?.modelReasoningConfig?.levels || []).map(item => item.level)) // 当前对话模型配置的思考档位，按配置顺序，随会话返回；未配置时为空数组，不展示控件也不发送档位
 const streamController = ref<AbortController>() // 流式请求控制器
 const scrollIntoView = ref('bottom-anchor') // 滚动锚点
 const actionConversation = ref<ChatConversation>() // 当前操作的对话
@@ -181,7 +186,7 @@ const displayMessageList = computed(() => {
   }
   return [{
     conversationId: activeConversation.value.id,
-    type: 'system',
+    type: AiChatMessageTypeEnum.SYSTEM,
     content: activeConversation.value.systemMessage,
   }] as ChatMessage[]
 })
@@ -229,7 +234,7 @@ const messageActions = computed(() => { // 消息操作
   if (actionMessage.value?.id) {
     actions.push({ name: '删除', value: 'delete' })
   }
-  if (actionMessage.value?.type === 'user') {
+  if (actionMessage.value?.type === AiChatMessageTypeEnum.USER) {
     actions.push(
       { name: '编辑', value: 'edit' },
       { name: '重发', value: 'resend' },
@@ -554,12 +559,13 @@ async function handleSend() {
   const conversationId = activeConversation.value.id
   prompt.value = ''
   attachmentUrls.value = []
-  messageList.value.push({ type: 'user', content, attachmentUrls: currentAttachmentUrls })
-  const assistantMessage: ChatMessage = { type: 'assistant', content: '' }
+  messageList.value.push({ type: AiChatMessageTypeEnum.USER, content, attachmentUrls: currentAttachmentUrls })
+  const assistantMessage: ChatMessage = { type: AiChatMessageTypeEnum.ASSISTANT, content: '' }
   messageList.value.push(assistantMessage)
   scrollToBottom()
 
   // 发起 SSE 流式生成
+  const reasoningLevel = resolveReasoningLevel(reasoningSelectedLevel.value) // 本次思考档位：发送、重发都使用当前选择
   streamController.value = createSseController()
   conversationInProgress.value = true
   void sendChatMessageStream(
@@ -583,7 +589,27 @@ async function handleSend() {
       streamController.value = undefined
     },
     currentAttachmentUrls,
+    reasoningLevel,
   ).catch(() => undefined)
+}
+
+/** 重置思考选择为模型默认档位：切换对话、切换模型时触发 */
+function resetReasoningSelection() {
+  reasoningSelectedLevel.value = resolveReasoningLevel()
+}
+watch([() => activeConversation.value?.id, () => activeConversation.value?.modelId], resetReasoningSelection, { immediate: true }) // 只监听对话和模型编号：同一对话重新拉取详情不重置已选档位
+
+/** 计算思考档位：选中的档位在模型配置中时使用，否则用默认档位；未配置档位时返回 undefined，请求不带 reasoningLevel */
+function resolveReasoningLevel(selected?: string) {
+  const levels = reasoningLevels.value
+  if (levels.length === 0) {
+    return undefined
+  }
+  if (selected && levels.includes(selected)) {
+    return selected
+  }
+  const defaultLevel = activeConversation.value?.modelReasoningConfig?.defaultLevel
+  return defaultLevel && levels.includes(defaultLevel) ? defaultLevel : levels[0]
 }
 
 /** 追加流式返回内容 */

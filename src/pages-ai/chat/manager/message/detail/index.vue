@@ -43,8 +43,20 @@
           </view>
           <text v-else>-</text>
         </wd-cell>
+        <wd-cell title="请求编号">
+          <text selectable class="break-all text-24rpx">{{ formData?.requestId || '-' }}</text>
+        </wd-cell>
         <wd-cell title="创建时间" :value="formatDateTime(formData?.createTime) || '-'" />
       </wd-cell-group>
+    </view>
+
+    <!-- Token 用量：展示业务快照 -->
+    <view v-if="formData?.type === AiChatMessageTypeEnum.ASSISTANT" class="p-24rpx">
+      <TokenUsage
+        :input-tokens="formData.inputTokens"
+        :output-tokens="formData.outputTokens"
+        :total-tokens="formData.totalTokens"
+      />
     </view>
 
     <!-- 底部操作按钮 -->
@@ -76,7 +88,9 @@ import { onMounted, ref } from 'vue'
 import { deleteChatMessageByAdmin, getChatMessage } from '@/api/ai/chat/message'
 import { getSimpleUserList } from '@/api/system/user'
 import { useAccess } from '@/hooks/useAccess'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
 import { delay, navigateBackPlus } from '@/utils'
+import { AiChatMessageTypeEnum } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{

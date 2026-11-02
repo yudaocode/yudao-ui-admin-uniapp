@@ -29,9 +29,9 @@
         :id="`msg-${index}`"
         :key="`${message.id || index}-${message.type}`"
         class="mb-44rpx flex flex-col"
-        :class="message.type === 'user' ? 'items-end' : 'items-start'"
+        :class="message.type === AiChatMessageTypeEnum.USER ? 'items-end' : 'items-start'"
       >
-        <view v-if="message.type !== 'user'" class="mb-16rpx flex items-center gap-12rpx">
+        <view v-if="message.type !== AiChatMessageTypeEnum.USER" class="mb-16rpx flex items-center gap-12rpx">
           <wd-img
             v-if="props.activeConversation?.roleAvatar"
             :src="props.activeConversation.roleAvatar"
@@ -47,15 +47,15 @@
         </view>
         <view
           class="text-29rpx text-[#333] leading-48rpx"
-          :class="message.type === 'user' ? 'max-w-[88%] rounded-[32rpx_32rpx_8rpx_32rpx] bg-[#e6f4ff] px-26rpx py-20rpx' : 'w-full'"
+          :class="message.type === AiChatMessageTypeEnum.USER ? 'max-w-[88%] rounded-[32rpx_32rpx_8rpx_32rpx] bg-[#e6f4ff] px-26rpx py-20rpx' : 'w-full'"
         >
           <ReasoningContent
             v-if="message.reasoningContent"
             :content="message.reasoningContent"
-            :in-progress="inProgress && index === messages.length - 1 && message.type === 'assistant'"
+            :in-progress="inProgress && index === messages.length - 1 && message.type === AiChatMessageTypeEnum.ASSISTANT"
           />
           <view
-            v-if="inProgress && message.type === 'assistant' && !message.content && !message.reasoningContent"
+            v-if="inProgress && message.type === AiChatMessageTypeEnum.ASSISTANT && !message.content && !message.reasoningContent"
             class="ai-typing"
           >
             <text class="ai-typing-dot" />
@@ -63,7 +63,7 @@
             <text class="ai-typing-dot ai-typing-dot-third" />
           </view>
           <YdMarkdown
-            v-else-if="message.content && message.type !== 'user'"
+            v-else-if="message.content && message.type !== AiChatMessageTypeEnum.USER"
             :content="message.content"
           />
           <view v-else-if="message.content" class="whitespace-pre-wrap">
@@ -72,6 +72,15 @@
           <MessageAttachments :urls="message.attachmentUrls" />
           <KnowledgeReference :segments="message.segments" />
           <WebSearchReference :pages="message.webSearchPages" />
+        </view>
+        <!-- Token 用量：仅助手消息，展示业务快照；未返回用量显示「未取得」 -->
+        <view v-if="message.type === AiChatMessageTypeEnum.ASSISTANT" class="mt-12rpx max-w-full">
+          <TokenUsage
+            :input-tokens="message.inputTokens"
+            :output-tokens="message.outputTokens"
+            :total-tokens="message.totalTokens"
+            :pending="isGenerating(index)"
+          />
         </view>
         <view class="mt-12rpx flex items-center gap-16rpx text-22rpx text-[#999]">
           <text v-if="message.createTime">{{ formatMessageTime(message.createTime) }}</text>
@@ -86,7 +95,9 @@
 <script lang="ts" setup>
 import type { ChatConversation } from '@/api/ai/chat/conversation'
 import type { ChatMessage } from '@/api/ai/chat/message'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
 import YdMarkdown from '@/pages-ai/components/yd-markdown/yd-markdown.vue'
+import { AiChatMessageTypeEnum } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import KnowledgeReference from './knowledge-reference.vue'
 import MessageAttachments from './message-attachments.vue'
@@ -109,6 +120,11 @@ const emit = defineEmits<{
 /** 格式化消息时间 */
 function formatMessageTime(time: string) {
   return formatDate(time, 'HH:mm')
+}
+
+/** 是否为生成中的最后一条消息 */
+function isGenerating(index: number) {
+  return props.inProgress && index === props.messages.length - 1
 }
 </script>
 

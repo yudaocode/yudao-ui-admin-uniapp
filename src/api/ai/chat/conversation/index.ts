@@ -1,3 +1,4 @@
+import type { AiModelReasoningConfig } from '@/api/ai/model/model'
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
 
@@ -21,6 +22,7 @@ export interface ChatConversation {
   modelMaxContexts?: string
   roleName?: string
   messageCount?: number
+  modelReasoningConfig?: AiModelReasoningConfig // 模型的思考配置；为空表示未配置
 }
 
 /** 获得我的聊天对话 */

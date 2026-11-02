@@ -14,6 +14,10 @@ export interface ChatMessage {
   content?: string
   reasoningContent?: string
   attachmentUrls?: string[]
+  requestId?: string | null // 请求编号，用于查询本次用量
+  inputTokens?: number | null // 输入 Token，未知为空
+  outputTokens?: number | null // 输出 Token，未知为空
+  totalTokens?: number | null // 合计 Token，未知为空
   segmentIds?: number[]
   segments?: Array<{
     id: number
@@ -53,6 +57,7 @@ export function sendChatMessageStream(
   onError?: (...args: any[]) => void,
   onClose?: (...args: any[]) => void,
   attachmentUrls?: string[],
+  reasoningLevel?: string,
 ) {
   return sendSsePost('/ai/chat/message/send-stream', {
     data: {
@@ -61,6 +66,7 @@ export function sendChatMessageStream(
       useContext: enableContext,
       useSearch: enableWebSearch,
       attachmentUrls: attachmentUrls || [],
+      reasoningLevel, // 本次思考档位；模型未配置档位时为 undefined，不会序列化
     },
     ctrl,
     onMessage,

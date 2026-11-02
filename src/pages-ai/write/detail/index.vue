@@ -38,6 +38,15 @@
           </wd-cell-group>
         </view>
 
+        <!-- Token 用量 -->
+        <view v-if="formData" class="mt-24rpx">
+          <TokenUsage
+            :input-tokens="formData.inputTokens"
+            :output-tokens="formData.outputTokens"
+            :total-tokens="formData.totalTokens"
+          />
+        </view>
+
         <view class="mt-24rpx rounded-16rpx bg-white p-24rpx shadow-sm">
           <view class="mb-20rpx text-30rpx text-[#222] font-semibold">
             生成内容
@@ -68,6 +77,7 @@ import type { AiWrite } from '@/api/ai/write'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { deleteWrite, getWrite } from '@/api/ai/write'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'

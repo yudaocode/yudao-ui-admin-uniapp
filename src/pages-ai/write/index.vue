@@ -17,7 +17,7 @@
 
     <!-- 当前生成 -->
     <view v-show="tabIndex === 0" class="min-h-0 flex flex-1 flex-col">
-      <WriteResult v-model:content="writeResult" :writing="isWriting" />
+      <WriteResult v-model:content="writeResult" :writing="isWriting" :usage="tokenUsage" />
       <WriteInputPanel
         ref="inputRef"
         :model-value="formData"
@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AiWriteGenerateReq } from '@/api/ai/write'
+import type { AiWriteGenerateReq, AiWriteGenerateResp } from '@/api/ai/write'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnmounted, reactive, ref } from 'vue'
 import { writeStream } from '@/api/ai/write'
@@ -60,6 +60,7 @@ const tabIndex = ref(0)
 const inputRef = ref<WriteInputPanelExpose>() // 输入组件引用
 const writeResult = ref('') // 写作结果
 const isWriting = ref(false) // 写作生成状态
+const tokenUsage = ref<Pick<AiWriteGenerateResp, 'inputTokens' | 'outputTokens' | 'totalTokens'>>() // 本次生成的 Token 最新快照；示例或未生成为空
 const streamController = ref<AbortController>() // 流式请求控制器
 const formData = reactive<AiWriteGenerateReq>({
   type: AiWriteTypeEnum.WRITING,
@@ -83,6 +84,7 @@ async function handleSubmit() {
     return
   }
   writeResult.value = ''
+  tokenUsage.value = undefined
   isWriting.value = true
   streamController.value = createSseController()
   void writeStream({
@@ -90,8 +92,18 @@ async function handleSubmit() {
     ctrl: streamController.value,
     onMessage: (res) => {
       const data = parseStreamData(res.data)
-      if (data !== undefined) {
+      if (data === undefined) {
+        return
+      }
+      if (typeof data === 'string') { // 非 JSON 帧按原样追加
         writeResult.value += data
+        return
+      }
+      writeResult.value += data.content || ''
+      tokenUsage.value = { // 按最新快照赋值，仅用量尾帧 content 为空也要更新
+        inputTokens: data.inputTokens,
+        outputTokens: data.outputTokens,
+        totalTokens: data.totalTokens,
       }
     },
     onError: (error) => {
@@ -122,10 +134,11 @@ function handleReset() {
     ...AiWriteDefaultOptions,
   })
   writeResult.value = ''
+  tokenUsage.value = undefined
 }
 
 /** 解析流式消息 */
-function parseStreamData(raw: string) {
+function parseStreamData(raw: string): AiWriteGenerateResp | string | undefined {
   try {
     const result = JSON.parse(raw)
     if (result.code !== 0) {

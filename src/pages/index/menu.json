@@ -3511,6 +3511,14 @@
               "iconColor": "#52c41a",
               "url": "/pages-ai/mindmap/manager/index",
               "permission": "ai:mind-map:query"
+            },
+            {
+              "key": "aiRequestLog",
+              "name": "请求日志",
+              "icon": "history",
+              "iconColor": "#1677ff",
+              "url": "/pages-ai/requestlog/index",
+              "permission": "ai:request-log:query"
             }
           ]
         }

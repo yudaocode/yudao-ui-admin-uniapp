@@ -35,7 +35,20 @@ export interface AiWrite {
   tone: number
   language: number
   errorMessage: string
+  requestId?: string | null // 请求编号；历史记录可能为空
+  inputTokens?: number | null // 输入 Token，未知为空
+  outputTokens?: number | null // 输出 Token，未知为空
+  totalTokens?: number | null // 合计 Token，未知为空
   createTime: string
+}
+
+/** AI 写作流式生成响应（CommonResult.data） */
+export interface AiWriteGenerateResp {
+  id: number // 业务编号
+  content: string // 本次增量内容；仅携带用量的尾帧为空串
+  inputTokens: number | null // 输入 Token 最新快照，未知为空
+  outputTokens: number | null // 输出 Token 最新快照，未知为空
+  totalTokens: number | null // 合计 Token 最新快照，未知为空
 }
 
 /** 流式写作 */

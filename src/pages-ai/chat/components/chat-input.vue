@@ -21,7 +21,7 @@
         custom-style="--wot-textarea-inner-min-height: 48rpx; --wot-textarea-inner-font-size: 28rpx; --wot-textarea-inner-line-height: 42rpx;"
       />
       <view class="mt-14rpx flex items-center justify-between">
-        <view class="flex items-center gap-12rpx">
+        <view class="flex flex-wrap items-center gap-12rpx">
           <view
             class="relative h-54rpx w-54rpx flex items-center justify-center rounded-full bg-[#f5f5f5]"
             @click="attachmentVisible = true"
@@ -47,6 +47,20 @@
             @click="enableWebSearch = !enableWebSearch"
           >
             联网
+          </view>
+          <!-- 思考等级：只有模型配置了档位才展示；只有一档时固定展示，不可点击 -->
+          <view
+            v-if="reasoningLevels.length === 1"
+            class="rounded-full bg-[#f5f5f5] px-18rpx py-10rpx text-23rpx text-[#666]"
+          >
+            思考等级：{{ getReasoningLevelLabel(reasoningLevels[0]) }}
+          </view>
+          <view
+            v-else-if="reasoningLevels.length > 1"
+            class="rounded-full bg-[#e6f4ff] px-18rpx py-10rpx text-23rpx text-[#1677ff]"
+            @click="reasoningLevelVisible = true"
+          >
+            思考等级：{{ getReasoningLevelLabel(reasoningSelectedLevel) }}
           </view>
         </view>
         <view
@@ -88,15 +102,26 @@
         />
       </view>
     </wd-popup>
+
+    <!-- 思考等级选择 -->
+    <wd-action-sheet
+      v-model="reasoningLevelVisible"
+      :actions="reasoningLevelActions"
+      title="思考等级"
+      root-portal
+      @select="handleReasoningLevelSelect"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { AI_REASONING_LEVEL_LABELS } from '@/utils/constants'
 import { getFileNameFromUrl } from '@/utils/download'
 
 const props = defineProps<{
   inProgress: boolean
+  reasoningLevels: string[] // 当前模型配置的思考档位，按配置顺序；未配置时为空数组
 }>()
 const emit = defineEmits<{
   send: []
@@ -107,6 +132,27 @@ const attachmentUrls = defineModel<string[]>('attachmentUrls', { default: () => 
 const enableContext = defineModel<boolean>('enableContext', { default: true })
 const enableWebSearch = defineModel<boolean>('enableWebSearch', { default: false })
 const attachmentVisible = ref(false) // 附件弹窗显示状态
+const reasoningSelectedLevel = defineModel<string>('reasoningSelectedLevel') // 选中的思考档位
+const reasoningLevelVisible = ref(false) // 思考档位弹窗显示状态
+const reasoningLevelActions = computed(() => props.reasoningLevels.map(level => ({
+  name: getReasoningLevelLabel(level),
+  value: level,
+  color: level === reasoningSelectedLevel.value ? '#1677ff' : undefined,
+}))) // 思考档位选项
+
+/** 获得思考档位的展示名 */
+function getReasoningLevelLabel(level?: string) {
+  if (!level) {
+    return ''
+  }
+  // 只认自有属性，避免 constructor、__proto__ 等档位值读到 Object 原型上的属性
+  return Object.prototype.hasOwnProperty.call(AI_REASONING_LEVEL_LABELS, level) ? AI_REASONING_LEVEL_LABELS[level] : level
+}
+
+/** 选择思考档位 */
+function handleReasoningLevelSelect({ item }: { item: { value: string } }) {
+  reasoningSelectedLevel.value = item.value
+}
 
 /** 移除待发送附件 */
 function handleRemoveAttachment(index: number) {

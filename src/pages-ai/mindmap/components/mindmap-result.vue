@@ -10,6 +10,14 @@
         </view>
         <wd-loading v-if="generating" size="30rpx" />
       </view>
+      <view v-if="generating || usage" class="mb-20rpx">
+        <TokenUsage
+          :input-tokens="usage?.inputTokens"
+          :output-tokens="usage?.outputTokens"
+          :total-tokens="usage?.totalTokens"
+          :pending="generating"
+        />
+      </view>
       <YdMarkdown v-if="generating" :content="content" />
       <YdMindMap v-else :content="content" />
     </view>
@@ -28,11 +36,14 @@
 </template>
 
 <script lang="ts" setup>
+import type { AiMindMapGenerateResp } from '@/api/ai/mindmap'
+import TokenUsage from '@/pages-ai/components/token-usage.vue'
 import YdMarkdown from '@/pages-ai/components/yd-markdown/yd-markdown.vue'
 import YdMindMap from '@/pages-ai/components/yd-mind-map/yd-mind-map.vue'
 
 defineProps<{
   content: string
   generating: boolean
+  usage?: Pick<AiMindMapGenerateResp, 'inputTokens' | 'outputTokens' | 'totalTokens'> // 本次生成的 Token 快照；未真实生成为空，不展示用量
 }>()
 </script>
