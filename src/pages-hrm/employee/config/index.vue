@@ -250,22 +250,21 @@ async function handleSubmit() {
   saving.value = true
   try {
     if (activeTab.value === 'create') {
-      await Promise.all([
-        saveEmployeeCreateFieldConfig(
-          HrmEmployeeEntryStatus.ACTIVE,
-          createList.value.map(item => ({
-            name: item.name,
-            visible: item.activeVisible,
-          })),
-        ),
-        saveEmployeeCreateFieldConfig(
-          HrmEmployeeEntryStatus.PENDING_ENTRY,
-          createList.value.map(item => ({
-            name: item.name,
-            visible: item.pendingEntryVisible,
-          })),
-        ),
-      ])
+      // 两组配置写同一张表，依次保存避免并发替换互相加锁；前一组失败时不再保存后一组
+      await saveEmployeeCreateFieldConfig(
+        HrmEmployeeEntryStatus.ACTIVE,
+        createList.value.map(item => ({
+          name: item.name,
+          visible: item.activeVisible,
+        })),
+      )
+      await saveEmployeeCreateFieldConfig(
+        HrmEmployeeEntryStatus.PENDING_ENTRY,
+        createList.value.map(item => ({
+          name: item.name,
+          visible: item.pendingEntryVisible,
+        })),
+      )
       toast.success('保存成功')
       await getCreateList()
       return
