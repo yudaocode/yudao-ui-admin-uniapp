@@ -268,6 +268,14 @@ export function getDeviceMessageMethodLabel(method?: string) {
   return Object.values(IotDeviceMessageMethodEnum).find(item => item.method === method)?.name || method
 }
 
+/** Modbus 功能码枚举 */
+export const ModbusFunctionCodeEnum = {
+  READ_COILS: 1, // 读线圈
+  READ_DISCRETE_INPUTS: 2, // 读离散输入
+  READ_HOLDING_REGISTERS: 3, // 读保持寄存器
+  READ_INPUT_REGISTERS: 4, // 读输入寄存器
+} as const
+
 /** Modbus 功能码选项 */
 export const ModbusFunctionCodeOptions = [
   { value: 1, label: '01 - 读线圈' },
@@ -283,6 +291,18 @@ export function getModbusFunctionCodeLabel(code?: number) {
   }
   return ModbusFunctionCodeOptions.find(item => item.value === code)?.label || String(code)
 }
+
+/** Modbus 原始数据类型枚举 */
+export const ModbusRawDataTypeEnum = {
+  INT16: 'INT16',
+  UINT16: 'UINT16',
+  INT32: 'INT32',
+  UINT32: 'UINT32',
+  FLOAT: 'FLOAT',
+  DOUBLE: 'DOUBLE',
+  BOOLEAN: 'BOOLEAN',
+  STRING: 'STRING',
+} as const
 
 /** Modbus 原始数据类型选项 */
 export const ModbusRawDataTypeOptions = [

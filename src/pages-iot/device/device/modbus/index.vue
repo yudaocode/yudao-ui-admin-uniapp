@@ -103,7 +103,7 @@
             <text class="mr-8rpx text-[#999]">功能码：</text>{{ getModbusFunctionCodeLabel(item.functionCode) }}
           </view>
           <view class="mb-12rpx text-26rpx text-[#666]">
-            <text class="mr-8rpx text-[#999]">寄存器地址：</text>{{ formatRegisterAddress(item.registerAddress) }}
+            <text class="mr-8rpx text-[#999]">寄存器地址：</text>{{ formatRegisterAddress(item.registerAddress, item.bitIndex) }}
           </view>
           <view class="mb-12rpx text-26rpx text-[#666]">
             <text class="mr-8rpx text-[#999]">数据类型：</text>{{ item.rawDataType || '-' }} / {{ item.byteOrder || '-' }}
@@ -222,6 +222,12 @@
               <wd-form-item title="寄存器数量" title-width="200rpx" prop="registerCount">
                 <wd-input-number v-model="pointFormData.registerCount" :min="1" :max="125" />
               </wd-form-item>
+              <wd-form-item v-if="showBitIndex" title="位索引" title-width="200rpx" prop="bitIndex">
+                <wd-input-number v-model="pointFormData.bitIndex" :min="0" :max="15" :precision="0" allow-null placeholder="留空表示整个寄存器非 0 即 true" />
+                <view class="mt-8rpx text-22rpx text-[#999]">
+                  0 为最低位；位点位忽略缩放因子和字节序
+                </view>
+              </wd-form-item>
               <yd-form-picker
                 v-model="pointFormData.rawDataType"
                 label="原始数据类型" label-width="200rpx" prop="rawDataType"
@@ -280,7 +286,7 @@ import { getThingModelList } from '@/api/iot/thingmodel'
 import { useAccess } from '@/hooks/useAccess'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle, navigateBackPlus } from '@/utils'
-import { CommonStatusEnum, DICT_TYPE, getByteOrderOptions, getModbusFunctionCodeLabel, IoTThingModelTypeEnum, ModbusFunctionCodeOptions, ModbusRawDataTypeOptions } from '@/utils/constants'
+import { CommonStatusEnum, DICT_TYPE, getByteOrderOptions, getModbusFunctionCodeLabel, IoTThingModelTypeEnum, ModbusFunctionCodeEnum, ModbusFunctionCodeOptions, ModbusRawDataTypeEnum, ModbusRawDataTypeOptions } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{ deviceId?: number | any }>()
@@ -385,6 +391,12 @@ const registerAddressHex = computed(() => { // 寄存器地址十六进制显示
   }
   return `0x${address.toString(16).toUpperCase().padStart(4, '0')}`
 })
+const showBitIndex = computed(() => { // 是否显示位索引：仅 FC03/FC04、BOOLEAN、1 个寄存器的点位，可以取寄存器中的某一位（需求来源：https://t.zsxq.com/Qg5LP）
+  const functionCode = pointFormData.value.functionCode
+  return (functionCode === ModbusFunctionCodeEnum.READ_HOLDING_REGISTERS || functionCode === ModbusFunctionCodeEnum.READ_INPUT_REGISTERS)
+    && pointFormData.value.rawDataType === ModbusRawDataTypeEnum.BOOLEAN
+    && pointFormData.value.registerCount === 1
+})
 
 /** 构造连接配置默认值 */
 function buildDefaultConfig(): DeviceModbusConfig {
@@ -411,6 +423,7 @@ function buildDefaultPoint(): DeviceModbusPoint {
     functionCode: undefined,
     registerAddress: undefined,
     registerCount: undefined,
+    bitIndex: undefined,
     byteOrder: undefined,
     rawDataType: undefined,
     scale: 1,
@@ -456,12 +469,13 @@ async function queryPointList(pageNo: number, pageSize: number) {
   }
 }
 
-/** 格式化寄存器地址 */
-function formatRegisterAddress(address?: number) {
+/** 格式化寄存器地址：位点位追加位索引，例如 0x0010.8 */
+function formatRegisterAddress(address?: number, bitIndex?: number) {
   if (address === undefined || address === null) {
     return '-'
   }
-  return `0x${address.toString(16).toUpperCase().padStart(4, '0')}`
+  const hex = `0x${address.toString(16).toUpperCase().padStart(4, '0')}`
+  return bitIndex != null ? `${hex}.${bitIndex}` : hex
 }
 
 /** 搜索按钮操作 */
@@ -554,7 +568,13 @@ async function handlePointSubmit() {
 
   pointLoading.value = true
   try {
-    const data = { ...pointFormData.value, deviceId: parseId(props.deviceId) as number }
+    // 位索引隐藏（例如改了功能码、数据类型）或留空（allow-null 清空时为 ''）时不提交，后端会清空
+    const bitIndex = pointFormData.value.bitIndex
+    const data = {
+      ...pointFormData.value,
+      deviceId: parseId(props.deviceId) as number,
+      bitIndex: showBitIndex.value && Number.isInteger(bitIndex) ? bitIndex : undefined,
+    }
     if (data.id) {
       await updateModbusPoint(data)
       toast.success('更新成功')

@@ -11,6 +11,7 @@ export interface DeviceModbusPoint {
   functionCode?: number
   registerAddress?: number
   registerCount?: number
+  bitIndex?: number // 位索引（0-15，仅 FC03/FC04 + BOOLEAN + 1 个寄存器）
   byteOrder?: string
   rawDataType?: string
   scale?: number
