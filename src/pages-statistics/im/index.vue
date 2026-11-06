@@ -248,7 +248,7 @@ const overviewCards = computed(() => { // 概览卡片（对标 vue3 + ep：图�
   ]
 })
 
-/** 构建趋势双线图配置（日期为后端毫秒时间戳，统一 formatDate 成 MM-DD） */
+/** 构建趋势双线图配置，将日期格式化为 MM-DD */
 function buildTrendOption(trend: ImStatisticsTrendVO, series: { name: string, key: string, color: string }[]) {
   const dates = (trend.dates || []).map(date => formatDate(date, 'MM-DD'))
   return {
