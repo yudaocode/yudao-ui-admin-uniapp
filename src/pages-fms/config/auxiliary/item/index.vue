@@ -10,31 +10,6 @@
     <!-- 搜索组件 -->
     <SearchForm @search="handleQuery" @reset="handleReset" />
 
-    <!-- 导入导出入口：Excel 操作需要在 PC 端管理后台完成 -->
-    <view
-      v-if="hasAccessByCodes(['fms:config:auxiliary:import']) || hasAccessByCodes(['fms:config:auxiliary:export'])"
-      class="flex flex-wrap gap-16rpx p-24rpx pb-0"
-    >
-      <wd-button
-        v-if="hasAccessByCodes(['fms:config:auxiliary:import'])"
-        type="warning"
-        variant="plain"
-        size="small"
-        @click="handleImportPc"
-      >
-        导入
-      </wd-button>
-      <wd-button
-        v-if="hasAccessByCodes(['fms:config:auxiliary:export'])"
-        type="warning"
-        variant="plain"
-        size="small"
-        @click="handleExportPc"
-      >
-        导出
-      </wd-button>
-    </view>
-
     <!-- 项目列表 -->
     <z-paging
       ref="pagingRef"
@@ -99,7 +74,6 @@ import { parseId } from '@/utils/id'
 import type { AuxiliaryItem } from '@/api/fms/config/auxiliary/item'
 import type { AuxiliaryType } from '@/api/fms/config/auxiliary/type'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { getAuxiliaryItemPage } from '@/api/fms/config/auxiliary/item'
 import { getAuxiliaryTypeList } from '@/api/fms/config/auxiliary/type'
 import { useAccess } from '@/hooks/useAccess'
@@ -122,7 +96,6 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
 const fmsStore = useFmsStore()
 const list = ref<AuxiliaryItem[]>([]) // 列表数据
 const queryParams = ref<Record<string, any>>({}) // 查询参数
@@ -187,22 +160,6 @@ function reload() {
 /** 新增项目 */
 function handleAdd() {
   uni.navigateTo({ url: `/pages-fms/config/auxiliary/item/form/index?auxiliaryTypeId=${props.auxiliaryTypeId}` })
-}
-
-/** 导入项目：Excel 导入需要在 PC 端管理后台操作 */
-function handleImportPc() {
-  dialog.alert({
-    title: '导入辅助核算项目',
-    msg: 'Excel 导入请在 PC 端管理后台操作',
-  })
-}
-
-/** 导出项目：Excel 导出需要在 PC 端管理后台操作 */
-function handleExportPc() {
-  dialog.alert({
-    title: '导出辅助核算项目',
-    msg: 'Excel 导出请在 PC 端管理后台操作',
-  })
 }
 
 /** 查看详情 */

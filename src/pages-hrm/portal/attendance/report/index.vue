@@ -42,16 +42,9 @@
           >
             请假申请
           </wd-button>
-          <wd-button
-            class="flex-1"
-            type="primary"
-            variant="plain"
-            size="small"
-            :loading="exportLoading"
-            @click="handleExport"
-          >
-            导出考勤
-          </wd-button>
+        </view>
+        <view class="mt-12rpx text-24rpx text-[#666]">
+          请在电脑端管理后台导出考勤
         </view>
       </view>
 
@@ -263,10 +256,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import {
-  exportPortalAttendanceMonthDetail,
-  getPortalAttendanceMonthDetail,
-} from '@/api/hrm/portal/attendance/statistics'
+import { getPortalAttendanceMonthDetail } from '@/api/hrm/portal/attendance/statistics'
 import {
   cancelMyAttendanceLeave,
   getMyAttendanceLeaveList,
@@ -293,7 +283,6 @@ const dialog = useDialog()
 const accessible = ref(false) // 是否可访问
 const loading = ref(false) // 月度详情加载中
 const leaveLoading = ref(false) // 请假列表加载中
-const exportLoading = ref(false) // 导出加载中
 const selectedMonth = ref(Date.now()) // 选中月份
 const monthVisible = ref(false) // 月份选择器显隐
 const monthDetail = ref<PortalAttendanceMonthDetail>() // 月度考勤详情
@@ -418,17 +407,6 @@ function handleMonthChange() {
 /** 打开请假申请表单 */
 function handleCreateLeave() {
   uni.navigateTo({ url: '/pages-hrm/portal/attendance/leave/form/index' })
-}
-
-/** 导出考勤日报 */
-async function handleExport() {
-  exportLoading.value = true
-  try {
-    await exportPortalAttendanceMonthDetail(yearMonth.value.year, yearMonth.value.month)
-    toast.success('导出成功')
-  } finally {
-    exportLoading.value = false
-  }
 }
 
 /** 查看审批进度 */

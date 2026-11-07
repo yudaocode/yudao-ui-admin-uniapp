@@ -41,16 +41,6 @@ export function useRouteQuery<T extends RouteProps>(props: T, pagePath: string) 
     // #endif
   }
 
-  /** 获取数字参数 */
-  function getRouteQueryNumber(key: keyof T) {
-    const value = getRouteQueryValue(key)
-    if (value === undefined || value === '') {
-      return undefined
-    }
-    const numberValue = Number(value)
-    return Number.isNaN(numberValue) ? undefined : numberValue
-  }
-
   /** 监听 H5 hash 参数变化 */
   function handleHashChange() {
     if (!isCurrentPageRoute())
@@ -73,7 +63,6 @@ export function useRouteQuery<T extends RouteProps>(props: T, pagePath: string) 
   return {
     routeVersion,
     getRouteQueryValue,
-    getRouteQueryNumber,
     isCurrentPageRoute,
   }
 }

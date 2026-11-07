@@ -27,31 +27,6 @@
         </scroll-view>
       </view>
 
-      <!-- 导入导出入口：Excel 操作需要在 PC 端管理后台完成 -->
-      <view
-        v-if="hasAccessByCodes(['fms:config:subject:import']) || hasAccessByCodes(['fms:config:subject:export'])"
-        class="flex flex-wrap gap-16rpx p-24rpx pb-0"
-      >
-        <wd-button
-          v-if="hasAccessByCodes(['fms:config:subject:import'])"
-          type="warning"
-          variant="plain"
-          size="small"
-          @click="handleImportPc"
-        >
-          导入
-        </wd-button>
-        <wd-button
-          v-if="hasAccessByCodes(['fms:config:subject:export'])"
-          type="warning"
-          variant="plain"
-          size="small"
-          @click="handleExportPc"
-        >
-          导出
-        </wd-button>
-      </view>
-
       <!-- 面包屑导航 -->
       <Breadcrumb ref="breadcrumbRef" v-model="currentParentId" />
 
@@ -115,7 +90,6 @@
 <script lang="ts" setup>
 import type { Subject } from '@/api/fms/config/subject'
 import { onUnload } from '@dcloudio/uni-app'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { getSubjectList } from '@/api/fms/config/subject'
 import { useAccess } from '@/hooks/useAccess'
 import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
@@ -141,7 +115,6 @@ definePage({
 })
 
 const { hasAccessByCodes } = useAccess()
-const dialog = useDialog()
 const fmsStore = useFmsStore()
 const loading = ref(false) // 列表加载状态
 const list = ref<Subject[]>([]) // 完整科目列表（树形结构）
@@ -217,22 +190,6 @@ function handleAccountSetChange() {
 function handleAdd() {
   uni.navigateTo({
     url: `/pages-fms/config/subject/form/index?parentId=${currentParentId.value}&type=${type.value}`,
-  })
-}
-
-/** 导入科目：Excel 导入需要在 PC 端管理后台操作 */
-function handleImportPc() {
-  dialog.alert({
-    title: '导入科目',
-    msg: 'Excel 导入请在 PC 端管理后台操作',
-  })
-}
-
-/** 导出科目：Excel 导出需要在 PC 端管理后台操作 */
-function handleExportPc() {
-  dialog.alert({
-    title: '导出科目',
-    msg: 'Excel 导出请在 PC 端管理后台操作',
   })
 }
 

@@ -47,24 +47,6 @@
         >
           试算平衡
         </wd-button>
-        <wd-button
-          v-if="canImport"
-          type="warning"
-          variant="plain"
-          size="small"
-          @click="handleImport"
-        >
-          导入
-        </wd-button>
-        <wd-button
-          v-if="hasAccessByCodes(['fms:config:initial-balance:export'])"
-          type="warning"
-          variant="plain"
-          size="small"
-          @click="handleExport"
-        >
-          导出
-        </wd-button>
       </view>
 
       <!-- 提示信息 -->
@@ -327,7 +309,6 @@ const editable = computed(() => // 是否可编辑：结账后初始余额不可
 const showProfitLoss = computed(() => !isJanuary.value && subjectType.value === FmsSubjectType.PROFIT_LOSS) // 是否展示实际损益发生额
 
 const canSave = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:update'])) // 启用期间可编辑、账套可写且有修改权限时才允许保存
-const canImport = computed(() => editable.value && fmsStore.isAccountSetWritable && hasAccessByCodes(['fms:config:initial-balance:import'])) // 启用期间可编辑、账套可写且有导入权限时才展示导入入口
 
 /** 返回上一页（有未保存修改时先确认，与切换科目类别的守卫一致） */
 async function handleBack() {
@@ -555,22 +536,6 @@ function openTrialBalance() {
     return
   }
   trialBalanceRef.value?.open(accountSetId)
-}
-
-/** 导入初始余额：Excel 导入需要在 PC 端管理后台操作 */
-function handleImport() {
-  dialog.alert({
-    title: '导入初始余额',
-    msg: 'Excel 导入请在 PC 端管理后台操作',
-  })
-}
-
-/** 导出初始余额：Excel 导出需要在 PC 端管理后台操作 */
-function handleExport() {
-  dialog.alert({
-    title: '导出初始余额',
-    msg: 'Excel 导出请在 PC 端管理后台操作',
-  })
 }
 
 /** 保存初始余额 */
