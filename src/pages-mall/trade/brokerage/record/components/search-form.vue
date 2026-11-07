@@ -36,23 +36,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.BROKERAGE_RECORD_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.BROKERAGE_RECORD_STATUS" all-option />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -84,7 +68,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   userId: undefined as string | undefined,
   bizType: -1,
-  status: -1,
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -97,7 +81,7 @@ const placeholder = computed(() => {
   if (formData.bizType !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.BROKERAGE_RECORD_BIZ_TYPE, formData.bizType)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.BROKERAGE_RECORD_STATUS, formData.status)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -112,7 +96,7 @@ function handleSearch() {
   emit('search', {
     userId: formData.userId ? parseId(formData.userId) : undefined,
     bizType: formData.bizType === -1 ? undefined : formData.bizType,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -121,7 +105,7 @@ function handleSearch() {
 function handleReset() {
   formData.userId = undefined
   formData.bizType = -1
-  formData.status = -1
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

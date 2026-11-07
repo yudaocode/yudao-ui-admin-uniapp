@@ -37,23 +37,7 @@
         </view>
         <wd-input v-model="formData.userMobile" placeholder="请输入用户手机" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          订单状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.TRADE_ORDER_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="订单状态" :dict-type="DICT_TYPE.TRADE_ORDER_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           订单类型
@@ -135,7 +119,7 @@ const formData = reactive({
   userId: undefined as string | undefined,
   userNickname: undefined as string | undefined,
   userMobile: undefined as string | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   type: -1,
   deliveryType: -1,
   payChannelCode: undefined as string | undefined,
@@ -158,7 +142,7 @@ const placeholder = computed(() => {
   if (formData.userMobile) {
     conditions.push(`手机:${formData.userMobile}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.TRADE_ORDER_STATUS, formData.status)}`)
   }
   if (formData.type !== -1) {
@@ -193,7 +177,7 @@ function handleSearch() {
     userId: formData.userId ? parseId(formData.userId) : undefined,
     userNickname: formData.userNickname || undefined,
     userMobile: formData.userMobile || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     type: formData.type === -1 ? undefined : formData.type,
     deliveryType: formData.deliveryType === -1 ? undefined : formData.deliveryType,
     payChannelCode: formData.payChannelCode,
@@ -211,7 +195,7 @@ function handleReset() {
   formData.userId = undefined
   formData.userNickname = undefined
   formData.userMobile = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.type = -1
   formData.deliveryType = -1
   formData.payChannelCode = undefined

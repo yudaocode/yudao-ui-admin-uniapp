@@ -65,23 +65,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          提现状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.BROKERAGE_WITHDRAW_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="提现状态" :dict-type="DICT_TYPE.BROKERAGE_WITHDRAW_STATUS" all-option />
       <yd-search-date-range v-model="formData.createTime" label="申请时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -116,7 +100,7 @@ const formData = reactive({
   userName: undefined as string | undefined,
   type: -1,
   bankName: '',
-  status: -1,
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -138,7 +122,7 @@ const placeholder = computed(() => {
   if (formData.bankName) {
     conditions.push(`银行:${getDictLabel(DICT_TYPE.BROKERAGE_BANK_NAME, formData.bankName)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.BROKERAGE_WITHDRAW_STATUS, formData.status)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -156,7 +140,7 @@ function handleSearch() {
     userName: formData.userName || undefined,
     type: formData.type === -1 ? undefined : formData.type,
     bankName: formData.bankName || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
@@ -168,7 +152,7 @@ function handleReset() {
   formData.userName = undefined
   formData.type = -1
   formData.bankName = ''
-  formData.status = -1
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

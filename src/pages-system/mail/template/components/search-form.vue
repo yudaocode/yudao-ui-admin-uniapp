@@ -33,23 +33,7 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          开启状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="开启状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <MailAccountSearchPicker ref="accountPickerRef" v-model="formData.accountId" />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
@@ -66,7 +50,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -78,7 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const formData = reactive({
-  status: -1,
+  status: undefined as number | undefined,
   code: undefined as string | undefined,
   name: undefined as string | undefined,
   accountId: undefined as number | undefined,
@@ -91,7 +75,7 @@ const accountPickerRef = ref<InstanceType<typeof MailAccountSearchPicker>>() // 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   if (formData.code) {
@@ -113,7 +97,7 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     code: formData.code || undefined,
     name: formData.name || undefined,
     accountId: formData.accountId || undefined,
@@ -123,7 +107,7 @@ function handleSearch() {
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.status = -1
+  formData.status = undefined
   formData.code = undefined
   formData.name = undefined
   formData.accountId = undefined

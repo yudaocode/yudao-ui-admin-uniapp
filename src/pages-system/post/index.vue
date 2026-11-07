@@ -96,9 +96,6 @@ async function queryList(pageNo: number, pageSize: number) {
       pageNo,
       pageSize,
     }
-    if ((params as any).status === -1) {
-      delete (params as any).status
-    }
     const data = await getPostPage(params)
     pagingRef.value?.completeByTotal(data.list, data.total)
   } catch {

@@ -37,23 +37,7 @@
         </view>
         <wd-input v-model="formData.userMobile" placeholder="请输入用户手机" clearable />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          订单状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.TRADE_ORDER_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="订单状态" :dict-type="DICT_TYPE.TRADE_ORDER_STATUS" all-option />
       <PickUpStoreSearchPicker ref="pickUpStoreSearchPickerRef" v-model="formData.pickUpStoreId" :options="stores" :all-option="false" />
       <yd-search-date-range v-model="formData.createTime" label="下单时间" />
       <view class="yd-search-form-actions">
@@ -73,7 +57,7 @@ import { parseId } from '@/utils/id'
 
 import { computed, reactive, ref, watch } from 'vue'
 import type { DeliveryPickUpStore } from '@/api/mall/trade/delivery/pick-up-store'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -93,7 +77,7 @@ const formData = reactive({
   userId: undefined as string | undefined,
   userNickname: undefined as string | undefined,
   userMobile: undefined as string | undefined,
-  status: -1,
+  status: undefined as number | undefined,
   pickUpStoreId: undefined as number | undefined, // 单选自提门店，提交时转 pickUpStoreIds 数组
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
@@ -116,7 +100,7 @@ const placeholder = computed(() => {
   if (formData.userMobile) {
     conditions.push(`手机:${formData.userMobile}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.TRADE_ORDER_STATUS, formData.status)}`)
   }
   if (formData.pickUpStoreId !== undefined) {
@@ -136,7 +120,7 @@ function handleSearch() {
     userId: formData.userId ? parseId(formData.userId) : undefined,
     userNickname: formData.userNickname || undefined,
     userMobile: formData.userMobile || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     pickUpStoreIds: formData.pickUpStoreId === undefined ? undefined : [formData.pickUpStoreId],
     createTime: formatDateRange(formData.createTime),
   })
@@ -148,7 +132,7 @@ function handleReset() {
   formData.userId = undefined
   formData.userNickname = undefined
   formData.userMobile = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.pickUpStoreId = props.defaultStoreId
   formData.createTime = [undefined, undefined]
   visible.value = false

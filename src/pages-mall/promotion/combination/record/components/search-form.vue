@@ -13,23 +13,7 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          记录状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.PROMOTION_COMBINATION_RECORD_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="记录状态" :dict-type="DICT_TYPE.PROMOTION_COMBINATION_RECORD_STATUS" all-option />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -45,7 +29,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -57,14 +41,14 @@ const emit = defineEmits<{
 
 const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
-  status: -1, // 记录状态，-1=全部
+  status: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined], // 创建时间范围
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.PROMOTION_COMBINATION_RECORD_STATUS, formData.status)}`)
   }
   if (formData.createTime?.[0] && formData.createTime?.[1]) {
@@ -77,14 +61,14 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     createTime: formatDateRange(formData.createTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.status = -1
+  formData.status = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')

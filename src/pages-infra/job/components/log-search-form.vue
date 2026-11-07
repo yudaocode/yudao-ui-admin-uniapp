@@ -33,23 +33,7 @@
           clearable
         />
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          执行状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.INFRA_JOB_LOG_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="执行状态" :dict-type="DICT_TYPE.INFRA_JOB_LOG_STATUS" all-option />
       <yd-search-date-range v-model="formData.beginTime" label="开始时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -65,7 +49,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { getDictLabel, getIntDictOptions } from '@/hooks/useDict'
+import { getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -83,7 +67,7 @@ const visible = ref(false) // 搜索弹窗显示状态
 const formData = reactive({
   jobId: undefined as number | undefined,
   handlerName: undefined as string | undefined,
-  status: -1, // -1 表示全部
+  status: undefined as number | undefined,
   beginTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
 
@@ -96,7 +80,7 @@ const placeholder = computed(() => {
   if (formData.handlerName) {
     conditions.push(`处理器:${formData.handlerName}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.INFRA_JOB_LOG_STATUS, formData.status)}`)
   }
   if (formData.beginTime?.[0] && formData.beginTime?.[1]) {
@@ -112,7 +96,7 @@ function handleSearch() {
   emit('search', {
     jobId: formData.jobId || undefined,
     handlerName: formData.handlerName || undefined,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     beginTime: range?.[0],
     endTime: range?.[1],
   })
@@ -122,7 +106,7 @@ function handleSearch() {
 function handleReset() {
   formData.jobId = undefined
   formData.handlerName = undefined
-  formData.status = -1
+  formData.status = undefined
   formData.beginTime = [undefined, undefined]
   visible.value = false
   emit('reset')

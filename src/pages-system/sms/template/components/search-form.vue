@@ -40,23 +40,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          开启状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="开启状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
           API 模板编号
@@ -106,7 +90,7 @@ const formData = reactive({
   code: undefined as string | undefined,
   content: undefined as string | undefined,
   type: -1,
-  status: -1,
+  status: undefined as number | undefined,
   apiTemplateId: undefined as string | undefined,
   channelId: undefined as number | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -124,7 +108,7 @@ const placeholder = computed(() => {
   if (formData.type !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.SYSTEM_SMS_TEMPLATE_TYPE, formData.type)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   if (formData.apiTemplateId) {
@@ -146,7 +130,7 @@ function handleSearch() {
     code: formData.code || undefined,
     content: formData.content || undefined,
     type: formData.type === -1 ? undefined : formData.type,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
     apiTemplateId: formData.apiTemplateId || undefined,
     channelId: formData.channelId,
     createTime: formatDateRange(formData.createTime),
@@ -158,7 +142,7 @@ function handleReset() {
   formData.code = undefined
   formData.content = undefined
   formData.type = -1
-  formData.status = -1
+  formData.status = undefined
   formData.apiTemplateId = undefined
   formData.channelId = undefined
   formData.createTime = [undefined, undefined]

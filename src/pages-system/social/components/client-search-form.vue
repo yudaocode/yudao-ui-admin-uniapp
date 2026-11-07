@@ -67,23 +67,7 @@
           </wd-radio>
         </wd-radio-group>
       </view>
-      <view class="yd-search-form-item">
-        <view class="yd-search-form-label">
-          状态
-        </view>
-        <wd-radio-group v-model="formData.status" type="button">
-          <wd-radio :value="-1">
-            全部
-          </wd-radio>
-          <wd-radio
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :value="dict.value"
-          >
-            {{ dict.label }}
-          </wd-radio>
-        </wd-radio-group>
-      </view>
+      <yd-search-picker v-model="formData.status" label="状态" :dict-type="DICT_TYPE.COMMON_STATUS" all-option />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
           重置
@@ -113,7 +97,7 @@ const formData = reactive({
   clientId: undefined as string | undefined,
   socialType: -1,
   userType: -1,
-  status: -1,
+  status: undefined as number | undefined,
 }) // 搜索表单数据
 
 /** 搜索条件 placeholder 拼接 */
@@ -131,7 +115,7 @@ const placeholder = computed(() => {
   if (formData.userType !== -1) {
     conditions.push(`类型:${getDictLabel(DICT_TYPE.USER_TYPE, formData.userType)}`)
   }
-  if (formData.status !== -1) {
+  if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.COMMON_STATUS, formData.status)}`)
   }
   return conditions.length > 0 ? conditions.join(' | ') : '搜索三方应用'
@@ -145,7 +129,7 @@ function handleSearch() {
     clientId: formData.clientId || undefined,
     socialType: formData.socialType === -1 ? undefined : formData.socialType,
     userType: formData.userType === -1 ? undefined : formData.userType,
-    status: formData.status === -1 ? undefined : formData.status,
+    status: formData.status,
   })
 }
 
@@ -155,7 +139,7 @@ function handleReset() {
   formData.clientId = undefined
   formData.socialType = -1
   formData.userType = -1
-  formData.status = -1
+  formData.status = undefined
   visible.value = false
   emit('reset')
 }
