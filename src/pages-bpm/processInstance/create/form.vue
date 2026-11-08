@@ -73,7 +73,7 @@ import { getProcessDefinition } from '@/api/bpm/definition'
 import { createProcessInstance, getApprovalDetail, getProcessInstance } from '@/api/bpm/processInstance'
 import FormCreate from '@/pages-bpm/components/form-create/packages/wot-ui/src/index.vue'
 import ProcessInstanceTimeline from '@/pages-bpm/processInstance/detail/components/time-line.vue'
-import { filterFormVariablesByFields, setConfAndFields2 } from '@/pages-bpm/utils'
+import { applySubFormsPermission, decodeFields, filterFormVariablesByFields, hasSubForm, isSubFieldPermissionField, setConfAndFields2 } from '@/pages-bpm/utils'
 import { delay, navigateBackPlus } from '@/utils'
 import { BpmCandidateStrategyEnum, BpmNodeIdEnum } from '@/utils/constants'
 import { setTabParams } from '@/utils/url'
@@ -106,6 +106,8 @@ const startUserSelectAssignees = ref<Record<string, number[]>>({}) // 发起人�
 const tempStartUserSelectAssignees = ref<Record<string, number[]>>({}) // 刷新预览前临时保留的审批人
 let previewTimer: ReturnType<typeof setTimeout> | undefined // 流程预览刷新防抖定时器
 let previewPromise: Promise<void> | undefined // 进行中的流程预览重算
+let formFields: string[] | undefined // 流程表单字段，子表单的子字段权限变化时重新解析
+let subFormsPermission: string | undefined // 已写入表单规则的字段权限（子表单的子字段权限）
 
 /** 返回流程发起页 */
 function handleBack() {
@@ -152,14 +154,29 @@ async function getProcessApprovalDetail() {
 
     // 后端会根据表单变量返回字段权限，移动端同步给 form-create
     if (data.formFieldsPermission) {
+      setSubFormsPermission(data.formFieldsPermission)
       await nextTick()
-      Object.entries(data.formFieldsPermission).forEach(([field, permission]) => {
-        fApi.value?.setFieldPermission(field, permission)
-      })
+      Object.entries(data.formFieldsPermission)
+        .filter(([field]) => !isSubFieldPermissionField(field)) // 子表单的子字段权限，已写入规则
+        .forEach(([field, permission]) => {
+          fApi.value?.setFieldPermission(field, permission)
+        })
     }
   } finally {
     processTimeLineLoading.value = false
   }
+}
+
+/** 设置子表单的子字段权限：需要写入规则后重新渲染表单，所以仅在权限变化时设置 */
+function setSubFormsPermission(formFieldsPermission: Record<string, string>) {
+  const permission = JSON.stringify(formFieldsPermission)
+  if (permission === subFormsPermission || !hasSubForm(detailForm.value.rule)) {
+    return
+  }
+  subFormsPermission = permission
+  const rule = decodeFields(formFields)
+  applySubFormsPermission(rule, formFieldsPermission)
+  detailForm.value.rule = rule
 }
 
 /** 确认发起人自选审批人 */
@@ -284,6 +301,7 @@ onLoad(async (options) => {
       ? await getRestartFormVariables(definition.formFields)
       : {}
     setConfAndFields2(detailForm, definition.formConf, definition.formFields, formVariables)
+    formFields = definition.formFields
     detailForm.value.option = {
       ...detailForm.value.option,
       // 发起页使用页面底部按钮提交，隐藏 form-create 内置按钮

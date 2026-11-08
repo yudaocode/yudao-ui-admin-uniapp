@@ -68,7 +68,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import FormCreate from '@/pages-bpm/components/form-create/packages/wot-ui/src/index.vue'
 import { FORM_FIELD_PERMISSION } from '@/pages-bpm/components/form-create/types/typing'
 import LeaveDetail from '@/pages-bpm/oa/leave/detail/index.vue'
-import { getMobileFormCustomPath, setConfAndFields2 } from '@/pages-bpm/utils'
+import { applySubFormsPermission, getMobileFormCustomPath, isSubFieldPermissionField, setConfAndFields2 } from '@/pages-bpm/utils'
 import { getLastPage } from '@/utils'
 import { BpmModelFormType } from '@/utils/constants'
 import { isSamePackage } from '@/utils/url'
@@ -125,6 +125,7 @@ watch(
     props.processDefinition?.formFields,
     props.processDefinition?.formType,
     props.processInstance?.formVariables,
+    props.formFieldsPermission,
   ],
   () => {
     if (props.processDefinition?.formType !== BpmModelFormType.NORMAL) {
@@ -143,6 +144,8 @@ watch(
       submitBtn: false,
       resetBtn: false,
     }
+    // 子表单的子字段权限需要在渲染前写入规则
+    applySubFormsPermission(normalForm.value.rule, props.formFieldsPermission)
     applyFieldPermission()
   },
   { deep: true, immediate: true },
@@ -168,12 +171,14 @@ async function applyFieldPermission() {
   api.hidden(false)
   api.disabled(true)
 
-  Object.entries(props.formFieldsPermission || {}).forEach(([field, permission]) => {
-    api.setFieldPermission(field, permission)
-    if (permission === FORM_FIELD_PERMISSION.WRITE) {
-      writableFields.value.push(field)
-    }
-  })
+  Object.entries(props.formFieldsPermission || {})
+    .filter(([field]) => !isSubFieldPermissionField(field)) // 子表单的子字段权限，已写入规则
+    .forEach(([field, permission]) => {
+      api.setFieldPermission(field, permission)
+      if (permission === FORM_FIELD_PERMISSION.WRITE) {
+        writableFields.value.push(field)
+      }
+    })
 }
 
 /** 校验当前流程表单 */
