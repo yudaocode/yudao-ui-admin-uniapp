@@ -27,28 +27,44 @@
         <view
           v-for="item in list"
           :key="item.id"
-          class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
+          class="mb-24rpx rounded-12rpx bg-white p-24rpx shadow-sm"
           @click="handleDetail(item)"
         >
-          <wd-img v-if="item.imageUrl" :src="item.imageUrl" width="100%" height="320rpx" mode="aspectFill" />
-          <view class="p-24rpx">
-            <view class="mb-16rpx flex items-start justify-between gap-16rpx">
-              <view class="min-w-0 flex-1">
-                <view class="truncate text-30rpx text-[#333] font-semibold">
-                  {{ item.title || '未命名音乐' }}
-                </view>
-                <view class="mt-8rpx text-22rpx text-[#999]">
-                  {{ formatDateTime(item.createTime) }}
-                </view>
+          <view class="flex gap-20rpx">
+            <view class="relative h-120rpx w-120rpx shrink-0 overflow-hidden rounded-8rpx bg-[#f5f5f5]">
+              <wd-img v-if="item.coverUrl" :src="item.coverUrl" width="120rpx" height="120rpx" mode="aspectFill" />
+              <view v-else class="h-full w-full flex items-center justify-center">
+                <wd-icon name="headset" size="48rpx" color="#bbb" />
               </view>
-              <dict-tag :type="DICT_TYPE.AI_MUSIC_STATUS" :value="item.status" />
+              <view v-if="isAiMusicRunning(item.status)" class="absolute inset-0 flex items-center justify-center bg-white/70">
+                <wd-loading size="36rpx" />
+              </view>
             </view>
-            <view class="line-clamp-2 text-26rpx text-[#666]">
-              {{ item.prompt || item.gptDescriptionPrompt || '-' }}
+            <view class="min-w-0 flex-1">
+              <view class="flex items-start justify-between gap-16rpx">
+                <view class="truncate text-30rpx text-[#333] font-semibold">
+                  {{ getMusicTitle(item.title) }}
+                </view>
+                <dict-tag :type="DICT_TYPE.AI_MUSIC_STATUS" :value="item.status" />
+              </view>
+              <view class="mt-8rpx flex flex-wrap items-center gap-8rpx text-24rpx text-[#999]">
+                <dict-tag :type="DICT_TYPE.AI_GENERATE_MODE" :value="item.generateMode" />
+                <text>{{ item.model || '-' }}</text>
+                <text>· {{ formatMusicDuration(item.duration) }}</text>
+              </view>
+              <view class="mt-8rpx text-24rpx text-[#999]">
+                用户：{{ item.userNickname || '-' }} · 播放 {{ item.playCount ?? 0 }} · {{ item.publicStatus ? '已公开' : '未公开' }}
+              </view>
             </view>
-            <view class="mt-12rpx text-24rpx text-[#999]">
-              用户：{{ getUserName(item.userId) }} / {{ item.platform || '-' }} / {{ item.model || '-' }}
-            </view>
+          </view>
+          <view v-if="isAiMusicRunning(item.status)" class="mt-16rpx">
+            <wd-progress :percentage="item.progress || 0" />
+          </view>
+          <view v-if="item.status === AiMusicStatusEnum.FAIL" class="line-clamp-2 mt-12rpx text-24rpx text-[#f5222d]">
+            {{ item.errorMessage || '-' }}
+          </view>
+          <view class="mt-12rpx text-22rpx text-[#999]">
+            {{ formatDateTime(item.createTime) }}
           </view>
         </view>
       </view>
@@ -58,13 +74,11 @@
 
 <script lang="ts" setup>
 import type { Music } from '@/api/ai/music'
-import type { User } from '@/api/system/user'
 import { onUnload } from '@dcloudio/uni-app'
 import { onMounted, ref } from 'vue'
 import { getMusicPage } from '@/api/ai/music'
-import { getSimpleUserList } from '@/api/system/user'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { AiMusicStatusEnum, DICT_TYPE, formatMusicDuration, getMusicTitle, isAiMusicRunning } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
@@ -78,7 +92,6 @@ definePage({
 const list = ref<Music[]>([]) // 音乐列表
 const pagingRef = ref<any>() // 分页组件引用
 const queryParams = ref<Record<string, any>>({}) // 查询参数
-const userList = ref<User[]>([]) // 用户精简列表
 
 /** 返回上一页 */
 function handleBack() {
@@ -123,15 +136,9 @@ function handleDetail(item: Music) {
   })
 }
 
-/** 获取用户昵称 */
-function getUserName(userId?: number) {
-  return userList.value.find(user => user.id === userId)?.nickname || String(userId || '-')
-}
-
 /** 初始化 */
-onMounted(async () => {
+onMounted(() => {
   uni.$on('ai:music:reload', reload)
-  userList.value = await getSimpleUserList().catch(() => [])
 })
 
 /** 卸载 */

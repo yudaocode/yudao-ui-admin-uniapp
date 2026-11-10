@@ -12,6 +12,11 @@
       <wd-cell-group border>
         <wd-cell title="模型名字" :value="formData?.name || '-'" />
         <wd-cell title="模型标识" :value="formData?.model || '-'" />
+        <wd-cell title="模型简介" :value="formData?.description || '-'" />
+        <wd-cell title="模型图标">
+          <wd-img v-if="formData?.iconUrl" :src="formData.iconUrl" width="80rpx" height="80rpx" radius="12rpx" mode="aspectFill" enable-preview />
+          <text v-else>-</text>
+        </wd-cell>
         <wd-cell title="模型平台">
           <dict-tag v-if="formData?.platform" :type="DICT_TYPE.AI_PLATFORM" :value="formData.platform" />
           <text v-else>-</text>

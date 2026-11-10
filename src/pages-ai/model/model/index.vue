@@ -31,6 +31,12 @@
           @click="handleDetail(item)"
         >
           <view class="mb-16rpx flex items-start justify-between gap-16rpx">
+            <view class="shrink-0">
+              <wd-img v-if="item.iconUrl" :src="item.iconUrl" width="72rpx" height="72rpx" radius="12rpx" mode="aspectFill" />
+              <view v-else class="h-72rpx w-72rpx flex items-center justify-center rounded-12rpx bg-[#f5f5f5]">
+                <wd-icon name="robot" size="40rpx" color="#bbb" />
+              </view>
+            </view>
             <view class="min-w-0 flex-1">
               <view class="truncate text-32rpx text-[#333] font-semibold">
                 {{ item.name || '-' }}
@@ -40,6 +46,9 @@
               </view>
             </view>
             <dict-tag :type="DICT_TYPE.AI_MODEL_TYPE" :value="item.type" />
+          </view>
+          <view v-if="item.description" class="line-clamp-2 mb-12rpx text-24rpx text-[#666]">
+            {{ item.description }}
           </view>
           <view class="text-26rpx text-[#666]">
             <view class="mb-8rpx">

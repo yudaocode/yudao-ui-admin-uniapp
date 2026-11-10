@@ -36,6 +36,18 @@
           <wd-form-item title="模型标识" title-width="200rpx" prop="model">
             <wd-input v-model="formData.model" clearable placeholder="请输入模型标识" />
           </wd-form-item>
+          <wd-form-item title="模型简介" title-width="200rpx" prop="description">
+            <wd-textarea
+              v-model="formData.description"
+              placeholder="选填，展示在模型选择框中，例如：通用推荐"
+              :maxlength="255"
+              show-word-limit
+              clearable
+            />
+          </wd-form-item>
+          <wd-form-item title="模型图标" title-width="200rpx" prop="iconUrl">
+            <yd-upload-img v-model="formData.iconUrl" directory="ai/model" />
+          </wd-form-item>
           <wd-form-item title="排序" title-width="200rpx" prop="sort">
             <wd-input-number v-model="formData.sort" :min="0" />
           </wd-form-item>
@@ -121,6 +133,8 @@ const formLoading = ref(false) // 表单提交状态
 const formData = ref<AiModel>({
   keyId: undefined,
   name: '',
+  description: '',
+  iconUrl: '',
   model: '',
   platform: '',
   type: AiModelTypeEnum.CHAT,
@@ -137,6 +151,7 @@ const formSchema = createFormSchema({
   keyId: [{ required: true, message: 'API 密钥不能为空' }],
   name: [{ required: true, message: '模型名字不能为空' }],
   model: [{ required: true, message: '模型标识不能为空' }],
+  description: [{ max: 255, message: '模型简介不能超过 255 个字符' }],
   sort: [{ required: true, message: '排序不能为空' }],
   temperature: [{ required: () => formData.value.type === AiModelTypeEnum.CHAT, message: '温度参数不能为空' }],
   maxTokens: [{ required: () => formData.value.type === AiModelTypeEnum.CHAT, message: 'Token 数不能为空' }],

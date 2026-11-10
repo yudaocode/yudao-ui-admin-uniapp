@@ -6,6 +6,8 @@ export interface AiModel {
   id?: number
   keyId?: number
   name?: string
+  description?: string // 模型简介
+  iconUrl?: string // 模型图标地址
   model?: string
   platform?: string
   type?: number
@@ -37,8 +39,8 @@ export function getModelPage(params: PageParam) {
 }
 
 /** 获得模型列表 */
-export function getModelSimpleList(type?: number) {
-  return http.get<AiModel[]>('/ai/model/simple-list', { type })
+export function getModelSimpleList(type?: number, platform?: string) {
+  return http.get<AiModel[]>('/ai/model/simple-list', { type, platform })
 }
 
 /** 查询模型详情 */

@@ -9,174 +9,61 @@
 
     <!-- Tab 切换 -->
     <view class="bg-white">
-      <wd-tabs v-model="tabIndex" shrink @change="handleTabChange">
+      <wd-tabs v-model="tabIndex" shrink>
         <wd-tab title="创作" />
-        <wd-tab title="我的音乐" />
+        <wd-tab title="我的作品" />
         <wd-tab title="音乐广场" />
       </wd-tabs>
     </view>
 
-    <!-- 生成表单 -->
-    <view v-show="tabIndex === 0" class="bg-white p-24rpx">
-      <wd-form :model="formData">
-        <wd-cell-group border>
-          <wd-form-item title="生成模式" title-width="170rpx" center>
-            <wd-radio-group v-model="formData.generateMode" type="button">
-              <wd-radio v-for="item in modeOptions" :key="item.value" :value="item.value">
-                {{ item.label }}
-              </wd-radio>
-            </wd-radio-group>
-          </wd-form-item>
-          <yd-form-picker v-model="formData.model" label="模型" label-width="170rpx" :columns="modelOptions" placeholder="请选择模型" />
+    <!-- 创作面板：切换 Tab 时保留表单内容 -->
+    <scroll-view v-show="tabIndex === 0" scroll-y class="min-h-0 flex-1">
+      <MusicCreatePanel ref="createPanelRef" @submitted="handleSubmitted" />
+    </scroll-view>
 
-          <template v-if="formData.generateMode === MusicGenerateModeEnum.DESCRIPTION">
-            <wd-form-item title="音乐说明" title-width="170rpx">
-              <wd-textarea
-                v-model="formData.prompt"
-                placeholder="描述想要的音乐风格和主题"
-                :maxlength="1200"
-                show-word-limit
-                clearable
-              />
-            </wd-form-item>
-            <wd-form-item title="纯音乐" title-width="170rpx" center>
-              <wd-switch v-model="formData.makeInstrumental" />
-            </wd-form-item>
-          </template>
+    <!-- 我的作品 / 音乐广场 -->
+    <MusicList
+      v-if="tabIndex !== 0"
+      :key="tabIndex"
+      ref="listRef"
+      :square="tabIndex === 2"
+      :current-id="playerState.id"
+      :playing="playerState.playing"
+      @play="handlePlay"
+      @detail="openDetail"
+      @extend="handleExtend"
+      @concat="handleConcat"
+      @edit="openEdit"
+      @delete="handleDelete"
+      @public="handlePublic"
+    />
 
-          <template v-else>
-            <wd-form-item title="歌曲名称" title-width="170rpx">
-              <wd-input v-model="formData.title" clearable placeholder="请输入音乐或歌曲名称" />
-            </wd-form-item>
-            <wd-form-item title="歌词" title-width="170rpx">
-              <wd-textarea
-                v-model="formData.prompt"
-                placeholder="请输入歌词，两节或 8 行左右效果更好"
-                :maxlength="1200"
-                show-word-limit
-                clearable
-              />
-            </wd-form-item>
-            <wd-form-item title="自定义风格" title-width="170rpx">
-              <wd-input v-model="customTag" clearable placeholder="输入英文风格后添加" />
-            </wd-form-item>
-          </template>
-        </wd-cell-group>
-      </wd-form>
+    <!-- 播放器 -->
+    <MusicPlayer ref="playerRef" @change="playerState = $event" />
 
-      <view v-if="formData.generateMode === MusicGenerateModeEnum.LYRIC" class="mt-20rpx">
-        <view class="mb-12rpx text-26rpx text-[#666]">
-          音乐风格
-        </view>
-        <view class="flex flex-wrap gap-12rpx">
-          <wd-tag
-            v-for="tag in styleTags"
-            :key="tag"
-            :type="formData.tags.includes(tag) ? 'primary' : 'default'"
-            variant="plain"
-            @click="handleToggleTag(tag)"
-          >
-            {{ tag }}
-          </wd-tag>
-          <wd-tag v-if="customTag" type="primary" variant="plain" @click="handleAddCustomTag">
-            添加 {{ customTag }}
-          </wd-tag>
-        </view>
-      </view>
-
-      <view class="mt-24rpx">
-        <wd-button block type="primary" :loading="generating" @click="handleGenerate">
-          创作音乐
-        </wd-button>
-      </view>
-    </view>
-
-    <!-- 音乐列表 -->
-    <z-paging
-      ref="pagingRef"
-      v-model="list"
-      :fixed="false"
-      class="min-h-0 flex-1"
-      :default-page-size="10"
-      :refresher-enabled="true"
-      :inside-more="true"
-      :loading-more-default-as-loading="true"
-      empty-view-text="暂无音乐记录"
-      @query="queryList"
-    >
-      <view class="p-24rpx">
-        <view
-          v-for="item in list"
-          :key="item.id"
-          class="mb-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm"
-        >
-          <image
-            v-if="item.imageUrl"
-            class="h-360rpx w-full bg-[#f1f5f9]"
-            :src="item.imageUrl"
-            mode="aspectFill"
-            @click="handlePreview(item.imageUrl)"
-          />
-          <view v-else class="h-260rpx flex items-center justify-center bg-[#f8fafc] text-26rpx text-[#999]">
-            {{ item.errorMessage || '音乐生成中' }}
-          </view>
-          <view class="p-24rpx">
-            <view class="mb-16rpx flex items-start justify-between gap-16rpx">
-              <view class="min-w-0 flex-1">
-                <view class="truncate text-32rpx text-[#333] font-semibold">
-                  {{ item.title || '未命名音乐' }}
-                </view>
-                <view class="mt-8rpx text-22rpx text-[#999]">
-                  {{ formatDateTime(item.createTime) }}
-                </view>
-              </view>
-              <dict-tag :type="DICT_TYPE.AI_MUSIC_STATUS" :value="item.status" />
-            </view>
-
-            <view class="line-clamp-3 text-26rpx text-[#666]">
-              {{ item.prompt || item.gptDescriptionPrompt || item.errorMessage || '-' }}
-            </view>
-            <view class="mt-12rpx text-24rpx text-[#999]">
-              {{ item.platform || '-' }} / {{ item.model || '-' }} / {{ getTagsText(item.tags) }}
-            </view>
-
-            <view class="mt-20rpx flex flex-wrap gap-12rpx">
-              <wd-button v-if="item.audioUrl" size="small" variant="plain" @click="handleCopyUrl(item.audioUrl)">
-                复制音频
-              </wd-button>
-              <wd-button v-if="item.videoUrl" size="small" variant="plain" @click="handleCopyUrl(item.videoUrl)">
-                复制视频
-              </wd-button>
-              <wd-button v-if="item.imageUrl" size="small" variant="plain" @click="handleCopyUrl(item.imageUrl)">
-                复制封面
-              </wd-button>
-              <wd-button
-                v-if="tabIndex !== 2"
-                size="small"
-                type="danger"
-                variant="plain"
-                @click="handleDelete(item)"
-              >
-                删除
-              </wd-button>
-            </view>
-          </view>
-        </view>
-      </view>
-    </z-paging>
+    <!-- 详情、编辑 -->
+    <MusicDetailPopup ref="detailRef" @play="handleDetailPlay" />
+    <MusicEditPopup ref="editRef" @success="reloadList" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { Music, MusicGenerateReq } from '@/api/ai/music'
+import type { Music } from '@/api/ai/music'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { reactive, ref } from 'vue'
-import { deleteMusicMy, generateMusic, getMusicMyPage } from '@/api/ai/music'
+import { onMounted, ref } from 'vue'
+import { concatMusic, deleteMusicMy, updateMyMusic } from '@/api/ai/music'
 import { navigateBackPlus } from '@/utils'
-import { AiPlatformEnum, DICT_TYPE, MusicGenerateModeEnum } from '@/utils/constants'
-import { formatDateTime } from '@/utils/date'
-import type { MusicGenerateMode } from '@/utils/constants'
+import { getMusicTitle } from '@/utils/constants'
+import MusicCreatePanel from './components/music-create-panel.vue'
+import MusicDetailPopup from './components/music-detail-popup.vue'
+import MusicEditPopup from './components/music-edit-popup.vue'
+import MusicList from './components/music-list.vue'
+import MusicPlayer from './components/music-player.vue'
+
+const props = defineProps<{
+  id?: number | any // 深链打开的作品编号
+}>()
 
 definePage({
   style: {
@@ -187,139 +74,99 @@ definePage({
 
 const toast = useToast()
 const dialog = useDialog()
-const tabIndex = ref(0)
-const list = ref<Music[]>([]) // 音乐列表
-const pagingRef = ref<any>() // 分页组件引用
-const generating = ref(false) // 音乐生成状态
-const customTag = ref('') // 自定义风格
-const formData = reactive({
-  generateMode: MusicGenerateModeEnum.LYRIC as MusicGenerateMode,
-  model: 'chirp-v3.5',
-  prompt: '',
-  makeInstrumental: false,
-  title: '',
-  tags: [] as string[],
-}) // 音乐生成表单
-const modeOptions = [ // 音乐生成模式
-  { label: '描述模式', value: MusicGenerateModeEnum.DESCRIPTION },
-  { label: '歌词模式', value: MusicGenerateModeEnum.LYRIC },
-]
-const modelOptions = [ // Suno 模型选项
-  { label: 'Suno V3.5', value: 'chirp-v3.5' },
-  { label: 'Suno V3', value: 'chirp-v3.0' },
-]
-const styleTags = ['rock', 'punk', 'jazz', 'soul', 'country', 'kidsmusic', 'pop'] // 常用音乐风格
+const tabIndex = ref(0) // 当前 Tab：0 创作、1 我的作品、2 音乐广场
+const createPanelRef = ref<InstanceType<typeof MusicCreatePanel>>() // 创作面板引用
+const listRef = ref<InstanceType<typeof MusicList>>() // 作品列表引用
+const playerRef = ref<InstanceType<typeof MusicPlayer>>() // 播放器引用
+const detailRef = ref<InstanceType<typeof MusicDetailPopup>>() // 详情弹窗引用
+const editRef = ref<InstanceType<typeof MusicEditPopup>>() // 编辑弹窗引用
+const playerState = ref<{ id?: number, playing: boolean }>({ playing: false }) // 播放器状态
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
 }
 
-/** Tab 切换 */
-function handleTabChange({ index }: { index: number }) {
-  tabIndex.value = index
-  pagingRef.value?.reload()
+/** 刷新作品列表 */
+function reloadList() {
+  listRef.value?.reload()
 }
 
-/** 查询音乐列表 */
-async function queryList(pageNo: number, pageSize: number) {
+/** 提交成功：切到我的作品，列表重新挂载后从第一页加载 */
+function handleSubmitted() {
+  tabIndex.value = 1
+}
+
+/** 播放 */
+function handlePlay(item: Music, list: Music[]) {
+  playerRef.value?.play(item, list)
+}
+
+/** 详情内播放 */
+function handleDetailPlay(item: Music) {
+  playerRef.value?.play(item, [item])
+}
+
+/** 详情 */
+function openDetail(item: Music) {
+  detailRef.value?.open(item.id)
+}
+
+/** 续写：带入创作面板 */
+function handleExtend(item: Music) {
+  createPanelRef.value?.setExtendSource(item)
+  tabIndex.value = 0
+}
+
+/** 合并为完整歌曲 */
+async function handleConcat(item: Music) {
   try {
-    const params = { pageNo, pageSize, publicStatus: tabIndex.value === 2 }
-    const data = await getMusicMyPage(params)
-    pagingRef.value?.completeByTotal(data.list, data.total)
+    await dialog.confirm({
+      title: '提示',
+      msg: `确认将续写作品《${getMusicTitle(item.title)}》与原曲合并为完整歌曲？合并需中转支持 /suno/submit/concat 扩展路径（官方 SunoAPI 插件不支持）。`,
+    })
   } catch {
-    pagingRef.value?.complete(false)
-  }
-}
-
-/** 切换音乐风格 */
-function handleToggleTag(tag: string) {
-  const index = formData.tags.indexOf(tag)
-  if (index >= 0) {
-    formData.tags.splice(index, 1)
-  } else {
-    formData.tags.push(tag)
-  }
-}
-
-/** 添加自定义风格 */
-function handleAddCustomTag() {
-  const tag = customTag.value.trim()
-  if (!tag) {
     return
   }
-  if (!formData.tags.includes(tag)) {
-    formData.tags.push(tag)
-  }
-  customTag.value = ''
+  await concatMusic(item.id)
+  toast.success('合并任务已提交')
+  reloadList()
 }
 
-/** 生成音乐 */
-async function handleGenerate() {
-  if (!formData.model) {
-    toast.warning('请选择模型')
-    return
-  }
-  if (!formData.prompt) {
-    toast.warning(formData.generateMode === MusicGenerateModeEnum.DESCRIPTION ? '请输入音乐说明' : '请输入歌词')
-    return
-  }
-
-  generating.value = true
-  try {
-    const data: MusicGenerateReq = {
-      platform: AiPlatformEnum.SUNO,
-      generateMode: formData.generateMode,
-      prompt: formData.prompt,
-      makeInstrumental: formData.generateMode === MusicGenerateModeEnum.DESCRIPTION ? formData.makeInstrumental : undefined,
-      model: formData.model,
-      tags: formData.generateMode === MusicGenerateModeEnum.LYRIC ? formData.tags : undefined,
-      title: formData.generateMode === MusicGenerateModeEnum.LYRIC ? formData.title : undefined,
-    }
-    await generateMusic(data)
-    toast.success('已提交音乐生成任务')
-    pagingRef.value?.reload()
-  } finally {
-    generating.value = false
-  }
+/** 编辑名称与封面 */
+function openEdit(item: Music) {
+  editRef.value?.open(item)
 }
 
-/** 删除音乐记录 */
+/** 删除 */
 async function handleDelete(item: Music) {
-  if (!item.id) {
-    return
-  }
   try {
-    await dialog.confirm({ title: '提示', msg: '确定要删除该音乐记录吗？' })
+    await dialog.confirm({
+      title: '提示',
+      msg: `确认删除作品《${getMusicTitle(item.title)}》？删除后不可恢复。`,
+    })
   } catch {
     return
   }
   await deleteMusicMy(item.id)
   toast.success('删除成功')
-  pagingRef.value?.reload()
-}
-
-/** 预览封面 */
-function handlePreview(url?: string) {
-  if (!url) {
-    return
+  if (playerState.value.id === item.id) {
+    playerRef.value?.close()
   }
-  uni.previewImage({ urls: [url] })
+  reloadList()
 }
 
-/** 复制资源地址 */
-function handleCopyUrl(url?: string) {
-  if (!url) {
-    return
+/** 公开 / 取消公开 */
+async function handlePublic(item: Music, value: boolean) {
+  await updateMyMusic({ id: item.id, publicStatus: value })
+  item.publicStatus = value
+  toast.success(value ? '已公开到音乐广场' : '已取消公开')
+}
+
+/** 初始化：?id= 深链打开详情 */
+onMounted(() => {
+  if (props.id) {
+    detailRef.value?.open(Number(props.id))
   }
-  uni.setClipboardData({
-    data: url,
-    success: () => toast.success('已复制地址'),
-  })
-}
-
-/** 获取风格文案 */
-function getTagsText(tags?: string[]) {
-  return tags?.length ? tags.join('、') : '-'
-}
+})
 </script>

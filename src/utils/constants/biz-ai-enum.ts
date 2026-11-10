@@ -23,6 +23,7 @@ export const AiModelTypeEnum = {
   VIDEO: 4,
   EMBEDDING: 5,
   RERANK: 6,
+  MUSIC: 7,
 } as const
 
 /** AI 聊天消息类型枚举 */
@@ -67,18 +68,64 @@ export const AiImageStatusEnum = {
 
 /** AI 音乐状态枚举 */
 export const AiMusicStatusEnum = {
-  IN_PROGRESS: 10,
-  SUCCESS: 20,
-  FAIL: 30,
+  PENDING: 10, // 待处理
+  IN_PROGRESS: 20, // 生成中
+  SAVING: 30, // 转存中
+  SUCCESS: 40, // 已完成
+  FAIL: 50, // 已失败
 } as const
+
+/** AI 音乐是否未结束：待处理、生成中、转存中 */
+export function isAiMusicRunning(status?: number) {
+  return status === AiMusicStatusEnum.PENDING
+    || status === AiMusicStatusEnum.IN_PROGRESS
+    || status === AiMusicStatusEnum.SAVING
+}
 
 /** AI 音乐生成模式枚举 */
-export const MusicGenerateModeEnum = {
-  DESCRIPTION: 1,
-  LYRIC: 2,
+export const AiMusicGenerateModeEnum = {
+  INSPIRATION: 1, // 灵感
+  CUSTOM: 2, // 自定义
+  EXTEND: 3, // 续写
+  CONCAT: 4, // 拼接
+  UPLOAD: 5, // 上传
 } as const
 
-export type MusicGenerateMode = typeof MusicGenerateModeEnum[keyof typeof MusicGenerateModeEnum]
+/** AI 音乐预置风格：中文显示，英文写入 */
+export const AI_MUSIC_PRESET_TAGS = [
+  { label: '女声', value: 'female vocals' },
+  { label: '男声', value: 'male vocals' },
+  { label: '流行', value: 'pop' },
+  { label: '摇滚', value: 'rock' },
+  { label: '硬摇滚', value: 'hard rock' },
+  { label: '电音', value: 'electronic' },
+  { label: '金属', value: 'metal' },
+  { label: '重金属', value: 'heavy metal' },
+  { label: '节拍', value: 'beat' },
+  { label: '弱拍', value: 'upbeat' },
+  { label: '合成器', value: 'synth' },
+  { label: '吉他', value: 'guitar' },
+  { label: '钢琴', value: 'piano' },
+  { label: '小提琴', value: 'violin' },
+  { label: '贝斯', value: 'bass' },
+  { label: '嘻哈', value: 'hip hop' },
+]
+
+/** 格式化音乐时长（秒）为 mm:ss；为空时返回 - */
+export function formatMusicDuration(seconds?: number | null) {
+  if (seconds === undefined || seconds === null || Number.isNaN(seconds)) {
+    return '-'
+  }
+  const total = Math.max(0, Math.floor(seconds))
+  const minute = Math.floor(total / 60)
+  const second = total % 60
+  return `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+}
+
+/** 音乐名称为空时的展示文案 */
+export function getMusicTitle(title?: string | null) {
+  return title || '未命名歌曲'
+}
 
 /** AI 写作类型枚举 */
 export enum AiWriteTypeEnum {

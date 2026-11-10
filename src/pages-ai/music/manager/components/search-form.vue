@@ -13,20 +13,30 @@
     @close="visible = false"
   >
     <view class="yd-search-form-container">
+      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <view class="yd-search-form-item">
         <view class="yd-search-form-label">
-          音乐标题
+          音乐名称
         </view>
         <wd-input
           v-model="formData.title"
-          placeholder="请输入音乐标题"
+          placeholder="请输入音乐名称"
           clearable
         />
       </view>
-      <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <yd-search-picker v-model="formData.status" label="音乐状态" :dict-type="DICT_TYPE.AI_MUSIC_STATUS" all-option />
       <yd-search-picker v-model="formData.generateMode" label="生成模式" :dict-type="DICT_TYPE.AI_GENERATE_MODE" all-option />
-      <yd-search-picker v-model="formData.publicStatus" label="是否发布" :columns="publicStatusOptions" all-option />
+      <yd-search-picker v-model="formData.publicStatus" label="是否公开" :columns="publicStatusOptions" all-option />
+      <view class="yd-search-form-item">
+        <view class="yd-search-form-label">
+          关键词
+        </view>
+        <wd-input
+          v-model="formData.keyword"
+          placeholder="描述或歌词"
+          clearable
+        />
+      </view>
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
       <view class="yd-search-form-actions">
         <wd-button class="flex-1" variant="plain" @click="handleReset">
@@ -43,7 +53,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
 import UserSearchPicker from '@/components/system-select/user-search-picker.vue'
-import { getDictLabel } from '@/hooks/useDict'
+import { getBoolDictOptions, getDictLabel } from '@/hooks/useDict'
 import { getTopPopupModalStyle, getTopPopupStyle } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDate, formatDateRange } from '@/utils/date'
@@ -56,24 +66,23 @@ const emit = defineEmits<{
 const visible = ref(false) // 搜索弹窗显示状态
 const userPickerRef = ref<InstanceType<typeof UserSearchPicker>>() // 用户选择器引用
 const formData = reactive({
-  title: undefined as string | undefined,
   userId: undefined as number | undefined,
+  title: undefined as string | undefined,
   status: undefined as number | undefined,
   generateMode: undefined as number | undefined,
   publicStatus: undefined as boolean | undefined,
+  keyword: undefined as string | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
 }) // 搜索表单数据
-const publicStatusOptions = [ // 是否发布选项
-  { label: '已发布', value: true },
-  { label: '未发布', value: false },
-]
+// DONE @AI：字段？！（是否公开选项改用 INFRA_BOOLEAN_STRING 字典，对齐 vue3、vben 音乐管理；协议字段 publicStatus 不变）
+const publicStatusOptions = getBoolDictOptions(DICT_TYPE.INFRA_BOOLEAN_STRING) // 是否公开选项
 const placeholder = computed(() => {
   const conditions: string[] = []
-  if (formData.title) {
-    conditions.push(`标题:${formData.title}`)
-  }
   if (formData.userId) {
     conditions.push(`用户:${userPickerRef.value?.format(formData.userId) || formData.userId}`)
+  }
+  if (formData.title) {
+    conditions.push(`名称:${formData.title}`)
   }
   if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.AI_MUSIC_STATUS, formData.status)}`)
@@ -82,7 +91,10 @@ const placeholder = computed(() => {
     conditions.push(`模式:${getDictLabel(DICT_TYPE.AI_GENERATE_MODE, formData.generateMode)}`)
   }
   if (formData.publicStatus !== undefined) {
-    conditions.push(`发布:${formData.publicStatus ? '是' : '否'}`)
+    conditions.push(`公开:${getDictLabel(DICT_TYPE.INFRA_BOOLEAN_STRING, formData.publicStatus)}`)
+  }
+  if (formData.keyword) {
+    conditions.push(`关键词:${formData.keyword}`)
   }
   if (formData.createTime[0] && formData.createTime[1]) {
     conditions.push(`时间:${formatDate(formData.createTime[0])}~${formatDate(formData.createTime[1])}`)
@@ -94,22 +106,24 @@ const placeholder = computed(() => {
 function handleSearch() {
   visible.value = false
   emit('search', {
-    title: formData.title || undefined,
     userId: formData.userId,
+    title: formData.title || undefined,
     status: formData.status,
     generateMode: formData.generateMode,
     publicStatus: formData.publicStatus,
+    keyword: formData.keyword || undefined,
     createTime: formatDateRange(formData.createTime),
   })
 }
 
 /** 重置按钮操作 */
 function handleReset() {
-  formData.title = undefined
   formData.userId = undefined
+  formData.title = undefined
   formData.status = undefined
   formData.generateMode = undefined
   formData.publicStatus = undefined
+  formData.keyword = undefined
   formData.createTime = [undefined, undefined]
   visible.value = false
   emit('reset')
