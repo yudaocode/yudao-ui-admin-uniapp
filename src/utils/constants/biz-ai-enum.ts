@@ -127,6 +127,58 @@ export function getMusicTitle(title?: string | null) {
   return title || '未命名歌曲'
 }
 
+/** AI PPT 状态枚举：任务、每页共用；每页的状态为空表示待生成 */
+export const AiPptStatusEnum = {
+  IN_PROGRESS: 10, // 生成中
+  SUCCESS: 20, // 已完成
+  FAIL: 30, // 已失败
+} as const
+
+/** AI PPT 格式枚举 */
+export const AiPptModeEnum = {
+  DETAILED: 1, // 详细演示文稿
+  SLIDES: 2, // 演示用幻灯片
+} as const
+
+/** AI PPT 素材来源枚举 */
+export const AiPptSourceEnum = {
+  PASTE: 1, // 粘贴大纲
+  UPLOAD: 2, // 上传材料
+} as const
+
+/** AI PPT 语言枚举 */
+export const AiPptLanguageEnum = {
+  ZH_CN: 'zh-CN', // 中文
+  EN: 'en', // English
+} as const
+
+/** AI PPT 导出格式枚举 */
+export const AiPptExportFormatEnum = {
+  PPTX: 'pptx',
+  PDF: 'pdf',
+} as const
+
+/** AI PPT 导出选项：用于 wd-action-sheet */
+export const AI_PPT_EXPORT_ACTIONS = [
+  { name: '导出 PPTX（16:9，每页一张图）', value: AiPptExportFormatEnum.PPTX },
+  { name: '导出 PDF（16:9，每页一张图）', value: AiPptExportFormatEnum.PDF },
+]
+
+/** AI PPT 支持的绘图平台，与后端一致 */
+export const AI_PPT_IMAGE_PLATFORMS: string[] = [
+  AiPlatformEnum.OPENAI,
+  AiPlatformEnum.SILICON_FLOW,
+  AiPlatformEnum.TONG_YI,
+]
+
+/** AI PPT 材料支持的格式，与后端一致 */
+export const AI_PPT_FILE_TYPES = ['pdf', 'doc', 'docx', 'txt', 'md', 'markdown']
+
+/** 格式化 PPT 语言 */
+export function formatPptLanguage(language?: string) {
+  return language === AiPptLanguageEnum.EN ? 'English' : '中文'
+}
+
 /** AI 写作类型枚举 */
 export enum AiWriteTypeEnum {
   WRITING = 1,

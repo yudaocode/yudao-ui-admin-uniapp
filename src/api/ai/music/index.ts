@@ -1,6 +1,5 @@
 import type { PageParam, PageResult } from '@/http/types'
 import { http } from '@/http/http'
-import { useTokenStore } from '@/store/token'
 
 /** AI 音乐 */
 export interface Music {
@@ -55,9 +54,10 @@ export interface MusicExtendReq {
   title: string // 歌曲名称
 }
 
-/** AI 音乐上传请求；音频文件通过 filePath 单独传入 */
+/** AI 音乐上传请求 */
 export interface MusicUploadReq {
   modelId: number // 模型编号
+  fileUrl: string // 音频文件地址，只支持 mp3、wav
   title?: string // 歌曲名称，默认取文件名
 }
 
@@ -98,39 +98,9 @@ export function concatMusic(id: number) {
   return http.post<number>('/ai/music/concat', { id })
 }
 
-/** 上传音乐：multipart 提交 modelId、file、title */
-export async function uploadMusic(filePath: string, data: MusicUploadReq) {
-  const token = await useTokenStore().tryGetValidToken()
-  return new Promise<number>((resolve, reject) => {
-    uni.uploadFile({
-      url: '/ai/music/upload', // 由请求拦截器补全地址、租户
-      filePath,
-      name: 'file',
-      header: {
-        Accept: '*/*',
-        Authorization: `Bearer ${token}`,
-      },
-      formData: {
-        modelId: data.modelId,
-        ...(data.title ? { title: data.title } : {}),
-      },
-      success: (res) => {
-        let result: any
-        try {
-          result = JSON.parse(res.data)
-        } catch {
-          reject(new Error('上传响应解析失败'))
-          return
-        }
-        if (res.statusCode === 200 && result.code === 0) {
-          resolve(result.data)
-        } else {
-          reject(new Error(result.msg || '上传失败'))
-        }
-      },
-      fail: reject,
-    })
-  })
+/** 上传音乐 */
+export function uploadMusic(data: MusicUploadReq) {
+  return http.post<number>('/ai/music/upload', data)
 }
 
 /** 生成歌词 */

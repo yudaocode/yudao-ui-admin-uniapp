@@ -142,6 +142,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, ref } from 'vue'
 import { extendMusic, generateLyric, generateMusic, uploadMusic } from '@/api/ai/music'
 import { AI_MUSIC_PRESET_TAGS, AiMusicGenerateModeEnum, formatMusicDuration, getMusicTitle } from '@/utils/constants'
+import { uploadFileFromPath } from '@/utils/uploadFile'
 import { createFormSchema } from '@/utils/wot'
 import MusicModelFormPicker from './music-model-form-picker.vue'
 
@@ -334,7 +335,7 @@ function handleChooseAudio() {
   // #endif
 }
 
-/** 上传音频：由后端存到文件服务，再提交上传任务 */
+/** 上传音频：先上传到文件服务，再提交上传任务 */
 async function handleUpload(filePath: string, name: string, size: number) {
   const ext = name.split('.').pop()?.toLowerCase()
   if (ext !== 'mp3' && ext !== 'wav') {
@@ -349,15 +350,17 @@ async function handleUpload(filePath: string, name: string, size: number) {
   uploading.value = true
   toast.loading('音频上传中...')
   try {
-    await uploadMusic(filePath, {
+    const fileUrl = await uploadFileFromPath(filePath, 'ai/music', undefined, name)
+    await uploadMusic({
       modelId: formData.value.modelId!,
+      fileUrl,
       title: title || undefined,
     })
     toast.success('歌曲上传成功，正在处理')
     emit('submitted')
   } catch (error: any) {
-    // 上传不经过统一请求层，需要页面提示失败原因
-    toast.error(error?.message || '上传失败')
+    // 文件上传不经过统一请求层，需要页面提示失败原因
+    toast.error(error?.message || error?.msg || '上传失败')
   } finally {
     uploading.value = false
   }

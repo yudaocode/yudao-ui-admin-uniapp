@@ -3412,6 +3412,13 @@
               "url": "/pages-ai/music/index"
             },
             {
+              "key": "aiPpt",
+              "name": "AI PPT",
+              "icon": "desktop",
+              "iconColor": "#fa541c",
+              "url": "/pages-ai/ppt/index"
+            },
+            {
               "key": "aiKnowledge",
               "name": "AI 知识库",
               "icon": "folder",
@@ -3495,6 +3502,14 @@
               "iconColor": "#f5222d",
               "url": "/pages-ai/music/manager/index",
               "permission": "ai:music:query"
+            },
+            {
+              "key": "aiPptManager",
+              "name": "PPT 管理",
+              "icon": "desktop",
+              "iconColor": "#fa541c",
+              "url": "/pages-ai/ppt/manager/index",
+              "permission": "ai:ppt:query"
             },
             {
               "key": "aiWriteManager",
