@@ -25,6 +25,7 @@
       </view>
       <UserSearchPicker ref="userPickerRef" v-model="formData.userId" label="用户" placeholder="请选择用户" />
       <yd-search-picker v-model="formData.platform" label="平台" :dict-type="DICT_TYPE.AI_PLATFORM" dict-kind="str" all-option />
+      <yd-search-picker v-model="formData.mode" label="生成方式" :dict-type="DICT_TYPE.AI_IMAGE_MODE" all-option />
       <yd-search-picker v-model="formData.status" label="绘画状态" :dict-type="DICT_TYPE.AI_IMAGE_STATUS" all-option />
       <yd-search-picker v-model="formData.publicStatus" label="是否发布" :columns="publicStatusOptions" all-option />
       <yd-search-date-range v-model="formData.createTime" label="创建时间" />
@@ -59,6 +60,7 @@ const formData = reactive({
   prompt: undefined as string | undefined,
   userId: undefined as number | undefined,
   platform: undefined as string | undefined,
+  mode: undefined as number | undefined,
   status: undefined as number | undefined,
   publicStatus: undefined as boolean | undefined,
   createTime: [undefined, undefined] as [number | undefined, number | undefined],
@@ -77,6 +79,9 @@ const placeholder = computed(() => {
   }
   if (formData.platform) {
     conditions.push(`平台:${getDictLabel(DICT_TYPE.AI_PLATFORM, formData.platform)}`)
+  }
+  if (formData.mode !== undefined) {
+    conditions.push(`方式:${getDictLabel(DICT_TYPE.AI_IMAGE_MODE, formData.mode)}`)
   }
   if (formData.status !== undefined) {
     conditions.push(`状态:${getDictLabel(DICT_TYPE.AI_IMAGE_STATUS, formData.status)}`)
@@ -97,6 +102,7 @@ function handleSearch() {
     prompt: formData.prompt || undefined,
     userId: formData.userId,
     platform: formData.platform,
+    mode: formData.mode,
     status: formData.status,
     publicStatus: formData.publicStatus,
     createTime: formatDateRange(formData.createTime),
@@ -108,6 +114,7 @@ function handleReset() {
   formData.prompt = undefined
   formData.userId = undefined
   formData.platform = undefined
+  formData.mode = undefined
   formData.status = undefined
   formData.publicStatus = undefined
   formData.createTime = [undefined, undefined]

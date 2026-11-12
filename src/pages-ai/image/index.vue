@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="图像生成"
+      title="AI 绘图"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -10,96 +10,79 @@
     <!-- Tab 切换 -->
     <view class="bg-white">
       <wd-tabs v-model="tabIndex" shrink>
-        <wd-tab title="生成" />
-        <wd-tab title="历史" />
-        <wd-tab title="作品广场" />
+        <wd-tab title="创作" />
+        <wd-tab title="我的作品" />
+        <wd-tab title="公开画廊" />
       </wd-tabs>
     </view>
 
-    <!-- 当前生成 -->
-    <ImageResult
-      v-if="tabIndex === 0"
-      :image-data="currentImage"
-      :action-loading-id="actionLoadingId"
-      @action="handleMidjourneyAction"
-    />
+    <!-- 创作：切换 Tab 时保留表单内容；参数区单独滚动，生成按钮在下方独占一行 -->
+    <view v-show="tabIndex === 0" class="min-h-0 flex flex-1 flex-col">
+      <scroll-view scroll-y class="min-h-0 flex-1">
+        <view class="p-24rpx">
+          <!-- 模型 -->
+          <view class="overflow-hidden rounded-12rpx bg-white shadow-sm">
+            <wd-cell-group border>
+              <ImageModelFormPicker v-model="modelId" :models="models" />
+            </wd-cell-group>
+            <view v-if="modelsLoadFailed" class="px-32rpx pb-16rpx text-22rpx text-[#f5222d]" @click="loadModels">
+              模型列表加载失败，点击重试
+            </view>
+            <view v-else-if="modelsLoaded && models.length === 0" class="px-32rpx pb-16rpx text-22rpx text-[#fa8c16] leading-34rpx">
+              没有可用的绘图模型，请先在「模型配置」启用绘图模型
+            </view>
+          </view>
 
-    <!-- 历史与广场 -->
-    <ImageRecordList
-      v-else
+          <!-- 创作表单：按模型能力显示参数 -->
+          <view v-if="selectedModel && isMidjourney" class="mt-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+            <ImageMidjourneyForm ref="midjourneyFormRef" :model="selectedModel" />
+          </view>
+          <view v-else-if="selectedModel && selectedCapability" class="mt-24rpx overflow-hidden rounded-12rpx bg-white shadow-sm">
+            <ImageDrawForm
+              ref="drawFormRef"
+              :key="selectedModel.id"
+              :model="selectedModel"
+              :capability="selectedCapability"
+            />
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 底部生成按钮 -->
+      <view class="shrink-0 bg-white px-24rpx pb-[calc(16rpx+env(safe-area-inset-bottom))] pt-16rpx">
+        <wd-button block type="primary" :loading="submitting" :disabled="!selectedModel" @click="handleSubmit">
+          {{ submitting ? '提交中...' : '生成图片' }}
+        </wd-button>
+      </view>
+    </view>
+
+    <!-- 我的作品 / 公开画廊 -->
+    <ImageList
+      v-if="tabIndex !== 0"
       :key="tabIndex"
-      ref="recordListRef"
-      :public-status="tabIndex === 2"
-      :action-loading-id="actionLoadingId"
-      @reuse="handleReuse"
-      @action="handleMidjourneyAction"
-      @delete="handleDelete"
+      :scope="tabIndex === 2 ? 'public' : 'mine'"
+      @detail="handleDetail"
+      @regenerate="handleRegenerate"
     />
 
-    <!-- 提示词输入栏 -->
-    <ImageInputPanel
-      v-if="tabIndex === 0"
-      :model-value="formData"
-      :drawing="drawing"
-      :hot-words="hotWords"
-      :selected-model-name="selectedModelName"
-      @draw="handleDraw"
-      @open-settings="settingsVisible = true"
-    />
-
-    <!-- 模型与参数设置 -->
-    <ImageSettingsPopup
-      ref="settingsRef"
-      v-model:visible="settingsVisible"
-      :form-data="formData"
-      :models="models"
-      :exclude-platforms="imageSpecialPlatforms"
-    />
+    <!-- 详情 -->
+    <ImageDetailPopup ref="detailRef" />
   </view>
 </template>
 
 <script lang="ts" setup>
-import type { AiImage, ImageDrawReq, ImageMidjourneyImagineReq } from '@/api/ai/image'
+import type { AiImage } from '@/api/ai/image'
 import type { AiModel } from '@/api/ai/model/model'
-import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { deleteImageMy, drawImage, getImageMy, midjourneyAction, midjourneyImagine } from '@/api/ai/image'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { getModelSimpleList } from '@/api/ai/model/model'
 import { navigateBackPlus } from '@/utils'
-import { AiImageStatusEnum, AiModelTypeEnum, AiPlatformEnum, Dall3Models, Dall3SizeList, ImageHotEnglishWords, ImageHotWords, MidjourneyModels, MidjourneySizeList } from '@/utils/constants'
-import ImageInputPanel from './components/image-input-panel.vue'
-import ImageRecordList from './components/image-record-list.vue'
-import ImageResult from './components/image-result.vue'
-import ImageSettingsPopup from './components/image-settings-popup.vue'
-
-type ImagePlatformMode = 'common' | 'dall3' | 'midjourney' | 'stableDiffusion' // 绘图平台模式
-
-/** 绘图生成表单 */
-interface ImageGenerationForm {
-  platformMode: ImagePlatformMode
-  modelId?: number
-  modelKey: string
-  prompt: string
-  size: string
-  style: string
-  version: string
-  referImageUrl: string
-  width: number
-  height: number
-  sampler: string
-  steps: number
-  seed: number
-  scale: number
-  clipGuidancePreset: string
-  stylePreset: string
-}
-
-/** 绘图记录列表组件暴露方法 */
-interface ImageRecordListExpose { reload: () => void }
-
-/** 绘图参数组件暴露方法 */
-interface ImageSettingsPopupExpose { validate: () => Promise<{ valid: boolean }> | undefined }
+import { AiModelTypeEnum, AiPlatformEnum, getImageModelCapability, getImageModelDisabledReason, isImagePlatform } from '@/utils/constants'
+import ImageDetailPopup from './components/image-detail-popup.vue'
+import ImageDrawForm from './components/image-draw-form.vue'
+import ImageList from './components/image-list.vue'
+import ImageMidjourneyForm from './components/image-midjourney-form.vue'
+import ImageModelFormPicker from './components/image-model-form-picker.vue'
 
 definePage({
   style: {
@@ -109,327 +92,82 @@ definePage({
 })
 
 const toast = useToast()
-const dialog = useDialog()
-const tabIndex = ref(0) // 当前 Tab 索引
-const recordListRef = ref<ImageRecordListExpose>() // 绘图记录列表引用
-const settingsRef = ref<ImageSettingsPopupExpose>() // 绘图参数弹窗引用
-const settingsVisible = ref(false) // 模型参数弹窗
-const currentImage = ref<AiImage>() // 本次生成图片
-const models = ref<AiModel[]>([]) // 图片模型列表
-const drawing = ref(false) // 图片生成状态
-const actionLoadingId = ref('') // MJ 操作加载标识
-let pollingTimer: ReturnType<typeof setTimeout> | undefined // 当前图片轮询定时器
-let pollingImageId: number | undefined // 当前轮询图片编号
-let pollingCount = 0 // 当前轮询次数
-const maxPollingCount = 300 // 最长轮询约十分钟
-const formData = reactive<ImageGenerationForm>({
-  platformMode: 'common',
-  modelId: undefined,
-  modelKey: '',
-  prompt: '',
-  size: '512x512',
-  style: '',
-  version: '6.0',
-  referImageUrl: '',
-  width: 512,
-  height: 512,
-  sampler: 'DDIM',
-  steps: 20,
-  seed: 42,
-  scale: 7.5,
-  clipGuidancePreset: 'NONE',
-  stylePreset: '3d-model',
-}) // 绘图表单数据
-const imageSpecialPlatforms: string[] = [ // 专用绘图平台
-  AiPlatformEnum.OPENAI,
-  AiPlatformEnum.MIDJOURNEY,
-  AiPlatformEnum.STABLE_DIFFUSION,
-]
-const isCommonMode = computed(() => formData.platformMode === 'common') // 是否通用绘图模式
-const isDall3Mode = computed(() => formData.platformMode === 'dall3') // 是否 DALL·E 模式
-const isMidjourneyMode = computed(() => formData.platformMode === 'midjourney') // 是否 Midjourney 模式
-const hotWords = computed(() => formData.platformMode === 'stableDiffusion' ? ImageHotEnglishWords : ImageHotWords) // 当前平台热门提示词
-const selectedModelName = computed(() => { // 当前模型展示名称
-  if (isCommonMode.value) {
-    const model = models.value.find(item => item.id === formData.modelId)
-    return model?.name || model?.model || '请选择模型'
-  }
-  if (isDall3Mode.value) {
-    return Dall3Models.find(item => item.key === formData.modelKey)?.name || 'DALL·E'
-  }
-  if (isMidjourneyMode.value) {
-    return MidjourneyModels.find(item => item.key === formData.modelKey)?.name || 'Midjourney'
-  }
-  return 'Stable Diffusion'
-})
+const tabIndex = ref(0) // 当前 Tab：0 创作、1 我的作品、2 公开画廊
+const models = ref<AiModel[]>([]) // 绘图模型列表
+const modelsLoaded = ref(false) // 模型列表是否已加载
+const modelsLoadFailed = ref(false) // 模型列表加载失败：提示重试
+const modelId = ref<number>() // 选中的模型编号
+const submitting = ref(false) // 提交状态
+const drawFormRef = ref<InstanceType<typeof ImageDrawForm>>() // 通用模型、Seedream 表单引用
+const midjourneyFormRef = ref<InstanceType<typeof ImageMidjourneyForm>>() // Midjourney 表单引用
+const detailRef = ref<InstanceType<typeof ImageDetailPopup>>() // 详情弹窗引用
+const selectedModel = computed(() => models.value.find(item => item.id === modelId.value)) // 选中的模型
+const isMidjourney = computed(() => selectedModel.value?.platform === AiPlatformEnum.MIDJOURNEY) // 是否 Midjourney
+const selectedCapability = computed(() => getImageModelCapability(selectedModel.value?.platform, selectedModel.value?.model)) // 选中模型的能力
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
 }
 
-/** 生成图片 */
-async function handleDraw() {
-  const result = await settingsRef.value?.validate()
-  if (!result?.valid || drawing.value) {
-    return
-  }
-  if (formData.platformMode === 'stableDiffusion' && /[\u4E00-\u9FFF]/.test(formData.prompt)) {
-    toast.warning('Stable Diffusion 暂不支持中文提示词')
-    return
-  }
-  const requestData = buildDrawRequest()
-  if (!requestData) {
-    return
-  }
-  drawing.value = true
+/** 加载绘图模型：默认选中第一个可用模型 */
+async function loadModels() {
+  modelsLoadFailed.value = false
   try {
-    const id = isMidjourneyMode.value
-      ? await midjourneyImagine(requestData as ImageMidjourneyImagineReq)
-      : await drawImage(requestData as ImageDrawReq)
-    currentImage.value = {
-      id,
-      prompt: formData.prompt,
-      status: AiImageStatusEnum.IN_PROGRESS,
+    const list = await getModelSimpleList(AiModelTypeEnum.IMAGE)
+    models.value = list.filter(item => isImagePlatform(item.platform))
+    if (!models.value.some(item => item.id === modelId.value)) {
+      modelId.value = models.value.find(item => !getImageModelDisabledReason(item.platform, item.model))?.id
     }
-    startPolling(id)
-    toast.success('已提交生成任务')
+  } catch {
+    modelsLoadFailed.value = true
   } finally {
-    drawing.value = false
+    modelsLoaded.value = true
   }
 }
 
-/** 开始轮询当前图片 */
-function startPolling(id: number) {
-  stopPolling()
-  pollingImageId = id
-  pollingCount = 0
-  schedulePolling(id)
-}
-
-/** 安排下一次图片轮询 */
-function schedulePolling(id: number) {
-  pollingTimer = setTimeout(async () => {
-    pollingTimer = undefined
-    pollingCount += 1
-    try {
-      const data = await getImageMy(id)
-      if (pollingImageId !== id) {
-        return
-      }
-      currentImage.value = data
-      if (data.status === AiImageStatusEnum.IN_PROGRESS) {
-        if (pollingCount >= maxPollingCount) {
-          toast.error('图片生成等待超时，请稍后在历史记录中查看')
-          return
-        }
-        schedulePolling(id)
-      }
-    } catch {
-      if (pollingImageId !== id) {
-        return
-      }
-      if (pollingCount >= maxPollingCount) {
-        toast.error('图片状态查询失败，请稍后在历史记录中查看')
-        return
-      }
-      schedulePolling(id)
+/** 提交：成功后切到我的作品，列表重新挂载后从第 1 页加载 */
+async function handleSubmit() {
+  const formRef = isMidjourney.value ? midjourneyFormRef.value : drawFormRef.value
+  if (!formRef || submitting.value) {
+    return
+  }
+  submitting.value = true
+  try {
+    if (await formRef.submit()) {
+      toast.success('已提交，生成结果见我的作品')
+      tabIndex.value = 1
     }
-  }, 2000)
-}
-
-/** 停止图片轮询 */
-function stopPolling() {
-  pollingImageId = undefined
-  if (pollingTimer) {
-    clearTimeout(pollingTimer)
-    pollingTimer = undefined
+  } finally {
+    submitting.value = false
   }
 }
 
-/** 构建绘图请求 */
-function buildDrawRequest(): ImageDrawReq | ImageMidjourneyImagineReq | undefined {
-  if (isCommonMode.value) {
-    const [width, height] = formData.size.split('x')
-    if (!formData.modelId) {
-      return undefined
-    }
-    return {
-      prompt: formData.prompt,
-      modelId: formData.modelId,
-      width: Number(width),
-      height: Number(height),
-      options: {},
-    }
-  }
-  if (isDall3Mode.value) {
-    const model = findModel(AiPlatformEnum.OPENAI, formData.modelKey)
-    const imageSize = Dall3SizeList.find(item => item.key === formData.size)
-    if (!model || !imageSize) {
-      toast.warning('该 DALL·E 模型不可用，请先配置模型')
-      return undefined
-    }
-    return {
-      prompt: formData.prompt,
-      modelId: model.id,
-      width: Number(imageSize.width),
-      height: Number(imageSize.height),
-      options: { style: formData.style },
-    }
-  }
-  if (isMidjourneyMode.value) {
-    const model = findModel(AiPlatformEnum.MIDJOURNEY, formData.modelKey)
-    const imageSize = MidjourneySizeList.find(item => item.key === formData.size)
-    if (!model || !imageSize) {
-      toast.warning('该 Midjourney 模型不可用，请先配置模型')
-      return undefined
-    }
-    return {
-      prompt: formData.prompt,
-      modelId: model.id,
-      width: Number(imageSize.width),
-      height: Number(imageSize.height),
-      version: formData.version,
-      referImageUrl: formData.referImageUrl,
-    }
-  }
-  const model = findModel(AiPlatformEnum.STABLE_DIFFUSION, formData.modelKey)
-  if (!model) {
-    toast.warning('该 Stable Diffusion 模型不可用，请先配置模型')
-    return undefined
-  }
-  return {
-    prompt: formData.prompt,
-    modelId: model.id,
-    width: formData.width,
-    height: formData.height,
-    options: {
-      seed: String(formData.seed),
-      steps: String(formData.steps),
-      scale: String(formData.scale),
-      sampler: formData.sampler,
-      clipGuidancePreset: formData.clipGuidancePreset,
-      stylePreset: formData.stylePreset,
-    },
-  }
+/** 详情 */
+function handleDetail(item: AiImage) {
+  detailRef.value?.open(item.id, tabIndex.value === 2 ? 'public' : 'mine')
 }
 
-/** 查找平台模型 */
-function findModel(platform: string, model: string) {
-  return models.value.find(item => item.platform === platform && item.model === model)
-}
-
-/** 复用绘图参数 */
-function handleReuse(item: AiImage) {
-  formData.prompt = item.prompt || ''
-  const platform = item.platform || ''
-  if (platform === AiPlatformEnum.OPENAI) {
-    formData.platformMode = 'dall3'
-    formData.modelKey = item.model || 'dall-e-3'
-    formData.size = `${item.width}x${item.height}`
-    formData.style = item.options?.style || item.options?.stylePreset || 'vivid'
-  } else if (platform === AiPlatformEnum.MIDJOURNEY) {
-    formData.platformMode = 'midjourney'
-    formData.modelKey = item.options?.model || item.model || 'midjourney'
-    formData.size = `${item.width}:${item.height}`
-    formData.version = item.options?.version || '6.0'
-    formData.referImageUrl = item.options?.referImageUrl || ''
-  } else if (platform === AiPlatformEnum.STABLE_DIFFUSION) {
-    formData.platformMode = 'stableDiffusion'
-    formData.width = Number(item.width || 512)
-    formData.height = Number(item.height || 512)
-    formData.seed = Number(item.options?.seed ?? 42)
-    formData.steps = Number(item.options?.steps ?? 20)
-    formData.scale = Number(item.options?.scale ?? 7.5)
-    formData.sampler = item.options?.sampler || 'DDIM'
-    formData.clipGuidancePreset = item.options?.clipGuidancePreset || 'NONE'
-    formData.stylePreset = item.options?.stylePreset || '3d-model'
-  } else {
-    formData.platformMode = 'common'
-    formData.modelId = models.value.find(model => model.platform === platform && model.model === item.model)?.id || formData.modelId
-    formData.size = `${item.width}x${item.height}`
-    formData.style = item.options?.style || item.options?.stylePreset || ''
+/** 重新生成：切换到原模型，回填参数 */
+async function handleRegenerate(image: AiImage) {
+  const model = models.value.find(item => item.id === image.modelId)
+    || models.value.find(item => item.platform === image.platform && item.model === image.model)
+  if (!model || getImageModelDisabledReason(model.platform, model.model)) {
+    toast.warning('原模型已不可用，请重新选择模型')
+    return
   }
+  modelId.value = model.id
   tabIndex.value = 0
-}
-
-/** Midjourney 二次操作 */
-async function handleMidjourneyAction(item: AiImage, customId: string) {
-  if (!item.id) {
-    return
-  }
-  actionLoadingId.value = `${item.id}-${customId}`
-  try {
-    const id = await midjourneyAction({ id: item.id, customId })
-    currentImage.value = {
-      id,
-      prompt: item.prompt,
-      status: AiImageStatusEnum.IN_PROGRESS,
-    }
-    tabIndex.value = 0
-    startPolling(id)
-    toast.success('已提交操作')
-  } finally {
-    actionLoadingId.value = ''
-  }
-}
-
-/** 删除绘图记录 */
-async function handleDelete(item: AiImage) {
-  if (!item.id) {
-    return
-  }
-  try {
-    await dialog.confirm({ title: '提示', msg: '确定要删除该绘图记录吗？' })
-  } catch {
-    return
-  }
-  await deleteImageMy(item.id)
-  if (currentImage.value?.id === item.id) {
-    currentImage.value = undefined
-  }
-  toast.success('删除成功')
-  recordListRef.value?.reload()
-}
-
-/** 应用平台默认参数 */
-function applyPlatformDefaults(mode: ImagePlatformMode) {
-  if (mode === 'common') {
-    formData.size = '512x512'
-    formData.style = ''
-    formData.modelKey = ''
-    formData.modelId = models.value.find(item => !imageSpecialPlatforms.includes(item.platform || ''))?.id
-  } else if (mode === 'dall3') {
-    formData.modelKey = 'dall-e-3'
-    formData.size = '1024x1024'
-    formData.style = 'vivid'
-  } else if (mode === 'midjourney') {
-    formData.modelKey = 'midjourney'
-    formData.size = '1:1'
-    formData.version = '6.0'
+  await nextTick()
+  if (isMidjourney.value) {
+    midjourneyFormRef.value?.setValues(image)
   } else {
-    formData.modelKey = 'stable-diffusion-v1-6'
-    formData.width = 512
-    formData.height = 512
-    formData.sampler = 'DDIM'
-    formData.clipGuidancePreset = 'NONE'
-    formData.stylePreset = '3d-model'
+    drawFormRef.value?.setValues(image)
   }
 }
 
-/** 初始化图片模型 */
-onMounted(async () => {
-  try {
-    models.value = await getModelSimpleList(AiModelTypeEnum.IMAGE)
-    formData.modelId = models.value.find(item => !imageSpecialPlatforms.includes(item.platform || ''))?.id
-  } catch {
-    models.value = []
-  }
+/** 初始化 */
+onMounted(() => {
+  loadModels()
 })
-
-/** 监听平台变化并重置默认参数 */
-watch(() => formData.platformMode, applyPlatformDefaults, { flush: 'sync' })
-
-/** 卸载 */
-onUnmounted(stopPolling)
 </script>

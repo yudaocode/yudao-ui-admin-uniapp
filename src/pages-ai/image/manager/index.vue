@@ -44,13 +44,21 @@
                   {{ item.prompt || `#${item.id}` }}
                 </view>
                 <view class="mt-8rpx text-22rpx text-[#999]">
-                  {{ formatDateTime(item.createTime) }}
+                  #{{ item.id }} · {{ formatDateTime(item.createTime) }}
                 </view>
               </view>
               <dict-tag :type="DICT_TYPE.AI_IMAGE_STATUS" :value="item.status" />
             </view>
-            <view class="text-24rpx text-[#999]">
-              用户：{{ getUserName(item.userId) }} / {{ item.platform || '-' }} / {{ item.model || '-' }}
+            <view class="flex flex-wrap items-center gap-8rpx text-24rpx text-[#999]">
+              <dict-tag :type="DICT_TYPE.AI_IMAGE_MODE" :value="item.mode" />
+              <dict-tag :type="DICT_TYPE.AI_PLATFORM" :value="item.platform" />
+              <text>{{ item.model || '-' }}</text>
+            </view>
+            <view class="mt-8rpx text-24rpx text-[#999]">
+              用户：{{ getUserName(item.userId) }} · {{ item.publicStatus ? '已公开' : '未公开' }}<text v-if="item.parentId"> · 来源 #{{ item.parentId }}</text>
+            </view>
+            <view v-if="item.status === AiImageStatusEnum.IN_PROGRESS" class="mt-16rpx">
+              <wd-progress :percentage="item.progress || 0" />
             </view>
             <view v-if="item.errorMessage" class="line-clamp-3 mt-12rpx text-24rpx text-[#f56c6c]">
               {{ item.errorMessage }}
@@ -70,7 +78,7 @@ import { onMounted, ref } from 'vue'
 import { getImagePage } from '@/api/ai/image'
 import { getSimpleUserList } from '@/api/system/user'
 import { navigateBackPlus } from '@/utils'
-import { DICT_TYPE } from '@/utils/constants'
+import { AiImageStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
 import SearchForm from './components/search-form.vue'
 
