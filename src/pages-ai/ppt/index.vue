@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="AI PPT"
+      title="AI PPT 生成"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />

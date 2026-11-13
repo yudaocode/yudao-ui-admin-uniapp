@@ -3391,34 +3391,6 @@
               "url": "/pages-ai/chat/index"
             },
             {
-              "key": "aiImage",
-              "name": "AI 绘画",
-              "icon": "image",
-              "iconColor": "#722ed1",
-              "url": "/pages-ai/image/index"
-            },
-            {
-              "key": "aiWrite",
-              "name": "AI 写作",
-              "icon": "edit",
-              "iconColor": "#fa8c16",
-              "url": "/pages-ai/write/index"
-            },
-            {
-              "key": "aiMusic",
-              "name": "AI 音乐",
-              "icon": "sound",
-              "iconColor": "#f5222d",
-              "url": "/pages-ai/music/index"
-            },
-            {
-              "key": "aiPpt",
-              "name": "AI PPT",
-              "icon": "desktop",
-              "iconColor": "#fa541c",
-              "url": "/pages-ai/ppt/index"
-            },
-            {
               "key": "aiKnowledge",
               "name": "AI 知识库",
               "icon": "folder",
@@ -3433,6 +3405,34 @@
               "iconColor": "#36cfc9",
               "url": "/pages-ai/workflow/index",
               "permission": "ai:workflow:query"
+            },
+            {
+              "key": "aiImage",
+              "name": "AI 图片生成",
+              "icon": "image",
+              "iconColor": "#722ed1",
+              "url": "/pages-ai/image/index"
+            },
+            {
+              "key": "aiMusic",
+              "name": "AI 音乐生成",
+              "icon": "sound",
+              "iconColor": "#f5222d",
+              "url": "/pages-ai/music/index"
+            },
+            {
+              "key": "aiPpt",
+              "name": "AI PPT 生成",
+              "icon": "desktop",
+              "iconColor": "#fa541c",
+              "url": "/pages-ai/ppt/index"
+            },
+            {
+              "key": "aiWrite",
+              "name": "AI 写作翻译",
+              "icon": "edit",
+              "iconColor": "#fa8c16",
+              "url": "/pages-ai/write/index"
             },
             {
               "key": "aiMindMap",
@@ -3480,8 +3480,16 @@
               "permission": "ai:tool:query"
             },
             {
+              "key": "aiRequestLog",
+              "name": "请求日志",
+              "icon": "history",
+              "iconColor": "#1677ff",
+              "url": "/pages-ai/requestlog/index",
+              "permission": "ai:request-log:query"
+            },
+            {
               "key": "aiChatManager",
-              "name": "聊天管理",
+              "name": "对话管理",
               "icon": "message",
               "iconColor": "#2f54eb",
               "url": "/pages-ai/chat/manager/index",
@@ -3489,7 +3497,7 @@
             },
             {
               "key": "aiImageManager",
-              "name": "绘画管理",
+              "name": "图片管理",
               "icon": "image",
               "iconColor": "#eb2f96",
               "url": "/pages-ai/image/manager/index",
@@ -3521,19 +3529,11 @@
             },
             {
               "key": "aiMindMapManager",
-              "name": "导图管理",
+              "name": "思维导图管理",
               "icon": "share-alt",
               "iconColor": "#52c41a",
               "url": "/pages-ai/mindmap/manager/index",
               "permission": "ai:mind-map:query"
-            },
-            {
-              "key": "aiRequestLog",
-              "name": "请求日志",
-              "icon": "history",
-              "iconColor": "#1677ff",
-              "url": "/pages-ai/requestlog/index",
-              "permission": "ai:request-log:query"
             }
           ]
         }
