@@ -51,7 +51,7 @@
           </view>
           <!-- 类型、公开标记：Seedream 与通用模型同为 AI 生图，按平台区分 -->
           <view class="absolute left-16rpx top-16rpx flex gap-8rpx">
-            <wd-tag v-if="item.platform === AiPlatformEnum.DOU_BAO" type="primary">
+            <wd-tag v-if="item.platform === AiPlatformEnum.BYTEDANCE" type="primary">
               Seedream
             </wd-tag>
             <dict-tag v-else :type="DICT_TYPE.AI_IMAGE_MODE" :value="item.mode" />

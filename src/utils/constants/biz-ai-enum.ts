@@ -2,18 +2,18 @@ import { formatNumber } from '@/utils/format'
 
 /** AI 平台枚举 */
 export const AiPlatformEnum = {
-  TONG_YI: 'TongYi',
-  YI_YAN: 'YiYan',
-  DEEP_SEEK: 'DeepSeek',
-  ZHI_PU: 'ZhiPu',
-  XING_HUO: 'XingHuo',
-  SILICON_FLOW: 'SiliconFlow',
-  OPENAI: 'OpenAI',
-  OLLAMA: 'Ollama',
-  STABLE_DIFFUSION: 'StableDiffusion',
-  MIDJOURNEY: 'Midjourney',
-  SUNO: 'Suno',
-  DOU_BAO: 'DouBao',
+  ALIBABA: 'ALIBABA',
+  BAIDU: 'BAIDU',
+  DEEPSEEK: 'DEEPSEEK',
+  ZHIPU: 'ZHIPU',
+  IFLYTEK: 'IFLYTEK',
+  SILICONFLOW: 'SILICONFLOW',
+  OPENAI: 'OPENAI',
+  OLLAMA: 'OLLAMA',
+  STABILITYAI: 'STABILITYAI',
+  MIDJOURNEY: 'MIDJOURNEY',
+  SUNO: 'SUNO',
+  BYTEDANCE: 'BYTEDANCE',
 } as const
 
 /** AI 模型类型枚举 */
@@ -202,8 +202,8 @@ export const AI_PPT_EXPORT_ACTIONS = [
 /** AI PPT 支持的绘图平台，与后端一致 */
 export const AI_PPT_IMAGE_PLATFORMS: string[] = [
   AiPlatformEnum.OPENAI,
-  AiPlatformEnum.SILICON_FLOW,
-  AiPlatformEnum.TONG_YI,
+  AiPlatformEnum.SILICONFLOW,
+  AiPlatformEnum.ALIBABA,
 ]
 
 /** AI PPT 材料支持的格式，与后端一致 */
@@ -327,7 +327,7 @@ const STABILITY_ADVANCED: ImageAdvancedField[] = [ // Stability 的高级参数
 
 /** 已登记模型的能力：键 = `${platform}:${model}`，只做精确匹配 */
 export const IMAGE_MODEL_CAPABILITIES: Record<string, ImageModelCapability> = {
-  'OpenAI:gpt-image-1': {
+  'OPENAI:gpt-image-1': {
     sizeMode: 'fixed',
     sizes: ['1024x1024', '1536x1024', '1024x1536'],
     qualities: ['auto', 'high', 'medium', 'low'],
@@ -336,7 +336,7 @@ export const IMAGE_MODEL_CAPABILITIES: Record<string, ImageModelCapability> = {
     reference: { max: 0 },
     status: { legacy: '官方有该模型的历史下线公告，上线前按官方模型页核实' },
   },
-  'OpenAI:dall-e-3': {
+  'OPENAI:dall-e-3': {
     sizeMode: 'fixed',
     sizes: ['1024x1024', '1792x1024', '1024x1792'],
     qualities: ['standard', 'hd'],
@@ -344,20 +344,20 @@ export const IMAGE_MODEL_CAPABILITIES: Record<string, ImageModelCapability> = {
     negativePrompt: false,
     reference: { max: 0 },
   },
-  'TongYi:wan2.7-image': {
+  'ALIBABA:wan2.7-image': {
     ...TONG_YI_PIXEL,
     promptMax: IMAGE_PROMPT_MAX,
     negativePrompt: false,
     reference: { max: 0 },
     status: { blocked: 'DashScope SDK 1.1.2.2 没有 wan2.7-image 路由，暂不可用' },
   },
-  'TongYi:wanx2.1-t2i-turbo': {
+  'ALIBABA:wanx2.1-t2i-turbo': {
     ...TONG_YI_PIXEL,
     promptMax: IMAGE_PROMPT_MAX,
     negativePrompt: false,
     reference: { max: 0 },
   },
-  'SiliconFlow:Kwai-Kolors/Kolors': {
+  'SILICONFLOW:Kwai-Kolors/Kolors': {
     sizeMode: 'pixel',
     sizes: ['1024x1024', '960x1280', '768x1024', '720x1440', '720x1280'],
     promptMax: IMAGE_PROMPT_MAX,
@@ -369,7 +369,7 @@ export const IMAGE_MODEL_CAPABILITIES: Record<string, ImageModelCapability> = {
       { key: 'cfgScale', label: '引导系数', min: 0, max: 20, step: 0.5, precision: 1, default: 7.5 },
     ],
   },
-  'StableDiffusion:stable-diffusion-v1-6': {
+  'STABILITYAI:stable-diffusion-v1-6': {
     sizeMode: 'pixel',
     sizes: ['512x512', '768x768', '1024x1024'],
     custom: { min: 320, max: 1536, step: 64 },
@@ -379,26 +379,26 @@ export const IMAGE_MODEL_CAPABILITIES: Record<string, ImageModelCapability> = {
     advanced: STABILITY_ADVANCED,
   },
   // Seedream 5.0 flash：本期只开放已实测的 2K 文生图；参考图、其它档位未实测，暂不开放
-  'DouBao:doubao-seedream-5-0-flash-260915': {
+  'BYTEDANCE:doubao-seedream-5-0-flash-260915': {
     ...SEEDREAM_BASE,
     tiers: ['2K'],
     promptMax: 1000,
     reference: { max: 0 },
     guide: SEEDREAM_BASE.guide?.slice(1), // 不开放参考图：去掉参考图的写法建议
   },
-  'DouBao:doubao-seedream-5-0-260128': {
+  'BYTEDANCE:doubao-seedream-5-0-260128': {
     ...SEEDREAM_BASE,
     tiers: ['2K', '3K'],
     promptMax: 1000,
     reference: { max: 10, maxMb: 10, accept: IMAGE_ACCEPT },
   },
-  'DouBao:doubao-seedream-4-5-251128': {
+  'BYTEDANCE:doubao-seedream-4-5-251128': {
     ...SEEDREAM_BASE,
     tiers: ['2K', '4K'],
     promptMax: 800,
     reference: { max: 10, maxMb: 5, accept: IMAGE_ACCEPT },
   },
-  'DouBao:doubao-seedream-4-0-250828': {
+  'BYTEDANCE:doubao-seedream-4-0-250828': {
     ...SEEDREAM_BASE,
     tiers: ['1K', '2K', '4K'],
     promptMax: 800,
@@ -414,12 +414,12 @@ const IMAGE_FALLBACK_CAPABILITY: ImageModelCapability = { // 未登记模型的�
   reference: { max: 0 },
 }
 
-const IMAGE_PLATFORM_FALLBACK: Record<string, ImageModelCapability | null> = { // 未登记的模型标识：按平台保守能力；DouBao 不可选
+const IMAGE_PLATFORM_FALLBACK: Record<string, ImageModelCapability | null> = { // 未登记的模型标识：按平台保守能力；ByteDance 不可选
   [AiPlatformEnum.OPENAI]: IMAGE_FALLBACK_CAPABILITY,
-  [AiPlatformEnum.TONG_YI]: IMAGE_FALLBACK_CAPABILITY,
-  [AiPlatformEnum.SILICON_FLOW]: IMAGE_FALLBACK_CAPABILITY,
-  [AiPlatformEnum.STABLE_DIFFUSION]: IMAGE_FALLBACK_CAPABILITY,
-  [AiPlatformEnum.DOU_BAO]: null,
+  [AiPlatformEnum.ALIBABA]: IMAGE_FALLBACK_CAPABILITY,
+  [AiPlatformEnum.SILICONFLOW]: IMAGE_FALLBACK_CAPABILITY,
+  [AiPlatformEnum.STABILITYAI]: IMAGE_FALLBACK_CAPABILITY,
+  [AiPlatformEnum.BYTEDANCE]: null,
 }
 
 /** 未登记的豆包模型的不可用说明 */

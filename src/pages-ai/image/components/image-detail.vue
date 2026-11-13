@@ -19,7 +19,7 @@
   <wd-cell-group border>
     <wd-cell v-if="scope !== 'public'" title="编号" :value="image.id" />
     <wd-cell title="类型">
-      <wd-tag v-if="image.platform === AiPlatformEnum.DOU_BAO" type="primary">
+      <wd-tag v-if="image.platform === AiPlatformEnum.BYTEDANCE" type="primary">
         Seedream
       </wd-tag>
       <dict-tag v-else :type="DICT_TYPE.AI_IMAGE_MODE" :value="image.mode" />

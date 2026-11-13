@@ -76,9 +76,9 @@ const selectedModel = computed(() => props.models.find(item => item.id === props
 const groups = computed(() => [ // 模型分组：通用模型 / Seedream / Midjourney
   {
     label: '通用模型',
-    models: props.models.filter(item => item.platform !== AiPlatformEnum.DOU_BAO && item.platform !== AiPlatformEnum.MIDJOURNEY),
+    models: props.models.filter(item => item.platform !== AiPlatformEnum.BYTEDANCE && item.platform !== AiPlatformEnum.MIDJOURNEY),
   },
-  { label: 'Seedream', models: props.models.filter(item => item.platform === AiPlatformEnum.DOU_BAO) },
+  { label: 'Seedream', models: props.models.filter(item => item.platform === AiPlatformEnum.BYTEDANCE) },
   { label: 'Midjourney', models: props.models.filter(item => item.platform === AiPlatformEnum.MIDJOURNEY) },
 ].filter(group => group.models.length > 0))
 
