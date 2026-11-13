@@ -19,6 +19,7 @@
         <wd-cell title="绑定模型" :value="formData?.modelName || formData?.model || '-'" />
         <wd-cell title="角色描述" :value="formData?.description || '-'" />
         <wd-cell title="角色设定" :value="formData?.systemMessage || '-'" />
+        <wd-cell title="引用技能" :value="formatSkillNames(formData?.skillIds)" />
         <wd-cell title="引用知识库" :value="formatList(formData?.knowledgeIds)" />
         <wd-cell title="引用工具" :value="formatList(formData?.toolIds)" />
         <wd-cell title="引用 MCP" :value="formatList(formData?.mcpClientNames)" />
@@ -47,11 +48,13 @@
 
 <script lang="ts" setup>
 import type { ChatRole } from '@/api/ai/model/chatRole'
+import type { Skill } from '@/api/ai/skill'
 import { onUnload } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { deleteChatRole, getChatRole } from '@/api/ai/model/chatRole'
+import { getSimpleSkillList } from '@/api/ai/skill'
 import { useAccess } from '@/hooks/useAccess'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -71,6 +74,7 @@ const toast = useToast()
 const dialog = useDialog()
 const formData = ref<ChatRole>() // 详情数据
 const deleting = ref(false) // 删除状态
+const skillList = ref<Skill[]>([]) // 技能列表：只包含启用的技能
 
 /** 返回上一页 */
 function handleBack() {
@@ -126,10 +130,19 @@ function formatList(value?: Array<number | string>) {
   return value?.length ? value.join('、') : '-'
 }
 
+/** 格式化技能名称：已禁用的技能显示编号 */
+function formatSkillNames(skillIds?: number[]) {
+  if (!skillIds?.length) {
+    return '-'
+  }
+  return skillIds.map(id => skillList.value.find(skill => skill.id === id)?.name || `#${id}（已禁用）`).join('、')
+}
+
 /** 初始化 */
-onMounted(() => {
+onMounted(async () => {
   uni.$on('ai:chat-role:reload', getDetail)
   getDetail()
+  skillList.value = await getSimpleSkillList()
 })
 
 /** 卸载 */

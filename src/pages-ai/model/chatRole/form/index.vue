@@ -27,6 +27,7 @@
           <wd-form-item title="角色设定" title-width="210rpx" prop="systemMessage">
             <wd-textarea v-model="formData.systemMessage" placeholder="请输入角色设定" clearable />
           </wd-form-item>
+          <SkillFormPicker v-model="formData.skillIds" label="引用技能" label-width="210rpx" type="checkbox" filterable placeholder="请选择技能" />
           <KnowledgeFormPicker v-model="formData.knowledgeIds" label="引用知识库" label-width="210rpx" type="checkbox" filterable />
           <ToolFormPicker v-model="formData.toolIds" label="引用工具" label-width="210rpx" type="checkbox" filterable />
           <yd-form-picker
@@ -80,11 +81,13 @@ import type { ChatRole } from '@/api/ai/model/chatRole'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createChatRole, getChatRole, updateChatRole } from '@/api/ai/model/chatRole'
+import { getSimpleSkillList } from '@/api/ai/skill'
 import { getIntDictOptions } from '@/hooks/useDict'
 import { delay, navigateBackPlus } from '@/utils'
 import { AiModelTypeEnum, CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
 import KnowledgeFormPicker from '@/pages-ai/knowledge/components/knowledge-form-picker.vue'
+import SkillFormPicker from '@/pages-ai/skill/components/skill-form-picker.vue'
 import ModelFormPicker from '../../model/components/model-form-picker.vue'
 import ToolFormPicker from '../../tool/components/tool-form-picker.vue'
 
@@ -114,6 +117,7 @@ const formData = ref<ChatRole>({
   status: CommonStatusEnum.ENABLE,
   knowledgeIds: [],
   toolIds: [],
+  skillIds: [],
   mcpClientNames: [],
 }) // 表单数据
 const formSchema = createFormSchema({
@@ -141,7 +145,11 @@ async function getDetail() {
   if (!props.id) {
     return
   }
-  formData.value = await getChatRole(props.id)
+  const data = await getChatRole(props.id)
+  // 过滤已禁用的技能：精简列表只包含启用的技能
+  const skillList = await getSimpleSkillList()
+  data.skillIds = (data.skillIds || []).filter(skillId => skillList.some(skill => skill.id === skillId))
+  formData.value = data
 }
 
 /** 提交表单 */

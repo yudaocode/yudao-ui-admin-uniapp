@@ -3472,6 +3472,14 @@
               "permission": "ai:chat-role:query"
             },
             {
+              "key": "aiSkill",
+              "name": "技能管理",
+              "icon": "code",
+              "iconColor": "#13c2c2",
+              "url": "/pages-ai/skill/index",
+              "permission": "ai:skill:query"
+            },
+            {
               "key": "aiTool",
               "name": "工具管理",
               "icon": "tool",

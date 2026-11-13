@@ -1,0 +1,63 @@
+<template>
+  <yd-form-picker
+    :model-value="modelValue"
+    :label="label"
+    :label-width="labelWidth"
+    :prop="prop"
+    :disabled="disabled"
+    :clearable="clearable"
+    :type="type"
+    :filterable="filterable"
+    :columns="options"
+    label-key="name"
+    value-key="id"
+    :placeholder="placeholder"
+    @update:model-value="handleUpdate"
+  />
+</template>
+
+<script lang="ts" setup>
+import type { Skill } from '@/api/ai/skill'
+import { onMounted, ref } from 'vue'
+import { getSimpleSkillList } from '@/api/ai/skill'
+
+const props = withDefaults(defineProps<{
+  modelValue?: number | number[]
+  label?: string
+  labelWidth?: string
+  placeholder?: string
+  prop?: string
+  disabled?: boolean
+  clearable?: boolean
+  type?: 'radio' | 'checkbox'
+  filterable?: boolean
+}>(), {
+  label: '技能',
+  labelWidth: '220rpx',
+  placeholder: '请选择技能',
+  prop: '',
+  disabled: false,
+  clearable: false,
+  type: 'radio',
+  filterable: false,
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: number | number[] | undefined]
+  'change': [items: Skill[]]
+}>()
+
+const options = ref<Skill[]>([]) // 技能选项：只包含启用的技能
+
+/** 更新技能 */
+function handleUpdate(value?: number | number[]) {
+  emit('update:modelValue', value)
+  const ids = Array.isArray(value) ? value : value == null ? [] : [value]
+  emit('change', options.value.filter(item => item.id != null && ids.includes(item.id)))
+}
+
+/** 初始化 */
+onMounted(async () => {
+  options.value = await getSimpleSkillList()
+})
+</script>

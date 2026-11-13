@@ -18,6 +18,7 @@ export interface ChatRole {
   status?: number
   knowledgeIds?: number[]
   toolIds?: number[]
+  skillIds?: number[] // 引用的技能编号
   mcpClientNames?: string[]
   createTime?: string
 }

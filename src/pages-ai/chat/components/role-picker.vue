@@ -59,6 +59,17 @@
               <view v-if="item.knowledgeIds?.length" class="mt-8rpx text-22rpx text-[#1677ff]">
                 已绑定 {{ item.knowledgeIds.length }} 个知识库
               </view>
+              <!-- 引用的技能 -->
+              <view v-if="getRoleSkills(item).length" class="mt-8rpx flex flex-wrap gap-8rpx">
+                <text
+                  v-for="skill in getRoleSkills(item)"
+                  :key="skill.id"
+                  class="max-w-full truncate rounded-6rpx bg-[#f0f5ff] px-10rpx text-22rpx text-[#2f54eb] leading-36rpx"
+                  @click.stop="handleSkillClick(skill)"
+                >
+                  {{ skill.name }}
+                </text>
+              </view>
             </view>
             <wd-icon name="arrow-right" size="30rpx" color="#bbb" />
           </view>
@@ -70,17 +81,27 @@
 
 <script lang="ts" setup>
 import type { ChatRole } from '@/api/ai/model/chatRole'
-import { ref } from 'vue'
+import type { Skill } from '@/api/ai/skill'
+import { useDialog } from '@wot-ui/ui/components/wd-dialog'
+import { ref, watch } from 'vue'
 import { getMyPage } from '@/api/ai/model/chatRole'
+import { getSimpleSkillList } from '@/api/ai/skill'
 
 const emit = defineEmits<{
   select: [role: ChatRole]
 }>()
 const visible = defineModel<boolean>({ default: false })
+const dialog = useDialog()
 const list = ref<ChatRole[]>([]) // 角色列表
 const pagingRef = ref<any>() // 分页组件引用
 const tabIndex = ref(0) // 当前角色分类
 const keyword = ref('') // 搜索关键字
+const skillList = ref<Skill[]>([]) // 技能列表：只包含启用的技能
+
+/** 获得角色引用的技能 */
+function getRoleSkills(role: ChatRole) {
+  return skillList.value.filter(skill => skill.id != null && role.skillIds?.includes(skill.id))
+}
 
 /** 查询角色列表 */
 async function queryList(pageNo: number, pageSize: number) {
@@ -107,6 +128,14 @@ function handleTabChange() {
   pagingRef.value?.reload()
 }
 
+/** 查看技能：标签只显示截断的名称，点击查看完整名称与描述 */
+function handleSkillClick(skill: Skill) {
+  dialog.alert({
+    title: '引用技能',
+    msg: `${skill.name}：${skill.description || '-'}`,
+  })
+}
+
 /** 选择角色 */
 function handleSelect(role: ChatRole) {
   visible.value = false
@@ -117,4 +146,11 @@ function handleSelect(role: ChatRole) {
 function handleOpen() {
   pagingRef.value?.reload()
 }
+
+/** 每次打开时，加载技能列表 */
+watch(visible, async (value) => {
+  if (value) {
+    skillList.value = await getSimpleSkillList()
+  }
+})
 </script>

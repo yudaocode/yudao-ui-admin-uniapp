@@ -60,6 +60,12 @@ export const AI_REASONING_LEVEL_LABELS: Record<string, string> = {
   max: '最高',
 }
 
+/** AI 技能文件类型枚举 */
+export const AiSkillFileTypeEnum = {
+  DIRECTORY: 1, // 目录
+  FILE: 2, // 文件
+} as const
+
 /** AI 图片状态枚举 */
 export const AiImageStatusEnum = {
   IN_PROGRESS: 10,
