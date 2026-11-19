@@ -3421,6 +3421,13 @@
               "url": "/pages-ai/music/index"
             },
             {
+              "key": "aiOcr",
+              "name": "AI 图片识别",
+              "icon": "scan",
+              "iconColor": "#1677ff",
+              "url": "/pages-ai/ocr/index"
+            },
+            {
               "key": "aiPpt",
               "name": "AI PPT 生成",
               "icon": "desktop",

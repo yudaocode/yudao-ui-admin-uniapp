@@ -25,6 +25,7 @@ export const AiModelTypeEnum = {
   EMBEDDING: 5,
   RERANK: 6,
   MUSIC: 7,
+  OCR: 8,
 } as const
 
 /** AI 聊天消息类型枚举 */
@@ -213,6 +214,12 @@ export const AI_PPT_FILE_TYPES = ['pdf', 'doc', 'docx', 'txt', 'md', 'markdown']
 export function formatPptLanguage(language?: string) {
   return language === AiPptLanguageEnum.EN ? 'English' : '中文'
 }
+
+/** AI 文字识别状态枚举，与后端一致 */
+export const AiOcrStatusEnum = {
+  SUCCESS: 20, // 识别成功
+  FAIL: 30, // 识别失败
+} as const
 
 /** AI 写作类型枚举 */
 export enum AiWriteTypeEnum {
