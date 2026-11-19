@@ -230,9 +230,6 @@ export const AiOcrStatusEnum = {
   FAIL: 30, // 识别失败
 } as const
 
-/** AI 文字识别修订文本的长度上限，与后端一致 */
-export const AI_OCR_TEXT_MAX_LENGTH = 100000
-
 /** AI 写作类型枚举 */
 export enum AiWriteTypeEnum {
   WRITING = 1,

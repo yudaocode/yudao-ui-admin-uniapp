@@ -3436,7 +3436,7 @@
             },
             {
               "key": "aiOcr",
-              "name": "OCR 文字识别",
+              "name": "AI 图片识别",
               "icon": "scan",
               "iconColor": "#1677ff",
               "url": "/pages-ai/ocr/index"
