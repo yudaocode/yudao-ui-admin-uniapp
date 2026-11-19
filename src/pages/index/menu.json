@@ -3414,11 +3414,32 @@
               "url": "/pages-ai/image/index"
             },
             {
+              "key": "aiVideo",
+              "name": "AI 视频生成",
+              "icon": "video-camera",
+              "iconColor": "#eb2f96",
+              "url": "/pages-ai/video/index"
+            },
+            {
+              "key": "aiDrama",
+              "name": "AI 短剧制作",
+              "icon": "play-circle",
+              "iconColor": "#faad14",
+              "url": "/pages-ai/drama/index"
+            },
+            {
               "key": "aiMusic",
               "name": "AI 音乐生成",
               "icon": "sound",
               "iconColor": "#f5222d",
               "url": "/pages-ai/music/index"
+            },
+            {
+              "key": "aiOcr",
+              "name": "OCR 文字识别",
+              "icon": "scan",
+              "iconColor": "#1677ff",
+              "url": "/pages-ai/ocr/index"
             },
             {
               "key": "aiPpt",
@@ -3505,15 +3526,31 @@
             },
             {
               "key": "aiImageManager",
-              "name": "图片管理",
+              "name": "图片生成管理",
               "icon": "image",
               "iconColor": "#eb2f96",
               "url": "/pages-ai/image/manager/index",
               "permission": "ai:image:query"
             },
             {
+              "key": "aiVideoManager",
+              "name": "视频生成管理",
+              "icon": "video-camera",
+              "iconColor": "#eb2f96",
+              "url": "/pages-ai/video/manager/index",
+              "permission": "ai:video:query"
+            },
+            {
+              "key": "aiDramaManager",
+              "name": "短剧制作管理",
+              "icon": "play-circle",
+              "iconColor": "#faad14",
+              "url": "/pages-ai/drama/manager/index",
+              "permission": "ai:drama:query"
+            },
+            {
               "key": "aiMusicManager",
-              "name": "音乐管理",
+              "name": "音乐生成管理",
               "icon": "sound",
               "iconColor": "#f5222d",
               "url": "/pages-ai/music/manager/index",
@@ -3521,7 +3558,7 @@
             },
             {
               "key": "aiPptManager",
-              "name": "PPT 管理",
+              "name": "PPT 生成管理",
               "icon": "desktop",
               "iconColor": "#fa541c",
               "url": "/pages-ai/ppt/manager/index",
@@ -3529,7 +3566,7 @@
             },
             {
               "key": "aiWriteManager",
-              "name": "写作管理",
+              "name": "写作翻译管理",
               "icon": "edit",
               "iconColor": "#faad14",
               "url": "/pages-ai/write/manager/index",

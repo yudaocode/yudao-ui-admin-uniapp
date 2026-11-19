@@ -352,6 +352,15 @@ const AI_DICT = {
   AI_IMAGE_MODE: 'ai_image_mode', // AI 绘图生成方式
   AI_MUSIC_STATUS: 'ai_music_status', // AI 音乐状态
   AI_PPT_STATUS: 'ai_ppt_status', // AI PPT 状态
+  AI_VIDEO_STATUS: 'ai_video_status', // AI 视频状态
+  AI_VIDEO_TYPE: 'ai_video_type', // AI 视频创作类型
+  AI_DRAMA_STATUS: 'ai_drama_status', // AI 短剧生成状态
+  AI_DRAMA_PROJECT_STATUS: 'ai_drama_project_status', // AI 短剧项目状态
+  AI_DRAMA_STYLE: 'ai_drama_style', // AI 短剧画风
+  AI_DRAMA_CHARACTER_ROLE_LEVEL: 'ai_drama_character_role_level', // AI 短剧角色等级
+  AI_DRAMA_CHARACTER_COSTUME_TIER: 'ai_drama_character_costume_tier', // AI 短剧服装档次
+  AI_DRAMA_SCENE_TYPE: 'ai_drama_scene_type', // AI 短剧场景类型
+  AI_DRAMA_TASK_TYPE: 'ai_drama_task_type', // AI 短剧任务类型
   AI_GENERATE_MODE: 'ai_generate_mode', // AI 生成模式
   AI_WRITE_TYPE: 'ai_write_type', // AI 写作类型
   AI_WRITE_LENGTH: 'ai_write_length', // AI 写作长度
