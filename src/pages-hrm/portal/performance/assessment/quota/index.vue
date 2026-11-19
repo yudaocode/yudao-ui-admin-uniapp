@@ -37,6 +37,10 @@
           目标已退回：{{ detail.targetConfirmationComment || '请调整后重新提交' }}
         </view>
 
+        <view class="mx-24rpx mt-24rpx rounded-12rpx bg-[#e6f4ff] px-24rpx py-20rpx text-24rpx text-[#1677ff] leading-36rpx">
+          可编辑维度的预置指标仅可填写目标值，不可编辑维度沿用考核模板的目标值；完成率指标需填写大于 0 的数字目标值，由首个评分环节录入实际值后，系统按 min(实际值 ÷ 目标值, 1) × 评分上限计算得分。
+        </view>
+
         <view
           v-for="group in dimensionGroups"
           :key="group.key"
@@ -144,8 +148,39 @@
                 allow-null
               />
             </view>
-            <view v-else class="text-26rpx text-[#666]">
+            <view v-else class="mb-12rpx text-26rpx text-[#666]">
               指标权重：{{ quota.weight || 0 }}%
+            </view>
+            <view v-if="!quota.preset" class="mt-16rpx">
+              <view class="mb-8rpx text-24rpx text-[#999]">
+                评分方式
+              </view>
+              <wd-radio-group v-model="quota.scoreType" type="button">
+                <wd-radio
+                  v-for="item in scoreTypeOptions"
+                  :key="item.value"
+                  :value="item.value"
+                >
+                  {{ item.label }}
+                </wd-radio>
+              </wd-radio-group>
+            </view>
+            <view v-else class="mb-12rpx text-26rpx text-[#666]">
+              评分方式：{{ isCompletionRateQuota(quota.scoreType) ? '完成率' : '直接输入' }}
+            </view>
+            <view v-if="group.allowEdit" class="mt-16rpx">
+              <view class="mb-8rpx text-24rpx text-[#999]">
+                目标值{{ isCompletionRateQuota(quota.scoreType) ? '（必填，大于 0 的数字）' : '' }}
+              </view>
+              <wd-input
+                v-model="quota.targetValue"
+                clearable
+                :placeholder="isCompletionRateQuota(quota.scoreType) ? '请输入大于 0 的数字' : '选填'"
+                :maxlength="1000"
+              />
+            </view>
+            <view v-else class="text-26rpx text-[#666]">
+              目标值：{{ quota.targetValue || '-' }}
             </view>
           </view>
         </view>
@@ -188,6 +223,7 @@ import {
   HrmPerformanceQuotaScoreType,
   HrmPerformanceStageType,
 } from '@/pages-hrm/utils/constants'
+import { isCompletionRateQuota, isValidTargetValue } from '@/pages-hrm/utils/performance'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -217,6 +253,10 @@ const accessible = ref(false) // 是否可访问
 const loading = ref(false) // 加载中
 const submitting = ref(false) // 提交中
 const detail = ref<PortalPerformanceAssessment>({}) // 详情数据
+const scoreTypeOptions = [
+  { label: '直接输入', value: HrmPerformanceQuotaScoreType.DIRECT_INPUT },
+  { label: '完成率', value: HrmPerformanceQuotaScoreType.COMPLETION_RATE },
+] // 评分方式选项
 
 const dimensionGroups = computed(() => {
   const groups = new Map<string, DimensionGroup>()
@@ -272,6 +312,7 @@ function addQuota(group: DimensionGroup) {
     standard: '',
     weight: remainingWeight || undefined,
     scoreType: HrmPerformanceQuotaScoreType.DIRECT_INPUT,
+    targetValue: '',
   })
 }
 
@@ -304,6 +345,13 @@ function validateQuota() {
       toast.error(`${group.name}存在重复指标名称`)
       return false
     }
+    const invalidQuota = group.quotas.find(
+      quota => isCompletionRateQuota(quota.scoreType) && !isValidTargetValue(quota.targetValue),
+    )
+    if (invalidQuota) {
+      toast.error(`完成率指标【${invalidQuota.name || '-'}】的目标值必须是大于 0 的数字`)
+      return false
+    }
   }
   return dimensionGroups.value.length > 0
 }
@@ -325,7 +373,7 @@ async function handleSubmit() {
         standard: quota.standard,
         weight: quota.weight,
         scoreType: quota.scoreType,
-        targetValue: quota.targetValue,
+        targetValue: quota.targetValue?.trim(),
         actualValue: quota.actualValue,
         selfScore: quota.selfScore,
         reviewerScore: quota.reviewerScore,

@@ -16,6 +16,7 @@
       prop-prefix="assessmentConfig."
       :disabled="disabled"
       :show-dimensions="true"
+      target-value-readonly
     />
     <view v-else class="px-24rpx py-32rpx text-center text-28rpx text-[#999]">
       请先选择考核指标模板

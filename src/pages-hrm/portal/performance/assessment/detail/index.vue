@@ -116,6 +116,12 @@
                 <view class="mb-8rpx text-26rpx text-[#666]">
                   标准：{{ quota.standard || '-' }}
                 </view>
+                <view class="mb-8rpx text-26rpx text-[#666]">
+                  评分方式：{{ isCompletionRateQuota(quota.scoreType) ? '完成率' : '直接输入' }}
+                </view>
+                <view class="mb-8rpx text-26rpx text-[#666]">
+                  目标值：{{ quota.targetValue || '-' }} · 实际值：{{ quota.actualValue || '-' }}
+                </view>
                 <view class="text-26rpx text-[#666]">
                   权重：{{ quota.weight || 0 }}% · 最终得分：{{ formatHrmScore(quota.finalScore) }}
                 </view>
@@ -264,6 +270,7 @@ import {
   HrmPerformanceStageType,
 } from '@/pages-hrm/utils/constants'
 import { formatHrmDate, formatHrmScore } from '@/pages-hrm/utils/format'
+import { isCompletionRateQuota } from '@/pages-hrm/utils/performance'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'

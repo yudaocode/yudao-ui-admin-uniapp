@@ -87,6 +87,9 @@
               <view class="text-24rpx text-[#666]">
                 权重 {{ quota.weight || 0 }}% · {{ formatScoreType(quota.scoreType) }}
               </view>
+              <view v-if="quota.targetValue" class="mt-8rpx text-24rpx text-[#999]">
+                默认目标值：{{ quota.targetValue }}
+              </view>
               <view v-if="quota.illustrate" class="mt-8rpx text-24rpx text-[#999]">
                 说明：{{ quota.illustrate }}
               </view>
@@ -187,6 +190,9 @@ function handleBack() {
 
 /** 格式化评分方式 */
 function formatScoreType(scoreType?: number) {
+  if (scoreType === HrmPerformanceQuotaScoreType.COMPLETION_RATE) {
+    return '完成率'
+  }
   return scoreType === HrmPerformanceQuotaScoreType.DIRECT_INPUT ? '直接输入' : '-'
 }
 

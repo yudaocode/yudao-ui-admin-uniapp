@@ -2,6 +2,7 @@ import type { PageParam, PageResult } from '@/http/types'
 import type {
   PerformanceAssessment,
   PerformanceAssessmentQuota,
+  PerformanceAssessmentQuotaScore,
   PerformanceProcessRecord,
 } from '@/api/hrm/performance/assessment'
 import { http } from '@/http/http'
@@ -118,6 +119,7 @@ export interface PortalPerformanceScorePreview {
   stageResultLevel?: string // 当前阶段结果等级
   cumulativeScore?: number // 当前累计得分
   cumulativeResultLevel?: string // 当前累计结果等级
+  quotaScores?: PerformanceAssessmentQuotaScore[] // 本阶段指标得分，完成率指标由后端计算
 }
 
 /** 员工端绩效评分驳回请求 */

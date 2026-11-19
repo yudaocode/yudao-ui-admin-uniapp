@@ -59,7 +59,25 @@
             :columns="scoreTypeColumns"
             placeholder="请选择评分方式"
           />
+          <wd-form-item title="默认目标值" prop="targetValue" title-width="180rpx">
+            <text v-if="props.targetValueReadonly" class="text-28rpx text-[#333]">
+              {{ formData.targetValue || '-' }}
+            </text>
+            <wd-input
+              v-else
+              v-model="formData.targetValue"
+              clearable
+              :placeholder="isCompletionRateQuota(formData.scoreType) ? '大于 0 的数字' : '选填'"
+              :maxlength="200"
+            />
+          </wd-form-item>
         </wd-cell-group>
+        <view v-if="isCompletionRateQuota(formData.scoreType)" class="mt-16rpx text-24rpx text-[#999] leading-36rpx">
+          完成率得分 = min(实际值 ÷ 目标值, 1) × 评分上限，由系统计算；系统制定指标或不可编辑维度的完成率指标必须配置默认目标值。
+        </view>
+        <view v-if="props.targetValueReadonly" class="mt-8rpx text-24rpx text-[#999] leading-36rpx">
+          计划中的默认目标值仅供查看，如需修改请调整考核模板。
+        </view>
       </wd-form>
       <view class="mt-32rpx">
         <wd-button type="primary" block @click="handleConfirm">
@@ -75,8 +93,14 @@ import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
 import type { AssessmentQuota } from '@/api/hrm/performance/assessment'
 import { computed, ref } from 'vue'
 import { HrmPerformanceQuotaScoreType } from '@/pages-hrm/utils/constants'
+import { isCompletionRateQuota, isValidTargetValue } from '@/pages-hrm/utils/performance'
 import { createFormSchema } from '@/utils/wot'
 
+const props = withDefaults(defineProps<{
+  targetValueReadonly?: boolean // 默认目标值是否只读：计划中以考核模板为准
+}>(), {
+  targetValueReadonly: false,
+})
 const emit = defineEmits<{
   confirm: [quota: AssessmentQuota]
 }>()
@@ -90,10 +114,15 @@ const formSchema = createFormSchema({
   standard: [{ required: true, message: '考核标准不能为空' }],
   weight: [{ required: true, message: '指标权重不能为空' }],
   scoreType: [{ required: true, message: '评分方式不能为空' }],
+  targetValue: [{
+    validator: (value, model) => !isCompletionRateQuota(model.scoreType) || !String(value ?? '').trim()
+      || isValidTargetValue(String(value)) || '完成率指标的默认目标值必须是大于 0 的数字',
+  }],
 })
 const title = computed(() => editing.value ? '编辑考核指标' : '新增考核指标')
 const scoreTypeColumns = [ // 评分方式选项
   { label: '直接输入', value: HrmPerformanceQuotaScoreType.DIRECT_INPUT },
+  { label: '完成率', value: HrmPerformanceQuotaScoreType.COMPLETION_RATE },
 ]
 
 /** 打开弹窗 */
@@ -115,6 +144,7 @@ async function handleConfirm() {
     name: formData.value.name?.trim(),
     illustrate: formData.value.illustrate?.trim(),
     standard: formData.value.standard?.trim(),
+    targetValue: formData.value.targetValue?.trim(),
   })
   visible.value = false
 }
@@ -127,6 +157,7 @@ function createDefaultQuota(): AssessmentQuota {
     standard: '',
     weight: undefined,
     scoreType: HrmPerformanceQuotaScoreType.DIRECT_INPUT,
+    targetValue: '',
   }
 }
 </script>

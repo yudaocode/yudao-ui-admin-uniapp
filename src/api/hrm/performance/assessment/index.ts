@@ -27,6 +27,7 @@ export interface AssessmentQuota {
   standard?: string // 评分标准
   weight?: number // 指标权重
   scoreType?: number // 评分类型
+  targetValue?: string // 默认目标值
 }
 
 /** 员工绩效考核指标评分 */
@@ -62,6 +63,7 @@ export interface PerformanceAssessmentStage {
   deadlineTime?: Date | string | number // 截止时间
   canHandle?: boolean // 是否可处理
   canScore?: boolean // 是否可评分
+  actualValueEditable?: boolean // 是否可录入完成率指标实际值
   quotaScoreList?: PerformanceAssessmentQuotaScore[] // 指标评分列表
 }
 

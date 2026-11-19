@@ -56,8 +56,11 @@
             <view class="mb-8rpx text-26rpx text-[#666]">
               标准：{{ quota.standard || '-' }}
             </view>
-            <view class="text-26rpx text-[#666]">
+            <view class="mb-8rpx text-26rpx text-[#666]">
               权重：{{ quota.dimensionWeight || 0 }}% / {{ quota.weight || 0 }}%
+            </view>
+            <view class="text-26rpx text-[#666]">
+              评分方式：{{ isCompletionRateQuota(quota.scoreType) ? '完成率' : '直接输入' }} · 目标值：{{ quota.targetValue || '-' }}
             </view>
           </view>
         </view>
@@ -110,6 +113,7 @@ import {
   getPortalPerformanceAssessment,
 } from '@/api/hrm/portal/performance/assessment'
 import { HrmPerformanceConfirmationResult } from '@/pages-hrm/utils/constants'
+import { isCompletionRateQuota } from '@/pages-hrm/utils/performance'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
 

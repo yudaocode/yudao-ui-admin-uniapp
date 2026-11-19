@@ -106,6 +106,18 @@
           单项评分范围为 0～{{ detail.upperLimitScore ?? '-' }} 分，最多保留两位小数；总分按评分、维度权重和指标权重计算。
         </view>
 
+        <view
+          v-if="hasCompletionRateQuota"
+          class="mx-24rpx mt-24rpx rounded-12rpx px-24rpx py-20rpx text-24rpx leading-36rpx"
+          :class="actualValueEditable ? 'bg-[#fff7e6] text-[#fa8c16]' : 'bg-[#e6f4ff] text-[#1677ff]'"
+        >
+          {{
+            actualValueEditable
+              ? '完成率指标请在本阶段录入实际值（纯数字），提交后后续阶段只读；得分 = min(实际值 ÷ 目标值, 1) × 评分上限，由系统计算。'
+              : '完成率指标的实际值由首个评分阶段录入，当前只读；得分由系统按目标值和实际值计算。'
+          }}
+        </view>
+
         <view class="mx-24rpx mt-24rpx">
           <view class="mb-16rpx text-30rpx text-[#333] font-semibold">
             指标评分
@@ -121,18 +133,45 @@
             <view class="mb-12rpx text-26rpx text-[#666]">
               目标值：{{ quota.targetValue || '-' }}
             </view>
-            <view class="mb-16rpx">
+            <view
+              v-if="isCompletionRateQuota(quota.scoreType) && !actualValueEditable"
+              class="mb-12rpx text-26rpx text-[#666]"
+            >
+              实际值：{{ quota.actualValue || '-' }}
+            </view>
+            <view v-else class="mb-16rpx">
               <view class="mb-8rpx text-24rpx text-[#999]">
                 实际值
               </view>
               <wd-input
+                v-if="isCompletionRateQuota(quota.scoreType)"
+                v-model="quota.actualValue"
+                clearable
+                placeholder="不小于 0 的数字"
+                :maxlength="1000"
+                @input="schedulePreview"
+                @clear="schedulePreview"
+              />
+              <wd-input
+                v-else
                 v-model="quota.actualValue"
                 clearable
                 placeholder="实际完成情况"
                 :maxlength="1000"
               />
             </view>
-            <view class="mb-16rpx">
+            <view
+              v-if="isCompletionRateQuota(quota.scoreType)"
+              class="mb-16rpx flex items-center justify-between gap-16rpx text-26rpx"
+            >
+              <text class="text-[#999]">
+                评分（完成率计算）
+              </text>
+              <text class="text-[#333] font-semibold">
+                {{ formatHrmScore(quotaPreviewScoreMap.get(quota.id)) }}
+              </text>
+            </view>
+            <view v-else class="mb-16rpx">
               <view class="mb-8rpx text-24rpx text-[#999]">
                 评分
               </view>
@@ -196,6 +235,7 @@
 
 <script lang="ts" setup>
 import type {
+  PerformanceAssessmentQuota,
   PortalPerformanceAssessment,
   PortalPerformanceScorePreview,
 } from '@/api/hrm/portal/performance/assessment'
@@ -213,6 +253,7 @@ import {
   HrmPerformanceRaterType,
 } from '@/pages-hrm/utils/constants'
 import { formatHrmScore } from '@/pages-hrm/utils/format'
+import { isCompletionRateQuota, isValidActualValue } from '@/pages-hrm/utils/performance'
 import { checkHrmPortalAccess } from '@/pages-hrm/utils/portal'
 import { navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
@@ -238,6 +279,7 @@ const detail = ref<PortalPerformanceAssessment>({}) // 详情数据
 const stageComment = ref('') // 阶段评语
 const scorePreview = ref<PortalPerformanceScorePreview>() // 分数预览
 let previewTimer: ReturnType<typeof setTimeout> | undefined
+let cancelPreview: (() => void) | undefined // 取消进行中的试算回调
 
 const currentStage = computed(() => detail.value.currentReviewStage) // 当前评分阶段
 const canReject = computed(() => {
@@ -245,41 +287,86 @@ const canReject = computed(() => {
     && !!detail.value.reviewStages?.some(
       stage =>
         stage.status === HrmPerformanceAssessmentStageStatus.PROCESSED
-        && (stage.sort || 0) < (currentStage.value?.sort || 0),
+        // 与后端一致按 sort、编号排序：sort 相同时编号更小的阶段在前
+        && ((stage.sort || 0) < (currentStage.value?.sort || 0)
+          || ((stage.sort || 0) === (currentStage.value?.sort || 0)
+            && (stage.id || 0) < (currentStage.value?.id || 0))),
     )
 })
+const actualValueEditable = computed(() => currentStage.value?.actualValueEditable === true) // 当前阶段是否录入完成率实际值
+const hasCompletionRateQuota = computed(() =>
+  (detail.value.quotas || []).some(quota => isCompletionRateQuota(quota.scoreType)),
+) // 是否包含完成率指标
+const quotaPreviewScoreMap = computed(() => new Map(
+  (scorePreview.value?.quotaScores || []).map(score => [score.assessmentQuotaId, score.score]),
+)) // 后端试算的指标得分
 
 /** 返回上一页 */
 function handleBack() {
   navigateBackPlus()
 }
 
+/** 判断指标是否已填写完整：手工指标需评分，录入阶段的完成率指标需合法实际值 */
+function isQuotaFilled(quota: PerformanceAssessmentQuota) {
+  if (isCompletionRateQuota(quota.scoreType)) {
+    return !actualValueEditable.value || isValidActualValue(quota.actualValue)
+  }
+  return quota.finalScore !== undefined && quota.finalScore !== null
+}
+
+/** 构建试算输入快照：手工指标取评分，完成率指标取实际值 */
+function buildPreviewKey() {
+  return JSON.stringify([
+    detail.value.id,
+    currentStage.value?.id,
+    (detail.value.quotas || []).map(quota => [
+      quota.id,
+      isCompletionRateQuota(quota.scoreType) ? quota.actualValue : quota.finalScore,
+    ]),
+  ])
+}
+
+/** 作废当前试算：取消进行中的试算回调，并清空已展示的结果 */
+function invalidatePreview() {
+  cancelPreview?.()
+  cancelPreview = undefined
+  scorePreview.value = undefined
+}
+
 /** 预览绩效分数 */
 async function previewScore() {
+  invalidatePreview()
   const stage = currentStage.value
   const quotaList = detail.value.quotas || []
-  if (
-    !detail.value.id
-    || !stage?.id
-    || !quotaList.length
-    || quotaList.some(quota => quota.finalScore === undefined || quota.finalScore === null)
-  ) {
-    scorePreview.value = undefined
+  if (!detail.value.id || !stage?.id || !quotaList.length || !quotaList.every(isQuotaFilled)) {
     return
   }
+  // 本次试算被新的输入或页面卸载取代后，丢弃其结果
+  let cancelled = false
+  cancelPreview = () => {
+    cancelled = true
+  }
+  const previewKey = buildPreviewKey()
   try {
-    scorePreview.value = await previewPortalPerformanceAssessmentScore({
+    const result = await previewPortalPerformanceAssessmentScore({
       assessmentId: detail.value.id,
       reviewStageId: stage.id,
       quotas: quotaList,
     })
+    if (!cancelled && previewKey === buildPreviewKey()) {
+      scorePreview.value = result
+    }
   } catch {
-    scorePreview.value = undefined
+    if (!cancelled && previewKey === buildPreviewKey()) {
+      scorePreview.value = undefined
+    }
   }
 }
 
 /** 评分预览调度 */
 function schedulePreview() {
+  // 评分输入变化时立即作废当前试算，再防抖重新试算
+  invalidatePreview()
   if (previewTimer) {
     clearTimeout(previewTimer)
   }
@@ -330,11 +417,12 @@ async function submitReview() {
     return
   }
   const quotaList = detail.value.quotas || []
-  if (
-    !quotaList.length
-    || quotaList.some(quota => quota.finalScore === undefined || quota.finalScore === null)
-  ) {
-    toast.error('请完成全部指标评分')
+  if (!quotaList.length || !quotaList.every(isQuotaFilled)) {
+    toast.error(
+      hasCompletionRateQuota.value && actualValueEditable.value
+        ? '请完成全部指标评分，并填写完成率指标的实际值（不小于 0 的数字）'
+        : '请完成全部指标评分',
+    )
     return
   }
   if (stage.requiredSetting && !stageComment.value.trim()) {
@@ -367,7 +455,7 @@ async function getDetail() {
   }
   loading.value = true
   stageComment.value = ''
-  scorePreview.value = undefined
+  invalidatePreview()
   try {
     detail.value = await getPortalPerformanceAssessment(props.id as number, props.stageId as number)
     stageComment.value = detail.value.currentReviewStage?.comment || ''
@@ -399,5 +487,6 @@ onUnmounted(() => {
   if (previewTimer) {
     clearTimeout(previewTimer)
   }
+  invalidatePreview()
 })
 </script>
