@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite'
+import { cp, mkdir, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import fs from 'fs-extra'
 
 /**
  * 原生插件资源复制配置接口
@@ -109,8 +109,12 @@ export function copyNativeResources(options: CopyNativeResourcesOptions = {}): P
 
         // 检查源目录是否存在
         // 如果不存在 nativeplugins 目录，说明项目没有使用本地原生插件
-        const sourceExists = await fs.pathExists(sourcePath)
-        if (!sourceExists) {
+        const sourceFiles = await readdir(sourcePath).catch((error: unknown) => {
+          if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+            return undefined
+          throw error
+        })
+        if (!sourceFiles) {
           if (verbose) {
             console.warn(`${logPrefix} 源目录不存在，跳过复制操作`)
             console.warn(`${logPrefix} 源目录路径: ${sourcePath}`)
@@ -123,7 +127,6 @@ export function copyNativeResources(options: CopyNativeResourcesOptions = {}): P
 
         // 检查源目录是否为空
         // 如果目录存在但为空，也跳过复制操作
-        const sourceFiles = await fs.readdir(sourcePath)
         if (sourceFiles.length === 0) {
           if (verbose) {
             console.warn(`${logPrefix} 源目录为空，跳过复制操作`)
@@ -134,7 +137,7 @@ export function copyNativeResources(options: CopyNativeResourcesOptions = {}): P
         }
 
         // 确保目标目录及其父目录存在
-        await fs.ensureDir(targetPath)
+        await mkdir(targetPath, { recursive: true })
 
         if (verbose) {
           console.log(`${logPrefix} 开始复制 UniApp 本地原生插件...`)
@@ -147,9 +150,9 @@ export function copyNativeResources(options: CopyNativeResourcesOptions = {}): P
 
         // 执行文件复制操作
         // 将整个 nativeplugins 目录复制到构建输出目录
-        await fs.copy(sourcePath, targetPath, {
-          overwrite: true, // 覆盖已存在的文件，确保使用最新版本
-          errorOnExist: false, // 如果目标文件存在不报错
+        await cp(sourcePath, targetPath, {
+          recursive: true,
+          verbatimSymlinks: true, // 保留原生插件内符号链接的目标路径
           preserveTimestamps: true, // 保持文件的时间戳
         })
 
