@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="绘图管理"
+      title="图片生成管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />

@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="音乐管理"
+      title="音乐生成管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />

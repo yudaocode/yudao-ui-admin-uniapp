@@ -114,10 +114,6 @@
               <wd-button size="small" variant="plain" @click="emit('edit', item)">
                 编辑
               </wd-button>
-              <view class="flex items-center gap-8rpx text-24rpx text-[#666]">
-                <text>公开</text>
-                <wd-switch :model-value="item.publicStatus" size="36rpx" @change="handlePublicChange(item, $event)" />
-              </view>
             </template>
             <wd-button
               size="small"
@@ -158,7 +154,6 @@ const emit = defineEmits<{
   concat: [item: Music]
   edit: [item: Music]
   delete: [item: Music]
-  public: [item: Music, value: boolean]
 }>()
 
 const pollInterval = 5000 // 有未结束作品时的刷新间隔
@@ -197,11 +192,6 @@ function handlePlay(item: Music) {
     return
   }
   emit('play', item, list.value.filter(canPlay))
-}
-
-/** 公开 / 取消公开 */
-function handlePublicChange(item: Music, { value }: { value: unknown }) {
-  emit('public', item, !!value)
 }
 
 /** 生成模式标签：续写、完整歌曲、用户上传 */

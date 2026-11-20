@@ -72,7 +72,6 @@ export interface MusicUpdateMyReq {
   id: number // 编号
   title?: string // 音乐名称
   coverUrl?: string // 封面地址
-  publicStatus?: boolean // 是否公开
 }
 
 /** 修改音乐请求（管理端） */
@@ -125,7 +124,7 @@ export function getMusicDetail(id: number) {
   return http.get<Music>(`/ai/music/get-detail?id=${id}`)
 }
 
-/** 修改我的音乐：名称、封面、是否公开 */
+/** 修改我的音乐：名称、封面 */
 export function updateMyMusic(data: MusicUpdateMyReq) {
   return http.put<boolean>('/ai/music/update-my', data)
 }
@@ -140,7 +139,7 @@ export function playMusic(id: number) {
   return http.post<boolean>(`/ai/music/play?id=${id}`)
 }
 
-// ========== 音乐管理 ==========
+// ========== 音乐生成管理 ==========
 
 /** 获得音乐分页 */
 export function getMusicPage(params: PageParam) {

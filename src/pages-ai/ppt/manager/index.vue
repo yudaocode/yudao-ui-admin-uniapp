@@ -2,7 +2,7 @@
   <view class="yd-page-container yd-page-container-paging">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="PPT 管理"
+      title="PPT 生成管理"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />

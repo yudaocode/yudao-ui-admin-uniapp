@@ -117,7 +117,7 @@ export function deletePptMy(id: number) {
   return http.delete<boolean>(`/ai/ppt/delete-my?id=${id}`)
 }
 
-// ========== PPT 管理 ==========
+// ========== PPT 生成管理 ==========
 
 /** 获得 PPT 分页 */
 export function getPptPage(params: PageParam) {

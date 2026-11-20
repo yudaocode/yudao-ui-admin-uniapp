@@ -116,7 +116,7 @@
     </view>
   </z-paging>
 
-  <!-- 更多操作：Midjourney 其它按钮、公开、删除 -->
+  <!-- 更多操作：Midjourney 其它按钮、删除 -->
   <wd-action-sheet
     v-model="moreVisible"
     :actions="moreActions"
@@ -134,7 +134,7 @@ import { onHide, onShow } from '@dcloudio/uni-app'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { deleteImageMy, getImageListMyByIds, getImagePageMy, getImagePagePublic, midjourneyAction, updateImagePublicMy } from '@/api/ai/image'
+import { deleteImageMy, getImageListMyByIds, getImagePageMy, getImagePagePublic, midjourneyAction } from '@/api/ai/image'
 import { AiImageModeEnum, AiImageStatusEnum, AiPlatformEnum, DICT_TYPE, isMjGridButton, isMjHiddenButton, isMjInpaintButton } from '@/utils/constants'
 import { formatDate } from '@/utils/date'
 import { saveImageToAlbum } from '@/utils/download'
@@ -210,16 +210,13 @@ function canRegenerate(item: AiImage) {
     && item.status !== AiImageStatusEnum.IN_PROGRESS
 }
 
-/** 更多操作：Midjourney 其它按钮、公开 / 取消公开、删除；局部重绘需要绘制蒙版，移动端暂不支持 */
+/** 更多操作：Midjourney 其它按钮、删除；局部重绘需要绘制蒙版，移动端暂不支持 */
 function getMoreActions(item: AiImage): Action[] {
   const actions: Action[] = getButtons(item)
     .filter(button => !isMjGridButton(button.customId))
     .map(button => isMjInpaintButton(button.customId)
       ? { name: getButtonText(button), description: '局部重绘需要绘制蒙版，请在 PC 端操作', disabled: true }
       : { name: getButtonText(button), button })
-  if (item.status === AiImageStatusEnum.SUCCESS) {
-    actions.push({ name: item.publicStatus ? '取消公开' : '公开', value: 'public' })
-  }
   if (item.status !== AiImageStatusEnum.IN_PROGRESS) {
     actions.push({ name: '删除', color: '#f5222d', value: 'delete' })
   }
@@ -239,9 +236,7 @@ function handleMoreSelect({ item }: { item: Action }) {
   if (!image) {
     return
   }
-  if (item.value === 'public') {
-    handlePublic(image)
-  } else if (item.value === 'delete') {
+  if (item.value === 'delete') {
     handleDelete(image)
   } else if (item.button) {
     handleAction(image, item.button)
@@ -268,22 +263,6 @@ async function handleAction(item: AiImage, button: AiImageMidjourneyButton) {
 /** 保存图片 */
 async function handleSave(item: AiImage) {
   await saveImageToAlbum(item.picUrl!, `ai-image-${item.id}.png`)
-}
-
-/** 公开、取消公开 */
-async function handlePublic(item: AiImage) {
-  const publicStatus = !item.publicStatus
-  try {
-    await dialog.confirm({
-      title: '提示',
-      msg: publicStatus ? '确认公开该作品？公开后同租户的用户可在公开画廊看到' : '确认取消公开？取消后公开画廊不再展示',
-    })
-  } catch {
-    return
-  }
-  await updateImagePublicMy({ id: item.id, publicStatus })
-  item.publicStatus = publicStatus
-  toast.success(publicStatus ? '已公开' : '已取消公开')
 }
 
 /** 删除 */

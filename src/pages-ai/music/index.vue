@@ -35,7 +35,6 @@
       @concat="handleConcat"
       @edit="openEdit"
       @delete="handleDelete"
-      @public="handlePublic"
     />
 
     <!-- 播放器 -->
@@ -52,7 +51,7 @@ import type { Music } from '@/api/ai/music'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
-import { concatMusic, deleteMusicMy, updateMyMusic } from '@/api/ai/music'
+import { concatMusic, deleteMusicMy } from '@/api/ai/music'
 import { navigateBackPlus } from '@/utils'
 import { getMusicTitle } from '@/utils/constants'
 import MusicCreatePanel from './components/music-create-panel.vue'
@@ -154,13 +153,6 @@ async function handleDelete(item: Music) {
     playerRef.value?.close()
   }
   reloadList()
-}
-
-/** 公开 / 取消公开 */
-async function handlePublic(item: Music, value: boolean) {
-  await updateMyMusic({ id: item.id, publicStatus: value })
-  item.publicStatus = value
-  toast.success(value ? '已公开到音乐广场' : '已取消公开')
 }
 
 /** 初始化：?id= 深链打开详情 */
