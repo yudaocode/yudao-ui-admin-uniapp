@@ -68,7 +68,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import FormCreate from '@/pages-bpm/components/form-create/packages/wot-ui/src/index.vue'
 import { FORM_FIELD_PERMISSION } from '@/pages-bpm/components/form-create/types/typing'
 import LeaveDetail from '@/pages-bpm/oa/leave/detail/index.vue'
-import { applySubFormsPermission, getMobileFormCustomPath, isSubFieldPermissionField, setConfAndFields2 } from '@/pages-bpm/utils'
+import { applySubFormsPermission, getMobileFormCustomPath, getMobileUnsupportedField, isSubFieldPermissionField, setConfAndFields2 } from '@/pages-bpm/utils'
 import { getLastPage } from '@/utils'
 import { BpmModelFormType } from '@/utils/constants'
 import { isSamePackage } from '@/utils/url'
@@ -175,7 +175,8 @@ async function applyFieldPermission() {
     .filter(([field]) => !isSubFieldPermissionField(field)) // 子表单的子字段权限，已写入规则
     .forEach(([field, permission]) => {
       api.setFieldPermission(field, permission)
-      if (permission === FORM_FIELD_PERMISSION.WRITE) {
+      // 子字段全部隐藏的子表单已经隐藏，不加入，避免提交看不到的值
+      if (permission === FORM_FIELD_PERMISSION.WRITE && !api.getRule(field)?.hidden) {
         writableFields.value.push(field)
       }
     })
@@ -198,9 +199,15 @@ function getWritableVariables() {
   }, {})
 }
 
+/** 获得移动端无法完整编辑的可编辑字段，退回修改后重新提交前拦截 */
+function getUnsupportedWritableField() {
+  return getMobileUnsupportedField(normalForm.value.rule, writableFields.value)
+}
+
 defineExpose({
   validate,
   getWritableVariables,
+  getUnsupportedWritableField,
   writableFields,
 })
 </script>

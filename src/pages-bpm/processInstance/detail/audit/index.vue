@@ -142,6 +142,8 @@ const props = defineProps<{
   taskId?: string
   pass?: string
   variablesCacheKey?: string
+  revisionId?: string // 退回修改的批次编号：从详情页进入时传递
+  fromDetail?: string // 是否从详情页进入：true 时沿用详情加载时的批次
 }>()
 
 definePage({
@@ -156,6 +158,7 @@ const isApprove = computed(() => props.pass !== 'false') // true: 同意, false:
 const toast = useToast()
 const formLoading = ref(false) // 审批提交状态
 const taskInfo = ref<Task | null>(null) // 任务信息
+const revisionId = computed(() => props.fromDetail === 'true' ? props.revisionId : taskInfo.value?.revisionId) // 退回修改的批次：从详情进入沿用详情快照（可能为空），从待办列表进入用本页加载的批次
 const attachmentFiles = ref<UploadFileItem[]>([]) // 审批附件
 const APPROVAL_ATTACHMENT_EXTENSIONS = [
   '.doc',
@@ -518,6 +521,7 @@ async function handleSubmit() {
         nextAssignees: Object.keys(approveUserSelectAssignees.value).length > 0
           ? approveUserSelectAssignees.value
           : undefined,
+        revisionId: revisionId.value, // 退回修改的批次，避免使用修改前的页面审批
       })
     } else {
       // 审批拒绝
@@ -525,6 +529,7 @@ async function handleSubmit() {
         id: taskId.value as string,
         reason: formData.reason,
         attachments,
+        revisionId: revisionId.value, // 退回修改的批次，避免使用修改前的页面审批
       })
     }
     clearCachedNormalFormVariables()

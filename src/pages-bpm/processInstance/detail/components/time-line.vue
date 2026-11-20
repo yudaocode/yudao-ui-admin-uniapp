@@ -166,9 +166,15 @@
               v-if="shouldShowTaskEvidence(task, activity.nodeType, index)"
               class="mt-8rpx rounded-8rpx bg-[#f5f5f5] p-16rpx"
             >
+              <!-- 退回修改：等待退回目标处理人修改 -->
+              <view v-if="task.status === BpmTaskStatusEnum.WAIT_REVISION" class="mb-8rpx">
+                <text class="text-24rpx text-[#fa8c16]">
+                  已退回至【{{ task.revisionTargetNodeName || '目标' }}】节点，等待 {{ task.revisionAssigneeUser?.nickname || '目标处理人' }} 修改
+                </text>
+              </view>
               <view v-if="task.reason">
                 <text class="text-24rpx text-[#666]">
-                  {{ getTaskEvidenceReasonLabel(activity.nodeType) }}：{{ task.reason }}
+                  {{ task.status === BpmTaskStatusEnum.WAIT_REVISION ? '退回原因' : getTaskEvidenceReasonLabel(activity.nodeType) }}：{{ task.reason }}
                 </text>
               </view>
               <view v-if="task.attachments?.length" class="mt-12rpx flex flex-wrap gap-12rpx">
@@ -304,6 +310,7 @@ const statusIconMap: Record<string, { color: string, icon: string }> = {
   '5': { color: '#f46b6c', icon: 'arrow-left' }, // 退回
   '6': { color: '#448ef7', icon: 'clock-circle' }, // 委派中
   '7': { color: '#00b32a', icon: 'check' }, // 审批通过中
+  '8': { color: '#f46b6c', icon: 'arrow-left' }, // 已退回，等待退回目标处理人修改
 }
 
 // 节点类型图标映射
@@ -323,7 +330,7 @@ const nodeTypeSvgMap: Record<number, { color: string, icon: string }> = {
   [BpmNodeTypeEnum.CHILD_PROCESS_NODE]: { color: '#14bb83', icon: 'organization' },
 }
 
-const onlyStatusIconShow = [BpmTaskStatusEnum.NOT_START, BpmTaskStatusEnum.RUNNING, BpmTaskStatusEnum.WAIT] // 只有状态是 -1、0、1 才展示头像右小角状态小 icon
+const onlyStatusIconShow = [BpmTaskStatusEnum.NOT_START, BpmTaskStatusEnum.RUNNING, BpmTaskStatusEnum.WAIT, BpmTaskStatusEnum.WAIT_REVISION] // 只有状态是 -1、0、1、8 才展示头像右小角状态小 icon
 const statusIconNodeTypes = [
   BpmNodeTypeEnum.START_USER_NODE,
   BpmNodeTypeEnum.USER_TASK_NODE,
@@ -430,7 +437,7 @@ function shouldShowTaskEvidence(task: ApprovalTaskInfo, nodeType: number, nodeIn
     return false
   }
   return (
-    Boolean(task.reason || task.attachments?.length || task.signPicUrl)
+    Boolean(task.status === BpmTaskStatusEnum.WAIT_REVISION || task.reason || task.attachments?.length || task.signPicUrl)
     && [
       BpmNodeTypeEnum.START_USER_NODE,
       BpmNodeTypeEnum.USER_TASK_NODE,
@@ -458,6 +465,7 @@ function getStatusTextClass(status: number) {
     [BpmTaskStatusEnum.REJECT]: 'text-[#f46b6c]',
     [BpmTaskStatusEnum.CANCEL]: 'text-[#cccccc]',
     [BpmTaskStatusEnum.RETURN]: 'text-[#f46b6c]',
+    [BpmTaskStatusEnum.WAIT_REVISION]: 'text-[#fa8c16]',
   }
   return colorMap[status] || 'text-[#666]'
 }
@@ -472,6 +480,7 @@ function getStatusText(status: number) {
     [BpmTaskStatusEnum.CANCEL]: '已取消',
     [BpmTaskStatusEnum.RETURN]: '已退回',
     [BpmTaskStatusEnum.SKIP]: '已跳过',
+    [BpmTaskStatusEnum.WAIT_REVISION]: '待修改',
   }
   return textMap[status] || '未知'
 }

@@ -44,6 +44,8 @@ export interface ApprovalDetail {
   todoTask?: Task
   formFieldsPermission?: Record<string, string>
   status?: number
+  revisionTaskId?: string // 退回修改中的任务编号：当前用户是修改人时返回
+  revisionId?: string // 退回修改的批次编号：重新提交时传递
 }
 
 /** 审批详情的节点信息 */
@@ -69,6 +71,9 @@ export interface ApprovalTaskInfo {
   attachments?: string[]
   signPicUrl: string
   status: number
+  revisionTargetNode?: string // 退回修改的目标节点
+  revisionTargetNodeName?: string // 退回修改的目标节点名称
+  revisionAssigneeUser?: User // 退回修改的处理人
 }
 
 /** 抄送流程实例 */

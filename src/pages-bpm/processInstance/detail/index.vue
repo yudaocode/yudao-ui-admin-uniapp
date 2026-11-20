@@ -100,10 +100,23 @@
 
     <!-- 区域：底部操作栏 -->
     <ProcessInstanceOperationButton
+      v-if="!revisionTaskId"
       ref="operationButtonRef"
       :validate-normal-form="validateNormalForm"
       :get-normal-form-variables="getNormalFormVariables"
     />
+    <!-- 退回修改：当前用户是修改人时，修改表单后重新提交。按钮权限和后端 /bpm/task/resubmit 一致 -->
+    <view v-if="revisionTaskId && hasAccessByCodes(['bpm:task:update', 'bpm:process-instance:query'])" class="yd-detail-footer">
+      <wd-button
+        type="primary"
+        :round="false"
+        block
+        :loading="resubmitting"
+        @click="handleResubmit"
+      >
+        重新提交
+      </wd-button>
+    </view>
   </view>
 </template>
 
@@ -111,11 +124,14 @@
 import type { ApprovalNodeInfo, ProcessDefinition, ProcessInstance } from '@/api/bpm/processInstance'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onUnload } from '@dcloudio/uni-app'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { getApprovalDetail } from '@/api/bpm/processInstance'
-import { navigateBackPlus } from '@/utils'
+import { resubmitTask } from '@/api/bpm/task'
+import { useAccess } from '@/hooks/useAccess'
+import { delay, navigateBackPlus } from '@/utils'
 import { BpmProcessInstanceStatus } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
+import { setTabParams } from '@/utils/url'
 import ProcessInstanceCommentList from './components/comment-list.vue'
 import FormDetail from './components/form-detail.vue'
 import ProcessInstanceOperationButton from './components/operation-button.vue'
@@ -135,6 +151,10 @@ definePage({
 })
 
 const toast = useToast()
+const { hasAccessByCodes } = useAccess()
+const revisionTaskId = ref<string>() // 退回修改中的任务编号：当前用户是修改人时，由后端返回
+const revisionId = ref<string>() // 退回修改的批次编号：重新提交时传递，避免过期的页面提交
+const resubmitting = ref(false) // 重新提交状态
 const processInstance = ref<ProcessInstance>()
 const processDefinition = ref<ProcessDefinition>()
 const formFieldsPermission = ref<Record<string, string>>({})
@@ -185,10 +205,13 @@ async function loadProcessInstance() {
   processInstance.value = data.processInstance
   processDefinition.value = data.processDefinition
   formFieldsPermission.value = data.formFieldsPermission || {}
+  revisionTaskId.value = data.revisionTaskId
+  revisionId.value = data.revisionId
   // 获取审批节点，显示 Timeline 的数据
   activityNodes.value = data.activityNodes
 
-  // 初始化操作栏，并统一刷新评论列表
+  // 初始化操作栏，并统一刷新评论列表。修改人重新提交后，操作栏重新挂载，需要等待渲染
+  await nextTick()
   operationButtonRef.value?.init(data.processInstance, data.todoTask)
   commentListRef.value?.getList()
 }
@@ -202,6 +225,46 @@ async function validateNormalForm() {
 /** 获取流程表单中当前节点允许编辑的变量 */
 function getNormalFormVariables() {
   return formDetailRef.value?.getWritableVariables() || {}
+}
+
+/** 退回修改后，重新提交 */
+async function handleResubmit() {
+  if (!revisionTaskId.value) {
+    return
+  }
+  // 移动端无法完整编辑的字段，提交会丢失或改写数据，需要前往 PC 端修改
+  const unsupportedField = formDetailRef.value?.getUnsupportedWritableField()
+  if (unsupportedField) {
+    toast.show(`「${unsupportedField}」暂不支持在移动端修改，请前往 PC 端重新提交`)
+    return
+  }
+  if (!await validateNormalForm()) {
+    toast.show('表单校验不通过，请先完善表单')
+    return
+  }
+  resubmitting.value = true
+  try {
+    // 只提交可编辑的字段，后端会按退回目标节点的表单字段权限校验
+    await resubmitTask({
+      taskId: revisionTaskId.value,
+      revisionId: revisionId.value!,
+      variables: getNormalFormVariables(),
+    })
+    toast.success('重新提交成功，等待审批人继续审批')
+    uni.$emit('bpm:task:reload')
+    // 只有待办权限的修改人，提交后不能再查看该流程详情，所以回到待办列表
+    if (!hasAccessByCodes(['bpm:process-instance:query'])) {
+      delay(() => {
+        setTabParams({ tab: 'todo' })
+        uni.switchTab({ url: '/pages/bpm/index' })
+      })
+      return
+    }
+    // 刷新后，后端不再返回 revisionTaskId，切换回普通的操作栏
+    await loadProcessInstance()
+  } finally {
+    resubmitting.value = false
+  }
 }
 
 /** 初始化 */

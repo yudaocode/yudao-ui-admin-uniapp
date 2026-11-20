@@ -226,6 +226,12 @@ function isRightOperation(operationType: number) {
   return rightOperations.value.some(action => action.operationType === operationType)
 }
 
+/** 退回修改的批次参数：从详情进入时沿用详情加载时的批次（没有批次也以详情为准），避免使用修改前的页面审批 */
+function getRevisionQuery() {
+  const revisionQuery = runningTask.value?.revisionId ? `&revisionId=${runningTask.value.revisionId}` : ''
+  return `&fromDetail=true${revisionQuery}`
+}
+
 /** 跳转到相应的操作页面 */
 async function handleOperation(operationType: number) {
   switch (operationType) {
@@ -235,11 +241,11 @@ async function handleOperation(operationType: number) {
         return
       }
       const variablesQuery = variablesCacheKey ? `&variablesCacheKey=${encodeURIComponent(variablesCacheKey)}` : ''
-      uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?processInstanceId=${processInstance.value.id}&taskId=${runningTask.value?.id}&pass=true${variablesQuery}` })
+      uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?processInstanceId=${processInstance.value.id}&taskId=${runningTask.value?.id}&pass=true${variablesQuery}${getRevisionQuery()}` })
       break
     }
     case BpmTaskOperationButtonTypeEnum.REJECT:
-      uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?processInstanceId=${processInstance.value.id}&taskId=${runningTask.value?.id}&pass=false` })
+      uni.navigateTo({ url: `/pages-bpm/processInstance/detail/audit/index?processInstanceId=${processInstance.value.id}&taskId=${runningTask.value?.id}&pass=false${getRevisionQuery()}` })
       break
     case BpmTaskOperationButtonTypeEnum.COMMENT:
       openComment()

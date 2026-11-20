@@ -216,6 +216,10 @@ export enum BpmTaskStatusEnum {
    * 待审批
    */
   WAIT = 0,
+  /**
+   * 已退回，等待修改：修改人重新提交后，由审批人继续审批
+   */
+  WAIT_REVISION = 8,
 }
 
 /**

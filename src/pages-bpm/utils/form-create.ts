@@ -1,4 +1,5 @@
 import { isRef } from 'vue'
+import { FORM_CREATE_TYPE_GROUPS } from '@/pages-bpm/components/form-create/packages/core/src/registry'
 import { parseJson } from '@/pages-bpm/components/form-create/packages/utils/src'
 import { FORM_FIELD_PERMISSION } from '@/pages-bpm/components/form-create/types/typing'
 
@@ -88,6 +89,18 @@ export function parseFormFields(
 
 const TABLE_FORM_TYPE = 'tableForm' // 表格表单
 const GROUP_FORM_TYPE = 'group' // 子表单
+const MOBILE_FIELD_TYPES = new Set<string>([ // 移动端可编辑的组件类型，和 fieldRenderer 一致，其它组件只展示「暂不支持」
+  ...Object.values(FORM_CREATE_TYPE_GROUPS).flatMap(types => [...types]),
+  'radio',
+  'checkbox',
+  'switch',
+  'rate',
+  'span',
+  'ApiSelect',
+  'DeptSelect',
+  'DictSelect',
+  'UserSelect',
+])
 
 /** 是否为子表单子字段的权限标识：子表单字段.子字段，区分不同子表单中的同名字段 */
 export function isSubFieldPermissionField(field: string) {
@@ -130,9 +143,7 @@ function isSubForm(rule?: FormCreateRule) {
 
 function applySubFormPermission(rule: FormCreateRule, subFormField: string, fieldsPermission: Record<string, string>) {
   const subFormPermission = fieldsPermission[subFormField]
-  const subFieldRules = rule.type === TABLE_FORM_TYPE
-    ? (rule.props?.columns || []).flatMap((column: Record<string, any>) => collectFieldRules(column.rule))
-    : collectFieldRules(rule.props?.rule)
+  const subFieldRules = getSubFieldRules(rule)
   // 子表单隐藏时，由表单字段权限隐藏整个子表单；没有子字段时（如表格表单未配置列），无需处理
   if (subFormPermission === FORM_FIELD_PERMISSION.HIDDEN || subFieldRules.length === 0) {
     return
@@ -158,6 +169,43 @@ function applySubFormPermission(rule: FormCreateRule, subFormField: string, fiel
   if (rule.type === TABLE_FORM_TYPE) {
     removeHiddenTableFormColumns(rule)
   }
+}
+
+/** 获得子表单的子字段规则 */
+function getSubFieldRules(rule: FormCreateRule) {
+  return rule.type === TABLE_FORM_TYPE
+    ? (rule.props?.columns || []).flatMap((column: Record<string, any>) => collectFieldRules(column.rule))
+    : collectFieldRules(rule.props?.rule)
+}
+
+/**
+ * 获得移动端无法完整编辑的字段标题，用于退回修改后重新提交前拦截，避免提交缺失或被改写的值
+ *
+ * 1. 字段组件移动端暂不支持
+ * 2. 子表单设置了 props.field（每行是单个值）：移动端子表单只支持对象行
+ * 3. 子表单中可编辑（未隐藏、未只读）的子字段组件移动端暂不支持
+ *
+ * @param rules 表单规则
+ * @param fields 可编辑的字段
+ */
+export function getMobileUnsupportedField(rules: FormCreateRule[], fields: string[]) {
+  for (const rule of collectFieldRules(rules)) {
+    if (!fields.includes(rule.field!)) {
+      continue
+    }
+    const title = rule.title || rule.field
+    if (!MOBILE_FIELD_TYPES.has(rule.type) || (isSubForm(rule) && rule.props?.field)) {
+      return title
+    }
+    if (!isSubForm(rule)) {
+      continue
+    }
+    const subFieldRule = getSubFieldRules(rule).find(item => !item.hidden && !item.props?.disabled && !MOBILE_FIELD_TYPES.has(item.type))
+    if (subFieldRule) {
+      return `${title}.${subFieldRule.title || subFieldRule.field}`
+    }
+  }
+  return undefined
 }
 
 /** 获得子字段的实际权限：未单独设置时继承子表单，子表单只读时子字段最多只读 */
