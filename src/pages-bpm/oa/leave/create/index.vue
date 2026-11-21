@@ -2,7 +2,7 @@
   <view class="yd-page-container pb-[76rpx]">
     <!-- 顶部导航栏 -->
     <wd-navbar
-      title="发起请假"
+      :title="isUpdate ? '编辑请假' : '发起请假'"
       left-arrow placeholder safe-area-inset-top fixed
       @click-left="handleBack"
     />
@@ -57,7 +57,7 @@
       </wd-form>
     </view>
     <!-- 流程预览卡片 -->
-    <view class="mx-24rpx mb-120rpx mt-24rpx rounded-16rpx bg-white">
+    <view v-if="!isUpdate" class="mx-24rpx mb-120rpx mt-24rpx rounded-16rpx bg-white">
       <view class="p-24rpx">
         <view class="mb-16rpx flex items-center justify-between">
           <text class="text-28rpx text-[#333] font-bold">流程预览</text>
@@ -83,7 +83,7 @@
     <view class="yd-detail-footer">
       <view class="yd-detail-footer-actions">
         <wd-button type="primary" class="flex-1" :loading="formLoading" @click="handleSubmit">
-          提交
+          {{ isUpdate ? '保存' : '提交' }}
         </wd-button>
       </view>
     </view>
@@ -92,13 +92,13 @@
 
 <script lang="ts" setup>
 import type { FormInstance } from '@wot-ui/ui/components/wd-form/types'
-import type { Leave } from '@/api/bpm/oa/leave'
+import type { Leave, LeaveUpdate } from '@/api/bpm/oa/leave'
 import type { ApprovalNodeInfo } from '@/api/bpm/processInstance'
 import { useDialog } from '@wot-ui/ui/components/wd-dialog'
 import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref, watch } from 'vue'
 import { getProcessDefinition } from '@/api/bpm/definition'
-import { createLeave, getLeave } from '@/api/bpm/oa/leave'
+import { createLeave, getLeave, updateLeave } from '@/api/bpm/oa/leave'
 import { getApprovalDetail } from '@/api/bpm/processInstance'
 import ProcessInstanceTimeline from '@/pages-bpm/processInstance/detail/components/time-line.vue'
 import { delay, navigateBackPlus } from '@/utils'
@@ -108,7 +108,10 @@ import { createFormSchema } from '@/utils/wot'
 
 const props = defineProps<{
   id?: number | string
+  type?: string
 }>()
+
+const isUpdate = computed(() => props.type === 'update' && !!props.id)
 
 definePage({
   style: {
@@ -120,6 +123,7 @@ definePage({
 const toast = useToast()
 const dialog = useDialog()
 const formLoading = ref(false) // 表单提交状态
+const originalData = ref<Record<string, unknown>>({})
 const processTimeLineLoading = ref(false) // 流程预览加载状态
 
 // 流程相关数据
@@ -155,6 +159,26 @@ const leaveDays = computed(() => {
   const end = new Date(formData.value.endTime)
   return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
 })
+
+/** 编辑模式只提交业务编号和发生变化的业务字段 */
+async function handleUpdate() {
+  const data: LeaveUpdate = {
+    id: Number(props.id),
+  }
+  for (const field of ['type', 'reason', 'startTime', 'endTime'] as const) {
+    if (formData.value[field] !== originalData.value[field]) {
+      Object.assign(data, { [field]: formData.value[field] })
+    }
+  }
+  formLoading.value = true
+  try {
+    await updateLeave(data)
+    toast.success('保存成功')
+    uni.redirectTo({ url: `/pages-bpm/oa/leave/detail/index?id=${props.id}` })
+  } finally {
+    formLoading.value = false
+  }
+}
 
 /** 返回上一页 */
 async function handleBack() {
@@ -252,6 +276,11 @@ async function handleSubmit() {
     return
   }
 
+  if (isUpdate.value) {
+    await handleUpdate()
+    return
+  }
+
   // 提交前等待流程预览
   const previewOk = await flushPreview()
   if (!previewOk) {
@@ -314,12 +343,21 @@ async function getDetail() {
   formData.value.reason = data.reason
   formData.value.startTime = data.startTime
   formData.value.endTime = data.endTime
+  originalData.value = {
+    type: data.type,
+    reason: data.reason,
+    startTime: data.startTime,
+    endTime: data.endTime,
+  }
 }
 
 // 组件初始化
 onMounted(async () => {
-  // 重新发起时回填请假信息
+  // 编辑模式只加载业务数据，不需要流程预览
   await getDetail()
+  if (isUpdate.value) {
+    return
+  }
 
   // 获取流程定义详情
   const processDefinitionDetail = await getProcessDefinition(undefined, processDefineKey)
