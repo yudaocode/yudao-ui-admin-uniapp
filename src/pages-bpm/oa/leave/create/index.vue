@@ -165,6 +165,7 @@ async function handleUpdate() {
   const data: LeaveUpdate = {
     id: Number(props.id),
   }
+  // 仅提交发生变化的业务字段，避免覆盖未编辑的数据
   for (const field of ['type', 'reason', 'startTime', 'endTime'] as const) {
     if (formData.value[field] !== originalData.value[field]) {
       Object.assign(data, { [field]: formData.value[field] })
