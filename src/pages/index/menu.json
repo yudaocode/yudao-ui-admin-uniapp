@@ -221,8 +221,15 @@
               "permissions": ["infra:file:query", "infra:file-config:query"]
             },
             {
+              "key": "sse",
+              "name": "SSE 推送",
+              "icon": "wifi",
+              "iconColor": "#1677ff",
+              "url": "/pages-infra/sse/index"
+            },
+            {
               "key": "websocket",
-              "name": "WebSocket",
+              "name": "WebSocket 推送",
               "icon": "wifi",
               "iconColor": "#13c2c2",
               "url": "/pages-infra/web-socket/index"

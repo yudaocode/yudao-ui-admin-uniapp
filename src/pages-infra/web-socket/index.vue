@@ -32,14 +32,18 @@
             <text class="break-all text-26rpx text-[#666]">{{ serverUrl }}</text>
           </view>
         </view>
-        <!-- 连接按钮 -->
-        <wd-button
-          block
-          :type="isConnected ? 'danger' : 'primary'"
-          @click="toggleConnection"
-        >
-          {{ isConnected ? '断开连接' : '建立连接' }}
-        </wd-button>
+        <!-- 连接操作：左侧状态说明，右侧操作按钮 -->
+        <view class="flex items-center justify-between gap-16rpx rounded-12rpx bg-[#f7f8fa] px-24rpx py-16rpx">
+          <text class="text-24rpx text-[#999]">{{ statusHint }}</text>
+          <view class="flex shrink-0 gap-16rpx">
+            <wd-button size="small" type="primary" :disabled="isConnected" @click="connect">
+              开启连接
+            </wd-button>
+            <wd-button size="small" type="danger" variant="plain" :disabled="!isConnected" @click="disconnect">
+              关闭连接
+            </wd-button>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -117,6 +121,11 @@
             清空
           </wd-button>
         </view>
+        <!-- 消息筛选：全部、业务、系统 -->
+        <wd-segmented v-model:value="filter" :options="FILTER_OPTIONS" />
+        <text class="mb-16rpx mt-16rpx block text-24rpx text-[#999]">
+          业务 {{ businessCount }} · 系统 {{ messageList.length - businessCount }}
+        </text>
 
         <!-- 消息列表 -->
         <scroll-view
@@ -124,9 +133,11 @@
           class="message-list rounded-12rpx bg-[#f7f8fa]"
           :style="{ height: '600rpx' }"
         >
-          <view v-if="messageList.length === 0" class="h-full flex flex-col items-center justify-center">
+          <view v-if="messageReverseList.length === 0" class="h-full flex flex-col items-center justify-center">
             <wd-icon name="message" size="80rpx" color="#c8c9cc" />
-            <text class="mt-16rpx text-26rpx text-[#c8c9cc]">暂无消息记录</text>
+            <text class="mt-16rpx text-26rpx text-[#c8c9cc]">
+              {{ messageList.length === 0 ? '暂无消息记录' : `暂无${filter}消息` }}
+            </text>
           </view>
           <view v-else class="p-20rpx">
             <view
@@ -192,6 +203,7 @@ const toast = useToast()
 const socketTask = ref<UniApp.SocketTask | null>(null)
 const isConnected = ref(false)
 const statusText = computed(() => (isConnected.value ? '已连接' : '未连接'))
+const statusHint = computed(() => (isConnected.value ? '连接已建立，可以发送消息' : '连接未建立，开启连接后才能发送消息')) // 连接操作区的状态说明
 const manualClose = ref(false) // 是否主动关闭（主动关闭不重连）
 
 // 自动重连状态
@@ -213,11 +225,19 @@ const serverUrl = computed(() => {
 interface Message {
   text: string
   time: number
-  type?: 'single' | 'group' | 'system'
+  type?: 'single' | 'group' | 'notice' | 'system' // single、group、notice 为业务消息；system 为连接、关闭、异常等系统消息
   userId?: string
 }
+const FILTER_OPTIONS = ['全部', '业务', '系统'] // 消息筛选，与 Vue3、Vben 的事件流语义一致
 const messageList = ref<Message[]>([])
-const messageReverseList = computed(() => [...messageList.value].reverse())
+const filter = ref('全部') // 当前筛选
+const businessCount = computed(() => messageList.value.filter(msg => msg.type !== 'system').length) // 业务消息数量
+const messageReverseList = computed(() => {
+  const list = filter.value === '全部'
+    ? messageList.value
+    : messageList.value.filter(msg => (msg.type === 'system') === (filter.value === '系统'))
+  return [...list].reverse()
+}) // 筛选后的消息，最新的在前
 
 // 发送消息相关
 const sendText = ref('')
@@ -262,6 +282,7 @@ function connect() {
   socketTask.value.onOpen(() => {
     isConnected.value = true
     reconnectAttempts = 0
+    appendSystemMessage('连接成功')
     toast.success('连接成功')
     // 开始心跳
     startHeartbeat()
@@ -274,6 +295,7 @@ function connect() {
 
   // 3.1 监听连接关闭
   socketTask.value.onClose(() => {
+    appendSystemMessage(manualClose.value ? '已主动关闭连接' : '连接已关闭')
     isConnected.value = false
     socketTask.value = null
     stopHeartbeat()
@@ -282,6 +304,7 @@ function connect() {
   })
   // 3.2 监听错误
   socketTask.value.onError(() => {
+    appendSystemMessage('连接异常')
     isConnected.value = false
     socketTask.value = null
     stopHeartbeat()
@@ -305,15 +328,6 @@ function disconnect() {
   socketTask.value = null
   isConnected.value = false
   stopHeartbeat()
-}
-
-/** 切换连接状态 */
-function toggleConnection() {
-  if (isConnected.value) {
-    disconnect()
-  } else {
-    connect()
-  }
 }
 
 // ======================= 心跳机制 =======================
@@ -405,7 +419,7 @@ function handleMessage(data: string) {
       messageList.value.push({
         text: content.title,
         time: Date.now(),
-        type: 'system',
+        type: 'notice',
       })
       return
     }
@@ -421,7 +435,7 @@ function handleSend() {
     return
   }
   if (!socketTask.value || !isConnected.value) {
-    toast.show('请先建立连接')
+    toast.show('请先开启连接')
     return
   }
 
@@ -449,6 +463,11 @@ function handleSend() {
   })
 }
 
+/** 记录连接、关闭、异常等系统消息 */
+function appendSystemMessage(text: string) {
+  messageList.value.push({ text, time: Date.now(), type: 'system' })
+}
+
 /** 清空消息记录 */
 function clearMessages() {
   messageList.value = []
@@ -463,8 +482,10 @@ function getMessageBadgeColor(type?: string) {
       return '#07c160'
     case 'single':
       return '#1989fa'
-    case 'system':
+    case 'notice':
       return '#fa5151'
+    case 'system':
+      return '#909399'
     default:
       return '#c8c9cc'
   }
@@ -477,6 +498,8 @@ function getMessageTypeText(type?: string) {
       return '群发'
     case 'single':
       return '单发'
+    case 'notice':
+      return '通知'
     case 'system':
       return '系统'
     default:
