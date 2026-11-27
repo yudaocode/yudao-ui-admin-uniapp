@@ -810,6 +810,7 @@ async function createQuickWorkItem(
       name,
       priority: PmsWorkItemPriority.MEDIUM,
       memberUserIds: [],
+      progress: 0,
       defectType:
         draft.type === PmsWorkItemType.DEFECT
           ? PmsWorkItemDefectType.FUNCTION
