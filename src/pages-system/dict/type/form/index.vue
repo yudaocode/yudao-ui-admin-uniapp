@@ -69,6 +69,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { computed, onMounted, ref } from 'vue'
 import { createDictType, getDictType, updateDictType } from '@/api/system/dict/type'
 import { getIntDictOptions } from '@/hooks/useDict'
+import { useDictStore } from '@/store/dict'
 import { delay, navigateBackPlus } from '@/utils'
 import { CommonStatusEnum, DICT_TYPE } from '@/utils/constants'
 import { createFormSchema } from '@/utils/wot'
@@ -85,6 +86,7 @@ definePage({
 })
 
 const toast = useToast()
+const dictStore = useDictStore()
 const getTitle = computed(() => props.id ? '编辑字典类型' : '新增字典类型')
 const formLoading = ref(false) // 表单提交状态
 const formData = ref<DictType>({
@@ -131,6 +133,7 @@ async function handleSubmit() {
       toast.success('新增成功')
     }
     uni.$emit('system:dict-type:reload')
+    void dictStore.refreshDictCache() // 同步字典缓存，供 BPM 表单等页面使用最新字典
     delay(handleBack)
   } finally {
     formLoading.value = false

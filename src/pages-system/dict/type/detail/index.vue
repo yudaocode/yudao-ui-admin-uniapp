@@ -49,6 +49,7 @@ import { useToast } from '@wot-ui/ui/components/wd-toast'
 import { onMounted, ref } from 'vue'
 import { deleteDictType, getDictType } from '@/api/system/dict/type'
 import { useAccess } from '@/hooks/useAccess'
+import { useDictStore } from '@/store/dict'
 import { delay, navigateBackPlus } from '@/utils'
 import { DICT_TYPE } from '@/utils/constants'
 import { formatDateTime } from '@/utils/date'
@@ -67,6 +68,7 @@ definePage({
 const { hasAccessByCodes } = useAccess()
 const dialog = useDialog()
 const toast = useToast()
+const dictStore = useDictStore()
 const formData = ref<DictType>() // 详情数据
 const deleting = ref(false) // 删除状态
 
@@ -114,6 +116,7 @@ async function handleDelete() {
     await deleteDictType(props.id)
     toast.success('删除成功')
     uni.$emit('system:dict-type:reload')
+    void dictStore.refreshDictCache() // 同步字典缓存，供 BPM 表单等页面使用最新字典
     delay(handleBack)
   } finally {
     deleting.value = false

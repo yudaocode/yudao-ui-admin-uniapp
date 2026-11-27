@@ -93,6 +93,12 @@ watch(
   { deep: true, immediate: true },
 )
 
+/** 字典缓存刷新（如在字典管理增删改后返回已打开的表单）时，同步最新选项；已选值不受影响 */
+watch(
+  () => dictStore.dictCache,
+  () => syncOptions(),
+)
+
 async function open() {
   if (props.disabled) {
     return
@@ -132,10 +138,7 @@ async function loadOptions() {
   loadError.value = ''
   try {
     await dictStore.loadDictCacheWithRetry()
-    options.value = loadDictOptions(dictType, valueType.value)
-    if (options.value.length === 0) {
-      loadError.value = '字典选项为空，请稍后重试'
-    }
+    syncOptions()
   } catch (error) {
     console.error('加载字典选项失败:', error)
     options.value = []
@@ -144,6 +147,16 @@ async function loadOptions() {
   } finally {
     loading.value = false
   }
+}
+
+/** 从字典缓存读取当前字典类型的选项 */
+function syncOptions() {
+  const dictType = props.rule.props?.dictType || ''
+  if (!dictType) {
+    return
+  }
+  options.value = loadDictOptions(dictType, valueType.value)
+  loadError.value = options.value.length === 0 ? '字典选项为空，请稍后重试' : ''
 }
 
 function showLoadError(message: string) {
